@@ -1,0 +1,471 @@
+"""Модуль математических моделей статического трехосного нагружения. Содержит модели:
+    ModelTriaxialStaticLoadTest - модель обработчика данных опыта консолидации.
+    Принцип работы:
+        Данные подаются в модель методом set_test_file_path(path). Подается путь к файлу, После считывания данные
+        передаются в обработчики частей опыта
+        Обработка опыта происходит в соответствующих классах частей опыта.
+        Метод plotter() позволяет вывести графики обработанного опыта
+        Результаты получаются методом get_test_results()
+
+    ModelTriaxialStaticLoadTestSoilTest - модель математического моделирования данных опыта трехосного нагружения.
+    Принцип работы:
+        Параметры опыта подаются в модель с помощью метода set_test_params().
+        Методы get_consolidation_draw_params() и get_deviator_loading_draw_params() служат для считывания рассчитанных
+        параметров отрисовки для передачи на слайдеры
+        Методы set_consolidation_draw_params() и set_deviator_loading_draw_params() служат установки данных отрисовки
+        и перезапуска моделирования опыта
+        Метод save_log_file(file_name) принимает имя файла для сохранения и записывает туда словари всех этапов опыта"""
+
+__version__ = 1
+
+import numpy as np
+import os
+import copy
+import matplotlib.pyplot as plt
+
+from static_loading.reconsolidation_model import ModelTriaxialReconsolidation, ModelTriaxialReconsolidationSoilTest
+from static_loading.consolidation_model import ModelTriaxialConsolidation, ModelTriaxialConsolidationSoilTest
+from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading, ModelTriaxialDeviatorLoadingSoilTest
+
+
+class ModelTriaxialStaticLoad:
+    """Класс моделирования опыта трехосного сжатия
+    Структура класса представляет объеденение 3х моделей"""
+    def __init__(self):
+        # Основные модели опыта
+        self.reconsolidation = ModelTriaxialReconsolidation()
+        self.consolidation = ModelTriaxialConsolidation()
+        self.deviator_loading = ModelTriaxialDeviatorLoading()
+
+    def set_test_data(self, test_data):
+        """Получение массивов опытов и передача в соответствующий класс"""
+        self.reconsolidation.set_test_data(test_data["reconsolidation"])
+        self.consolidation.set_test_data(test_data["consolidation"])
+        self.deviator_loading.set_test_data(test_data["deviator_loading"])
+
+    def set_test_file_path(self, file_path):
+        """Обработка логфайла опыта"""
+        test_data = ModelTriaxialStaticLoad.open_geotek_log(file_path)
+        self.set_test_data(test_data)
+
+    def get_test_results(self):
+        results = {}
+        results.update(self.reconsolidation.get_test_results())
+        results.update(self.consolidation.get_test_results())
+        results.update(self.deviator_loading.get_test_results())
+        return results
+
+    def plotter(self):
+        self.reconsolidation.plotter()
+        self.consolidation.plotter()
+        self.deviator_loading.plotter()
+        plt.show()
+
+    @staticmethod
+    def open_geotek_log(file_path, camera="A"):
+        """Функция открытия файла прибора геотек"""
+
+        def find_current_columns(line, column_keys):
+            """Функция находит нужные колонки по ключу и определяет их размерность"""
+            columns_dict = {}
+            for key in column_keys:
+                for column_name in line:
+                    if key in column_name:
+                        columns_dict[key] = {"index": line.index(column_name),
+                                             "scale": 1}
+                        break
+            return columns_dict
+
+        def define_reconsolidation(read_data):
+            """Обработка реконсолидации"""
+            reconsolidation = {}
+            try:
+                end_reconsolidation = read_data['Trajectory'].index("Consolidation")
+                reconsolidation["delta_h"] = round(read_data['VerticalDeformation'][end_reconsolidation], 5)
+                reconsolidation["pore_pressure"] = read_data['PorePress'][0:end_reconsolidation]
+                reconsolidation["cell_pressure"] = read_data['CellPress'][0:end_reconsolidation]
+                reconsolidation["action"] = read_data['Action'][0:end_reconsolidation]
+                reconsolidation["time"] = read_data['Time'][0:end_reconsolidation]
+                reconsolidation["trajectory"] = read_data["Trajectory"][0:end_reconsolidation]
+
+                return reconsolidation
+            except (ValueError, IndexError):
+                return None
+
+        def define_consolidation(read_data, delta_h):
+            """Обработка консолидации"""
+            consolidation = {}
+            # Найдем начало и конец этапа консолидации
+            try:
+                begin_consolidation = read_data['Trajectory'].index('Consolidation')
+                iload = read_data['Action'][begin_consolidation:].index('Stabilization')
+                begin_consolidation += iload - 1
+            except ValueError:
+                try:
+                    begin_consolidation = read_data['Trajectory'].index('Consolidation')
+                    iload = read_data['Action'][begin_consolidation:].index('Wait')
+                    begin_consolidation += iload
+                except ValueError:
+                    try:
+                        begin_consolidation = read_data['Trajectory'].index('Consolidation')
+                    except ValueError:
+                        return None
+            try:
+                end_consolidation = read_data['Action'].index('WaitLimit')
+            except ValueError:
+                try:
+                    end_consolidation = read_data['Trajectory'].index('CTC')
+                except ValueError:
+                    end_consolidation = len(read_data['Trajectory'])
+
+            try:
+                consolidation["delta_h_consolidation"] = read_data['VerticalDeformation'][end_consolidation]
+                consolidation["delta_h_reconsolidation"] = round(delta_h, 5)
+                consolidation["cell_volume_strain"] = -((read_data['CellVolume'][
+                                                         begin_consolidation:end_consolidation]) / (
+                                                                np.pi * (19 ** 2) * (76 - consolidation["delta_h_reconsolidation"])))
+                consolidation["pore_volume_strain"] = (read_data['PoreVolume'][
+                                                       begin_consolidation:end_consolidation]) / (
+                                                              np.pi * (19 ** 2) * (76 - consolidation["delta_h_reconsolidation"]))
+                consolidation["time"] = read_data['Time'][begin_consolidation:end_consolidation] - \
+                                        read_data['Time'][begin_consolidation]
+                if camera == "A":
+                    rod_accounting = (read_data['VerticalDeformation'][begin_consolidation:end_consolidation] -
+                                      read_data['VerticalDeformation'][begin_consolidation]) / (
+                                             np.pi * (10 ** 2) * (76 - delta_h))
+                    consolidation["cell_volume_strain"] -= rod_accounting
+
+                return consolidation
+            except (ValueError, IndexError):
+                return None
+
+        def define_deviator_loading(read_data, delta_h):
+            """Обработка девиаторного нагружения"""
+            deviator_loading = {}
+
+            try:
+                begin_deviator_loading = read_data['Trajectory'].index('CTC')
+                iload = read_data['Action'][begin_deviator_loading:].index('WaitLimit')
+                begin_deviator_loading += iload
+
+                try:
+                    end_deviator_loading = read_data['Action'].index('Unload')
+                except (ValueError, IndexError):
+                    end_deviator_loading = len(read_data['VerticalDeformation'])
+
+                deviator_loading["strain"] = (read_data['VerticalDeformation'][
+                                              begin_deviator_loading:end_deviator_loading] - \
+                                              read_data['VerticalDeformation'][begin_deviator_loading]) / (76 - delta_h)
+
+                deviator_loading["deviator"] = read_data['Deviator'][begin_deviator_loading:end_deviator_loading] - \
+                                               read_data['Deviator'][begin_deviator_loading]
+
+                deviator_loading["cell_volume_strain"] = -((read_data["CellVolume"][
+                                                            begin_deviator_loading:end_deviator_loading] - \
+                                                            read_data["CellVolume"][begin_deviator_loading]) / (
+                                                                   np.pi * (19 ** 2) * (76 - delta_h)))
+                deviator_loading["pore_volume_strain"] = (read_data["PoreVolume"][
+                                                          begin_deviator_loading:end_deviator_loading] - \
+                                                          read_data["PoreVolume"][begin_deviator_loading]) / (
+                                                                 np.pi * (19 ** 2) * (76 - delta_h))
+                deviator_loading["sigma_3"] = np.mean(read_data["CellPress"][begin_deviator_loading:end_deviator_loading])
+
+                deviator_loading["u"] = np.mean(read_data["PorePress"][begin_deviator_loading:end_deviator_loading])
+
+                # Разгрузка
+                try:
+                    begin_upload = read_data['Action'].index('CyclicUnloading')
+                    deviator_loading["reload_points"] = [begin_upload - begin_deviator_loading,
+                                                         read_data['Action'][begin_upload:].index('WaitLimit') +
+                                                         begin_upload - begin_deviator_loading]
+                except (ValueError, IndexError):
+                    deviator_loading["reload_points"] = None
+
+                return deviator_loading
+
+            except (ValueError, IndexError):
+                return None
+
+        # Обштй вид результирующей структуры данных
+        test_data = {"reconsolidation": {"pore_pressure": None, "cell_pressure": None, "action": None, "delta_h": None},
+
+                     "consolidation": {"time": None, "cell_volume_strain": None, "pore_volume_strain": None,
+                                       "delta_h": None},
+
+                     "deviator_loading": {"sigma_3": None, "strain": None, "deviator": None, "cell_volume_strain": None,
+                                          "pore_volume_strain": None, "reload_points": None, "delta_h": None, "u": None}
+                     }
+
+        column_keys = ['VerticalDeformation', 'Deviator', 'CellVolume', 'PoreVolume', 'Time', 'Action',
+                       'Trajectory', 'CellPress', 'PorePress']
+
+        # Считываем файл
+        f = open(file_path)
+        lines = f.readlines()
+        f.close()
+
+        columns_dict = find_current_columns(lines[0].split("\t"), column_keys)
+
+        # Словарь считанных данных по ключам колонок
+        read_data = {}
+
+        for key in columns_dict:  # по нужным столбцам
+            try:
+                read_data[key] = np.array(
+                    list(map(lambda x: float(x.split("\t")[columns_dict[key]["index"]].replace(",", ".")), lines[1:])))
+            except ValueError:
+                read_data[key] = list(
+                    map(lambda x: x.split("\t")[columns_dict[key]["index"]].replace(",", "."), lines[1:]))
+
+        # Обработка реконсолидации
+        test_data["reconsolidation"] = define_reconsolidation(read_data)
+
+        if test_data["reconsolidation"]:
+            delta_h_reconsolidation = test_data["reconsolidation"].get("delta_h", 0)
+        else:
+            delta_h_reconsolidation = 0
+        test_data["consolidation"] = define_consolidation(read_data, delta_h_reconsolidation)
+
+        if test_data["consolidation"]:
+            delta_h_consolidation = test_data["consolidation"].get("delta_h_consolidation", 0)
+        else:
+            delta_h_consolidation = 0
+
+        test_data["deviator_loading"] = define_deviator_loading(read_data, delta_h_consolidation)
+
+        return test_data
+
+class ModelTriaxialStaticLoadSoilTest:
+    """Класс моделирования опыта трехосного сжатия
+    Структура класса представляет объеденение 3х моделей"""
+    def __init__(self):
+        # Основные модели опыта
+        self.reconsolidation = ModelTriaxialReconsolidationSoilTest()
+        self.consolidation = ModelTriaxialConsolidationSoilTest()
+        self.deviator_loading = ModelTriaxialDeviatorLoadingSoilTest()
+
+    def set_test_params(self, test_params):
+        """Получение массивов опытов и передача в соответствующий класс"""
+        self.reconsolidation.set_test_params(test_params["sigma_3"])
+
+        self.consolidation.set_delta_h_reconsolidation(self.reconsolidation.get_test_results()["delta_h_reconsolidation"])
+        self.consolidation.set_test_params(test_params)
+        self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
+                                                   self.consolidation.get_delta_h_consolidation())
+        self.deviator_loading.set_test_params(test_params)
+
+    def get_consolidation_draw_params(self):
+        """Метод считывает параметры отрисованных опытов для передачи на ползунки"""
+        return self.consolidation.get_draw_params()
+
+    def get_deviator_loading_draw_params(self):
+        """Метод считывает параметры отрисованных опытов для передачи на ползунки"""
+        return self.deviator_loading.get_draw_params()
+
+    def set_consolidation_draw_params(self, params):
+        """Передача параметров для перерисовки графиков"""
+        self.consolidation.set_draw_params(params)
+
+    def set_deviator_loading_draw_params(self, params):
+        """Передача параметров для перерисовки графиков"""
+        self.deviator_loading.set_draw_params(params)
+
+    def save_log_file(self, file_path):
+        """Метод генерирует логфайл прибора"""
+        reconsolidation_dict = self.reconsolidation.get_dict()
+        consolidation_dict = self.consolidation.get_dict(self.reconsolidation.get_effective_stress_after_reconsolidation())
+        deviator_loading_dict = self.deviator_loading.get_dict()
+
+        main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
+                                                                                         consolidation_dict,
+                                                                                         deviator_loading_dict)
+        ModelTriaxialStaticLoadSoilTest.text_file(file_path, main_dict)
+
+    def plotter(self):
+        self.reconsolidation.plotter()
+        self.consolidation.plotter()
+        self.deviator_loading.plotter()
+        plt.show()
+
+    def get_test_results(self):
+        results = {}
+        results.update(self.reconsolidation.get_test_results())
+        results.update(self.consolidation.get_test_results())
+        results.update(self.deviator_loading.get_test_results())
+        return results
+
+    @staticmethod
+    def addition_of_dictionaries(data1, data2, initial=True, skip_keys=None):
+        dictionary_1 = copy.deepcopy(data1)
+        dictionary_2 = copy.deepcopy(data2)
+        if skip_keys is None:
+            skip_keys = ['']
+        keys_d1 = list(dictionary_1.keys())  # массив ключей словаря 1
+        len_d1_elem = len(dictionary_1[keys_d1[0]])  # длина массива под произвольным ключем словаря 1
+        keys_d2 = list(dictionary_2.keys())  # массив ключей словаря 2
+        len_d2_elem = len(dictionary_2[keys_d2[0]])  # длина массива под произвольным ключем словаря 2
+
+        for key in dictionary_1:
+            if key in dictionary_2:  # если ключ есть в словаре 2
+                if initial and (str(type(dictionary_1[key][0])) not in ["<class 'str'>", "<class 'numpy.str_'>"]) and (
+                        key not in skip_keys):  # если initial=True и элементы под ключем не строки
+                    # к эламентам словаря 2 прибавляется последний элемент словаря 1 под одним ключем
+                    for val in range(len(dictionary_2[key])):
+                        dictionary_2[key][val] += dictionary_1[key][-1]
+                dictionary_1[key] = np.append(dictionary_1[key], dictionary_2[key])
+            else:  # если ключа нет в словаре 2
+                dictionary_1[key] = np.append(dictionary_1[key], np.full(len_d2_elem, ''))
+
+        for key in dictionary_2:  # если ключа нет в словаре 1
+            if key not in dictionary_1:
+                dictionary_1[key] = np.append(np.full(len_d1_elem, ''), dictionary_2[key])
+
+        return dictionary_1
+
+    @staticmethod
+    def text_file(file_path, data):
+        """Сохранение текстового файла формата Willie.
+                    Передается папка, массивы"""
+        p = os.path.join(file_path, "Тест.log")
+
+        def make_string(data, i):
+            s = ""
+            for key in data:
+                s += str(data[key][i]) + '\t'
+            s += '\n'
+            return (s)
+
+        with open(file_path, "w") as file:
+            file.write(
+                "Time" + '\t' + "Action" + '\t' + "Action_Changed" + '\t' + "SampleHeight_mm" + '\t' + "SampleDiameter_mm" + '\t' +
+                "Deviator_kPa" + '\t' + "VerticalDeformation_mm" + '\t' + "CellPress_kPa" + '\t' + "CellVolume_mm3" + '\t' +
+                "PorePress_kPa" + '\t' + "PoreVolume_mm3" + '\t' + "VerticalPress_kPa" + '\t' +
+                "Trajectory" + '\n')
+            for i in range(len(data["Time"])):
+                file.write(make_string(data, i))
+
+    @staticmethod
+    def number_format(x, characters_number=0, split=".", change_negatives=True):
+        """Функция возвращает число с заданным количеством знаков после запятой
+        :param characters_number: количество знаков после запятой
+        :param format: строка или число
+        :param split: кразделитель дробной части. точка или запятая
+        :param change_negatives: удаление начального знака минус"""
+
+        if str(type(x)) in ["<class 'numpy.float64'>", "<class 'numpy.int32'>", "<class 'int'>", "<class 'float'>"]:
+            # установим нужный формат
+            _format = "{:." + str(characters_number) + "f}"
+            round_x = np.round(x, characters_number)
+            x = _format.format(round_x)
+
+            # Уберем начальный минус  (появляется, например, когда округляем -0.0003 до 1 знака)
+            if change_negatives:
+                if x[0] == "-":
+                    x = x[1:len(x)]
+
+            if split == ".":
+                return x
+            elif split == ",":
+                return x.replace(".", ",")
+
+
+        else:
+            _format = "{:." + str(characters_number) + "f}"
+
+            if str(type(x)) == "<class 'numpy.ndarray'>":
+                x = list(x)
+
+            for i in range(len(x)):
+                # Уберем начальный минус  (появляется, например, когда округляем -0.0003 до 1 знака)
+                x[i] = _format.format(x[i])
+                if change_negatives:
+                    if x[i][0] == "-":
+                        x[i] = x[i][1:len(x)]
+
+                if split == ".":
+                    pass
+                elif split == ",":
+                    x[i].replace(".", ",")
+
+            return x
+
+    @staticmethod
+    def current_value_array(array, number, change_negatives=True):
+        s = []
+        for i in range(len(array)):
+            num = ModelTriaxialStaticLoadSoilTest.number_format(array[i], number, change_negatives=change_negatives)
+            if num == "0.00000":
+                num = "0"
+            s.append(num)
+        return s
+
+    @staticmethod
+    def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading):
+
+        data = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(b_test, consolidation, initial=True,
+                                        skip_keys=["SampleHeight_mm", "SampleDiameter_mm"])
+        dictionary = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(copy.deepcopy(data), deviator_loading, initial=True,
+                                              skip_keys=["SampleHeight_mm", "SampleDiameter_mm", "Action_Changed"])
+
+        dictionary["Time"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["Time"], 3)
+        dictionary["Deviator_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["Deviator_kPa"], 3)
+        # dictionary["VerticalDeformation_mm"] = current_value_array(dictionary["VerticalDeformation_mm"], 5)
+
+        # Для части девиаторного нагружения вертикальная деформация хода штока должна писаться со знаком "-"
+        CTC_index, = np.where(dictionary["Trajectory"] == 'CTC')
+        str = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["VerticalDeformation_mm"][:CTC_index[0]], 5)
+        str.extend(ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["VerticalDeformation_mm"][CTC_index[0]:], 5, change_negatives=False))
+        dictionary["VerticalDeformation_mm"] = str
+
+        dictionary["CellPress_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["CellPress_kPa"], 5)
+        dictionary["CellVolume_mm3"] = dictionary["CellVolume_mm3"]
+        dictionary["PorePress_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["PorePress_kPa"], 5)
+        dictionary["PoreVolume_mm3"] = dictionary["PoreVolume_mm3"]
+        dictionary["VerticalPress_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["VerticalPress_kPa"], 5)
+
+        return dictionary
+
+
+if __name__ == '__main__':
+
+    file = r"C:\Users\Пользователь\PycharmProjects\Willie\Test.1.log"
+    file = r"Z:\МДГТ - Механика\3. Трехосные испытания\1365\Test\Test.1.log"
+    #file = r"C:\Users\Пользователь\Desktop\Девиаторное нагружение\Архив\7а-1\Test sigma3=186.4.log"
+    #a = ModelTriaxialStaticLoading()
+    #a.set_test_data(openfile(file)["DeviatorLoading"])
+    #a.plotter()
+
+
+
+    #file = r"Z:\МДГТ - Механика\3. Трехосные испытания\1375\Test\Test.1.log"
+
+    #a = ModelTriaxialConsolidationSoilTest()
+    #a.set_test_params({"Cv": 0.178,
+                       #"Ca": 0.0001,
+                      # "E": 50000,
+                      # "sigma_3": 100,
+                      # "K0": 1})
+    #a.plotter()
+    #a = ModelTriaxialReconsolidation()
+    #a.open_file(file)
+    #open_geotek_log(file)
+
+    #a = ModelTriaxialStaticLoadSoilTest()
+    param = {'E': 30495, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5,
+             'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
+             'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
+                                                                                             'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73, 'r': '-', 'rd': '-', 'n': '-', 'e': '-', 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-', 'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0, '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-', '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие (E)'}
+    test = "soil_test"
+
+    if test == "soil_test1":
+        a = ModelTriaxialStaticLoadSoilTest()
+        a.set_test_params(param)
+        a.save_log_file("C:/Users/Пользователь/Desktop/Test.1.log")
+        a.plotter()
+    else:
+        a = ModelTriaxialStaticLoad()
+        a.set_test_file_path("C:/Users/Пользователь/Desktop/Test.1.log")
+        a.plotter()
+
+
+

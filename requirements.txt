@@ -1,0 +1,8 @@
+numpy==1.19.5
+scipy==1.5.0
+matplotlib==3.2.2
+openpyxl==3.0.4
+reportlab==3.5.49
+pyqt5
+pyexcel
+svglib==1.0.1
