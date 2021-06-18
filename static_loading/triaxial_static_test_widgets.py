@@ -11,14 +11,7 @@ from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI, Model
     ModelTriaxialConsolidationUI, ModelTriaxialDeviatorLoadingUI
 from static_loading.triaxial_static_loading_test_model import ModelTriaxialStaticLoad, ModelTriaxialStaticLoadSoilTest
 from general.general_widgets import Float_Slider
-
-style = """QLabel {border-style: outset; border-width: 1px;}
-QSlider::groove:horizontal::disabled {
-    border: #D3D3D3;
-    border-radius: 2px;
-    height: 5px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
-    background: #D3D3D3;
-}"""
+from configs.styles import style
 
 class TriaxialStaticWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.

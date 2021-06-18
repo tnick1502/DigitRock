@@ -261,7 +261,7 @@ class StatementStructure(QWidget):
                        "scale_factor": "Размер столбцов",
                        "additional_parameters": "Дополнительные параметры испытаний"}
 
-        self._statement_structures_path = os.path.join(sys.path[-1], "structures.json")
+        self._statement_structures_path = os.path.join(os.getcwd()[:-7] + "/project_data/", "structures.json")
 
         self._statement_structures = None
         self._statement_structure = None
@@ -269,11 +269,10 @@ class StatementStructure(QWidget):
         self.create_UI()
         self.setFixedHeight(38 * len(self.params) + 70)  # задаем высоту в завивисиости от числа параметров
 
-        self._open_statement_structures(
-            self._statement_structures_path)  # вызываем функцию от пути которая считывает структуру из файла json
+        self._open_statement_structures(self._statement_structures_path)  # вызываем функцию от пути которая считывает структуру из файла json
         if statement_structure_key:  # только если в переменную передали ключ
             self._set_combo_structure(statement_structure_key)
-            self._combo_changed()
+
 
     def create_UI(self):
         self.layout = QVBoxLayout()
@@ -305,16 +304,23 @@ class StatementStructure(QWidget):
         self.combo_box = QComboBox()
         self.combo_box.activated.connect(self._combo_changed)
         self.dafault_parameter_box_layout.addWidget(self.combo_box)
+        self.combo_box.setFixedWidth(180)
         self.new_statement_name = QLineEdit()
-        self.new_statement_name.setFixedWidth(120)
+        #self.new_statement_name.setFixedWidth(120)
         self.dafault_parameter_box_layout.addWidget(self.new_statement_name)
         self.save_new_structure_button = QPushButton("Сохранить шаблон")
-        self.save_new_structure_button.setFixedWidth(120)
+        self.save_new_structure_button.setFixedWidth(110)
         self.dafault_parameter_box_layout.addWidget(self.save_new_structure_button)
         self.save_new_structure_button.clicked.connect(self._save_structure)
         self.open_new_structure_button = QPushButton("Открыть шаблон")
-        self.open_new_structure_button.setFixedWidth(120)
+        self.open_new_structure_button.setFixedWidth(110)
         self.dafault_parameter_box_layout.addWidget(self.open_new_structure_button)
+        self.dell_structure_button = QPushButton("Удалить шаблон")
+        self.dell_structure_button.setFixedWidth(110)
+        self.dafault_parameter_box_layout.addWidget(self.dell_structure_button)
+        """!!!"""
+        self.dell_structure_button.clicked.connect(self._dell_structure)
+
         self.dafault_parameter_box.setLayout(self.dafault_parameter_box_layout)
         self.end_line.addWidget(self.dafault_parameter_box)
 
@@ -349,15 +355,20 @@ class StatementStructure(QWidget):
 
     def _combo_changed(self):
         """Смена значений в combo_change"""
-        self._statement_structure = self._statement_structures[self.combo_box.currentText()]
+        if self._statement_structures:
+            self._statement_structure = self._statement_structures[self.combo_box.currentText()]
         self._set_structure()
+        """!!!"""
+        self.new_statement_name.setText(self.combo_box.currentText())
 
     def _set_combo_structure(self, key):
         """Поставить значение по ключу в combo_box"""
         index = self.combo_box.findText(key, Qt.MatchFixedString)
         if index >= 0:
             self.combo_box.setCurrentIndex(index)
-        self._set_structure()
+        if index == -1:
+            self._statement_structure = None
+        self._combo_changed()
 
     def _set_structure(self):
         """Заполнение формы и заголовка по структуре таблицы"""
@@ -399,6 +410,22 @@ class StatementStructure(QWidget):
                 QMessageBox.critical(self, "Ошибка", "Ошибка добавления")
         else:
             QMessageBox.critical(self, "Ошибка", "Введите имя шаблона")
+
+    """!!!"""
+    def _dell_structure(self):
+        """Функция удаления структуры"""
+
+        text = self.new_statement_name.text()
+
+        if text:
+            try:
+                self._statement_structures.pop(text)
+                create_json_file(self._statement_structures_path, self._statement_structures)
+                self._open_statement_structures(self._statement_structures_path)
+                self.combo_box.setCurrentIndex(0)
+                self._set_combo_structure(self.combo_box.currentText())
+            except KeyError:
+                QMessageBox.critical(self, "Ошибка", "Неверное имя шаблона")
 
     def _get_structure(self):
         statement_title = self.parameter_title.text()

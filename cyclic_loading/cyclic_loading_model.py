@@ -38,13 +38,8 @@ import scipy.ndimage as ndimage
 
 from general.general_functions import define_qf, create_deviation_curve, current_exponent, step_sin, logarithm, sigmoida,\
     create_acute_sine_array, AttrDict, mirrow_element
-
-plotter_params = {"main_line": {"linewidth": 2.5, "color": None, "linestyle": "-"},
-                            "scatter_line": {"linewidth": 2, "color": "sandybrown", "linestyle": None},
-                            "sandybrown_line": {"linewidth": 2, "color": "sandybrown", "linestyle": None},
-                            "help_line": {"linewidth": 1.5, "color": "tomato", "linestyle": "-"},
-                            "dotted_line": {"linewidth": 1.5, "color": "tomato", "linestyle": "--"},
-                  "black_dotted_line": {"linewidth": 1, "color": "black", "linestyle": "--"}}
+from cyclic_loading.cyclic_stress_ratio_function import define_fail_cycle
+from configs.plot_params import plotter_params
 
 class ModelTriaxialCyclicLoading:
     """Модель обработки циклического нагружения
@@ -405,7 +400,9 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         """Функция принимает параметры опыта для дальнейших построений.
         n_fail моделируется из кривой CSR. Если нет разжижения - n_fail = None"""
         self._test_params.cycles_count = params["N"]
-        self._test_params.n_fail = None
+        if self._test_params.cycles_count <5:
+            self._test_params.cycles_count = 5
+
         self._test_params.sigma_1 = params["sigma1"]
         self._test_params.t = params["t"]
         self._test_params.K0 = params["K0"]
@@ -421,11 +418,15 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                                      self._test_params.sigma_3,
                                                                                      2*self._test_params.t)
 
+        self._test_params.n_fail, Mcsr = define_fail_cycle(self._test_params.cycles_count, self._test_params.sigma_1,
+                                       self._test_params.t, self._test_params.physical["Ip"],
+                                       self._test_params.physical["Il"], self._test_params.physical["e"])
+
         if self._test_params.n_fail:
             if self._test_params.n_fail > self._test_params.cycles_count - 5:
                 self._test_params.n_fail = self._test_params.cycles_count - 5
 
-        self._define_draw_params()
+        self._define_draw_params(Mcsr)
         self._test_modeling()
         self._test_processing()
 
@@ -461,7 +462,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         cycles_count_params = {
             "cycles_count": {"value": self._test_params.cycles_count,
-                             "borders": [5, self._test_params.cycles_count if self._test_params.cycles_count > 5 else 5]}
+                             "borders": [3, self._test_params.cycles_count if self._test_params.cycles_count > 5 else 5]}
         }
 
         return strain_params, PPR_params, cycles_count_params
@@ -526,7 +527,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                     self._test_data.cell_pressure,
                                                                     self._test_params.physical["Ip"])
 
-    def _define_draw_params(self):
+    def _define_draw_params(self, Mcsr=None):
         """Определение параметров отрисовки графиков.
         Eсли грунт не разжижился, ассимптота PPR моделируется через коэффициент запаса(отношение текущего CSR к
         максимальному)
@@ -561,8 +562,12 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._draw_params.strain_filter = 0.5
 
         # Ассимптота графика PPR. Если есть разрушение - не учитывается
-        self._draw_params.PPR_max = 4 * self._test_params.t * np.random.uniform(0.3, 0.5) / self._test_params.sigma_3 \
-                                    + np.random.uniform(0.2, 0.3)
+        if Mcsr:
+            self._draw_params.PPR_max = 1/Mcsr
+        else:
+            self._draw_params.PPR_max = 4 * self._test_params.t * np.random.uniform(0.3, 0.5) / self._test_params.sigma_3 \
+                                        + np.random.uniform(0.2, 0.3)
+
         # Наклон графика PPR. Если есть разрушение - не учитывается
         if self._test_params.cycles_count > 200:
             self._draw_params.PPR_slant = np.random.uniform(100, 200)

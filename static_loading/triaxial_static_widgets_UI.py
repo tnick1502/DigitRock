@@ -15,7 +15,7 @@ from io import BytesIO
 
 from general.general_widgets import Float_Slider, RangeSlider
 from general.general_functions import point_to_xy
-from general.plot_params import plotter_params
+from configs.plot_params import plotter_params
 from general.general_functions import read_json_file
 
 plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))

@@ -30,7 +30,7 @@ from general.general_functions import sigmoida, make_increas, line_approximate, 
     define_dilatancy, define_type_ground, AttrDict, find_line_area, interpolated_intercept, Point, point_to_xy, \
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, define_qf, define_E50
 from static_loading.consolidation_functions import function_consalidation, function_consalidation_without_Cv
-from general.plot_params import plotter_params
+from configs.plot_params import plotter_params
 
 class ModelTriaxialConsolidation:
     """Модель обработки консолидации

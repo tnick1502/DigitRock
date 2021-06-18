@@ -19,7 +19,7 @@ from static_loading.mohr_circles_test_model import ModelMohrCircles, ModelMohrCi
 from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI
 from static_loading.triaxial_static_test_widgets import TriaxialStaticDialog, TriaxialStaticDialogSoilTest
 from general.initial_tables import Table
-from general.plot_params import plotter_params
+from configs.plot_params import plotter_params
 from general.general_functions import read_json_file
 
 plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
