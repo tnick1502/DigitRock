@@ -1,9 +1,7 @@
-"""Модуль математических моделей циклического нагружения. Содержит модели:
-    ModelTriaxialCyclicLoading - модель обработчика данных опыта.
-        Данные подаются в модель методом set_test_data(test_data) с определенными ключами. Функция открытия файла
-        прибора open_wille_log() находится в модуле самом классе как метод класса
-        Обработка опыта происходит с помощью метода _test_processing(). При неправильном автоопределении частоты можно
-        подать ее самостоятельно с помощью метода set_frequency(frequency)
+"""Модуль математических моделей резонансной колонки. Содержит модели:
+    ModelRezonantColumn - модель обработчика данных опыта.
+        Данные подаются в модель методом set_test_data(test_data) с определенными ключами.
+        Обработка опыта происходит с помощью метода _test_processing()
         Метод plotter() позволяет вывести графики обработанного опыта
         Результаты получаются методом get_test_results()
 
@@ -22,14 +20,19 @@ __version__ = 1
 
 import numpy as np
 import os
+import warnings
 import sys
 import matplotlib.pyplot as plt
-import scipy.ndimage as ndimage
+from scipy.optimize import curve_fit
+from scipy.optimize import differential_evolution
 
-from general.general_functions import define_qf, create_deviation_curve, current_exponent, step_sin, logarithm, sigmoida,\
-    create_acute_sine_array, AttrDict, mirrow_element
+from general.general_functions import AttrDict
 from cyclic_loading.cyclic_stress_ratio_function import define_fail_cycle
 from configs.plot_params import plotter_params
+from general.general_functions import read_json_file
+
+plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
+plt.style.use('bmh')
 
 class ModelRezonantColumn:
     """Модель обработки циклического нагружения
@@ -39,8 +42,6 @@ class ModelRezonantColumn:
 
         - Обработка опыта производится методом _test_processing.
 
-        - Метод set_frequency позволяет задать частоту для масштабирования оси х. Используется в случае неправильной
-        работы метода определения частоты
 
         - Метод get_plot_data подготавливает данные для построения. Метод plotter позволяет построить графики с помощью
         matplotlib"""
@@ -48,147 +49,90 @@ class ModelRezonantColumn:
     def __init__(self):
         """Определяем основную структуру данных"""
         # Структура дынных
-        self._test_data = AttrDict({"time": None,
-                                    "cycles": None,
-                                    "cell_pressure": None,
-                                    "setpoint": None,
-                                    "strain": None,
-                                    "deviator": None,
-                                    "PPR": None,
-                                    "mean_effective_stress": None})
+        self._test_data = AttrDict({
+            "shear_strain": None,
+            "G_array": None,
+            "frequency": None,
+            "resonant_curves": None})
 
-        self._test_params = AttrDict({"frequency": None,
-                                      "points_in_cycle": None})
+        # Положение для выделения опыта из общего массива
+        self._test_cut_position = AttrDict({"left": None,
+                                            "right": None})
 
         # Результаты опыта
-        self._test_result = AttrDict({"max_PPR": None,
-                                      "max_strain": None,
-                                      "fail_cycle": None,  # номер цикла или False (минимальный из последующих)
-                                      "fail_cycle_criterion_strain": None,  # номер цикла или False
-                                      "fail_cycle_criterion_stress": None,  # номер цикла или False
-                                      "fail_cycle_criterion_PPR": None,  # номер цикла или False
-                                      "conclusion": None})  # заключение о разжижаемости
+        self._test_result = AttrDict({"G0": None, "threshold_shear_strain": None})
 
     def set_test_data(self, test_data):
         """Получение и обработка массивов данных, считанных с файла прибора"""
-        self._test_data.cycles = test_data["cycles"]
-        self._test_data.time = test_data["time"]
-        self._test_params.frequency = test_data["frequency"]
-        self._test_params.points_in_cycle = test_data["points"]
-        self._test_data.deviator = test_data["deviator"]
-        self._test_data.PPR = test_data["PPR"]
-        self._test_data.strain = test_data["strain"]
-        self._test_data.mean_effective_stress = test_data["mean_effective_stress"]
-        self._test_data.cell_pressure = test_data["cell_pressure"]
+        self._test_data.shear_strain = test_data["shear_strain"]
+        self._test_data.G_array = test_data["G0_array"]
+        self._test_data.frequency = test_data["frequency"]
+        self._test_data.resonant_curves = test_data["resonant_curves"]
+
+        self._test_cut_position.left = 0
+        self._test_cut_position.right = len(self._test_data.G_array)
 
         self._test_processing()
-
-    def get_test_params(self):
-        return self._test_params.get_dict()
-
-    def set_frequency(self, frequency):
-        """Изменение частоты опыта"""
-        self._test_params.frequency = frequency
-        self._test_data.cycles = self._test_data.time * self._test_params.frequency
 
     def get_test_results(self):
         """Получение результатов обработки опыта"""
         return self._test_result.get_dict()
 
+    def open_path(self, path):
+        data = {}
+        for dirpath, dirs, files in os.walk(path):
+            for filename in files:
+                if filename == "RCCT.txt":
+                    data.update(
+                        ModelRezonantColumn.open_resonant_curves_log(os.path.join(os.path.join(dirpath, filename))))
+                elif filename == "RCCT_ModulusTable.txt":
+                    data.update(ModelRezonantColumn.open_G0_log(os.path.join(os.path.join(dirpath, filename))))
+        self.set_test_data(data)
+
     def get_plot_data(self):
         """Возвращает данные для построения"""
-        if self._test_data.strain is None:
+        if self._test_data.G_array is None:
             return None
         else:
-            strain_lim = []
-            if np.min(self._test_data.strain) < 0:
-                strain_lim.append(np.min(self._test_data.strain) - 0.005)
-            else:
-                strain_lim.append(-0.005)
-            if np.max(self._test_data.strain) > 0.0475:
-                strain_lim.append(np.max(self._test_data.strain) + 0.0025)
-            else:
-                strain_lim.append(0.05)
+            shear_strain_approximate = np.linspace(self._test_data.shear_strain[0],
+                                                   self._test_data.shear_strain[-1], 300)
 
-            PPR_lim = []
-            if np.min(self._test_data.PPR) < 0:
-                PPR_lim.append(np.min(self._test_data.PPR) - 0.1)
-            else:
-                PPR_lim.append(-0.1)
-            if np.max(self._test_data.PPR) > 0.95:
-                PPR_lim.append(np.max(self._test_data.PPR) + 0.05)
-            else:
-                PPR_lim.append(1)
-
-            return {"cycles": self._test_data.cycles,
-                    "deviator": self._test_data.deviator,
-                    "strain": self._test_data.strain,
-                    "PPR": self._test_data.PPR,
-                    "mean_effective_stress": self._test_data.mean_effective_stress,
-                    "strain_lim": strain_lim,
-                    "PPR_lim": PPR_lim}
+            G_approximate = ModelRezonantColumn.Hardin_Drnevick(shear_strain_approximate,
+                                                                0.278/(0.722 *
+                                                                       (self._test_result.threshold_shear_strain/10000)),
+                                                                self._test_result.G0)
+            return {
+                "G": self._test_data.G_array,
+                "shear_strain": self._test_data.shear_strain,
+                "G_approximate": G_approximate,
+                "shear_strain_approximate": shear_strain_approximate,
+                "frequency": self._test_data.frequency,
+                "resonant_curves": self._test_data.resonant_curves
+            }
 
     def plotter(self, save_path=None):
         """Построение графиков опыта. Если передать параметр save_path, то графики сохраняться туда"""
-        from matplotlib import rcParams
-        rcParams['font.family'] = 'Times New Roman'
-        rcParams['font.size'] = '14'
-        rcParams['axes.edgecolor'] = 'black'
-
         plot_data = self.get_plot_data()
 
         if plot_data:
-            figure = plt.figure(figsize = [9.3, 6])
-            figure.subplots_adjust(right=0.98, top=0.98, bottom=0.1, wspace=0.25, hspace=0.25, left=0.1)
+            figure = plt.figure(figsize=[12, 5])
+            figure.subplots_adjust(right=0.98, top=0.98, bottom=0.1, wspace=0.2, hspace=0.2, left=0.08)
 
-            ax_deviator = figure.add_subplot(2, 2, 1)
-            ax_deviator.grid(axis='both')
-            ax_deviator.set_xlabel("Число циклов N, ед.")
-            ax_deviator.set_ylabel("Девиатор q, кПА")
+            ax_G = figure.add_subplot(1, 2, 2)
+            ax_G.set_xlabel("Деформация сдвига γ, д.е.")
+            ax_G.set_xscale("log")
+            ax_G.set_ylabel("Модуль сдвига G, МПа")
 
-            ax_strain = figure.add_subplot(2, 2, 2)
-            ax_strain.grid(axis='both')
-            ax_strain.set_xlabel("Число циклов N, ед.")
-            ax_strain.set_ylabel("Относительная деформация $ε_1$, д.е.")
+            ax_rezonant = figure.add_subplot(1, 2, 1)
+            ax_rezonant.set_xlabel("Частота f, Гц")
+            ax_rezonant.set_ylabel("Деформация сдвига γ, д.е.")
 
-            ax_strain.set_ylim(plot_data["strain_lim"])
+            ax_G.scatter(plot_data["shear_strain"], plot_data["G"], label="test data", color="tomato")
+            ax_G.plot(plot_data["shear_strain_approximate"], plot_data["G_approximate"], label="approximate data")
+            ax_G.legend()
 
-
-            ax_PPR = figure.add_subplot(2, 2, 3)
-            ax_PPR.grid(axis='both')
-            ax_PPR.set_xlabel("Число циклов N, ед.")
-            ax_PPR.set_ylabel("Приведенное поровое давление PPR, д.е.")
-
-            ax_PPR.set_ylim(plot_data["PPR_lim"])
-
-
-            ax_stresses = figure.add_subplot(2, 2, 4)
-            ax_stresses.grid(axis='both')
-            ax_stresses.set_xlabel("Среднее эффективное напряжение p', кПа")
-            ax_stresses.set_ylabel("Касательное напряжение τ, кПа")
-
-            ax_deviator.plot(plot_data["cycles"], plot_data["deviator"], **plotter_params["main_line"])
-            ax_strain.plot(plot_data["cycles"], plot_data["strain"], **plotter_params["main_line"])
-            ax_PPR.plot(plot_data["cycles"], plot_data["PPR"], **plotter_params["main_line"])
-            ax_stresses.plot(plot_data["mean_effective_stress"], plot_data["deviator"] / 2, **plotter_params["main_line"])
-
-            try:
-                xlims = ax_stresses.get_xlim()
-                ylims = ax_stresses.get_ylim()
-                ax_stresses.plot(self._test_data.mean_effective_stress, self.critical_line, label="CSL",
-                                 **plotter_params["dotted_line"])
-
-                i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator / 2,
-                                                                           self.critical_line, **plotter_params["dotted_line"])
-                if i:
-                    ax_stresses.scatter(self._test_data.mean_effective_stress[i], self._test_data.deviator[i] / 2,
-                                        zorder=5, s=40, **plotter_params["dotted_line"])
-
-                ax_stresses.legend()
-                ax_stresses.set_xlim(xlims)
-                ax_stresses.set_ylim(ylims)
-            except:
-                pass
+            for i in range(len(plot_data["frequency"])):
+                ax_rezonant.plot(plot_data["frequency"][i], plot_data["resonant_curves"][i])
 
             if save_path:
                 try:
@@ -200,48 +144,16 @@ class ModelRezonantColumn:
 
     def _test_processing(self):
         """Обработка опыта"""
-        self._test_result.max_PPR = round(np.max(self._test_data.PPR), 3)
-        self._test_result.max_strain = round(np.max(self._test_data.strain), 3)
-
-        self._test_result.fail_cycle_criterion_strain = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                          (self._test_data.strain >= 0.05))
-        self._test_result.fail_cycle_criterion_stress = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                          (self._test_data.mean_effective_stress <= 0))
-        self._test_result.fail_cycle_criterion_PPR = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                       (self._test_data.PPR >= 1))
-
-        self._test_result.fail_cycle = min([i for i in [self._test_result.fail_cycle_criterion_strain,
-                                                        self._test_result.fail_cycle_criterion_stress,
-                                                        self._test_result.fail_cycle_criterion_PPR] if i], default=None)
-
-        if self._test_result.fail_cycle_criterion_stress or self._test_result.fail_cycle_criterion_PPR:
-            self._test_result.conclusion = "Грунт склонен к разжижению"
-        elif self._test_result.fail_cycle_criterion_strain:
-            self._test_result.conclusion = "Грунт динамически неустойчив"
-        else:
-            self._test_result.conclusion = "Грунт не склонен к разжижению"
+        self._test_result.G0, self._test_result.threshold_shear_strain = \
+            ModelRezonantColumn.approximate_Hardin_Drnevick(self._test_data.shear_strain[self._test_cut_position.left : self._test_cut_position.right],
+                                                            self._test_data.G_array[self._test_cut_position.left : self._test_cut_position.right])
 
     @staticmethod
-    def define_fail_cycle(cycles, condisions):
-        """Функция находит номер цикла разрушения заданному критерию. Возвращает None, если критерий не выполнился"""
+    def open_G0_log(file_path):
 
-        def return_current_cycle(cycles, fail):
-            try:
-                return int(cycles[fail[0]])
-            except IndexError:
-                return None
+        test_data = {"shear_strain": np.array([]), "G0_array": np.array([])}
 
-        fail_cycles, = np.where(condisions)
-
-        return return_current_cycle(cycles, fail_cycles)
-
-    @staticmethod
-    def open_wille_log(file_path, define_frequency=True):
-        """Функция считывания файла опыта с прибора Вилли"""
-        test_data = {"time": np.array([]), "cycles": np.array([]), "deviator": np.array([]), "strain": np.array([]),
-                  "PPR": np.array([]), "mean_effective_stress": np.array([]), "cell_pressure": 0, "frequency": 0}
-
-        columns_key = ["Time", 'Deviator', 'Piston position', 'Pore pressure', 'Cell pressure', "Sample height"]
+        columns_key = ['ShearStrain1[]', 'G1[MPa]']
 
         # Считываем файл
         f = open(file_path)
@@ -252,38 +164,20 @@ class ModelRezonantColumn:
         read_data = {}
 
         for key in columns_key:  # по нужным столбцам
-            index = (lines[0].split("\t").index(key)) #
-            read_data[key] = np.array(list(map(lambda x: float(x.split("\t")[index]), lines[2:])))
+            index = (lines[0].split("; ").index(key))  #
+            read_data[key] = np.array(list(map(lambda x: float(x.split("; ")[index]), lines[1:])))
 
-        u_consolidations = read_data['Pore pressure'][0]
-
-        test_data["cell_pressure"] = read_data['Cell pressure'] - u_consolidations
-        pore_pressure = read_data['Pore pressure'] - u_consolidations
-        test_data["PPR"] = pore_pressure / test_data["cell_pressure"]
-        test_data["time"] = read_data["Time"] - read_data["Time"][0]
-        test_data["deviator"] = read_data['Deviator']
-        test_data["strain"] = (read_data['Piston position'] / read_data['Sample height']) - \
-                              (read_data['Piston position'][0] / read_data['Sample height'][0])
-        test_data["mean_effective_stress"] = ((test_data["cell_pressure"] * (1 - test_data["PPR"])) * 3 +
-                                              test_data["deviator"])/3
-
-        if define_frequency:
-            test_data["frequency"], test_data["points"] = ModelTriaxialCyclicLoading.find_frequency(test_data["time"],
-                                                                                                    test_data["deviator"])
-            test_data["cycles"] = test_data["time"] * test_data["frequency"]
-        else:
-            pass
+        test_data["shear_strain"] = read_data['ShearStrain1[]']
+        test_data["G0_array"] = read_data['G1[MPa]']
 
         return test_data
 
     @staticmethod
-    def open_geotek_log(file_path, define_frequency=True):
-        """Функция считывания файла опыта с прибора Вилли"""
-        test_data = {"time": np.array([]), "cycles": np.array([]), "deviator": np.array([]), "strain": np.array([]),
-                     "PPR": np.array([]), "mean_effective_stress": np.array([]), "cell_pressure": 0, "frequency": 0}
+    def open_resonant_curves_log(file_path):
 
-        columns_key = ["Test_Dyn_halfcycles", "Test_Dyn_time", "Test_DynVerticalPress_kPa_value",
-                       "Test_DynPorePress_kPa_value", "Test_DynVerticalDeformation_mm_value"]
+        test_data = {"frequency": np.array([]), "resonant_curves": np.array([])}
+
+        columns_key = ['ShearStrain1[]', 'Freq', 'STEP_ID']
 
         # Считываем файл
         f = open(file_path)
@@ -294,77 +188,73 @@ class ModelRezonantColumn:
         read_data = {}
 
         for key in columns_key:  # по нужным столбцам
-            index = (lines[0].split("\t").index(key))  #
-            read_data[key] = np.array(list(map(lambda x: float(x.split("\t")[index].replace(",", ".")), lines[1:])))
+            index = (lines[0].split("; ").index(key))  #
+            read_data[key] = np.array(list(map(lambda x: float(x.split("; ")[index]), lines[1:])))
 
-        test_data["cell_pressure"] = float(file_path[file_path.index("=") + 1: len(file_path) - file_path[::-1].index(".")].strip())
-        u_consolidations = read_data["Test_DynPorePress_kPa_value"][0]
-        test_data["PPR"] = (read_data["Test_DynPorePress_kPa_value"] - u_consolidations) / test_data["cell_pressure"]
-        test_data["time"] = read_data["Test_Dyn_time"] - read_data["Test_Dyn_time"][0]
-        test_data["deviator"] = read_data["Test_DynVerticalPress_kPa_value"] - test_data["cell_pressure"]
-        test_data["strain"] = (read_data["Test_DynVerticalDeformation_mm_value"] - \
-                              read_data["Test_DynVerticalDeformation_mm_value"][0]) / 100
-        test_data["mean_effective_stress"] = ((test_data["cell_pressure"] * (1 - test_data["PPR"])) * 3 +
-                                              test_data["deviator"]) / 3
+        id = len(set(read_data['STEP_ID']))
+        test_data["resonant_curves"] = [list() for _ in range(id)]
+        test_data["frequency"] = [list() for _ in range(id)]
 
-        if define_frequency:
-            test_data["frequency"], test_data["points"] = ModelTriaxialCyclicLoading.find_frequency(test_data["time"],
-                                                                                                     test_data["deviator"])
-            test_data["cycles"] = test_data["time"] * test_data["frequency"]
-        else:
-            pass
+        for i in range(id):
+            if i == id - 1:
+                i_1, = np.where(read_data['STEP_ID'] == i)
+                test_data["resonant_curves"][i] = np.array(read_data['ShearStrain1[]'][i_1[0]:])
+                test_data["frequency"][i] = np.array(read_data['Freq'][i_1[0]:])
+            else:
+                i_1, = np.where(read_data['STEP_ID'] == i)
+                i_2, = np.where(read_data['STEP_ID'] == i + 1)
+                test_data["resonant_curves"][i] = np.array(read_data['ShearStrain1[]'][i_1[0]:i_2[0]])
+                test_data["frequency"][i] = np.array(read_data['Freq'][i_1[0]:i_2[0]])
 
         return test_data
 
     @staticmethod
-    def find_frequency(time, deviator):
-        """Функция поиска частоты девиаторного нагружения"""
-        mid_deviator = ((max(deviator) - min(deviator)) / 2) + min(deviator)
-        k = 0
-        for i in range(len(time) - 1):
-            if deviator[i + 1] >= mid_deviator and deviator[i] < mid_deviator:
-                k += 1
-        k += 1
-        h = round(k / time[-1], 1)
+    def Hardin_Drnevick(gam, a, G0):
+        """Кривая Гардина - Дрневича"""
+        return G0 / (1 + a * gam)
 
-        h = round(h, 2)
-        points = round(len(time) / (max(time) * h))
+    @staticmethod
+    def approximate_Hardin_Drnevick(x, y):
 
-        return h, points
+        def sumOfSquaredError(parameterTuple):
+            warnings.filterwarnings("ignore")  # do not print warnings by genetic algorithm
+            val = ModelRezonantColumn.Hardin_Drnevick(x, *parameterTuple)
+            return np.sum((x - val) ** 2.0)
+
+        def generate_Initial_Parameters():
+            # min and max used for bounds
+            maxX = np.max(x)
+            minX = np.min(x)
+            maxY = np.max(y)
+            minY = np.min(y)
+
+            parameterBounds = []
+            parameterBounds.append([minX, maxX])  # search bounds for h
+            parameterBounds.append([minY, maxY])
+            result = differential_evolution(sumOfSquaredError, parameterBounds, seed=3)
+            return result.x
+
+        geneticParameters = generate_Initial_Parameters()
+
+        popt, pcov = curve_fit(ModelRezonantColumn.Hardin_Drnevick, x, y, geneticParameters)
+
+        aa, G = popt
+        threshold_shear_strain = 0.278 / (aa * 0.722)
+
+        return np.round(G, 2), np.round(threshold_shear_strain*10000, 2)
+
 
 
 
 if __name__ == '__main__':
 
     #file = "C:/Users/Пользователь/Desktop/Тест/Циклическое трехосное нагружение/Архив/19-1/Косинусное значение напряжения.txt"
-    file = "Z:/МДГТ - Механика/6. Циклика/499-20 с прибора/1-7/Косинусное значения напряжения.txt"
-    #a = ModelTriaxialCyclicLoading()
-    #a.set_test_data(ModelTriaxialCyclicLoading.open_wille_log(file))
-    #print(a.get_test_results())
-    #a.plotter()
-
-    #file = r"C:\Users\Пользователь\PycharmProjects\Willie\Test.1.log"
-    #file = r"Z:\МДГТ - Механика\3. Трехосные испытания\1375\Test\Test.1.log"
-    #a = ModelTriaxialStaticLoading()
-    #a.set_test_data(openfile(file)["DeviatorLoading"])
-    #a.plotter()
-
-    #a.plotter()
-
-    """a = ModelTriaxialCyclicLoading()
-    a.set_test_data(ModelTriaxialCyclicLoading.open_geotek_log("C:/Users/Пользователь/Desktop/Опыты/264-21 П-57 11.7 Обжимающее давление = 120.txt"))
-    a.plotter()"""
-
-    a = ModelTriaxialCyclicLoadingSoilTest()
-    params = {'E': 50000.0, 'c': 0.023, 'fi': 8.2,
-     'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8, 'Ip': 17.9,
-     'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 1200,
-     'MSF': '2.82', 'I': 2.0, 'sigma1': 96, 't': 22.56, 'sigma3': 96, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
-     'data_phiz': {'borehole': 'rete', 'depth': 9.8,
-                   'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'ige': '-',
-                   'rs': 2.73, 'r': 1.76, 'rd': 1.23, 'n': 55.0, 'e': 1.22, 'W': 43.4, 'Sr': 0.97, 'Wl': 47.1,
-                   'Wp': 29.2, 'Ip': 17.9, 'Il': 0.79, 'Ir': 6.8, 'str_index': 'l', 'gw_depth': 0.0, 'build_press': '-',
-                   'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 0.1,
-                   '005': 17.7, '001': 35.0, '0002': 18.8, '0000': 28.1, 'Nop': 20}, 'test_type': 'Сейсморазжижение'}
-    a.set_test_params(params)
-    a.plotter()
+    file = "Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1/RCCT.txt"
+    m = ModelRezonantColumn()
+    m.open_path(
+        "Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1")
+    m.plotter()
+    plt.show()
+    #ModelRezonantColumn.open_resonant_curves_log(file)
+    #file = "Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1/RCCT_ModulusTable.txt"
+    #ModelRezonantColumn.open_G0_log(file)
