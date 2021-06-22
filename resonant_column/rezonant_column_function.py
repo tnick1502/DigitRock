@@ -1,7 +1,7 @@
 import numpy as np
 from general.general_functions import define_type_ground, define_E50
 
-atmospheric_pressure = 0.1
+atmospheric_pressure = 0.1 * 1000
 
 def define_G0_Hardin_and_Black_1968(p_ref, e) -> float:
     """Функция находит параметр G0 для глины
@@ -168,9 +168,9 @@ def define_G0_Sas_et_al_2017(p_ref) -> float:
     :return
         G0, МПа"""
 
-    G0 = (3.02 * p_ref ** 0.68 + 0.82 * (p_ref * 1000) ** 0.96) / 2
+    G0 = (3.02 * ((p_ref * 1000) ** 0.68) + 0.82 * ((p_ref * 1000) ** 0.96)) / 2
 
-    return G0 / 1000
+    return G0
 
 def define_G0_sands(p_ref, e) -> float:
     """Функция находит параметр G0 для песков
@@ -218,7 +218,7 @@ def define_G0_plaxis(p_ref, e, c, fi, type_ground):
         G0 *= 0.3
 
     elif type_ground in [1, 2, 3, 4, 5]:  # Песок
-        G0 *= 0.8 - type_ground * 0.1
+        G0 *= 0.7 - type_ground * 0.05
 
     elif type_ground in [6, 7, 8]:  # Глина
         G0 *= 1.1 - 0.1 * type_ground
@@ -227,7 +227,7 @@ def define_G0_plaxis(p_ref, e, c, fi, type_ground):
     return G0
 
 
-def define_gam_07(E50, G0, p_ref, c, fi, K0, PI):
+def define_threshold_shear_strain(E50, G0, p_ref, c, fi, K0, PI):
     """Функция находит параметр gam07
         :argument
             E50 (float): модуль деформации, Мпа
@@ -237,15 +237,16 @@ def define_gam_07(E50, G0, p_ref, c, fi, K0, PI):
         :return
             gam07"""
     fi = np.deg2rad(fi)
-    gam07 = (((1 + ((E50 * 1000) * (5 / np.random.choice(np.linspace(50000, 70000, 20))))) * 10 ** (-4)) * 10000 + \
+    gam07 = (((1 + ((E50 * 1000) * 0.00006)) * 10 ** (-4)) * 10000 + \
           ((1 / (9 * 1000 * G0)) * (2 * c * (1 + np.cos(2 * fi)) + (1000 * p_ref) *
                                     (1 + K0) * np.sin(2 * fi))) * 10000 +
              (0.0352 + 0.00101*PI*1)*(p_ref**0.348)*100) / 3
 
+    gam07 *= (1 + (-0.3 + PI * 0.01))
+
     return gam07
 
-
-def define_G0_gam_07(p_ref, data_physical, E50, c, fi, K0) -> float:
+def define_G0_threshold_shear_strain(p_ref, data_physical, E50, c, fi, K0) -> tuple:
     """Функция находит параметр G0 для всех грунтов
     :argument
         p_ref (float): референтное давление
@@ -259,7 +260,7 @@ def define_G0_gam_07(p_ref, data_physical, E50, c, fi, K0) -> float:
     type_ground = define_type_ground(data_physical, data_physical["Ip"], data_physical["Ir"])
     e = data_physical["e"]
     if data_physical["Ip"] != "-":
-        PI = data_physical["Ip"]*100
+        PI = data_physical["Ip"]
     else:
         PI = 0
 
@@ -277,30 +278,42 @@ def define_G0_gam_07(p_ref, data_physical, E50, c, fi, K0) -> float:
               define_G0_Kallioglou_et_al_2008(p_ref, 0, e) +
               define_G0_Sas_et_al_2017(p_ref) +
               define_G0_sands(p_ref, e)) / 4
-        G0 *= (1 + (1.25 - type_ground * 0.25))
+        G0 *= (1 + (0.75 - type_ground * 0.15))
 
     elif type_ground in [6, 7, 8]: # Глина
         G0 = ((define_G0_Hardin_and_Black_1968(p_ref, e) +
               define_G0_Marcuson_andWahls_1972(p_ref, e) +
               define_G0_Kim_and_Novac_1981(p_ref, e) +
-              define_G0_Kokusho_et_al_1982_Kaolinite(p_ref, e) +
               define_G0_Kokusho_et_al_1982_Alluvial_clays(p_ref, e) +
               define_G0_Jamiolkowski_et_al_1995(p_ref, e) +
               define_G0_Shibuya_and_Tanaka_1996(p_ref, e) +
               define_G0_Vrettos_andSavidis_1999(p_ref, e) +
               define_G0_Kallioglou_et_al_2008(p_ref, PI, e) +
-              define_G0_Sas_et_al_2017(p_ref)) / 10) * 0.6 + define_G0_clays(p_ref, data_physical["Ip"], e) * 0.4
+              define_G0_Sas_et_al_2017(p_ref)) / 9) * 0.8 * 0.6 + define_G0_clays(p_ref, data_physical["Ip"], e) * 0.4
 
     G0 = G0_plaxis * 0.7 + G0 * 0.3
 
-    gam07 = define_gam_07(E50, G0, p_ref, c, fi, K0, PI)
+    gam07 = define_threshold_shear_strain(E50, G0, p_ref, c, fi, K0, PI)
 
     return (np.round(G0, 2), np.round(gam07, 2))
 
+p_ref=0.2
+e=0.5
+#print(define_G0_Hardin_and_Black_1968(p_ref, e))
+#print(define_G0_Marcuson_andWahls_1972(p_ref, e))
+#print(define_G0_Kim_and_Novac_1981(p_ref, e))
+#print(define_G0_Kokusho_et_al_1982_Alluvial_clays(p_ref, e))
+#print(define_G0_Jamiolkowski_et_al_1995(p_ref, e))
+#print(define_G0_Shibuya_and_Tanaka_1996(p_ref, e))
+#print(define_G0_DElia_and_Lanzo_1996_sandy_silt_silty_sand(p_ref, e))
+#print(define_G0_DElia_and_Lanzo_1996_clayey_silts(p_ref, e))
+#print(define_G0_Vrettos_andSavidis_1999(p_ref, e))
+#print(define_G0_Kallioglou_et_al_2008(p_ref, 1, e))
+#print(define_G0_Sas_et_al_2017(0.1))
 
 if __name__ == "__main__":
-    e = 0.6
-    p_ref = 0.5
+    e = 0.55
+    p_ref = 0.2
     Ip = 17
     E50 = 100
     G0 = 190
@@ -308,22 +321,22 @@ if __name__ == "__main__":
     fi = 42
     K0 = 1
     PI = 60
+    data_physical = {"Ip":"-", "e": e, "Ir": "-",
+                     "10": "-",
+                     "5": "-",
+                     "2": "-",
+                     "1": "-",
+                     "05": "-",
+                     "025": 50,
+                     "01": 40,
+                     "005": "-",
+                     "001": "-",
+                     "0002": "-",
+                     "0000": "-",
+                     }
+    print(define_G0_threshold_shear_strain(p_ref, data_physical, E50, c, fi, K0))
     #print(define_G0_plaxis(p_ref, e, fi))
 
-# p_ref=0.1
-# e=0.6
-# print(define_G0_Hardin_and_Black_1968(p_ref, e))
-# print(define_G0_Marcuson_andWahls_1972(p_ref, e))
-# print(define_G0_Kim_and_Novac_1981(p_ref, e))
-# print(define_G0_Kokusho_et_al_1982_Kaolinite(p_ref, e))
-# print(define_G0_Kokusho_et_al_1982_Alluvial_clays(p_ref, e))
-# print(define_G0_Jamiolkowski_et_al_1995(p_ref, e))
-# print(define_G0_Shibuya_and_Tanaka_1996(p_ref, e))
-# print(define_G0_DElia_and_Lanzo_1996_sandy_silt_silty_sand(p_ref, e))
-# print(define_G0_DElia_and_Lanzo_1996_clayey_silts(p_ref, e))
-# print(define_G0_Vrettos_andSavidis_1999(p_ref, e))
-# print(define_G0_Kallioglou_et_al_2008(p_ref, 1, e))
-# print(define_G0_Sas_et_al_2017(0.1))
 
 """
 Глина:

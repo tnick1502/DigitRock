@@ -18,7 +18,10 @@ from general.general_functions import point_to_xy
 from configs.plot_params import plotter_params
 from general.general_functions import read_json_file
 
-plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
+try:
+    plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
+except FileNotFoundError:
+    plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
 plt.style.use('bmh')
 
 class ModelTriaxialDeviatorLoadingUI(QWidget):

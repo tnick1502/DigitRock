@@ -27,25 +27,21 @@ from scipy.optimize import curve_fit
 from scipy.optimize import differential_evolution
 
 from general.general_functions import AttrDict
-from cyclic_loading.cyclic_stress_ratio_function import define_fail_cycle
-from configs.plot_params import plotter_params
+from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
 from general.general_functions import read_json_file
 
 plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
 plt.style.use('bmh')
 
 class ModelRezonantColumn:
-    """Модель обработки циклического нагружения
-
+    """Модель обработки резонансной колонки
     Логика работы:
-        - Данные принимаются в set_test_data(). значально все данные обнуляются методом _reset_data()
+        - Данные принимаются в set_test_data()
 
         - Обработка опыта производится методом _test_processing.
 
-
         - Метод get_plot_data подготавливает данные для построения. Метод plotter позволяет построить графики с помощью
         matplotlib"""
-
     def __init__(self):
         """Определяем основную структуру данных"""
         # Структура дынных
@@ -89,6 +85,12 @@ class ModelRezonantColumn:
                     data.update(ModelRezonantColumn.open_G0_log(os.path.join(os.path.join(dirpath, filename))))
         self.set_test_data(data)
 
+    def set_borders(self, left, right):
+        """Выделение границ для обрезки значений всего опыта"""
+        self._test_cut_position.left = left
+        self._test_cut_position.right = right
+        self._test_processing()
+
     def get_plot_data(self):
         """Возвращает данные для построения"""
         if self._test_data.G_array is None:
@@ -113,6 +115,7 @@ class ModelRezonantColumn:
     def plotter(self, save_path=None):
         """Построение графиков опыта. Если передать параметр save_path, то графики сохраняться туда"""
         plot_data = self.get_plot_data()
+        res = self.get_test_results()
 
         if plot_data:
             figure = plt.figure(figsize=[12, 5])
@@ -129,10 +132,15 @@ class ModelRezonantColumn:
 
             ax_G.scatter(plot_data["shear_strain"], plot_data["G"], label="test data", color="tomato")
             ax_G.plot(plot_data["shear_strain_approximate"], plot_data["G_approximate"], label="approximate data")
+
+            ax_G.scatter([], [], label="$G_{0}$" + " = " + str(res["G0"]), color="#eeeeee")
+            ax_G.scatter([], [], label="$γ_{0.7}$" + " = " + str(res["threshold_shear_strain"]) + " " +
+                                       "$⋅10^{-4}$", color="#eeeeee")
             ax_G.legend()
 
             for i in range(len(plot_data["frequency"])):
                 ax_rezonant.plot(plot_data["frequency"][i], plot_data["resonant_curves"][i])
+                ax_rezonant.scatter(plot_data["frequency"][i], plot_data["resonant_curves"][i], s=10)
 
             if save_path:
                 try:
@@ -243,18 +251,154 @@ class ModelRezonantColumn:
 
         return np.round(G, 2), np.round(threshold_shear_strain*10000, 2)
 
+class ModelRezonantColumnSoilTest(ModelRezonantColumn):
+    """Модель моделирования девиаторного нагружения
+    Наследует обработчик и структуру данных из ModelTriaxialDeviatorLoading
+
+    Логика работы:
+        - Параметры опыта передаются в set_test_params(). Автоматически подпираются данные для отрисовки -
+        self.draw_params. После чего параметры отрисовки можно считать методом get_draw_params()  передать на ползунки
+
+        - Параметры опыта и данные отрисовки передаются в метод _test_modeling(), который моделирует кривые.
+
+        - Метод set_draw_params(params) установливает параметры, считанные с позунков и производит отрисовку новых
+         данных опыта"""
+    def __init__(self):
+        super().__init__()
+        self._test_params = AttrDict({"p_ref": None,
+                                      "K0": None,
+                                      "E": None,
+                                      "c": None,
+                                      "fi": None,
+                                      "physical": None})
+
+        # Коэффициенты отвечают за значение смоделированных результатов
+        self._draw_params = AttrDict({"G0_ratio": 1,
+                                      "threshold_shear_strain_ratio": 1,
+                                      "frequency_step": 5})
+
+    def set_test_params(self, params):
+        """Функция принимает параметры опыта для дальнейших построений"""
+        self._test_params.p_ref = params["Pref"]
+        self._test_params.c = params["c"]
+        self._test_params.fi = params["fi"]
+        self._test_params.E = params["E"]
+        self._test_params.K0 = params["K0"]
+        self._test_params.physical = params["data_phiz"]
+
+        self._test_modeling()
+
+    def _test_modeling(self):
+        """Моделирование данных опыта"""
+        G0, threshold_shear_strain = define_G0_threshold_shear_strain(self._test_params.p_ref,
+                                                                      self._test_params.physical,
+                                                                      self._test_params.E,
+                                                                      self._test_params.c,
+                                                                      self._test_params.fi,
+                                                                      self._test_params.K0)
+        self._test_data.G_array, self._test_data.shear_strain = \
+            ModelRezonantColumnSoilTest.generate_G_array(G0, threshold_shear_strain)
+
+
+        self._test_data.frequency, self._test_data.resonant_curves = \
+            ModelRezonantColumnSoilTest.generate_resonant_curves(self._test_data.shear_strain, self._test_data.G_array,
+                                                                 frequency_step=self._draw_params.frequency_step,
+                                                                 ro=self._test_params.physical["r"] * 1000)
+        self._test_processing()
+        self.plotter()
+        #plt.plot(self._test_data.frequency[0], self._test_data.resonant_curves[0])
+
+    @staticmethod
+    def generate_G_array(G0, threshold_shear_strain, point_count=int(np.random.uniform(10, 15))):
+        """Функция генерирует массив G0"""
+
+        # Моделирование сдвиговых деформаций
+        first_point = np.log((6 + 5 * np.random.uniform(0, 1)) * 10e-8)
+        last_point = np.log(np.random.uniform(0.7 * 10e-4, 1.1 * 10e-4))
+        shear_strain = np.linspace(first_point, last_point, point_count)
+        shear_strain = np.e**(shear_strain)
+
+        # Моделирование модуля
+        G = ModelRezonantColumn.Hardin_Drnevick(shear_strain, 0.278 / (0.722 * threshold_shear_strain/10000), G0) \
+            + np.random.uniform(-0.03 * G0, 0.03 * G0, np.size(shear_strain))
+
+        # Значение не может быть больше предыдущего
+        for k in range(len(G) - 1):
+            if G[k + 1] > G[k]:
+                G[k + 1] = G[k]
+
+        return G, shear_strain
+
+    @staticmethod
+    def generate_resonant_curves(shear_strain, G, frequency_step=5, ro=2000):
+        """Функция генерирует массив G0"""
+        H = 0.1
+        Io = 0.001374
+
+        # Массив скоростей поперечных волн
+        Vs_array = np.sqrt(G / ro)
+
+
+        # Массив резонансных частот
+        resonant_frequency_array = np.round((Vs_array / (H * (ro * H / (Vs_array * Io)) ** (-0.5))) / (4 * np.pi))
+
+        # Массив частот испытания
+        min_test_frequency = np.round(0.8 * np.min(resonant_frequency_array))
+        max_test_frequency = np.round(1.1 * np.max(resonant_frequency_array)) + frequency_step
+        frequency_array = np.arange(min_test_frequency - min_test_frequency % frequency_step,
+                                    max_test_frequency - min_test_frequency % frequency_step, frequency_step)
+
+        resonant_curves = [list() for _ in range(len(frequency_array))]
+        frequency = [list() for _ in range(len(frequency_array))]
+
+        for i in range(len(resonant_frequency_array)):
+            resonant_curves[i] = ModelRezonantColumnSoilTest.generate_resonant_curve(frequency_array,
+                                                                                     resonant_frequency_array[i],
+                                                                                     shear_strain[i])
+            frequency[i] = frequency_array
+
+        return frequency, resonant_curves
+
+    @staticmethod
+    def generate_resonant_curve(frequency, resonant_frequency, max_shear_strain):
+        """Функция генерафии резонансной кривой"""
+        max_shear_strain /= 10000
+
+        alpha = -np.log(1/max_shear_strain)/(frequency[-1] - frequency[0])**2
+        betta = alpha/5
+        """alpha = -(10e-12/(max_shear_strain))*(frequency[-1] - frequency[0])#-0.005
+        betta = alpha/5#10e12*  alpha*max_shear_strain#np.array([alpha/i for i in range(1, len(frequency) + 1)][::-1])"""
+
+        i_resonance, = np.where(frequency>resonant_frequency)
+        resonant_curve = np.hstack(((0.6 * np.exp(10 * alpha * (frequency[:i_resonance[0]] - resonant_frequency) ** 2) +
+                          0.2 * np.exp(3*betta * (frequency[:i_resonance[0]] - resonant_frequency) ** 2)) * \
+                         max_shear_strain + max_shear_strain*0.2,
+                                    (0.4 * np.exp(alpha * (frequency[i_resonance[0]:] - resonant_frequency) ** 2) +
+                                     0.4 * np.exp(betta * (frequency[i_resonance[0]:] - resonant_frequency) ** 2)) * \
+                                    max_shear_strain + max_shear_strain * 0.2))
+        #resonant_curve = (0.6 * np.exp(alpha * (frequency - resonant_frequency) ** 2) +
+        # 0.2 * np.exp(betta * (frequency - resonant_frequency) ** 2)) * max_shear_strain + max_shear_strain * 0.2
+        return resonant_curve
 
 
 
 if __name__ == '__main__':
 
     #file = "C:/Users/Пользователь/Desktop/Тест/Циклическое трехосное нагружение/Архив/19-1/Косинусное значение напряжения.txt"
-    file = "Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1/RCCT.txt"
-    m = ModelRezonantColumn()
-    m.open_path(
-        "Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1")
-    m.plotter()
+    #file = "Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1/RCCT.txt"
+    #m = ModelRezonantColumn()
+    #m.open_path(
+        #"Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1")
+    #m.plotter()
+    #plt.show()
+    #ModelRezonantColumnSoilTest.create_G_array(100, 4.34)
+
+    #ModelRezonantColumnSoilTest.generate_resonant_curves(0, np.array([150 , 120 , 100]), ro=2000)
+
+    data_physical = {"Ip": "-", "e": 0.3, "Ir": "-", "r": 2,
+                     "10": "-", "5": "-", "2": "-", "1": "-", "05": "-", "025": 50, "01": 40, "005": "-", "001": "-",
+                     "0002": "-", "0000": "-"}
+    param = {"Pref": 0.5, "c": 0.001, "fi": 42, "E": 70, "K0": 1, "data_phiz": data_physical}
+    a = ModelRezonantColumnSoilTest()
+    a.set_test_params(param)
     plt.show()
-    #ModelRezonantColumn.open_resonant_curves_log(file)
-    #file = "Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1/RCCT_ModulusTable.txt"
-    #ModelRezonantColumn.open_G0_log(file)
