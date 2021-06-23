@@ -326,6 +326,49 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         #self.plotter()
         #plt.plot(self._test_data.frequency[0], self._test_data.resonant_curves[0])
 
+    def save_log_file(self, director):
+        G = self._test_data.G_array
+        points = self._test_data.shear_strain
+        Chastota = self._test_data.frequency[0]
+        A = self._test_data.resonant_curves
+
+        p = os.path.join(director, "RCCT_ModulusTable.txt")
+        p2 = os.path.join(director, "RCCT.txt")
+
+        step = range(len(G))
+
+        q = 1.586093674105024
+        acur = [5]
+        for i in range(100):
+            x = acur[i]
+            acur.append(x * q)
+
+        with open(p, "w") as file:
+            file.write(
+                "STEP_ID; Frequency1; CURRENT[A]; ShearStrain1[]; G1[MPa]; Frequency2; CURRENT[A]; ShearStrain2[]; G2[MPa];" + '\n')
+            for i in range(len(G)):
+                file.write(str(step[i]) + '; ' + str(int(Chastota[i])) + '; ' + str(points[i] * 302) + '; ' + str(
+                    points[i]) + '; ' + str(G[i]) + '; ' + str(int(Chastota[i])) + '; ' + str(
+                    points[i] * 302) + '; ' + str(
+                    (points[i] * (1 + np.random.uniform(0, 0.01)))) + '; ' + str(
+                    (G[i] * (1 + np.random.uniform(0, 0.01)))) + '; ' + '\n')
+        file.close()
+
+        with open(p2, "w") as file:
+            file.write(
+                "STEP_ID; Freq; Acur_target; Adac; ACCELERATION1[m/s^2]; ACCELERATION2[m/s^2]; CURRENT[A]; Velocity1[m/s]; Displacement1[m]; ShearStrain1[]; Velocity2[m/s]; Displacement2[m]; ShearStrain2[]; ")
+            for i in range(len(G)):
+                for j in range(len(A[0])):
+                    file.write(str(step[i]) + '; ' + str(int(Chastota[j])) + '; ' + str(acur[i]) + '; ' + str(
+                        acur[i]) + '; ' + str((A[i][j] * 1300000 * (1 + np.random.uniform(0, 0.01)))) + '; ' + str(
+                        A[i][j] * 1300000) + '; ' + str(points[i] * 302) + '; ' + str(A[i][j] * 200) + '; ' + str(
+                        A[i][j] * 0.3) + '; ' + str(A[i][j]) + '; ' + str(
+                        (A[i][j] * 200 * (1 + np.random.uniform(0, 0.01)))) + '; ' + str(
+                        (A[i][j] * 0.3 * (1 + np.random.uniform(0, 0.01)))) + '; ' + str(
+                        (A[i][j] * (1 + np.random.uniform(0, 0.01)))) + '; ' + '\n')
+
+            file.close()
+
     @staticmethod
     def generate_G_array(G0, threshold_shear_strain, point_count=int(np.random.uniform(10, 15))):
         """Функция генерирует массив G0"""
@@ -396,6 +439,7 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         #resonant_curve = (0.6 * np.exp(alpha * (frequency - resonant_frequency) ** 2) +
         # 0.2 * np.exp(betta * (frequency - resonant_frequency) ** 2)) * max_shear_strain + max_shear_strain * 0.2
         return resonant_curve
+
 
 
 

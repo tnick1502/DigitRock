@@ -7,15 +7,14 @@ __version__ = 1
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QFileDialog, QMessageBox, QTabWidget
 from PyQt5.QtCore import pyqtSignal
 import os
-import time
 import sys
-import pyautogui
 import shutil
 
 from general.save_widget import Save_Dir
 from resonant_column.resonant_column_widgets import RezonantColumnProcessingWidget, RezonantColumnSoilTestWidget
 from general.general_widgets import Statment_Rezonant_Column
 from general.reports import report_rc
+from general.excel_functions import set_cell_data
 
 class RezonantColumn_Processing_Tab(QWidget):
     def __init__(self):
@@ -89,6 +88,14 @@ class DigitRock_RezonantColumn_Processing(QWidget):
             shutil.copy(file_name, self.tab_2.save.report_directory + "/" + file_name[len(file_name) -
                                                                                  file_name[::-1].index("/"):])
             QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
+
+            set_cell_data(self.tab_1.path,
+                          "HL" + str(self.tab_1.get_physical_data()[self.tab_1.get_lab_number()]["Nop"]),
+                          test_result["G0"], sheet="Лист1")
+            set_cell_data(self.tab_1.path,
+                          "HK" + str(self.tab_1.get_physical_data()[self.tab_1.get_lab_number()]["Nop"]),
+                          test_result["threshold_shear_strain"], sheet="Лист1")
+
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(self.tab_1.get_lab_number()))
 
@@ -177,8 +184,16 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
                       os.getcwd() + "/project_data/", test_parameter, results,
                       self.tab_2.test.test_widget.save_canvas(), __version__)
 
+            set_cell_data(self.tab_1.path,
+                          "HL" + str(self.tab_1.get_physical_data()[self.tab_1.get_lab_number()]["Nop"]),
+                          test_result["G0"], sheet="Лист1")
+            set_cell_data(self.tab_1.path,
+                          "HK" + str(self.tab_1.get_physical_data()[self.tab_1.get_lab_number()]["Nop"]),
+                          test_result["threshold_shear_strain"], sheet="Лист1")
+
             shutil.copy(file_name, self.tab_2.save.report_directory + "/" + file_name[len(file_name) -
                                                                                       file_name[::-1].index("/"):])
+            self.tab_2.test._model.save_log_file(save)
             QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(self.tab_1.get_lab_number()))
