@@ -7,6 +7,8 @@ import pyexcel as p
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter, column_index_from_string
 
+from cyclic_loading.cyclic_stress_ratio_function import define_fail_cycle
+
 
 
 #Пересохраняем excel
@@ -358,6 +360,7 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
 
                     Ip = float_from_excel(wb["Лист1"]['Y' + str(i)].value)
                     Il = float_from_excel(wb["Лист1"]['Z' + str(i)].value)
+                    e = float_from_excel(wb["Лист1"]['T' + str(i)].value)
 
                     if Ip == "-":
                         Ip = 0
@@ -459,6 +462,8 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                         if sig1 < 10:
                             sig1 = 10
 
+                        n_fail, Mcsr = define_fail_cycle(N, sig1, tau, Ip, Il, e)
+
                         Data[key] = {"E": E, "c": c, "fi": fi,
                                      "name": str(wb["Лист1"]['D' + str(i)].value),
                                      "depth": z, "Ip": Ip, "Il": Il, "K0": K0,
@@ -469,6 +474,7 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                                      "sigma3": round(sig1*K0),
                                      "ige": float_from_excel(
                                          wb["Лист1"]['ES' + str(i)].value),
+                                     "n_fail": n_fail, "Mcsr": Mcsr,
                                      "Nop": i}
 
 
@@ -487,6 +493,8 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                         if sig1 < 10:
                             sig1 = 10
 
+                        n_fail, Mcsr = define_fail_cycle(N, sig1, tau, Ip, Il, e)
+
                         Data[key] = {"E": E, "c": c, "fi": fi,
                                      "name": str(wb["Лист1"]['D' + str(i)].value),
                                      "depth": z, "Ip": Ip, "Il": Il, "K0": K0,
@@ -496,6 +504,7 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                                      "rw" : rw, "Hw" : Hw,
                                      "sigma1": sig1, "t": tau,
                                      "sigma3": round(sig1 * K0),
+                                     "n_fail": n_fail, "Mcsr": Mcsr,
                                      "ige": float_from_excel(
                                          wb["Лист1"]['ES' + str(i)].value),
                                      "Nop": i}

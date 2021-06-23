@@ -16,6 +16,7 @@ from general.save_widget import Save_Dir
 from cyclic_loading.cyclic_loading_widgets import CyclicLoadingProcessingWidget, CyclicLoadingSoilTestWidget
 from general.general_widgets import Statment_Triaxial_Cyclic
 from general.reports import report_triaxial_cyclic
+from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI_ShowAllTests
 
 class TriaxialCyclicLoading_Identification_Tab(QWidget):
     """Класс создания окна для обработки файла ведомости"""
@@ -239,8 +240,13 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
         self.layout.addWidget(self.tab_widget)
 
         self.tab_1.folder[str].connect(self.tab_2.save_widget.get_save_directory)
+        self.tab_1.folder[str].connect(self._open_all)
         self.tab_1.click_emit[object].connect(self.tab_2.widget.set_params)
         self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
+
+    def _open_all(self, param):
+        self.dialog = CyclicLoadingUI_ShowAllTests(self.tab_1.table._data_test)
+        self.dialog.show()
 
     def save_report(self):
 

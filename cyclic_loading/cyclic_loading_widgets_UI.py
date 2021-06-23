@@ -5,7 +5,7 @@
 __version__ = 1
 
 from PyQt5.QtWidgets import QApplication, QGridLayout, QFrame, QLabel, QHBoxLayout,\
-    QVBoxLayout, QGroupBox, QWidget, QLineEdit, QPushButton
+    QVBoxLayout, QGroupBox, QWidget, QLineEdit, QPushButton, QTableWidget, QDialog, QHeaderView,  QTableWidgetItem
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
@@ -518,6 +518,75 @@ class CyclicLoadingUISoilTest(CyclicLoadingUI):
         self.deviator_canvas_frame = None
         self.sliders_widget = ModelTriaxialCyclicLoading_Sliders()
         self.graph_layout.addWidget(self.sliders_widget)
+
+class CyclicLoadingUI_ShowAllTests(QDialog):
+    """Класс отрисовывает таблицу физических свойств"""
+    lab_number_click_signal = pyqtSignal(str)
+    def __init__(self, data):
+        super().__init__()
+        self.create_IU()
+        self.set_data(data)
+        self.lab_number = ""
+
+    def create_IU(self):
+        self.layout = QVBoxLayout()
+        self.layout.setSpacing(0)
+        self.table = QTableWidget()
+        self.table.horizontalHeader().setSectionsMovable(True)
+        self._clear_table()
+        self.layout.addWidget(self.table)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+        self.setLayout(self.layout)
+
+    def _clear_table(self):
+        """Очистка таблицы и придание соответствующего вида"""
+        while (self.table.rowCount() > 0):
+            self.table.removeRow(0)
+
+        self.table.setColumnCount(6)
+        #self.table.horizontalHeader().resizeSection(1, 200)
+        self.table.setHorizontalHeaderLabels(
+            ["Лаб. ном.", "Глубина", "Наименование грунта", "Обжимающее давление", "Кол-во циклов нагружения",
+             "Цикл разрушения"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+    def _fill_table(self):
+        """Заполнение таблицы параметрами"""
+        self._clear_table()
+
+        self.table.setRowCount(len(self._data))
+
+        for string_number, lab_number in enumerate(self._data):
+            self.table.setItem(string_number, 0, QTableWidgetItem(lab_number))
+
+            test = {'4-5': {'E': 4000.0, 'c': 0.023, 'fi': 8.2,
+                     'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8,
+                     'Ip': 17.9, 'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0,
+                     'rd': '0.912', 'N': 3, 'MSF': '2.82', 'I': 2.0, 'sigma1': 96, 't': 11.28, 'sigma3': 96, 'ige': '-',
+                     'Nop': 20}}
+
+            self.table.setItem(string_number, 1, QTableWidgetItem(str(self._data[lab_number]["depth"])))
+            self.table.setItem(string_number, 2, QTableWidgetItem(self._data[lab_number]["name"]))
+            self.table.setItem(string_number, 3, QTableWidgetItem(str(self._data[lab_number]['sigma3'])))
+            self.table.setItem(string_number, 4, QTableWidgetItem(str(self._data[lab_number]['N'])))
+            self.table.setItem(string_number, 5, QTableWidgetItem(str(self._data[lab_number]['n_fail'])))
+
+            #if self._data[lab_number]['n_fail']:
+                #self.set_row_color(string_number)
+
+    def set_row_color(self, row, color=(129, 216, 208)):#color=(62, 180, 137)):
+        """Раскрашиваем строку"""
+        if row is not None:
+            for i in range(self.table.columnCount()):
+                self.table.item(row, i).setBackground(QtGui.QColor(*color))
+
+    def set_data(self, data):
+        """Функция для получения данных"""
+        self._data = data
+        self._fill_table()
+
+    def get_data(self):
+        return self._data
 
 
 

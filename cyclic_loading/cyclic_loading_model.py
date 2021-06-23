@@ -400,8 +400,11 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         """Функция принимает параметры опыта для дальнейших построений.
         n_fail моделируется из кривой CSR. Если нет разжижения - n_fail = None"""
         self._test_params.cycles_count = params["N"]
-        if self._test_params.cycles_count <5:
+        if self._test_params.cycles_count < 5:
             self._test_params.cycles_count = 5
+
+        self._test_params.n_fail = params["n_fail"]
+        Mcsr = params["Mcsr"]
 
         self._test_params.sigma_1 = params["sigma1"]
         self._test_params.t = params["t"]
@@ -418,9 +421,9 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                                      self._test_params.sigma_3,
                                                                                      2*self._test_params.t)
 
-        self._test_params.n_fail, Mcsr = define_fail_cycle(self._test_params.cycles_count, self._test_params.sigma_1,
-                                       self._test_params.t, self._test_params.physical["Ip"],
-                                       self._test_params.physical["Il"], self._test_params.physical["e"])
+        #self._test_params.n_fail, Mcsr = define_fail_cycle(self._test_params.cycles_count, self._test_params.sigma_1,
+                                       #self._test_params.t, self._test_params.physical["Ip"],
+                                       #self._test_params.physical["Il"], self._test_params.physical["e"])
 
         if self._test_params.n_fail:
             if self._test_params.n_fail > self._test_params.cycles_count - 5:
