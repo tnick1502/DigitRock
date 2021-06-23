@@ -10,7 +10,7 @@ import os
 from openpyxl import load_workbook
 
 from general.excel_functions import read_customer, read_dynemic, read_mech, resave_xls_to_xlsx, cfe_test_type_columns, \
-    k0_test_type_column, column_fullness_test, read_phiz
+    k0_test_type_column, column_fullness_test, read_phiz, read_dynemic_rc
 from general.initial_tables import Table_Castomer, Table_Physical_Properties, Table_Vertical
 
 class Float_Slider(QSlider):  # получает на входе размер окна. Если передать 0 то размер автоматический
@@ -680,8 +680,83 @@ class Statment_Triaxial_Cyclic(Statment_Initial):
         self.table_vertical.set_data(data)
         self.signal.emit(data)
 
+class Statment_Rezonant_Column(Statment_Initial):
+    """Класс обработки файла задания для трехосника"""
+    def __init__(self):
+        data_test_parameters = {"p_ref": ["Выберите референтное давление", "Pref: Pref из столбца FV",
+                                          "Pref: Через бытовое давление"],
+                                "k0_condition": ["Тип определения K0",
+                                                 "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
+                                                 "K0: K0 из ведомости", "K0: Формула Джекки",
+                                                 "K0: K0 = 1"]
+                                }
 
-"""if __name__ == "__main__":
+        headlines = ["Лаб. ном.", "Модуль деформации E, МПа", "Сцепление с, МПа",
+                     "Угол внутреннего трения, град",
+                     "Референтное давление, МПа", "K0"]
+
+        fill_keys = ["lab_number", "E", "c", "fi", "Pref", "K0"]
+
+        super().__init__(data_test_parameters, headlines, fill_keys, identification_column="HL")
+
+    def file_open(self):
+        """Открытие и проверка заполненности всего файла веддомости"""
+        if self.path != "":
+
+            wb = load_workbook(self.path, data_only=True)
+
+            combo_params = self.open_line.get_data()
+
+            if combo_params["p_ref"] == "Pref: Pref из столбца FV":
+                columns_marker = ["FV"]
+            elif combo_params["p_ref"] == "Pref: Через бытовое давление":
+                columns_marker = ["A"]
+            columns_marker_k0 = k0_test_type_column(combo_params["k0_condition"])
+            marker, customer = read_customer(wb)
+
+            try:
+                assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)),\
+                    "Заполните K0 в ведомости"
+                assert column_fullness_test(wb, columns=["BD", "BC", "BE"], initial_columns=list(columns_marker)), \
+                    "Заполните параметры прочности и деформируемости (BD, BC, BE)"
+                assert not marker, "Проверьте заказчиков и даты"# + customer
+
+            except AssertionError as error:
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
+            else:
+                self.table_physical_properties._clear_table()
+                self.open_line.text_file_path.setText("")
+                self._data_customer = customer
+                self._data_physical = read_phiz(wb, identification_column=self.identification_column)
+                self._data_test = read_dynemic_rc(wb, combo_params["k0_condition"], combo_params["p_ref"])
+                key1 = [i for i in self._data_physical]
+                key2 = [j for j in self._data_test]
+
+                for i in key1:
+                    if i not in key2:
+                        self._data_physical.pop(i)
+                if len(self._data_test)<1:
+                    QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
+                                        + str(columns_marker), QMessageBox.Ok)
+                else:
+                    self.customer_line.set_data(self._data_customer)
+                    self.table_physical_properties.set_data(self._data_physical)
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
+
+    def table_physical_properties_click(self, lab_number):
+        data = self._data_test[lab_number]
+        self._lab_number = lab_number
+        data["lab_number"] = lab_number
+        data["data_phiz"] = self._data_physical[lab_number]
+        type = self.open_line.get_data()
+        self.table_vertical.set_data(data)
+        self.signal.emit(data)
+
+
+
+if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     headlines = ["Лаб. ном.", "Модуль деформации E, кПа", "Сцепление с, МПа",
@@ -699,13 +774,14 @@ class Statment_Triaxial_Cyclic(Statment_Initial):
                                              "K0: K0 = 1"]
                             }
 
-    Dialog = Statment_Triaxial_Static(data_test_parameters, headlines, fill_keys)
+    #Dialog = Statment_Triaxial_Static(data_test_parameters, headlines, fill_keys)
+    Dialog = Statment_Rezonant_Column()
     Dialog.show()
     app.setStyle('Fusion')
 
 
     sys.exit(app.exec_())
-"""
+
 
 class Progressbar(QWidget):
     def __init__(self, count):
@@ -723,6 +799,7 @@ class Progressbar(QWidget):
         self.progressBar.setProperty("value", round(val*100/self.count))
         self.label.setText("Процесс выполнения: {} из {}".format(val, self.count))
 
+"""
 if __name__ == "__main__":
     main = QApplication(sys.argv)
     window = Progressbar(5)
@@ -743,4 +820,4 @@ if __name__ == "__main__":
     timer.start(1000)
 
     window.show()
-    sys.exit(main.exec_())
+    sys.exit(main.exec_())"""

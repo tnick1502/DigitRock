@@ -521,13 +521,6 @@ def read_dynemic_rc(wb, K0_mode, pref_mode):
                 pass
             else:
 
-                if pref_mode == "Pref: Pref из столбца FV":
-                    pref = round(float_from_excel(wb["Лист1"]['FV' + str(i)].value), 2)
-                elif pref_mode == "Pref: Через б.д.":
-                    pref = round(2 * float_from_excel(wb["Лист1"]['C' + str(i)].value) * 10/1000, 2)
-
-
-
                 Ip = float_from_excel(wb["Лист1"]['Y' + str(i)].value)
                 Il = float_from_excel(wb["Лист1"]['Z' + str(i)].value)
 
@@ -550,14 +543,21 @@ def read_dynemic_rc(wb, K0_mode, pref_mode):
                     K0 = float_from_excel(wb["Лист1"]['GY' + str(i)].value)
                 elif K0_mode == "K0: Формула Джекки":
                     K0 = round((1 - np.sin(np.pi * fi / 180)), 2)
+                elif K0_mode == "K0: K0 = 1":
+                    K0 = 1
                 else:
-                    K0 = 0.5
+                    K0 = 1
+
+                if pref_mode == "Pref: Pref из столбца FV":
+                    pref = round(float_from_excel(wb["Лист1"]['FV' + str(i)].value), 2)
+                elif pref_mode == "Pref: Через бытовое давление":
+                    pref = round(2 * K0 * float_from_excel(wb["Лист1"]['C' + str(i)].value) * 10/1000, 2)
 
                 Data[str(wb["Лист1"]['A' + str(i)].value)] = {"E": E,
                                                                 "c": c,
                                                                 "fi": fi,
                                                                 "K0": K0,
-                                                                "Pref" : pref*K0,
+                                                                "Pref" : pref,
                                                                 "Nop": i}
 
     return Data

@@ -30,7 +30,7 @@ from general.general_functions import AttrDict
 from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
 from general.general_functions import read_json_file
 
-plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
+plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))#[:-15]
 plt.style.use('bmh')
 
 class ModelRezonantColumn:
@@ -87,29 +87,35 @@ class ModelRezonantColumn:
 
     def set_borders(self, left, right):
         """Выделение границ для обрезки значений всего опыта"""
-        self._test_cut_position.left = left
-        self._test_cut_position.right = right
-        self._test_processing()
+        if (right - left) >= 3:
+            self._test_cut_position.left = left
+            self._test_cut_position.right = right
+            self._test_processing()
 
     def get_plot_data(self):
         """Возвращает данные для построения"""
         if self._test_data.G_array is None:
             return None
         else:
-            shear_strain_approximate = np.linspace(self._test_data.shear_strain[0],
-                                                   self._test_data.shear_strain[-1], 300)
+            shear_strain_approximate = np.linspace(self._test_data.shear_strain[self._test_cut_position.left:
+                                                                                self._test_cut_position.right][0],
+                                                   self._test_data.shear_strain[self._test_cut_position.left
+                                                                                :self._test_cut_position.right][-1],
+                                                   300)
 
             G_approximate = ModelRezonantColumn.Hardin_Drnevick(shear_strain_approximate,
                                                                 0.278/(0.722 *
                                                                        (self._test_result.threshold_shear_strain/10000)),
                                                                 self._test_result.G0)
             return {
-                "G": self._test_data.G_array,
-                "shear_strain": self._test_data.shear_strain,
+                "G": self._test_data.G_array[self._test_cut_position.left : self._test_cut_position.right],
+                "shear_strain": self._test_data.shear_strain[self._test_cut_position.left : self._test_cut_position.right],
                 "G_approximate": G_approximate,
                 "shear_strain_approximate": shear_strain_approximate,
-                "frequency": self._test_data.frequency,
-                "resonant_curves": self._test_data.resonant_curves
+                "frequency": self._test_data.frequency[self._test_cut_position.left:
+                                                                                self._test_cut_position.right],
+                "resonant_curves": self._test_data.resonant_curves[self._test_cut_position.left:
+                                                                                self._test_cut_position.right]
             }
 
     def plotter(self, save_path=None):
@@ -288,14 +294,22 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
 
         self._test_modeling()
 
+    def set_draw_params(self, params):
+        """Считывание параметров отрисовки(для передачи на слайдеры)"""
+        self._draw_params.G0_ratio = params["G0_ratio"]
+        self._draw_params.threshold_shear_strain_ratio = params["threshold_shear_strain_ratio"]
+        self._draw_params.frequency_step = int(params["frequency_step"])
+        self._test_modeling()
+
     def _test_modeling(self):
         """Моделирование данных опыта"""
         G0, threshold_shear_strain = define_G0_threshold_shear_strain(self._test_params.p_ref,
                                                                       self._test_params.physical,
-                                                                      self._test_params.E,
-                                                                      self._test_params.c,
-                                                                      self._test_params.fi,
-                                                                      self._test_params.K0)
+                                                                      self._test_params.E, self._test_params.c,
+                                                                      self._test_params.fi, self._test_params.K0)
+        G0 *= self._draw_params.G0_ratio
+        threshold_shear_strain *= self._draw_params.threshold_shear_strain_ratio
+
         self._test_data.G_array, self._test_data.shear_strain = \
             ModelRezonantColumnSoilTest.generate_G_array(G0, threshold_shear_strain)
 
@@ -305,7 +319,7 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
                                                                  frequency_step=self._draw_params.frequency_step,
                                                                  ro=self._test_params.physical["r"] * 1000)
         self._test_processing()
-        self.plotter()
+        #self.plotter()
         #plt.plot(self._test_data.frequency[0], self._test_data.resonant_curves[0])
 
     @staticmethod
@@ -383,7 +397,6 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
 
 
 if __name__ == '__main__':
-
     #file = "C:/Users/Пользователь/Desktop/Тест/Циклическое трехосное нагружение/Архив/19-1/Косинусное значение напряжения.txt"
     #file = "Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1/RCCT.txt"
     #m = ModelRezonantColumn()
@@ -394,7 +407,6 @@ if __name__ == '__main__':
     #ModelRezonantColumnSoilTest.create_G_array(100, 4.34)
 
     #ModelRezonantColumnSoilTest.generate_resonant_curves(0, np.array([150 , 120 , 100]), ro=2000)
-
     data_physical = {"Ip": "-", "e": 0.3, "Ir": "-", "r": 2,
                      "10": "-", "5": "-", "2": "-", "1": "-", "05": "-", "025": 50, "01": 40, "005": "-", "001": "-",
                      "0002": "-", "0000": "-"}

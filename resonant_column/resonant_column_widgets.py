@@ -2,8 +2,8 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMe
 import numpy as np
 import sys
 
-from resonant_column_widgets_UI import RezonantColumnUI, RezonantColumnOpenTestUI
-from rezonant_column_hss_model import ModelRezonantColumn
+from resonant_column.resonant_column_widgets_UI import RezonantColumnUI, RezonantColumnOpenTestUI
+from resonant_column.rezonant_column_hss_model import ModelRezonantColumn
 
 class RezonantColumnProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -35,8 +35,6 @@ class RezonantColumnProcessingWidget(QWidget):
         """Определение размера слайдера. Через длину массива"""
         self.test_processing_widget.cut_slider.setMinimum(0)
         self.test_processing_widget.cut_slider.setMaximum(len)
-        self.test_processing_widget.cut_slider.setLow(0)
-        self.test_processing_widget.cut_slider.setHight(len)
 
     def _open_path(self):
         """Открытие файла опыта"""
@@ -46,10 +44,7 @@ class RezonantColumnProcessingWidget(QWidget):
             self._plot()
             try:
                 self._model.open_path(path)
-                try:
-                    self._cut_slider_set_len(len(self._model._test_data.G_array))
-                except:
-                    pass
+                self._cut_slider_set_len(len(self._model._test_data.G_array))
                 self.open_widget.set_file_path(path)
             except (ValueError, IndexError, FileNotFoundError):
                 pass

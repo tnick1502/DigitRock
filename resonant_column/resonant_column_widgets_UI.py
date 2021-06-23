@@ -17,7 +17,7 @@ from general.general_functions import read_json_file
 from configs.styles import style
 from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
 
-plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
+plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
 plt.style.use('bmh')
 
 class RezonantColumnUI(QWidget):
@@ -113,14 +113,7 @@ class RezonantColumnUI(QWidget):
             canvas.draw()
             return path
 
-        if format_ == "jpg":
-            import matplotlib as mpl
-            mpl.rcParams['agg.path.chunksize'] = len(self.model._test_data.cycles)
-            format = 'jpg'
-        else:
-            format = 'svg'
-
-        return save(self.figure, self.canvas, [6, 3])
+        return save(self.figure, self.canvas, [6, 3], 'svg')
 
 class RezonantColumnOpenTestUI(QWidget):
     """Виджет для открытия файла прибора и определения параметров опыта"""
@@ -175,6 +168,12 @@ class RezonantColumnSoilTestUI(RezonantColumnUI):
             "G0_ratio": "Коэффициент G0",
             "threshold_shear_strain_ratio": "Коэффициент жесткости",
             "frequency_step": "Шаг частоты"})
+        self.sliders.set_sliders_params(
+            {
+                "G0_ratio": {"value": 1, "borders": [0.1, 5]},
+                "threshold_shear_strain_ratio": {"value": 1, "borders": [0.1, 5]},
+                "frequency_step": {"value": 5, "borders": [1, 5]}
+            })
         self.layout.addWidget(self.sliders)
 
 
