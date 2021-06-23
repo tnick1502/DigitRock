@@ -1,8 +1,8 @@
 __version__ = 1
 
 from PyQt5.QtWidgets import QApplication, QGridLayout, QFrame, QLabel, QHBoxLayout,\
-    QVBoxLayout, QGroupBox, QWidget, QLineEdit, QPushButton
-from PyQt5 import QtGui
+    QVBoxLayout, QGroupBox, QWidget, QLineEdit, QPushButton, QTextEdit
+from PyQt5 import Qt
 from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -119,6 +119,120 @@ class RezonantColumnUI(QWidget):
 
         return path
 
+class RezonantColumnIdentificationUI(QWidget):
+    """Интерфейс обработчика Резонансной колонки"""
+    def __init__(self):
+        """Определяем основную структуру данных"""
+        super().__init__()
+        self._create_UI()
+        self.setFixedHeight(100)
+
+    def _create_UI(self):
+        """Создание данных интерфейса"""
+        self.layout = QVBoxLayout()
+        self.box = QGroupBox("Идентификация пробы")
+        self.box_layout = QHBoxLayout()
+        self.box.setLayout(self.box_layout)
+
+        self.lab_number_label = QLabel("Лабораторный номер")
+        self.lab_number_label.setAlignment(Qt.AlignRight)
+        self.lab_number_label.setFixedWidth(120)
+        self.lab_number_text = QLineEdit()
+        self.lab_number_text.setFixedWidth(80)
+        self.lab_number_text.setDisabled(True)
+
+        self.borehole_label = QLabel("Скважина")
+        self.borehole_label.setAlignment(Qt.AlignRight)
+        self.borehole_label.setFixedWidth(60)
+        self.borehole_text = QLineEdit()
+        self.borehole_text.setFixedWidth(80)
+        self.borehole_text.setDisabled(True)
+
+        self.depth_label = QLabel("Глубина")
+        self.depth_label.setAlignment(Qt.AlignRight)
+        self.depth_label.setFixedWidth(60)
+        self.depth_text = QLineEdit()
+        self.depth_text.setFixedWidth(80)
+        self.depth_text.setDisabled(True)
+
+        self.name_label = QLabel("Наименование")
+        self.name_label.setAlignment(Qt.AlignRight)
+        self.name_label.setFixedWidth(80)
+        self.name_text = QTextEdit()
+        self.name_text.setDisabled(True)
+
+        self.p_ref_label = QLabel("Референтное давление")
+        self.p_ref_label.setAlignment(Qt.AlignRight)
+        self.p_ref_label.setFixedWidth(120)
+        self.p_ref_text = QLineEdit()
+        self.p_ref_text.setDisabled(True)
+        self.p_ref_text.setFixedWidth(80)
+
+        self.e_label = QLabel("Коэф. пористости")
+        self.e_label.setAlignment(Qt.AlignRight)
+        self.e_label.setFixedWidth(100)
+        self.e_text = QLineEdit()
+        self.e_text.setFixedWidth(80)
+        self.e_text.setDisabled(True)
+
+        self.E_label = QLabel("Модуль Е50")
+        self.E_label.setAlignment(Qt.AlignRight)
+        self.E_label.setFixedWidth(100)
+        self.E_text = QLineEdit()
+        self.E_text.setFixedWidth(80)
+        self.E_text.setDisabled(True)
+
+
+        self.column_1 = QVBoxLayout()
+        self.column_2 = QVBoxLayout()
+        self.column_3 = QVBoxLayout()
+        self.column_4 = QVBoxLayout()
+        self.column_5 = QVBoxLayout()
+        self.column_6 = QVBoxLayout()
+        self.column_7 = QVBoxLayout()
+        self.column_8 = QVBoxLayout()
+
+        self.column_1.addWidget(self.lab_number_label)
+        self.column_1.addWidget(self.p_ref_label)
+        self.column_2.addWidget(self.lab_number_text)
+        self.column_2.addWidget(self.p_ref_text)
+
+        self.column_3.addWidget(self.depth_label)
+        self.column_3.addWidget(self.borehole_label)
+        self.column_4.addWidget(self.depth_text)
+        self.column_4.addWidget(self.borehole_text)
+
+        self.column_5.addWidget(self.e_label)
+        self.column_5.addWidget(self.E_label)
+        self.column_6.addWidget(self.e_text)
+        self.column_6.addWidget(self.E_text)
+
+        self.column_7.addWidget(self.name_label)
+        self.column_7.addStretch(-1)
+        self.column_8.addWidget(self.name_text)
+
+        self.box_layout.addLayout(self.column_1)
+        self.box_layout.addLayout(self.column_2)
+        self.box_layout.addLayout(self.column_3)
+        self.box_layout.addLayout(self.column_4)
+        self.box_layout.addLayout(self.column_5)
+        self.box_layout.addLayout(self.column_6)
+        self.box_layout.addLayout(self.column_7)
+        self.box_layout.addLayout(self.column_8)
+
+        self.layout.addWidget(self.box)
+        self.setLayout(self.layout)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+    def set_params(self, params):
+        self.lab_number_text.setText(str(params["lab_number"]))
+        self.borehole_text.setText(str(params["data_phiz"]["borehole"]))
+        self.depth_text.setText(str(params["data_phiz"]["depth"]))
+        self.name_text.setText(str(params["data_phiz"]["name"]))
+        self.p_ref_text.setText(str(params["Pref"]))
+        self.e_text.setText(str(params["data_phiz"]["e"]))
+        self.E_text.setText(str(params["E"]))
+
 class RezonantColumnOpenTestUI(QWidget):
     """Виджет для открытия файла прибора и определения параметров опыта"""
     # Сигнал для построения опыта после открытия файла. Передается в ModelTriaxialCyclicLoadingUI для активации plot
@@ -186,6 +300,6 @@ if __name__ == '__main__':
 
     # Now use a palette to switch to dark colors:
     app.setStyle('Fusion')
-    ex = RezonantColumnSoilTestUI()
+    ex = RezonantColumnIdentificationUI()
     ex.show()
     sys.exit(app.exec_())

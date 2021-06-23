@@ -3,7 +3,7 @@ import numpy as np
 import sys
 
 from resonant_column.resonant_column_widgets_UI import RezonantColumnUI, RezonantColumnOpenTestUI, \
-    RezonantColumnSoilTestUI
+    RezonantColumnSoilTestUI, RezonantColumnIdentificationUI
 from resonant_column.rezonant_column_hss_model import ModelRezonantColumn, ModelRezonantColumnSoilTest
 
 class RezonantColumnProcessingWidget(QWidget):
@@ -19,7 +19,9 @@ class RezonantColumnProcessingWidget(QWidget):
 
     def _create_Ui(self):
         self.layout = QVBoxLayout(self)
+        self.identification_widget = RezonantColumnIdentificationUI()
         self.open_widget = RezonantColumnOpenTestUI()
+        self.layout.addWidget(self.identification_widget)
         self.open_widget.setFixedHeight(100)
         self.layout.addWidget(self.open_widget)
         self.test_processing_widget = RezonantColumnUI()
@@ -71,7 +73,9 @@ class RezonantColumnSoilTestWidget(QWidget):
 
     def _create_Ui(self):
         self.layout = QVBoxLayout(self)
+        self.identification_widget = RezonantColumnIdentificationUI()
         self.test_widget = RezonantColumnSoilTestUI()
+        self.layout.addWidget(self.identification_widget)
         self.layout.addWidget(self.test_widget)
         self.layout.setContentsMargins(5, 5, 5, 5)
 

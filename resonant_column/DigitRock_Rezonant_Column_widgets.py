@@ -47,6 +47,7 @@ class DigitRock_RezonantColumn_Processing(QWidget):
         self.layout.addWidget(self.tab_widget)
 
         self.tab_1.statment_directory[str].connect(self.tab_2.save.get_save_directory)
+        self.tab_1.signal[object].connect(self.tab_2.test.identification_widget.set_params)
         self.tab_2.save.save_button.clicked.connect(self.save_report)
 
     def save_report(self):
@@ -132,6 +133,7 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
 
         self.tab_1.statment_directory[str].connect(self.tab_2.save.get_save_directory)
         self.tab_1.signal[object].connect(self.tab_2.test.set_test_params)
+        self.tab_1.signal[object].connect(self.tab_2.test.identification_widget.set_params)
         self.tab_2.save.save_button.clicked.connect(self.save_report)
         self.tab_2.test.test_widget.sliders.signal[object].connect(self._params_slider_moove)
 
