@@ -2,8 +2,9 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMe
 import numpy as np
 import sys
 
-from resonant_column.resonant_column_widgets_UI import RezonantColumnUI, RezonantColumnOpenTestUI
-from resonant_column.rezonant_column_hss_model import ModelRezonantColumn
+from resonant_column.resonant_column_widgets_UI import RezonantColumnUI, RezonantColumnOpenTestUI, \
+    RezonantColumnSoilTestUI
+from resonant_column.rezonant_column_hss_model import ModelRezonantColumn, ModelRezonantColumnSoilTest
 
 class RezonantColumnProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -35,6 +36,8 @@ class RezonantColumnProcessingWidget(QWidget):
         """Определение размера слайдера. Через длину массива"""
         self.test_processing_widget.cut_slider.setMinimum(0)
         self.test_processing_widget.cut_slider.setMaximum(len)
+        self.test_processing_widget.cut_slider.setLow(0)
+        self.test_processing_widget.cut_slider.setHigh(len)
 
     def _open_path(self):
         """Открытие файла опыта"""
@@ -56,6 +59,45 @@ class RezonantColumnProcessingWidget(QWidget):
         res = self._model.get_test_results()
         self.test_processing_widget.plot(plots, res)
 
+class RezonantColumnSoilTestWidget(QWidget):
+    """Виджет для открытия и обработки файла прибора"""
+    def __init__(self):
+        """Определяем основную структуру данных"""
+        super().__init__()
+        self._model = ModelRezonantColumnSoilTest()
+        self._create_Ui()
+        #self.open_widget.button_open_file.clicked.connect(self._open_file)
+        self.test_widget.cut_slider.sliderMoved.connect(self._cut_sliders_moove)
+
+    def _create_Ui(self):
+        self.layout = QVBoxLayout(self)
+        self.test_widget = RezonantColumnSoilTestUI()
+        self.layout.addWidget(self.test_widget)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+    def _cut_sliders_moove(self):
+        if self._model._test_data.G_array is not None:
+            self._model.set_borders(int(self.test_widget.cut_slider.low()),
+                                                        int(self.test_widget.cut_slider.high()))
+            self._plot()
+
+    def _cut_slider_set_len(self, len):
+        """Определение размера слайдера. Через длину массива"""
+        self.test_widget.cut_slider.setMinimum(0)
+        self.test_widget.cut_slider.setMaximum(len)
+        self.test_widget.cut_slider.setLow(0)
+        self.test_widget.cut_slider.setHigh(len)
+
+    def set_test_params(self, params):
+        self._model.set_test_params(params)
+        self._cut_slider_set_len(len(self._model._test_data.G_array))
+        self._plot()
+
+    def _plot(self):
+        """Построение графиков опыта"""
+        plots = self._model.get_plot_data()
+        res = self._model.get_test_results()
+        self.test_widget.plot(plots, res)
 
 
 if __name__ == '__main__':
@@ -63,6 +105,6 @@ if __name__ == '__main__':
 
     # Now use a palette to switch to dark colors:
     app.setStyle('Fusion')
-    ex = RezonantColumnProcessingWidget()
+    ex = RezonantColumnSoilTestWidget()
     ex.show()
     sys.exit(app.exec_())

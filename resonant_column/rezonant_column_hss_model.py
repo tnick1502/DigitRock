@@ -30,7 +30,11 @@ from general.general_functions import AttrDict
 from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
 from general.general_functions import read_json_file
 
-plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))#[:-15]
+try:
+    plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
+except FileNotFoundError:
+    plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
+
 plt.style.use('bmh')
 
 class ModelRezonantColumn:
@@ -351,7 +355,6 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
 
         # Массив скоростей поперечных волн
         Vs_array = np.sqrt(G / ro)
-
 
         # Массив резонансных частот
         resonant_frequency_array = np.round((Vs_array / (H * (ro * H / (Vs_array * Io)) ** (-0.5))) / (4 * np.pi))

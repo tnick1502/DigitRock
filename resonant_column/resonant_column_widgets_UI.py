@@ -17,7 +17,10 @@ from general.general_functions import read_json_file
 from configs.styles import style
 from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
 
-plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
+try:
+    plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
+except FileNotFoundError:
+    plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
 plt.style.use('bmh')
 
 class RezonantColumnUI(QWidget):
@@ -47,7 +50,7 @@ class RezonantColumnUI(QWidget):
         self.canvas_frame_layout = QVBoxLayout()
         self.canvas_frame.setLayout(self.canvas_frame_layout)
         self.figure = plt.figure()
-        self.figure.subplots_adjust(right=0.98, top=0.98, bottom=0.1, wspace=0.2, hspace=0.2, left=0.08)
+        self.figure.subplots_adjust(right=0.98, top=0.98, bottom=0.14, wspace=0.2, hspace=0.2, left=0.08)
         self.canvas = FigureCanvas(self.figure)
 
         self.ax_G = self.figure.add_subplot(1, 2, 2)
@@ -98,22 +101,23 @@ class RezonantColumnUI(QWidget):
         except:
             pass
 
-    def save_canvas(self, format_="svg"):
+    def save_canvas(self,):
         """Сохранение графиков для передачи в отчет"""
-        def save(figure, canvas, size_figure, file_type):
-            path = BytesIO()
-            size = figure.get_size_inches()
-            figure.set_size_inches(size_figure)
-            if file_type == "svg":
-                figure.savefig(path, format='svg', transparent=True)
-            elif file_type == "jpg":
-                figure.savefig(path, format='jpg', dpi=200, bbox_inches='tight')
-            path.seek(0)
-            figure.set_size_inches(size)
-            canvas.draw()
-            return path
 
-        return save(self.figure, self.canvas, [6, 3], 'svg')
+        self.ax_G.get_legend().remove()
+        self.canvas.draw()
+
+        path = BytesIO()
+        size = self.figure.get_size_inches()
+        self.figure.set_size_inches([6, 3])
+        self.figure.savefig(path, format='svg', transparent=True)
+        path.seek(0)
+        self.figure.set_size_inches(size)
+
+        self.ax_G.legend()
+        self.canvas.draw()
+
+        return path
 
 class RezonantColumnOpenTestUI(QWidget):
     """Виджет для открытия файла прибора и определения параметров опыта"""
