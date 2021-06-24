@@ -4,7 +4,8 @@
     """
 __version__ = 1
 
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QFileDialog, QMessageBox, QTabWidget
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QFileDialog, QMessageBox, QTabWidget, \
+    QDialog
 from PyQt5.QtCore import pyqtSignal
 import os
 import time
@@ -16,7 +17,7 @@ from general.save_widget import Save_Dir
 from cyclic_loading.cyclic_loading_widgets import CyclicLoadingProcessingWidget, CyclicLoadingSoilTestWidget
 from general.general_widgets import Statment_Triaxial_Cyclic
 from general.reports import report_triaxial_cyclic
-from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI_ShowAllTests
+from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI_PredictLiquefaction
 
 class TriaxialCyclicLoading_Identification_Tab(QWidget):
     """Класс создания окна для обработки файла ведомости"""
@@ -240,13 +241,21 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
         self.layout.addWidget(self.tab_widget)
 
         self.tab_1.folder[str].connect(self.tab_2.save_widget.get_save_directory)
-        self.tab_1.folder[str].connect(self._open_all)
         self.tab_1.click_emit[object].connect(self.tab_2.widget.set_params)
         self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
 
-    def _open_all(self, param):
-        self.dialog = CyclicLoadingUI_ShowAllTests(self.tab_1.table._data_test)
-        self.dialog.show()
+        self.button_predict_liquefaction = QPushButton("Предсказание разжижения")
+        self.button_predict_liquefaction.setFixedHeight(50)
+        self.button_predict_liquefaction.clicked.connect(self._predict_liquefaction)
+        self.tab_1.table.splitter_table_vertical.addWidget(self.button_predict_liquefaction)
+
+    def _predict_liquefaction(self):
+        if self.tab_1.table._data_test is not None:
+            dialog = CyclicLoadingUI_PredictLiquefaction(self.tab_1.table._data_test, self.tab_1.table.get_customer_data())
+            dialog.show()
+
+            if dialog.exec() == QDialog.Accepted:
+                self.tab_1.table._data_test = dialog.get_data()
 
     def save_report(self):
 

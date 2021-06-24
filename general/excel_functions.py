@@ -462,6 +462,9 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                         if sig1 < 10:
                             sig1 = 10
 
+                        if N < 5:
+                            N = 5
+
                         n_fail, Mcsr = define_fail_cycle(N, sig1, tau, Ip, Il, e)
 
                         Data[key] = {"E": E, "c": c, "fi": fi,
@@ -494,6 +497,7 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                             sig1 = 10
 
                         n_fail, Mcsr = define_fail_cycle(N, sig1, tau, Ip, Il, e)
+
 
                         Data[key] = {"E": E, "c": c, "fi": fi,
                                      "name": str(wb["Лист1"]['D' + str(i)].value),

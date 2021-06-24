@@ -5,19 +5,21 @@
 __version__ = 1
 
 from PyQt5.QtWidgets import QApplication, QGridLayout, QFrame, QLabel, QHBoxLayout,\
-    QVBoxLayout, QGroupBox, QWidget, QLineEdit, QPushButton, QTableWidget, QDialog, QHeaderView,  QTableWidgetItem
+    QVBoxLayout, QGroupBox, QWidget, QLineEdit, QPushButton, QTableWidget, QDialog, QHeaderView,  QTableWidgetItem, \
+    QHeaderView, QDialogButtonBox, QFileDialog, QMessageBox
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import os
+import numpy as np
 import sys
 from io import BytesIO
 
-from general.initial_tables import Table
+from general.initial_tables import Table, Table_Castomer
 from general.general_widgets import Float_Slider
-from general.general_functions import read_json_file
+from general.general_functions import read_json_file, create_json_file
 from configs.styles import style
 
 plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
@@ -284,7 +286,6 @@ class CyclicLoadingOpenTestUI(QWidget):
 
         return params
 
-
 class ModelTriaxialCyclicLoading_Sliders(QWidget):
     """Виджет с ползунками для регулирования значений переменных.
     При перемещении ползунков отправляет 3 сигнала."""
@@ -519,24 +520,59 @@ class CyclicLoadingUISoilTest(CyclicLoadingUI):
         self.sliders_widget = ModelTriaxialCyclicLoading_Sliders()
         self.graph_layout.addWidget(self.sliders_widget)
 
-class CyclicLoadingUI_ShowAllTests(QDialog):
+class CyclicLoadingUI_PredictLiquefaction(QDialog):
     """Класс отрисовывает таблицу физических свойств"""
-    lab_number_click_signal = pyqtSignal(str)
-    def __init__(self, data):
+    def __init__(self, data, data_customer):
         super().__init__()
+        self._table_is_full = False
+        self.setWindowTitle("Прогнозирование разжижаемости")
         self.create_IU()
-        self.set_data(data)
-        self.lab_number = ""
+        self._set_data(data)
+        self.table_castomer.set_data(data_customer)
+        self.resize(1400, 800)
 
     def create_IU(self):
-        self.layout = QVBoxLayout()
-        self.layout.setSpacing(0)
+        self.layout = QVBoxLayout(self)
+        self.layout.setSpacing(10)
+
+        self.table_castomer = Table_Castomer()
+        self.table_castomer.setFixedHeight(80)
+        self.layout.addWidget(self.table_castomer)
+
+        self.l = QHBoxLayout()
+        self.button_box = QGroupBox("Инструменты")
+        self.button_box_layout = QHBoxLayout()
+        self.button_box.setLayout(self.button_box_layout)
+        self.open_data_button = QPushButton("Подгрузить данные")
+        self.open_data_button.clicked.connect(self._read_data_from_json)
+        self.open_data_button.setFixedHeight(30)
+        self.save_data_button = QPushButton("Сохранить данные")
+        self.save_data_button.clicked.connect(self._save_data_to_json)
+        self.save_data_button.setFixedHeight(30)
+        self.save_button = QPushButton("Сохранить данные PDF")
+        self.save_button.setFixedHeight(30)
+        self.button_box_layout.addWidget(self.open_data_button)
+        self.button_box_layout.addWidget(self.save_data_button)
+        self.button_box_layout.addWidget(self.save_button)
+        self.l .addStretch(-1)
+        self.l.addWidget(self.button_box)
+        self.layout.addLayout(self.l)
+
         self.table = QTableWidget()
-        self.table.horizontalHeader().setSectionsMovable(True)
+        self.table.itemChanged.connect(self._set_color_on_fail)
         self._clear_table()
         self.layout.addWidget(self.table)
+
+        self.buttonBox = QDialogButtonBox()
+        self.buttonBox.setOrientation(Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName("buttonBox")
+        self.layout.addWidget(self.buttonBox)
+
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
         self.layout.setContentsMargins(5, 5, 5, 5)
-        self.setLayout(self.layout)
 
     def _clear_table(self):
         """Очистка таблицы и придание соответствующего вида"""
@@ -546,9 +582,17 @@ class CyclicLoadingUI_ShowAllTests(QDialog):
         self.table.setColumnCount(6)
         #self.table.horizontalHeader().resizeSection(1, 200)
         self.table.setHorizontalHeaderLabels(
-            ["Лаб. ном.", "Глубина", "Наименование грунта", "Обжимающее давление", "Кол-во циклов нагружения",
+            ["Лаб. ном.", "Глубина", "Наименование грунта", "Обжимающее давление", "Общее число циклов",
              "Цикл разрушения"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.verticalHeader().setDefaultSectionSize(25)
+        self.table.horizontalHeader().setMinimumSectionSize(150)
+
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.Fixed)
 
     def _fill_table(self):
         """Заполнение таблицы параметрами"""
@@ -571,23 +615,64 @@ class CyclicLoadingUI_ShowAllTests(QDialog):
             self.table.setItem(string_number, 4, QTableWidgetItem(str(self._data[lab_number]['N'])))
             self.table.setItem(string_number, 5, QTableWidgetItem(str(self._data[lab_number]['n_fail'])))
 
-            #if self._data[lab_number]['n_fail']:
-                #self.set_row_color(string_number)
+        self._table_is_full = True
 
-    def set_row_color(self, row, color=(129, 216, 208)):#color=(62, 180, 137)):
+        self._set_color_on_fail()
+
+    def _update_data(self):
+
+        def read_n_fail(x):
+            try:
+                y = int(x)
+                return y
+            except ValueError:
+                return None
+
+        for string_number, lab_number in enumerate(self._data):
+            self._data[lab_number]["n_fail"] = read_n_fail(self.table.item(string_number, 5).text())
+
+            if self._data[lab_number]["n_fail"]:
+                self._data[lab_number]["Mcsr"] = None
+            else:
+                self._data[lab_number]["Mcsr"] = np.random.uniform(2, 3)
+
+    def _set_color_on_fail(self):
+
+        if self._table_is_full:
+            self._update_data()
+            for string_number, lab_number in enumerate(self._data):
+                if self._data[lab_number]['n_fail']:
+                    self._set_row_color(string_number, color=(255, 99, 71))
+
+    def _set_row_color(self, row, color=(129, 216, 208)):#color=(62, 180, 137)):
         """Раскрашиваем строку"""
         if row is not None:
             for i in range(self.table.columnCount()):
                 self.table.item(row, i).setBackground(QtGui.QColor(*color))
 
-    def set_data(self, data):
+    def _set_data(self, data):
         """Функция для получения данных"""
         self._data = data
         self._fill_table()
 
+    def _save_data_to_json(self):
+        s = QFileDialog.getSaveFileName(self, 'Open file')[0]
+        if s:
+            s += ".json"
+            create_json_file(s, self._data)
+
+    def _read_data_from_json(self):
+        s = QFileDialog.getOpenFileName(self, 'Open file')[0]
+        if s:
+            data = read_json_file(s)
+            if sorted(data) == sorted(self._data):
+                self._table_is_full = False
+                self._set_data(data)
+            else:
+                QMessageBox.critical(self, "Ошибка", "Неверная структура данных", QMessageBox.Ok)
+
     def get_data(self):
         return self._data
-
 
 
 if __name__ == '__main__':

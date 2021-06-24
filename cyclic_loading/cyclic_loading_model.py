@@ -506,17 +506,17 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         self._modeling_PPR()
         i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator / 2, self.critical_line)
-        if i:
+        if Msf:
             if self._test_params.reverse:
                 self._draw_params.strain_max = np.random.uniform(0, 0.005)
             else:
-                self._draw_params.strain_max = np.random.uniform(0.05, 0.06)
+                self._draw_params.strain_max = np.random.uniform(0.05 / Msf, 0.06 / Msf)
             self._modeling_strain()
         else:
             if self._test_params.reverse:
                 self._draw_params.strain_max = np.random.uniform(0, 0.005)
             else:
-                self._draw_params.strain_max = np.random.uniform(Msf * 0.05, Msf * 0.06)
+                self._draw_params.strain_max = np.random.uniform(0.05, 0.06)
             self._modeling_strain()
         self._test_processing()
 
@@ -698,21 +698,20 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                 self._test_params.frequency)
 
         self._modeling_deviator()
-        #plt.plot(self._test_data.cycles[:300], self._test_data.deviator[:300])
-        #plt.show()
         self._modeling_PPR()
+
         i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator/2, self.critical_line)
-        if i:
+        if Msf:
             if self._test_params.reverse:
                 self._draw_params.strain_max = np.random.uniform(0, 0.005)
             else:
-                self._draw_params.strain_max = np.random.uniform(0.05, 0.06)
+                self._draw_params.strain_max = np.random.uniform(0.05 / Msf, 0.06 / Msf)
             self._modeling_strain()
         else:
             if self._test_params.reverse:
                 self._draw_params.strain_max = np.random.uniform(0, 0.005)
             else:
-                self._draw_params.strain_max = np.random.uniform(Msf*0.05, Msf*0.06)
+                self._draw_params.strain_max = np.random.uniform(0.05, 0.06)
             self._modeling_strain()
 
     def _critical_line(self):
@@ -722,14 +721,16 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         k = (6 * np.sin(fi) / (3 - np.sin(fi)))
         self.critical_line = c + 0.5 * k * self._test_data.mean_effective_stress
 
-
     @staticmethod
     def intercept_CSL(t, CSL):
         """Поиск точки пересечения критической линии Мора кулона"""
         for i in range(len(t)):
             if t[i] >= CSL[i]:
-                return [i, 0]
-        return [None, np.min(CSL - t) / t[np.argmin(np.min(CSL - t))]]
+                return [i, None]
+
+        Msf = np.min(CSL - t) / t[np.argmin(np.min(CSL - t))]
+
+        return [None, Msf if Msf > 0.9 else np.random.uniform(0.85, 0.95)]
 
     @staticmethod
     def create_deviator_array(x, amplitude, offset, fail_cycle=False, phase_shift=0, points=20):
