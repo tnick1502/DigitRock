@@ -6,7 +6,7 @@ __version__ = 1
 
 from PyQt5.QtWidgets import QApplication, QGridLayout, QFrame, QLabel, QHBoxLayout,\
     QVBoxLayout, QGroupBox, QWidget, QLineEdit, QPushButton, QTableWidget, QDialog, QHeaderView,  QTableWidgetItem, \
-    QHeaderView, QDialogButtonBox, QFileDialog, QMessageBox
+    QHeaderView, QDialogButtonBox, QFileDialog, QMessageBox, QItemDelegate, QComboBox
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
@@ -551,9 +551,15 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         self.save_data_button.setFixedHeight(30)
         self.save_button = QPushButton("Сохранить данные PDF")
         self.save_button.setFixedHeight(30)
+        self.combo_box = QComboBox()
+        self.combo_box.setFixedHeight(30)
+        self.combo_box.addItems(["Сортировка", "CSR"])
+        #self.combo_box.activated.connect(self._sort_combo_changed)
+        self.button_box_layout.addWidget(self.combo_box)
         self.button_box_layout.addWidget(self.open_data_button)
         self.button_box_layout.addWidget(self.save_data_button)
         self.button_box_layout.addWidget(self.save_button)
+
         self.l .addStretch(-1)
         self.l.addWidget(self.button_box)
         self.layout.addLayout(self.l)
@@ -576,13 +582,15 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
 
     def _clear_table(self):
         """Очистка таблицы и придание соответствующего вида"""
+        self._table_is_full = False
+
         while (self.table.rowCount() > 0):
             self.table.removeRow(0)
 
-        self.table.setColumnCount(6)
+        self.table.setColumnCount(7)
         #self.table.horizontalHeader().resizeSection(1, 200)
         self.table.setHorizontalHeaderLabels(
-            ["Лаб. ном.", "Глубина", "Наименование грунта", "Обжимающее давление", "Общее число циклов",
+            ["Лаб. ном.", "Глубина", "Наименование грунта", "Обжимающее давление", "CSR", "Общее число циклов",
              "Цикл разрушения"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setDefaultSectionSize(25)
@@ -593,27 +601,23 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.Fixed)
 
     def _fill_table(self):
         """Заполнение таблицы параметрами"""
-        self._clear_table()
 
         self.table.setRowCount(len(self._data))
 
         for string_number, lab_number in enumerate(self._data):
-            self.table.setItem(string_number, 0, QTableWidgetItem(lab_number))
-
-            test = {'4-5': {'E': 4000.0, 'c': 0.023, 'fi': 8.2,
-                     'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8,
-                     'Ip': 17.9, 'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0,
-                     'rd': '0.912', 'N': 3, 'MSF': '2.82', 'I': 2.0, 'sigma1': 96, 't': 11.28, 'sigma3': 96, 'ige': '-',
-                     'Nop': 20}}
-
-            self.table.setItem(string_number, 1, QTableWidgetItem(str(self._data[lab_number]["depth"])))
-            self.table.setItem(string_number, 2, QTableWidgetItem(self._data[lab_number]["name"]))
-            self.table.setItem(string_number, 3, QTableWidgetItem(str(self._data[lab_number]['sigma3'])))
-            self.table.setItem(string_number, 4, QTableWidgetItem(str(self._data[lab_number]['N'])))
-            self.table.setItem(string_number, 5, QTableWidgetItem(str(self._data[lab_number]['n_fail'])))
+            for i, val in enumerate([lab_number,
+                                    str(self._data[lab_number]["depth"]),
+                                    self._data[lab_number]["name"],
+                                    str(self._data[lab_number]['sigma3']),
+                                    str(self._data[lab_number]['CSR']),
+                                    str(self._data[lab_number]['N']),
+                                    str(self._data[lab_number]['n_fail']) if self._data[lab_number]['n_fail']
+                                     else "-"]):
+                self.table.setItem(string_number, i, QTableWidgetItem(val))
 
         self._table_is_full = True
 
@@ -629,7 +633,7 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
                 return None
 
         for string_number, lab_number in enumerate(self._data):
-            self._data[lab_number]["n_fail"] = read_n_fail(self.table.item(string_number, 5).text())
+            self._data[lab_number]["n_fail"] = read_n_fail(self.table.item(string_number, 6).text())
 
             if self._data[lab_number]["n_fail"]:
                 self._data[lab_number]["Mcsr"] = None
@@ -637,17 +641,22 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
                 self._data[lab_number]["Mcsr"] = np.random.uniform(2, 3)
 
     def _set_color_on_fail(self):
-
         if self._table_is_full:
             self._update_data()
             for string_number, lab_number in enumerate(self._data):
                 if self._data[lab_number]['n_fail']:
                     self._set_row_color(string_number, color=(255, 99, 71))
+                else:
+                    self._set_row_color(string_number, color=(255, 255, 255))
 
-    def _set_row_color(self, row, color=(129, 216, 208)):#color=(62, 180, 137)):
+    def _set_row_color(self, row, color=(255, 255, 255)):#color=(62, 180, 137)):
         """Раскрашиваем строку"""
-        if row is not None:
-            for i in range(self.table.columnCount()):
+        for i in range(self.table.columnCount()):
+            if color == (255, 255, 255):
+                item_color = str(self.table.item(row, i).background().color().name())
+                if item_color != "#ffffff" and item_color != "#000000":
+                    self.table.item(row, i).setBackground(QtGui.QColor(*color))
+            else:
                 self.table.item(row, i).setBackground(QtGui.QColor(*color))
 
     def _set_data(self, data):
@@ -666,10 +675,21 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         if s:
             data = read_json_file(s)
             if sorted(data) == sorted(self._data):
-                self._table_is_full = False
                 self._set_data(data)
             else:
                 QMessageBox.critical(self, "Ошибка", "Неверная структура данных", QMessageBox.Ok)
+
+    def _sort_data(self, sort_key="CSR"):
+        """Сортировка проб"""
+        sort_lab_numbers = sorted(list(self._data.keys()), key=lambda x: self._data[x][sort_key])
+        self._data = {key: self._data[key] for key in sort_lab_numbers}
+        self._fill_table()
+
+    def _sort_combo_changed(self):
+        if self.combo_box.currentText() == "Сортировка":
+            self._fill_table()
+        else:
+            self._sort_data(self.combo_box.currentText())
 
     def get_data(self):
         return self._data

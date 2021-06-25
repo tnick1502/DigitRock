@@ -473,7 +473,7 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                                      "groundwater": Groundwater, "ro": ro_statment,
                                      "balnost": Balnost, "magnituda": M,
                                      "rd": rd, "N": N, "MSF": MSF, "I": Balnost,
-                                     "sigma1": sig1, "t": tau,
+                                     "sigma1": sig1, "t": tau, "CSR": round(sig1/tau, 2),
                                      "sigma3": round(sig1*K0),
                                      "ige": float_from_excel(
                                          wb["Лист1"]['ES' + str(i)].value),
@@ -505,7 +505,7 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                                      "groundwater": Groundwater, "ro": ro_statment,
                                      "balnost": "-", "magnituda": "-",
                                      "rd": "-", "N": N, "MSF": "-", "I": "-",
-                                     "rw" : rw, "Hw" : Hw,
+                                     "rw" : rw, "Hw" : Hw, "CSR": round(sig1/tau, 2),
                                      "sigma1": sig1, "t": tau,
                                      "sigma3": round(sig1 * K0),
                                      "n_fail": n_fail, "Mcsr": Mcsr,
