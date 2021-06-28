@@ -408,10 +408,11 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         frequency_array = np.arange(min_test_frequency - min_test_frequency % frequency_step,
                                     max_test_frequency - min_test_frequency % frequency_step, frequency_step)
 
-        resonant_curves = [list() for _ in range(len(frequency_array))]
-        frequency = [list() for _ in range(len(frequency_array))]
+        len_array = len(resonant_frequency_array)
+        resonant_curves = [list() for _ in range(len_array)]
+        frequency = [list() for _ in range(len_array)]
 
-        for i in range(len(resonant_frequency_array)):
+        for i in range(len_array):
             resonant_curves[i] = ModelRezonantColumnSoilTest.generate_resonant_curve(frequency_array,
                                                                                      resonant_frequency_array[i],
                                                                                      shear_strain[i])

@@ -6,3 +6,4 @@ reportlab==3.5.49
 pyqt5
 pyexcel
 svglib==1.0.1
+pdfrw
