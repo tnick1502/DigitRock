@@ -21,6 +21,7 @@ from general.initial_tables import Table, Table_Castomer
 from general.general_widgets import Float_Slider
 from general.general_functions import read_json_file, create_json_file
 from configs.styles import style
+from general.report_general_statment import save_report
 
 plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
 plt.style.use('bmh')
@@ -525,11 +526,18 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
     def __init__(self, data, data_customer):
         super().__init__()
         self._table_is_full = False
+        self._data_customer = data_customer
         self.setWindowTitle("Прогнозирование разжижаемости")
         self.create_IU()
+        self._original_keys_for_sort = list(data.keys())
         self._set_data(data)
         self.table_castomer.set_data(data_customer)
         self.resize(1400, 800)
+
+        self.open_data_button.clicked.connect(self._read_data_from_json)
+        self.save_data_button.clicked.connect(self._save_data_to_json)
+        self.save_button.clicked.connect(self._save_pdf)
+        self.combo_box.activated.connect(self._sort_combo_changed)
 
     def create_IU(self):
         self.layout = QVBoxLayout(self)
@@ -544,23 +552,20 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         self.button_box_layout = QHBoxLayout()
         self.button_box.setLayout(self.button_box_layout)
         self.open_data_button = QPushButton("Подгрузить данные")
-        self.open_data_button.clicked.connect(self._read_data_from_json)
         self.open_data_button.setFixedHeight(30)
         self.save_data_button = QPushButton("Сохранить данные")
-        self.save_data_button.clicked.connect(self._save_data_to_json)
         self.save_data_button.setFixedHeight(30)
         self.save_button = QPushButton("Сохранить данные PDF")
         self.save_button.setFixedHeight(30)
         self.combo_box = QComboBox()
         self.combo_box.setFixedHeight(30)
-        self.combo_box.addItems(["Сортировка", "CSR"])
-        #self.combo_box.activated.connect(self._sort_combo_changed)
+        self.combo_box.addItems(["Сортировка", "CSR", "sigma3", "depth"])
         self.button_box_layout.addWidget(self.combo_box)
         self.button_box_layout.addWidget(self.open_data_button)
         self.button_box_layout.addWidget(self.save_data_button)
         self.button_box_layout.addWidget(self.save_button)
 
-        self.l .addStretch(-1)
+        self.l.addStretch(-1)
         self.l.addWidget(self.button_box)
         self.layout.addLayout(self.l)
 
@@ -624,7 +629,7 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         self._set_color_on_fail()
 
     def _update_data(self):
-
+        """Метод обновляет данные разжижения из таблицы в структуру жанных"""
         def read_n_fail(x):
             try:
                 y = int(x)
@@ -681,18 +686,58 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
 
     def _sort_data(self, sort_key="CSR"):
         """Сортировка проб"""
-        sort_lab_numbers = sorted(list(self._data.keys()), key=lambda x: self._data[x][sort_key])
-        self._data = {key: self._data[key] for key in sort_lab_numbers}
-        self._fill_table()
+        #sort_lab_numbers = sorted(list(self._data.keys()), key=lambda x: self._data[x][sort_key])
+        #self._data = {key: self._data[key] for key in sort_lab_numbers}
+        self._data = dict(sorted(self._data.items(), key=lambda x: self._data[x[0]][sort_key]))
 
     def _sort_combo_changed(self):
-        if self.combo_box.currentText() == "Сортировка":
+        """Изменение способа сортировки combo_box"""
+        if self._table_is_full:
+            if self.combo_box.currentText() == "Сортировка":
+                self._data = {key: self._data[key] for key in self._original_keys_for_sort}
+                self._clear_table()
+            else:
+                self._sort_data(self.combo_box.currentText())
+                self._clear_table()
+
             self._fill_table()
-        else:
-            self._sort_data(self.combo_box.currentText())
+
+    def _save_pdf(self):
+        save_dir = QFileDialog.getExistingDirectory(self, "Select Directory")
+        if save_dir:
+            statement_title = "Прогнозирования разжижения"
+            titles, data, scales = CyclicLoadingUI_PredictLiquefaction.transform_data_for_statment(self._data)
+            try:
+                save_report(titles, data, scales, self._data_customer["data"], ['Заказчик:', 'Объект:'],
+                            [self._data_customer["customer"], self._data_customer["object_name"]], statement_title,
+                            save_dir, "---", "Прогноз разжижения.pdf")
+                QMessageBox.about(self, "Сообщение", "Успешно сохранено")
+            except PermissionError:
+                QMessageBox.critical(self, "Ошибка", "Закройте ведомость", QMessageBox.Ok)
 
     def get_data(self):
         return self._data
+
+    @staticmethod
+    def transform_data_for_statment(data):
+        """Трансформация данных для передачи в ведомость"""
+        data_structure = []
+
+        for string_number, lab_number in enumerate(data):
+                data_structure.append([
+                    lab_number,
+                    str(data[lab_number]["depth"]),
+                    data[lab_number]["name"],
+                    str(data[lab_number]['CSR']),
+                    str(data[lab_number]['N']),
+                    str(data[lab_number]['n_fail']) if data[lab_number]['n_fail'] else "-"])
+
+        titles = ["Лаб. номер", "Глубина, м", "Наименование грунта", "CSR, д.е.", "Общее число циклов",
+                   "Цикл разрушения"]
+
+        scale = [70, 70, "*", 70, 70, 70]
+
+        return (titles, data_structure, scale)
 
 
 if __name__ == '__main__':
