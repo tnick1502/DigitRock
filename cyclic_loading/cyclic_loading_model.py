@@ -293,7 +293,7 @@ class ModelTriaxialCyclicLoading:
                      "PPR": np.array([]), "mean_effective_stress": np.array([]), "cell_pressure": 0, "frequency": 0}
 
         columns_key = ["Test_Dyn_halfcycles", "Test_Dyn_time", "Test_DynVerticalPress_kPa_value",
-                       "Test_DynPorePress_kPa_value", "Test_DynVerticalDeformation_mm_value"]
+                       "Test_DynPorePress_kPa_value", "Test_DynVerticalDeformation_mm_value",]
 
         # Считываем файл
         f = open(file_path)
@@ -318,8 +318,10 @@ class ModelTriaxialCyclicLoading:
                                               test_data["deviator"]) / 3
 
         if define_frequency:
-            test_data["frequency"], test_data["points"] = ModelTriaxialCyclicLoading.find_frequency(test_data["time"],
-                                                                                                     test_data["deviator"])
+            index_1, = np.where(read_data["Test_Dyn_halfcycles"] == 2)
+            index_2, = np.where(read_data["Test_Dyn_halfcycles"] == 4)
+            T = test_data["time"][index_2[0]] - test_data["time"][index_1[0]]
+            test_data["frequency"], test_data["points"] = 1/T, len(test_data["time"][index_1[0]:index_2[0]])
             test_data["cycles"] = test_data["time"] * test_data["frequency"]
         else:
             pass
@@ -329,6 +331,20 @@ class ModelTriaxialCyclicLoading:
     @staticmethod
     def find_frequency(time, deviator):
         """Функция поиска частоты девиаторного нагружения"""
+        for i in range(len(deviator)):
+            if (deviator[i] > deviator[i + 1]) and (deviator[i] > deviator[i + 2]) \
+                    and (deviator[i] > deviator[i + 3]) and (deviator[i] > deviator[i + 4]) \
+                    and (deviator[i] > deviator[i + 5]) and (deviator[i] > deviator[i + 6]) \
+                    and (deviator[i] > deviator[i + 7]) and (deviator[i] > deviator[i + 8]) \
+                    and (deviator[i] > deviator[i + 9]) and (deviator[i] > deviator[i + 10]) \
+                    and (deviator[i] > deviator[i + 11]) and (deviator[i] > deviator[i + 12]) \
+                    and (deviator[i] > deviator[i + 13]) and (deviator[i] > deviator[i + 14]) \
+                    and (deviator[i] > deviator[i + 15]) and (i > int(len(deviator) * 3 / 4)):
+                index_1 = i
+                break
+        deviator = deviator[index_1:]
+        time = time[index_1:] - time[index_1]
+
         mid_deviator = ((max(deviator) - min(deviator)) / 2) + min(deviator)
         k = 0
         for i in range(len(time) - 1):
@@ -414,7 +430,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.c = params["c"]
         self._test_params.fi = params["fi"]
         self._test_params.E = params["E"]
-        self._test_params.frequency = 0.5
+        self._test_params.frequency = params["frequency"]
         self._test_params.points_in_cycle = 20
         self._test_params.deviator_start_value = self._test_params.sigma_1 - self._test_params.sigma_3
         self._test_params.reverse = ModelTriaxialCyclicLoadingSoilTest.check_revers(self._test_params.sigma_1,
@@ -432,6 +448,14 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._define_draw_params(Mcsr)
         self._test_modeling()
         self._test_processing()
+
+    def get_data_for_vibration_creep(self):
+        return {
+            "strain": self._test_data.strain,
+            "deviator": self._test_data.deviator,
+            "time": self._test_data.time,
+            "frequency": self._test_params.frequency
+        }
 
     def get_draw_params(self):
         """Считывание параметров отрисовки(для передачи на слайдеры)"""
@@ -1135,11 +1159,13 @@ if __name__ == '__main__':
 
     #a.plotter()
 
-    """a = ModelTriaxialCyclicLoading()
-    a.set_test_data(ModelTriaxialCyclicLoading.open_geotek_log("C:/Users/Пользователь/Desktop/Опыты/264-21 П-57 11.7 Обжимающее давление = 120.txt"))
-    a.plotter()"""
+    a = ModelTriaxialCyclicLoading()
+    file = "C:/Users/Пользователь/Desktop/Опыты/264-21 П-57 11.7 Обжимающее давление = 120.txt"
+    file = "C:/Users/Пользователь/Desktop/Опыты/718-20 PL20-Skv139 0.2  Обжимающее давление = 25.txt"
+    a.set_test_data(ModelTriaxialCyclicLoading.open_geotek_log(file))
+    a.plotter()
 
-    a = ModelTriaxialCyclicLoadingSoilTest()
+    """a = ModelTriaxialCyclicLoadingSoilTest()
     params = {'E': 50000.0, 'c': 0.023, 'fi': 8.2,
      'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8, 'Ip': 17.9,
      'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 1200,
@@ -1151,4 +1177,4 @@ if __name__ == '__main__':
                    'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 0.1,
                    '005': 17.7, '001': 35.0, '0002': 18.8, '0000': 28.1, 'Nop': 20}, 'test_type': 'Сейсморазжижение'}
     a.set_test_params(params)
-    a.plotter()
+    a.plotter()"""

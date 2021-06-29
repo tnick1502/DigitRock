@@ -475,6 +475,7 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                                      "rd": rd, "N": N, "MSF": MSF, "I": Balnost,
                                      "sigma1": sig1, "t": tau, "CSR": round(sig1/tau, 2),
                                      "sigma3": round(sig1*K0),
+                                     "frequency": 0.5,
                                      "ige": float_from_excel(
                                          wb["Лист1"]['ES' + str(i)].value),
                                      "n_fail": n_fail, "Mcsr": Mcsr,
@@ -504,11 +505,12 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                                      "depth": z, "Ip": Ip, "Il": Il, "K0": K0,
                                      "groundwater": Groundwater, "ro": ro_statment,
                                      "balnost": "-", "magnituda": "-",
-                                     "rd": "-", "N": N, "MSF": "-", "I": "-",
+                                     "rd": "-", "MSF": "-", "I": "-",
                                      "rw" : rw, "Hw" : Hw, "CSR": round(sig1/tau, 2),
                                      "sigma1": sig1, "t": tau,
                                      "sigma3": round(sig1 * K0),
                                      "n_fail": n_fail, "Mcsr": Mcsr,
+                                     "N": N, "frequency": float_from_excel(wb["Лист1"]['HT' + str(i)].value),
                                      "ige": float_from_excel(
                                          wb["Лист1"]['ES' + str(i)].value),
                                      "Nop": i}
