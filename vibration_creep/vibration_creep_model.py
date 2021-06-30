@@ -131,7 +131,7 @@ class ModelVibrationCreep:
         return {"strain_dynamic": [i.strain_dynamic for i in self._dynamic_tests],
                 "deviator_dynamic": [i.deviator_dynamic for i in self._dynamic_tests],
                 "time": [i.time for i in self._dynamic_tests],
-                #"creep_curve": [i.creep_curve for i in self._dynamic_tests],
+                "creep_curve": [i.creep_curve for i in self._dynamic_tests],
                 "strain": static_plots["strain"],
                 "deviator": static_plots["deviator"],
                 "E50d": E50d,
@@ -155,15 +155,16 @@ class ModelVibrationCreep:
         plot_data = self.get_plot_data()
         result_data = self.get_test_results()
 
-        ax_deviator.plot(plot_data["strain"][:-5000], plot_data["deviator"][:-5000], alpha=0.5)
+        ax_deviator.plot(plot_data["strain"], plot_data["deviator"], alpha=0.5)
 
         for i, color in zip(range(len(plot_data["strain_dynamic"])), ["tomato", "forestgreen", "purple"]):
-            ax_deviator.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5, linewidth=0.5,
+            ax_deviator.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5, linewidth=1,
                              color=color, label= "Kd = " + str(result_data[i]["Kd"]) + "; frequency = " + str(plot_data["frequency"][i]) + " Hz")
 
-            #if plot_data["creep_curve"][i] is not None:
-                #ax_creep.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,
-                              #label="frequency = " + str(plot_data["frequency"][i]) + " Hz")
+            if plot_data["creep_curve"][i] is not None:
+                ax_creep.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,
+                              label="frequency = " + str(plot_data["frequency"][i]) + " Hz")
+
             if plot_data["E50d"][i]:
                 ax_deviator.plot(*plot_data["E50d"][i], **plotter_params["black_dotted_line"])
 
@@ -183,7 +184,6 @@ class ModelVibrationCreep:
     def _test_processing(self):
         """Обработка результатов опыта"""
         if self._static_test_data.get_test_results()["qf"] is not None:
-            print("1")
             for dyn_test, test_result in zip(self._dynamic_tests, self._test_results):
                 if dyn_test.strain_dynamic is not None:
                     qf = self._static_test_data.get_test_results()["qf"]*0.6
@@ -194,9 +194,9 @@ class ModelVibrationCreep:
                                                                                dyn_test.deviator_dynamic)
                         test_result.Kd = np.round((test_result.E50d / test_result.E50), 2)
 
-                        #dyn_test.time, dyn_test.creep_curve = ModelVibrationCreep.plastic_creep(dyn_test.strain_dynamic,
-                                                                                       #dyn_test.deviator_dynamic,
-                                                                                                #dyn_test.time)
+                        dyn_test.time, dyn_test.creep_curve = ModelVibrationCreep.plastic_creep(dyn_test.strain_dynamic,
+                                                                                       dyn_test.deviator_dynamic,
+                                                                                                dyn_test.time)
 
                     else:
                         test_result.E50d = None
@@ -235,6 +235,7 @@ class ModelVibrationCreep:
         time_creep = list(map(lambda x: x - time_creep[0], time_creep))
 
         return np.array(time_creep), np.array(creep)
+        #return time, strain
 
     @staticmethod
     def find_E50d(strain, deviator):
@@ -284,9 +285,10 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
 
     def set_dynamic_test_params(self, params):
         for frequency in params["frequency"]:
-            self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest())
+            self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest(False))
             params_for_current_test = copy.copy(params)
             params_for_current_test["frequency"] = frequency
+            params_for_current_test["E"] = params_for_current_test["E"]*np.random.uniform(0.85, 1.15)
             self._dynamic_tests_models[-1].set_test_params(params_for_current_test)
 
         for test in self._dynamic_tests_models:
@@ -324,10 +326,10 @@ if __name__ == '__main__':
                                                                                              'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73, 'r': '-', 'rd': '-', 'n': '-', 'e': '-', 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-', 'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0, '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-', '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type':
                          'Трёхосное сжатие (E)'}
     a.set_static_test_params(static_params)
-    dynamic_params = params = {'E': 50000.0, 'c': 0.023, 'fi': 8.2,
+    dynamic_params = {'E': 50000.0, 'c': 0.023, 'fi': 45, 'qf': 700,
      'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8, 'Ip': 17.9,
      'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 1200,
-     'MSF': '2.82', 'I': 2.0, 'sigma1': 400, 't': 22.56, 'sigma3': 100, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
+     'MSF': '2.82', 'I': 2.0, 'sigma1': 900, 't': 22.56, 'sigma3': 100, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
      'data_phiz': {'borehole': 'rete', 'depth': 9.8,
                    'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'ige': '-',
                    'rs': 2.73, 'r': 1.76, 'rd': 1.23, 'n': 55.0, 'e': 1.22, 'W': 43.4, 'Sr': 0.97, 'Wl': 47.1,

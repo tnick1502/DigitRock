@@ -140,11 +140,6 @@ class ModelTriaxialCyclicLoading:
 
     def plotter(self, save_path=None):
         """Построение графиков опыта. Если передать параметр save_path, то графики сохраняться туда"""
-        from matplotlib import rcParams
-        rcParams['font.family'] = 'Times New Roman'
-        rcParams['font.size'] = '14'
-        rcParams['axes.edgecolor'] = 'black'
-
         plot_data = self.get_plot_data()
 
         if plot_data:
@@ -152,12 +147,10 @@ class ModelTriaxialCyclicLoading:
             figure.subplots_adjust(right=0.98, top=0.98, bottom=0.1, wspace=0.25, hspace=0.25, left=0.1)
 
             ax_deviator = figure.add_subplot(2, 2, 1)
-            ax_deviator.grid(axis='both')
             ax_deviator.set_xlabel("Число циклов N, ед.")
             ax_deviator.set_ylabel("Девиатор q, кПА")
 
             ax_strain = figure.add_subplot(2, 2, 2)
-            ax_strain.grid(axis='both')
             ax_strain.set_xlabel("Число циклов N, ед.")
             ax_strain.set_ylabel("Относительная деформация $ε_1$, д.е.")
 
@@ -373,8 +366,12 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         - Метод set_draw_params(params) установливает параметры, считанные с позунков и производит отрисовку новых
          данных опыта"""
-    def __init__(self):
+    def __init__(self, cyclic=True):
         super().__init__()
+
+        # Переменная отвечает за то, чтобы первая четверть периода синусоиды была догрузка
+        self._cosine = True
+
         self._draw_params = AttrDict({"deviator_deviation": None,
                                       "deviator_filter": None,
 
@@ -436,6 +433,12 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.reverse = ModelTriaxialCyclicLoadingSoilTest.check_revers(self._test_params.sigma_1,
                                                                                      self._test_params.sigma_3,
                                                                                      2*self._test_params.t)
+        try:
+            self._test_params.qf = params["qf"]
+            self._test_params.deviator_start_value = 0
+        except KeyError:
+            self._test_params.qf = 2 * self._test_params.t
+            self._test_params.deviator_start_value = self._test_params.sigma_1 - self._test_params.sigma_3
 
         #self._test_params.n_fail, Mcsr = define_fail_cycle(self._test_params.cycles_count, self._test_params.sigma_1,
                                        #self._test_params.t, self._test_params.physical["Ip"],
@@ -585,7 +588,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         # Параметр, отвечающий за рост деформации после цикла разрушения
         self._draw_params.strain_rise_after_fail = np.random.uniform(2, 3)
         # Погрешность и коэффициент сглаживания
-        self._draw_params.strain_deviation = 0.001
+        self._draw_params.strain_deviation = 0.0001
         self._draw_params.strain_filter = 0.5
 
         # Ассимптота графика PPR. Если есть разрушение - не учитывается
@@ -624,16 +627,22 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
     def _modeling_deviator(self):
         """Функция моделирования девиаторного нагружения"""
         # Массив setpoint - идеальная кривая, к которой стремится пид-регулятор
-        self._test_data.setpoint = np.hstack((self._load_stage.deviator,
-        ModelTriaxialCyclicLoadingSoilTest.create_deviator_array(self._test_data.cycles[len(self._load_stage.time):],
-                                                                    2 * self._test_params.t,
-                                                                    self._test_params.deviator_start_value,
-                                                                    self._test_params.n_fail,
-                                                                    points=self._test_params.points_in_cycle)))
+        self._test_data.setpoint = ModelTriaxialCyclicLoadingSoilTest.create_deviator_array(self._test_data.cycles,
+                                                                            2 * self._test_params.t,
+                                                                            self._test_params.deviator_start_value,
+                                                                            fail_cycle=self._test_params.n_fail,
+                                                                            points=self._test_params.points_in_cycle)
+
+        if self._cosine:
+            self._test_data.setpoint = np.hstack((self._load_stage.deviator + self._test_params.deviator_start_value,
+                                                self._test_data.setpoint[len(self._load_stage.deviator):] +
+                                                self._test_params.qf/2))
+
         # Создадим массив девиаторного нагружения
         self._test_data.deviator = self._test_data.setpoint + np.random.uniform(-self._draw_params.deviator_deviation,
-                                                                                self._draw_params.deviator_deviation,
-                                                                                self._test_params.len_cycles)
+                                                                                    self._draw_params.deviator_deviation,
+                                                                                    self._test_params.len_cycles)
+
         #self._test_data.deviator = ndimage.gaussian_filter(self._test_data.deviator, self._draw_params.deviator_filter,
                                                          #order=0)
 
@@ -649,10 +658,11 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         # Создадим массив моделя E. Он отвечает за рост амплитуды
         E_module = ModelTriaxialCyclicLoadingSoilTest.create_E_module_array(self._test_data.cycles,
-                                                                             self._draw_params.strain_E0,
-                                         (-0.3 * self._draw_params.PPR_max) + 1, fail_cycle=self._test_params.n_fail,
-                                                                             reverse=self._test_params.reverse,
-                                                                             rise_after_fail=self._draw_params.strain_rise_after_fail)
+                                                                            self._draw_params.strain_E0,
+                                                                            (-0.3 * self._draw_params.PPR_max) + 1,
+                                                                            fail_cycle=self._test_params.n_fail,
+                                                                            reverse=self._test_params.reverse,
+                                                                            rise_after_fail=self._draw_params.strain_rise_after_fail)
         # Создадим массив вертикальной деформации
         self._test_data.strain = ModelTriaxialCyclicLoadingSoilTest.create_strain_array(self._test_data.cycles,
                                                                                              2 * self._test_params.t,
@@ -660,17 +670,37 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                                              self._draw_params.strain_max,
                                                                                              self._draw_params.strain_slant,
                                                                                              phase_shift=np.random.uniform(0, 0.1))
+
+        if self._cosine:
+            self._test_data.strain = np.hstack((self._load_stage.strain,
+                                                self._test_data.strain[len(self._load_stage.strain):] -
+                                                self._test_data.strain[len(self._load_stage.strain)] +
+                                                self._load_stage.strain[-1]))
+
+            self._test_data.strain += np.random.uniform(-self._draw_params.strain_deviation,
+                                                        self._draw_params.strain_deviation,
+                                                        self._test_params.len_cycles) + \
+                                      create_deviation_curve(self._test_data.cycles,
+                                                             self._draw_params.strain_max / 150, (1, 0.1),
+                                                             points=self._test_params.cycles_count) + \
+                                      create_deviation_curve(self._test_data.cycles,
+                                                             self._draw_params.strain_max / 80, (1, 0.1),
+                                                             np.random.uniform(8, 15))
+        else:
+            self._test_data.strain += np.random.uniform(-self._draw_params.strain_deviation,
+                                                        self._draw_params.strain_deviation,
+                                                        self._test_params.len_cycles) + \
+                                      create_deviation_curve(self._test_data.cycles,
+                                                             self._draw_params.strain_max / 40, (1, 0.1),
+                                                             points=self._test_params.cycles_count) + \
+                                      create_deviation_curve(self._test_data.cycles,
+                                                             self._draw_params.strain_max / 25, (1, 0.1),
+                                                             np.random.uniform(8, 15))
+
+
         #self._test_data.strain = np.hstack((self._load_stage.strain, self._test_data.strain)) [len(self._load_stage.time):]
         # Накладываем погрешности на вертикальную деформацию
-        self._test_data.strain += np.random.uniform(-self._draw_params.strain_deviation,
-                                                    self._draw_params.strain_deviation,
-                                                    self._test_params.len_cycles) +\
-                                  create_deviation_curve(self._test_data.cycles,
-                                                         self._draw_params.strain_max / 40, (1, 0.1),
-                                                         points=self._test_params.cycles_count) +\
-                                  create_deviation_curve(self._test_data.cycles,
-                                                         self._draw_params.strain_max / 25, (1, 0.1),
-                                                         np.random.uniform(8, 15))
+
 
         self._test_data.strain = ndimage.gaussian_filter(self._test_data.strain, self._draw_params.strain_filter,
                                                          order=0)
@@ -700,20 +730,32 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         self._critical_line()
 
-    def _test_modeling(self, cyclic=True):
+    def _test_modeling(self):
         """Функция моделирования опыта"""
-        # Этап нагружения
-        self._load_stage.time, self._load_stage.strain, self._load_stage.deviator = ModelTriaxialCyclicLoadingSoilTest.dev_loading(
-            define_qf(self._test_params.sigma_3, self._test_params.c, self._test_params.fi), self._test_params.E*10, 2*self._test_params.t)
-        self._load_stage.deviator += self._test_params.deviator_start_value
-        if cyclic:
-                self._load_stage.time = np.linspace(0, 1/(self._test_params.frequency*4), len(self._load_stage.deviator))
 
-        self._test_data.cycles = np.hstack((self._load_stage.time * self._test_params.frequency,
+        self._test_data.cycles = np.linspace(0, self._test_params.cycles_count,
+                                             self._test_params.points_in_cycle * self._test_params.cycles_count + 1)
+
+        # Этап нагружения
+        if self._cosine:
+            self._load_stage.time, self._load_stage.strain, self._load_stage.deviator = ModelTriaxialCyclicLoadingSoilTest.dev_loading(
+                define_qf(self._test_params.sigma_3, self._test_params.c, self._test_params.fi),
+                self._test_params.E, self._test_params.qf/2 + 2 * self._test_params.t)
+
+            #self._load_stage.deviator += self._test_params.deviator_start_value
+
+            self._test_data.cycles = np.hstack((np.linspace(0, 0.25, len(self._load_stage.deviator)),
+                                                self._test_data.cycles[int(self._test_params.points_in_cycle/4):]))
+
+        self._test_data.time = self._test_data.cycles/self._test_params.frequency
+
+
+        """self._test_data.cycles = np.hstack((self._load_stage.time * self._test_params.frequency,
                                             np.arange(self._load_stage.time[-1] * self._test_params.frequency,
                                                       self._test_params.cycles_count + 1 / self._test_params.cycles_count +
                                                       self._load_stage.time[-1] * self._test_params.frequency,
-                                                      1 / self._test_params.points_in_cycle)))
+                                                      1 / self._test_params.points_in_cycle)))"""
+
 
         self._test_params.len_cycles = len(self._test_data.cycles)
 
@@ -1159,22 +1201,24 @@ if __name__ == '__main__':
 
     #a.plotter()
 
-    a = ModelTriaxialCyclicLoading()
+    """a = ModelTriaxialCyclicLoading()
     file = "C:/Users/Пользователь/Desktop/Опыты/264-21 П-57 11.7 Обжимающее давление = 120.txt"
     file = "C:/Users/Пользователь/Desktop/Опыты/718-20 PL20-Skv139 0.2  Обжимающее давление = 25.txt"
     a.set_test_data(ModelTriaxialCyclicLoading.open_geotek_log(file))
-    a.plotter()
+    a.plotter()"""
 
-    """a = ModelTriaxialCyclicLoadingSoilTest()
+    a = ModelTriaxialCyclicLoadingSoilTest()
     params = {'E': 50000.0, 'c': 0.023, 'fi': 8.2,
      'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8, 'Ip': 17.9,
-     'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 1200,
-     'MSF': '2.82', 'I': 2.0, 'sigma1': 96, 't': 22.56, 'sigma3': 96, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
+     'Il': 0.79, 'K0': 0.5, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 5,
+     'MSF': '2.82', 'I': 2.0, 'sigma1': 200, 't': 22.56, 'sigma3': 100, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
+     "n_fail": None, "Mcsr": 2, "frequency": 0.5,
      'data_phiz': {'borehole': 'rete', 'depth': 9.8,
                    'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'ige': '-',
                    'rs': 2.73, 'r': 1.76, 'rd': 1.23, 'n': 55.0, 'e': 1.22, 'W': 43.4, 'Sr': 0.97, 'Wl': 47.1,
                    'Wp': 29.2, 'Ip': 17.9, 'Il': 0.79, 'Ir': 6.8, 'str_index': 'l', 'gw_depth': 0.0, 'build_press': '-',
                    'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 0.1,
-                   '005': 17.7, '001': 35.0, '0002': 18.8, '0000': 28.1, 'Nop': 20}, 'test_type': 'Сейсморазжижение'}
+                   '005': 17.7, '001': 35.0, '0002': 18.8, '0000': 28.1, 'Nop': 20}, 'test_type': 'Сейсморазжижение',
+              }
     a.set_test_params(params)
-    a.plotter()"""
+    a.plotter()
