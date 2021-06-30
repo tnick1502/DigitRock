@@ -234,8 +234,8 @@ class ModelVibrationCreep:
         creep = list(map(lambda x: x - creep[0], creep))
         time_creep = list(map(lambda x: x - time_creep[0], time_creep))
 
-        return np.array(time_creep), np.array(creep)
-        #return time, strain
+        #return np.array(time_creep), np.array(creep)
+        return time -time[0], strain
 
     @staticmethod
     def find_E50d(strain, deviator):
@@ -328,15 +328,15 @@ if __name__ == '__main__':
     a.set_static_test_params(static_params)
     dynamic_params = {'E': 50000.0, 'c': 0.023, 'fi': 45, 'qf': 700,
      'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8, 'Ip': 17.9,
-     'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 1200,
-     'MSF': '2.82', 'I': 2.0, 'sigma1': 900, 't': 22.56, 'sigma3': 100, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
+     'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 100,
+     'MSF': '2.82', 'I': 2.0, 'sigma1': 900, 't': 30, 'sigma3': 100, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
      'data_phiz': {'borehole': 'rete', 'depth': 9.8,
                    'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'ige': '-',
                    'rs': 2.73, 'r': 1.76, 'rd': 1.23, 'n': 55.0, 'e': 1.22, 'W': 43.4, 'Sr': 0.97, 'Wl': 47.1,
                    'Wp': 29.2, 'Ip': 17.9, 'Il': 0.79, 'Ir': 6.8, 'str_index': 'l', 'gw_depth': 0.0, 'build_press': '-',
                    'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 0.1,
                    '005': 17.7, '001': 35.0, '0002': 18.8, '0000': 28.1, 'Nop': 20}, 'test_type': 'Сейсморазжижение',
-                               "frequency": [1, 3, 5], "n_fail": None, "Mcsr": 2}
+                               "frequency": [1, 3, 5], "n_fail": None, "Mcsr": 5}
 
     a.set_dynamic_test_params(dynamic_params)
     a.plotter()
