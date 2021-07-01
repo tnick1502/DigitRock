@@ -180,6 +180,9 @@ class ModelVibrationCreep:
             if plot_data["E50d"][i]:
                 ax_deviator.plot(*plot_data["E50d"][i], **plotter_params["black_dotted_line"])
 
+            if plot_data["E50"][i]:
+                ax_deviator.plot(*plot_data["E50"][i], **plotter_params["black_dotted_line"])
+
 
             ax_deviator.legend()
             ax_creep.legend()
@@ -199,7 +202,7 @@ class ModelVibrationCreep:
         if self._static_test_data.get_test_results()["qf"] is not None:
             for dyn_test, test_result in zip(self._dynamic_tests, self._test_results):
                 if dyn_test.strain_dynamic is not None:
-                    qf = self._static_test_data.get_test_results()["qf"]*0.6
+                    qf = self._static_test_data.get_test_results()["qf"]
                     test_result.E50 = ModelVibrationCreep.find_E50_dynamic(dyn_test.strain_dynamic,
                                                                          dyn_test.deviator_dynamic, qf*1000)
                     if test_result.E50:
@@ -333,23 +336,23 @@ if __name__ == '__main__':
 
 
     a = ModelVibrationCreepSoilTest()
-    static_params = {'E': 50000.0, 'sigma_3': 100, 'sigma_1': 900, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5,
+    static_params = {'E': 50000.0, 'sigma_3': 100, 'sigma_1': 300, 'c': 0.025, 'fi': 45, 'qf': 593.8965363, 'K0': 0.5,
              'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
              'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
                                                                                              'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73, 'r': '-', 'rd': '-', 'n': '-', 'e': '-', 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-', 'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0, '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-', '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type':
                          'Трёхосное сжатие (E)'}
     a.set_static_test_params(static_params)
-    dynamic_params = {'E': 50000.0, 'c': 0.023, 'fi': 45, 'qf': 700,
+    dynamic_params = {'E': 50000.0, 'c': 0.023, 'fi': 45, 'qf': 593.8965363,
      'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8, 'Ip': 17.9,
      'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 100,
-     'MSF': '2.82', 'I': 2.0, 'sigma1': 300, 't': 5, 'sigma3': 300, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
+     'MSF': '2.82', 'I': 2.0, 'sigma1': 100, 't': 10, 'sigma3': 100, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
      'data_phiz': {'borehole': 'rete', 'depth': 9.8,
                    'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'ige': '-',
                    'rs': 2.73, 'r': 1.76, 'rd': 1.23, 'n': 55.0, 'e': 1.22, 'W': 43.4, 'Sr': 0.97, 'Wl': 47.1,
                    'Wp': 29.2, 'Ip': 17.9, 'Il': 0.79, 'Ir': 6.8, 'str_index': 'l', 'gw_depth': 0.0, 'build_press': '-',
                    'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 0.1,
                    '005': 17.7, '001': 35.0, '0002': 18.8, '0000': 28.1, 'Nop': 20}, 'test_type': 'Сейсморазжижение',
-                               "frequency": [1, 3, 5], "n_fail": None, "Mcsr": 100}
+                               "frequency": [1], "n_fail": None, "Mcsr": 100}
 
     a.set_dynamic_test_params(dynamic_params)
     a.plotter()
