@@ -148,7 +148,7 @@ class ModelVibrationCreep:
         ax_deviator.set_xlabel("Относительная деформация $ε_1$, д.е.")
         ax_deviator.set_ylabel("Девиатор q, кПа")
         ax_creep = figure.add_subplot(2, 1, 2)
-        ax_creep.set_xscale("log")
+        ax_creep.set_xscale("log")#, basex=np.e)
         ax_creep.set_xlabel("Время")
         ax_creep.set_ylabel("Пластическая деформация, д.е.")
 
@@ -156,10 +156,22 @@ class ModelVibrationCreep:
         result_data = self.get_test_results()
 
         ax_deviator.plot(plot_data["strain"], plot_data["deviator"], alpha=0.5)
+        lims = [0, max([max(x) for x in plot_data["creep_curve"]])*1.05]
 
         for i, color in zip(range(len(plot_data["strain_dynamic"])), ["tomato", "forestgreen", "purple"]):
+            plot_data["creep_curve"][i] -= plot_data["creep_curve"][i][0]
+
             ax_deviator.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5, linewidth=1,
-                             color=color, label= "Kd = " + str(result_data[i]["Kd"]) + "; frequency = " + str(plot_data["frequency"][i]) + " Hz")
+                             color=color, label="Kd = " + str(result_data[i]["Kd"]) + "; frequency = " + str(plot_data["frequency"][i]) + " Hz")
+
+            plt.axes([0.3, 0.6, .2, .2])
+            plt.plot(plot_data["creep_curve"][i], plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) - len(plot_data["creep_curve"][i]):],
+                     alpha=0.5, linewidth=1, color=color)
+            plt.grid()
+            plt.title('Динамическая нагрузка', fontsize=10)
+            plt.xlim(*lims)
+            plt.xticks([])
+            plt.yticks([])
 
             if plot_data["creep_curve"][i] is not None:
                 ax_creep.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,
@@ -167,6 +179,7 @@ class ModelVibrationCreep:
 
             if plot_data["E50d"][i]:
                 ax_deviator.plot(*plot_data["E50d"][i], **plotter_params["black_dotted_line"])
+
 
             ax_deviator.legend()
             ax_creep.legend()
@@ -235,7 +248,7 @@ class ModelVibrationCreep:
         time_creep = list(map(lambda x: x - time_creep[0], time_creep))
 
         #return np.array(time_creep), np.array(creep)
-        return time -time[0], strain
+        return time - time[0], strain - strain[0]
 
     @staticmethod
     def find_E50d(strain, deviator):
@@ -288,7 +301,7 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
             self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest(False))
             params_for_current_test = copy.copy(params)
             params_for_current_test["frequency"] = frequency
-            params_for_current_test["E"] = params_for_current_test["E"]*np.random.uniform(0.85, 1.15)
+            params_for_current_test["E"] = params_for_current_test["E"]*np.random.uniform(0.95, 1.03)
             self._dynamic_tests_models[-1].set_test_params(params_for_current_test)
 
         for test in self._dynamic_tests_models:
@@ -329,14 +342,14 @@ if __name__ == '__main__':
     dynamic_params = {'E': 50000.0, 'c': 0.023, 'fi': 45, 'qf': 700,
      'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8, 'Ip': 17.9,
      'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 100,
-     'MSF': '2.82', 'I': 2.0, 'sigma1': 900, 't': 30, 'sigma3': 100, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
+     'MSF': '2.82', 'I': 2.0, 'sigma1': 300, 't': 5, 'sigma3': 300, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
      'data_phiz': {'borehole': 'rete', 'depth': 9.8,
                    'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'ige': '-',
                    'rs': 2.73, 'r': 1.76, 'rd': 1.23, 'n': 55.0, 'e': 1.22, 'W': 43.4, 'Sr': 0.97, 'Wl': 47.1,
                    'Wp': 29.2, 'Ip': 17.9, 'Il': 0.79, 'Ir': 6.8, 'str_index': 'l', 'gw_depth': 0.0, 'build_press': '-',
                    'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 0.1,
                    '005': 17.7, '001': 35.0, '0002': 18.8, '0000': 28.1, 'Nop': 20}, 'test_type': 'Сейсморазжижение',
-                               "frequency": [1, 3, 5], "n_fail": None, "Mcsr": 5}
+                               "frequency": [1, 3, 5], "n_fail": None, "Mcsr": 100}
 
     a.set_dynamic_test_params(dynamic_params)
     a.plotter()
