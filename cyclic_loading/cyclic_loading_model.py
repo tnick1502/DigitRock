@@ -455,7 +455,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             "strain": self._test_data.strain,
             "deviator": self._test_data.deviator,
             "time": self._test_data.time,
-            "frequency": self._test_params.frequency
+            "frequency": self._test_params.frequency,
+            "start_dynamic": len(self._load_stage.deviator )
         }
 
     def get_draw_params(self):
@@ -508,10 +509,10 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         return self._test_params.cycles_count
 
     def set_cycles_count(self, cycles_count):
-        self._test_params.cycles_count = cycles_count
+        self._test_params.cycles_count = int(cycles_count)
 
         if self._test_params.n_fail:
-            if self._test_params.n_fail >= 0.8*cycles_count:
+            if self._test_params.n_fail >= int(0.8*cycles_count):
                 self._test_params.n_fail = int(0.8*cycles_count)
 
         self._define_draw_params()
@@ -677,9 +678,9 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                                                  self._draw_params.strain_max,
                                                                                                  self._draw_params.strain_slant,
                                                                                                  phase_shift=np.random.uniform(0.505, 0.52)*np.pi)
+            self._test_data.strain -= self._test_data.strain[0]
             self._test_data.strain = np.hstack((self._load_stage.strain,
-                                                self._test_data.strain +
-                                                self._load_stage.strain[-1]))
+                                                self._test_data.strain + self._load_stage.strain[-1]))
 
             self._test_data.strain += np.random.uniform(-self._draw_params.strain_deviation,
                                                         self._draw_params.strain_deviation,
@@ -806,7 +807,6 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._modeling_PPR()
 
         i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator/2, self.critical_line)
-        print(Msf)
         if Msf:
             if self._test_params.reverse:
                 if self._test_params.qf != 0:

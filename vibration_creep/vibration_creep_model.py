@@ -31,18 +31,19 @@ except FileNotFoundError:
     plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
 
 class DataModelVibrationCreep:
-    strain_dynamic: type(np.array([]))
-    #start_dynamic: int  # Начало циклического нагружения
-    deviator_dynamic: type(np.array([]))
-    time: type(np.array([]))
-    cycles_dynamic: type(np.array([]))  # Ось циклов
-    creep_curve: type(np.array([]))
-    frequency: float
+    strain_dynamic: type(np.array([])) = None
+    start_dynamic: int = None # Начало циклического нагружения
+    deviator_dynamic: type(np.array([])) = None
+    time: type(np.array([])) = None
+    cycles_dynamic: type(np.array([])) = None # Ось циклов
+    creep_curve: type(np.array([])) = None
+    frequency: float = None
 
 class TestResultModelVibrationCreep:
-    Kd: float
-    E50d: float
-    E50: float
+    Kd: float = None
+    E50d: float = None
+    E50: float = None
+
     def get_dict(self):
         return {
             "Kd": self.Kd,
@@ -74,13 +75,17 @@ class ModelVibrationCreep:
         self._dynamic_tests[-1].deviator_dynamic = test_data["deviator"]
         self._dynamic_tests[-1].time = test_data["time"]
         self._dynamic_tests[-1].frequency = test_data["frequency"]
+        self._dynamic_tests[-1].start_dynamic = \
+            ModelVibrationCreep.define_start_dynamic(self._dynamic_tests[-1].deviator_dynamic)
         self._test_results.append(TestResultModelVibrationCreep())
 
-        self._dynamic_tests.append(DataModelVibrationCreep())
+        """self._dynamic_tests.append(DataModelVibrationCreep())
         self._dynamic_tests[-1].strain_dynamic = test_data["strain"]*1.2
         self._dynamic_tests[-1].deviator_dynamic = test_data["deviator"]*1.03
         self._dynamic_tests[-1].time = test_data["time"]*1.1
         self._dynamic_tests[-1].frequency= test_data["frequency"]*0.9
+        self._dynamic_tests[-1].start_dynamic = \
+            ModelVibrationCreep.define_start_dynamic(self._dynamic_tests[-1].deviator_dynamic)
         self._test_results.append(TestResultModelVibrationCreep())
 
         self._dynamic_tests.append(DataModelVibrationCreep())
@@ -88,7 +93,9 @@ class ModelVibrationCreep:
         self._dynamic_tests[-1].deviator_dynamic = test_data["deviator"] * 1.05
         self._dynamic_tests[-1].time = test_data["time"] * 1.1
         self._dynamic_tests[-1].frequency = test_data["frequency"]*0.7
-        self._test_results.append(TestResultModelVibrationCreep())
+        self._dynamic_tests[-1].start_dynamic = \
+            ModelVibrationCreep.define_start_dynamic(self._dynamic_tests[-1].deviator_dynamic)
+        self._test_results.append(TestResultModelVibrationCreep())"""
 
         self._test_processing()
 
@@ -156,22 +163,21 @@ class ModelVibrationCreep:
         result_data = self.get_test_results()
 
         ax_deviator.plot(plot_data["strain"], plot_data["deviator"], alpha=0.5)
-        lims = [0, max([max(x) for x in plot_data["creep_curve"]])*1.05]
+        lims = [min([min(x) for x in plot_data["creep_curve"]]) , max([max(x) for x in plot_data["creep_curve"]])*1.05]
 
         for i, color in zip(range(len(plot_data["strain_dynamic"])), ["tomato", "forestgreen", "purple"]):
             plot_data["creep_curve"][i] -= plot_data["creep_curve"][i][0]
-
             ax_deviator.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5, linewidth=1,
                              color=color, label="Kd = " + str(result_data[i]["Kd"]) + "; frequency = " + str(plot_data["frequency"][i]) + " Hz")
 
-            plt.axes([0.3, 0.6, .2, .2])
-            plt.plot(plot_data["creep_curve"][i], plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) - len(plot_data["creep_curve"][i]):],
-                     alpha=0.5, linewidth=1, color=color)
-            plt.grid()
-            plt.title('Динамическая нагрузка', fontsize=10)
-            plt.xlim(*lims)
-            plt.xticks([])
-            plt.yticks([])
+            #plt.axes([0.3, 0.6, .2, .2])
+            #plt.plot(plot_data["creep_curve"][i], plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) - len(plot_data["creep_curve"][i]):],
+                     #alpha=0.5, linewidth=1, color=color)
+            #plt.grid()
+            #plt.title('Динамическая нагрузка', fontsize=10)
+            #plt.xlim(*lims)
+            #plt.xticks([])
+            #plt.yticks([])
 
             if plot_data["creep_curve"][i] is not None:
                 ax_creep.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,
@@ -203,7 +209,17 @@ class ModelVibrationCreep:
             for dyn_test, test_result in zip(self._dynamic_tests, self._test_results):
                 if dyn_test.strain_dynamic is not None:
                     qf = self._static_test_data.get_test_results()["qf"]
-                    test_result.E50 = ModelVibrationCreep.find_E50_dynamic(dyn_test.strain_dynamic,
+
+                    test_result.E50, test_result.E50d = \
+                        ModelVibrationCreep.find_E50d(dyn_test.strain_dynamic, dyn_test.deviator_dynamic,
+                                                      start_dynamic=dyn_test.start_dynamic)
+                    test_result.Kd = np.round((test_result.E50d / test_result.E50), 2)
+
+                    dyn_test.time, dyn_test.creep_curve = \
+                        ModelVibrationCreep.plastic_creep(dyn_test.strain_dynamic, dyn_test.deviator_dynamic,
+                                                          dyn_test.time, start_dynamic=dyn_test.start_dynamic)
+
+                    """test_result.E50 = ModelVibrationCreep.find_E50_dynamic(dyn_test.strain_dynamic,
                                                                          dyn_test.deviator_dynamic, qf*1000)
                     if test_result.E50:
                         test_result.E50d = ModelVibrationCreep.find_E50d(dyn_test.strain_dynamic,
@@ -212,30 +228,22 @@ class ModelVibrationCreep:
 
                         dyn_test.time, dyn_test.creep_curve = ModelVibrationCreep.plastic_creep(dyn_test.strain_dynamic,
                                                                                        dyn_test.deviator_dynamic,
-                                                                                                dyn_test.time)
+                                                                                                dyn_test.time)"""
 
-                    else:
-                        test_result.E50d = None
-                        test_result.Kd = None
                 else:
-                    pass
+                    test_result.E50d = None
+                    test_result.Kd = None
         else:
             pass
 
     @staticmethod
-    def plastic_creep(strain, deviator, time):  # ось циклов, ось девиатора
-        # Поиск начала девиаторного нагружения
-        for i in range(len(deviator) - 5):
-            if deviator[i + 1] < deviator[i] and deviator[i + 2] < deviator[i + 1] and deviator[i + 3] < deviator[i + 2] and deviator[i + 4] < deviator[i + 3] and deviator[
-                i + 5] < deviator[i + 4] and deviator[i + 6] < deviator[i + 5] and deviator[i + 7] < deviator[i + 6] and deviator[i + 8] < deviator[i + 7] and deviator[
-                i + 9] < deviator[i + 8]:
-                k = i
-                break
+    def plastic_creep(strain, deviator, time, start_dynamic=None):  # ось циклов, ось девиатора
+        _start_dynamic = start_dynamic
 
         # Приводим массивы к правильному виду
-        strain = strain[k:]
-        deviator = deviator[k:]
-        time = time[k:]
+        strain = strain[_start_dynamic:]
+        deviator = deviator[_start_dynamic:]
+        time = time[_start_dynamic:]
 
         creep = []
         time_creep = []
@@ -254,7 +262,47 @@ class ModelVibrationCreep:
         return time - time[0], strain - strain[0]
 
     @staticmethod
-    def find_E50d(strain, deviator):
+    def find_E50d(strain, deviator, start_dynamic=False):
+        start = start_dynamic
+        mean_dynamic_load = np.mean(np.array(deviator[int(start):]))
+
+        if deviator[-1] >= mean_dynamic_load:
+            i, = np.where(np.array(deviator[::-1]) < mean_dynamic_load)
+            E50d = mean_dynamic_load / strain[len(strain) - i[0]]
+
+        elif deviator[-1] < mean_dynamic_load:
+            i, = np.where(np.array(deviator[::-1]) > mean_dynamic_load)
+            E50d = mean_dynamic_load / strain[len(strain) - i[0]]
+
+
+        if deviator[int(start)] >= mean_dynamic_load:
+            i, = np.where(np.array(deviator[:int(start)]) < mean_dynamic_load)
+            E50 = mean_dynamic_load / strain[int(start) + i[0]]
+
+        elif deviator[int(start)] < mean_dynamic_load:
+            i, = np.where(np.array(deviator[:int(start)]) > mean_dynamic_load)
+            E50 = mean_dynamic_load / strain[int(start) + i[0]]
+
+        E50 = mean_dynamic_load / np.min(strain[int(start):])
+
+        plt.plot(strain, deviator)
+        plt.scatter(strain[int(start)], deviator[int(start)], color="red")
+        plt.show()
+
+        return (round(E50 / 1000, 2), round(E50d / 1000, 2))
+
+    @staticmethod
+    def find_E50_dynamic(strain, deviator, qf):
+        """Определение параметра E50 по динамической кривой при наличии qf"""
+        i_half_qf, = np.where(deviator > qf/2)
+        if len(i_half_qf):
+            E50 = (qf / 2) / (strain[i_half_qf[0]])
+            return round(E50 / 1000, 2)
+        else:
+            return None
+
+    @staticmethod
+    def define_start_dynamic(deviator):
         for i in range(len(deviator)):
             if (deviator[i] > deviator[i + 1]) and (deviator[i] > deviator[i + 2]) \
                     and (deviator[i] > deviator[i + 3]) and (deviator[i] > deviator[i + 4]) \
@@ -266,20 +314,7 @@ class ModelVibrationCreep:
                     and (deviator[i] > deviator[i + 15]) and (i > int(len(deviator) * 3 / 4)):
                 index_1 = i
                 break
-        # plt.scatter(strain[index_1], deviator[index_1])
-        mean_dinamic_load = np.mean(deviator[index_1:])
-        E50d = mean_dinamic_load / strain[-1]
-        return round(E50d / 1000, 2)
-
-    @staticmethod
-    def find_E50_dynamic(strain, deviator, qf):
-        """Определение параметра E50 по динамической кривой при наличии qf"""
-        i_half_qf, = np.where(deviator > qf/2)
-        if len(i_half_qf):
-            E50 = (qf / 2) / (strain[i_half_qf[0]])
-            return round(E50 / 1000, 2)
-        else:
-            return None
+        return index_1
 
 class ModelVibrationCreepSoilTest(ModelVibrationCreep):
     """Модель виброползучести"""
@@ -314,28 +349,24 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
             self._dynamic_tests[-1].deviator_dynamic = test_data["deviator"]
             self._dynamic_tests[-1].time = test_data["time"]
             self._dynamic_tests[-1].frequency = test_data["frequency"]
+            self._dynamic_tests[-1].start_dynamic = test_data["start_dynamic"]
             self._test_results.append(TestResultModelVibrationCreep())
 
         self._test_processing()
 
 
-
-
-
-
-
 if __name__ == '__main__':
 
     #file = "C:/Users/Пользователь/Desktop/Тест/Циклическое трехосное нагружение/Архив/19-1/Косинусное значение напряжения.txt"
-    """file = "C:/Users/Пользователь/Desktop/Опыты/Опыт Виброползучесть/Песок 1/E50/Косинусное значения напряжения.txt"
+    file = "C:/Users/Пользователь/Desktop/Опыты/Опыт Виброползучесть/Песок 1/E50/Косинусное значения напряжения.txt"
     file2 = "C:/Users/Пользователь/Desktop/Тест/Девиаторное нагружение/Архив/10-2/0.2.log"
     a = ModelVibrationCreep()
     a.set_static_test_path(file2)
     a.set_dynamic_test_path(file)
-    a.plotter()"""
+    a.plotter()
 
 
-    a = ModelVibrationCreepSoilTest()
+    """a = ModelVibrationCreepSoilTest()
     static_params = {'E': 50000.0, 'sigma_3': 100, 'sigma_1': 300, 'c': 0.025, 'fi': 45, 'qf': 593.8965363, 'K0': 0.5,
              'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
              'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
@@ -355,4 +386,4 @@ if __name__ == '__main__':
                                "frequency": [1], "n_fail": None, "Mcsr": 100}
 
     a.set_dynamic_test_params(dynamic_params)
-    a.plotter()
+    a.plotter()"""
