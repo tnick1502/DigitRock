@@ -162,22 +162,22 @@ class ModelVibrationCreep:
         plot_data = self.get_plot_data()
         result_data = self.get_test_results()
 
-        ax_deviator.plot(plot_data["strain"], plot_data["deviator"], alpha=0.5)
+        ax_deviator.plot(plot_data["strain"], plot_data["deviator"], alpha=0.5, linewidth=2)
         lims = [min([min(x) for x in plot_data["creep_curve"]]) , max([max(x) for x in plot_data["creep_curve"]])*1.05]
 
         for i, color in zip(range(len(plot_data["strain_dynamic"])), ["tomato", "forestgreen", "purple"]):
             plot_data["creep_curve"][i] -= plot_data["creep_curve"][i][0]
-            ax_deviator.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5, linewidth=1,
+            ax_deviator.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5, linewidth=1.5,
                              color=color, label="Kd = " + str(result_data[i]["Kd"]) + "; frequency = " + str(plot_data["frequency"][i]) + " Hz")
 
-            #plt.axes([0.3, 0.6, .2, .2])
-            #plt.plot(plot_data["creep_curve"][i], plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) - len(plot_data["creep_curve"][i]):],
-                     #alpha=0.5, linewidth=1, color=color)
-            #plt.grid()
-            #plt.title('Динамическая нагрузка', fontsize=10)
-            #plt.xlim(*lims)
-            #plt.xticks([])
-            #plt.yticks([])
+            plt.axes([0.3, 0.6, .2, .2])
+            plt.plot(plot_data["creep_curve"][i], plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) - len(plot_data["creep_curve"][i]):],
+                     alpha=0.5, linewidth=1, color=color)
+            plt.grid()
+            plt.title('Динамическая нагрузка', fontsize=10)
+            plt.xlim(*lims)
+            plt.xticks([])
+            plt.yticks([])
 
             if plot_data["creep_curve"][i] is not None:
                 ax_creep.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,
@@ -186,8 +186,8 @@ class ModelVibrationCreep:
             if plot_data["E50d"][i]:
                 ax_deviator.plot(*plot_data["E50d"][i], **plotter_params["black_dotted_line"])
 
-            if plot_data["E50"][i]:
-                ax_deviator.plot(*plot_data["E50"][i], **plotter_params["black_dotted_line"])
+            #if plot_data["E50"][i]:
+                #ax_deviator.plot(*plot_data["E50"][i], **plotter_params["black_dotted_line"])
 
 
             ax_deviator.legend()
@@ -267,27 +267,23 @@ class ModelVibrationCreep:
         mean_dynamic_load = np.mean(np.array(deviator[int(start):]))
 
         if deviator[-1] >= mean_dynamic_load:
-            i, = np.where(np.array(deviator[::-1]) < mean_dynamic_load)
-            E50d = mean_dynamic_load / strain[len(strain) - i[0]]
+            i, = np.where(np.array(deviator[::-1]) <= mean_dynamic_load)
+            E50d = mean_dynamic_load / strain[len(strain) - i[0] + 1]
 
         elif deviator[-1] < mean_dynamic_load:
-            i, = np.where(np.array(deviator[::-1]) > mean_dynamic_load)
-            E50d = mean_dynamic_load / strain[len(strain) - i[0]]
+            i, = np.where(np.array(deviator[::-1]) >= mean_dynamic_load)
+            E50d = mean_dynamic_load / strain[len(strain) - i[0]+ 1]
 
 
-        if deviator[int(start)] >= mean_dynamic_load:
-            i, = np.where(np.array(deviator[:int(start)]) < mean_dynamic_load)
-            E50 = mean_dynamic_load / strain[int(start) + i[0]]
+        #if deviator[int(start)] >= mean_dynamic_load:
+            #i, = np.where(np.array(deviator[:int(start)]) < mean_dynamic_load)
+            #E50 = mean_dynamic_load / strain[int(start) + i[0]]
 
-        elif deviator[int(start)] < mean_dynamic_load:
-            i, = np.where(np.array(deviator[:int(start)]) > mean_dynamic_load)
-            E50 = mean_dynamic_load / strain[int(start) + i[0]]
+        #elif deviator[int(start)] < mean_dynamic_load:
+            #i, = np.where(np.array(deviator[:int(start)]) > mean_dynamic_load)
+            #E50 = mean_dynamic_load / strain[int(start) + i[0]]
 
-        E50 = mean_dynamic_load / np.min(strain[int(start):])
-
-        plt.plot(strain, deviator)
-        plt.scatter(strain[int(start)], deviator[int(start)], color="red")
-        plt.show()
+        E50 = mean_dynamic_load / (0.5*(np.min(strain[int(start):]) + strain[int(start)]))
 
         return (round(E50 / 1000, 2), round(E50d / 1000, 2))
 
@@ -335,11 +331,12 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
         self._static_test_data.set_test_params(params)
 
     def set_dynamic_test_params(self, params):
-        for frequency in params["frequency"]:
+        for frequency, Kd in zip(params["frequency"], params["Kd"]):
             self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest(False))
             params_for_current_test = copy.copy(params)
             params_for_current_test["frequency"] = frequency
-            params_for_current_test["E"] = params_for_current_test["E"]*np.random.uniform(0.95, 1.03)
+            params_for_current_test["E"] = params_for_current_test["E"]*np.random.uniform(0.9, 1.1)
+            params_for_current_test["Kd"] = Kd
             self._dynamic_tests_models[-1].set_test_params(params_for_current_test)
 
         for test in self._dynamic_tests_models:
@@ -358,22 +355,23 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
 if __name__ == '__main__':
 
     #file = "C:/Users/Пользователь/Desktop/Тест/Циклическое трехосное нагружение/Архив/19-1/Косинусное значение напряжения.txt"
-    file = "C:/Users/Пользователь/Desktop/Опыты/Опыт Виброползучесть/Песок 1/E50/Косинусное значения напряжения.txt"
+    """file = "C:/Users/Пользователь/Desktop/Опыты/Опыт Виброползучесть/Песок 1/E50/Косинусное значения напряжения.txt"
     file2 = "C:/Users/Пользователь/Desktop/Тест/Девиаторное нагружение/Архив/10-2/0.2.log"
     a = ModelVibrationCreep()
     a.set_static_test_path(file2)
     a.set_dynamic_test_path(file)
-    a.plotter()
+    a.plotter()"""
 
 
-    """a = ModelVibrationCreepSoilTest()
+
+    a = ModelVibrationCreepSoilTest()
     static_params = {'E': 50000.0, 'sigma_3': 100, 'sigma_1': 300, 'c': 0.025, 'fi': 45, 'qf': 593.8965363, 'K0': 0.5,
              'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
              'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
                                                                                              'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73, 'r': '-', 'rd': '-', 'n': '-', 'e': '-', 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-', 'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0, '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-', '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type':
                          'Трёхосное сжатие (E)'}
     a.set_static_test_params(static_params)
-    dynamic_params = {'E': 50000.0, 'c': 0.023, 'fi': 45, 'qf': 593.8965363,
+    dynamic_params = {'E': 50000.0, 'c': 0.023, 'fi': 45, 'qf': 593.8965363, "Kd": [0.86, 0.8, 0.7],
      'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8, 'Ip': 17.9,
      'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 100,
      'MSF': '2.82', 'I': 2.0, 'sigma1': 100, 't': 10, 'sigma3': 100, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
@@ -383,7 +381,8 @@ if __name__ == '__main__':
                    'Wp': 29.2, 'Ip': 17.9, 'Il': 0.79, 'Ir': 6.8, 'str_index': 'l', 'gw_depth': 0.0, 'build_press': '-',
                    'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 0.1,
                    '005': 17.7, '001': 35.0, '0002': 18.8, '0000': 28.1, 'Nop': 20}, 'test_type': 'Сейсморазжижение',
-                               "frequency": [1], "n_fail": None, "Mcsr": 100}
+                               "frequency": [1, 5 ,10], "n_fail": None, "Mcsr": 100}
 
     a.set_dynamic_test_params(dynamic_params)
-    a.plotter()"""
+    a.plotter()
+

@@ -433,6 +433,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                                      2*self._test_params.t)
         try:
             self._test_params.qf = params["qf"]
+            self._test_params.Kd = params["Kd"]
             self._test_params.deviator_start_value = 0
         except KeyError:
             self._test_params.qf = 0
@@ -456,7 +457,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             "deviator": self._test_data.deviator,
             "time": self._test_data.time,
             "frequency": self._test_params.frequency,
-            "start_dynamic": len(self._load_stage.deviator )
+            "start_dynamic": len(self._load_stage.deviator)
         }
 
     def get_draw_params(self):
@@ -809,19 +810,14 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator/2, self.critical_line)
         if Msf:
             if self._test_params.reverse:
-                if self._test_params.qf != 0:
-                    qf = self._test_params.qf
-                    qf_t = self._test_params.qf + self._test_params.t*2
-                    strain_50 = np.log(-((qf_t / 2) / qf) + 1) / \
-                                (np.log(0.5) / ((qf / 2) / self._test_params.E))
-
-
-                    self._draw_params.strain_max = strain_50 - 0.97 * strain_50
-                    self._draw_params.strain_max *= \
-                        ModelTriaxialCyclicLoadingSoilTest.influence_of_frequency_on_strain(self._test_params.frequency)
-
+                if self._test_params.Kd:
+                    if self._test_params.Kd >= 0.9:
+                        k = 1
+                    else:
+                        k = 1 + (1 - self._test_params.Kd)*1.2
+                    self._draw_params.strain_max = self._load_stage.strain[-1] * (1-self._test_params.Kd) * k
                 else:
-                    self._draw_params.strain_max = np.random.uniform(0, 0.001)
+                    self._draw_params.strain_max = np.random.uniform(0, 0.005)
                     self._draw_params.strain_max *=\
                         ModelTriaxialCyclicLoadingSoilTest.influence_of_frequency_on_strain(self._test_params.frequency)
             else:
@@ -1139,7 +1135,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             end_time = q_end
 
         time = np.linspace(0, end_time, round(points_in_sec * q_end))
-        a = np.random.randint(0, 2)
+        a = 2#np.random.randint(0, 2)
         #strain = np.linspace(0, hyp_strain(q_end, E50, qf), len(time)) if a == 1 else np.linspace(0,
                                                                                                   #exp_strain(q_end, E50,
                                                                                                              #qf),
