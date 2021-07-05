@@ -30,6 +30,7 @@ try:
 except FileNotFoundError:
     plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
 
+@dataclass
 class DataModelVibrationCreep:
     strain_dynamic: type(np.array([])) = None
     start_dynamic: int = None # Начало циклического нагружения
@@ -39,6 +40,7 @@ class DataModelVibrationCreep:
     creep_curve: type(np.array([])) = None
     frequency: float = None
 
+@dataclass
 class TestResultModelVibrationCreep:
     Kd: float = None
     E50d: float = None
@@ -154,6 +156,11 @@ class ModelVibrationCreep:
         ax_deviator = figure.add_subplot(2, 1, 1)
         ax_deviator.set_xlabel("Относительная деформация $ε_1$, д.е.")
         ax_deviator.set_ylabel("Девиатор q, кПа")
+        ax_dyn_phase = figure.add_axes([0.3, 0.6, .2, .2])
+        ax_dyn_phase.set_title('Динамическая нагрузка', fontsize=10)
+        ax_dyn_phase.set_xticks([])
+        ax_dyn_phase.set_yticks([])
+
         ax_creep = figure.add_subplot(2, 1, 2)
         ax_creep.set_xscale("log")#, basex=np.e)
         ax_creep.set_xlabel("Время")
@@ -165,19 +172,27 @@ class ModelVibrationCreep:
         ax_deviator.plot(plot_data["strain"], plot_data["deviator"], alpha=0.5, linewidth=2)
         lims = [min([min(x) for x in plot_data["creep_curve"]]) , max([max(x) for x in plot_data["creep_curve"]])*1.05]
 
+        ax_dyn_phase.set_xlim(*lims)
+
         for i, color in zip(range(len(plot_data["strain_dynamic"])), ["tomato", "forestgreen", "purple"]):
-            plot_data["creep_curve"][i] -= plot_data["creep_curve"][i][0]
+            plot_data["creep_curve"][i][1] = 0
             ax_deviator.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5, linewidth=1.5,
                              color=color, label="Kd = " + str(result_data[i]["Kd"]) + "; frequency = " + str(plot_data["frequency"][i]) + " Hz")
 
-            plt.axes([0.3, 0.6, .2, .2])
-            plt.plot(plot_data["creep_curve"][i], plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) - len(plot_data["creep_curve"][i]):],
-                     alpha=0.5, linewidth=1, color=color)
-            plt.grid()
-            plt.title('Динамическая нагрузка', fontsize=10)
-            plt.xlim(*lims)
-            plt.xticks([])
-            plt.yticks([])
+            ax_dyn_phase.plot(plot_data["creep_curve"][i],
+                              plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) -
+                                                               len(plot_data["creep_curve"][i]):],
+                              alpha=0.5, linewidth=1, color=color)
+            # alpha=0.5, linewidth=1, color=color)
+
+            #plt.axes([0.3, 0.6, .2, .2])
+            #plt.plot(plot_data["creep_curve"][i], plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) - len(plot_data["creep_curve"][i]):],
+                     #alpha=0.5, linewidth=1, color=color)
+            #plt.grid()
+            #plt.title('Динамическая нагрузка', fontsize=10)
+            #plt.xlim(*lims)
+            #plt.xticks([])
+            #plt.yticks([])
 
             if plot_data["creep_curve"][i] is not None:
                 ax_creep.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,
@@ -256,6 +271,7 @@ class ModelVibrationCreep:
                 time_creep.append(time[i])
 
         creep = list(map(lambda x: x - creep[0], creep))
+        creep[1] = 0
         time_creep = list(map(lambda x: x - time_creep[0], time_creep))
 
         #return np.array(time_creep), np.array(creep)
@@ -355,16 +371,16 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
 if __name__ == '__main__':
 
     #file = "C:/Users/Пользователь/Desktop/Тест/Циклическое трехосное нагружение/Архив/19-1/Косинусное значение напряжения.txt"
-    """file = "C:/Users/Пользователь/Desktop/Опыты/Опыт Виброползучесть/Песок 1/E50/Косинусное значения напряжения.txt"
+    file = "C:/Users/Пользователь/Desktop/Опыты/Опыт Виброползучесть/Песок 1/E50/Косинусное значения напряжения.txt"
     file2 = "C:/Users/Пользователь/Desktop/Тест/Девиаторное нагружение/Архив/10-2/0.2.log"
     a = ModelVibrationCreep()
     a.set_static_test_path(file2)
     a.set_dynamic_test_path(file)
-    a.plotter()"""
+    a.plotter()
 
 
 
-    a = ModelVibrationCreepSoilTest()
+    """a = ModelVibrationCreepSoilTest()
     static_params = {'E': 50000.0, 'sigma_3': 100, 'sigma_1': 300, 'c': 0.025, 'fi': 45, 'qf': 593.8965363, 'K0': 0.5,
              'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
              'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
@@ -384,5 +400,5 @@ if __name__ == '__main__':
                                "frequency": [1, 5 ,10], "n_fail": None, "Mcsr": 100}
 
     a.set_dynamic_test_params(dynamic_params)
-    a.plotter()
+    a.plotter()"""
 

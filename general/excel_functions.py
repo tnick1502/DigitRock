@@ -802,7 +802,6 @@ def get_column_letters(last_letter='IV'):
         import_columns.append(get_column_letter(i))
     return import_columns[:last_letter_index + 1]  # обрезание идет До индекса, так что включаем еще значение
 
-
 def table_data(table, structure):
     """Функция возвращает матрицу для построения таблицы. Первая втрока - имя, остальные - столбцы значений
     Входные параметры: table - матрица, считанная с excel,
@@ -870,7 +869,6 @@ def table_data(table, structure):
     # print('после округ',data)
     return titles, data, scale
 
-
 def form_xlsx_dictionary(wb, last_key):
     """
     Функция считывает всю ведомость и записывает значения в словарь, где
@@ -905,9 +903,6 @@ def form_xlsx_dictionary(wb, last_key):
         xlsx_dictionary[str(key)] = np.array(xlsx_dictionary[str(key)])
 
     return xlsx_dictionary
-
-
-
 
 def number_of_decimal_places(matrix, parameter_decimal):
     for j, count in enumerate(parameter_decimal):
