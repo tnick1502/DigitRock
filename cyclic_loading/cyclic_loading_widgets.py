@@ -1,10 +1,11 @@
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMessageBox, QHBoxLayout
 import numpy as np
 import sys
 
 
 from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI, CyclicLoadingOpenTestUI, CyclicLoadingUISoilTest
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, ModelTriaxialCyclicLoadingSoilTest
+from general.initial_tables import Table_Vertical
 
 class CyclicLoadingProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -94,8 +95,20 @@ class CyclicLoadingSoilTestWidget(QWidget):
 
     def _create_Ui(self):
         self.layout = QVBoxLayout(self)
+        self.layout_1 = QHBoxLayout(self)
         self.test_widget = CyclicLoadingUISoilTest()
-        self.layout.addWidget(self.test_widget)
+        headlines = ["Лаб. ном.", "Модуль деформации E, кПа", "Сцепление с, МПа",
+                     "Угол внутреннего трения, град", "CSR",
+                     "Обжимающее давление 𝜎3", "K0", "Косательное напряжение τ, кПа",
+                     "Число циклов N, ед.", "Бальность, балл", "Магнитуда", "Понижающий коэф. rd", "MSF"]
+
+        fill_keys = ["lab_number", "E", "c", "fi", "CSR", "sigma3", "K0", "t", "N", "I", "magnituda", "rd", "MSF"]
+        self.identification = Table_Vertical(headlines, fill_keys)
+        self.identification.setFixedWidth(300)
+        self.layout_1.addWidget(self.test_widget)
+        self.layout_1.addWidget(self.identification)
+        self.layout.addLayout(self.layout_1)
+
         self.layout.setContentsMargins(5, 5, 5, 5)
 
     def _sliders_strain(self, param):

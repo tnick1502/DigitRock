@@ -620,6 +620,24 @@ class Statment_Vibration_Creep(Statment_Triaxial_Static):
 
 class Statment_Triaxial_Cyclic(Statment_Initial):
     """Класс обработки файла задания для трехосника"""
+    def __init__(self):
+        data_test_parameters = {"equipment": ["Выберите прибор", "Прибор: Вилли", "Прибор: Геотек"],
+                                "test_type": ["Режим испытания", "Сейсморазжижение", "Штормовое разжижение"],
+                                "k0_condition": ["Тип определения K0",
+                                                 "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
+                                                 "K0: K0 из ведомости", "K0: Формула Джекки",
+                                                 "K0: K0 = 1"]
+                                }
+
+        headlines = ["Лаб. ном.", "Модуль деформации E, кПа", "Сцепление с, МПа",
+                     "Угол внутреннего трения, град", "CSR",
+                     "Обжимающее давление 𝜎3", "K0", "Касательное напряжение τ, кПа",
+                     "Число циклов N, ед.", "Бальность, балл", "Магнитуда", "Понижающий коэф. rd", "MSF"]
+
+        fill_keys = ["lab_number", "E", "c", "fi", "CSR", "sigma3", "K0", "t", "N", "I", "magnituda", "rd", "MSF"]
+
+        super().__init__(data_test_parameters, headlines, fill_keys, identification_column="HW")
+
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path != "":
@@ -655,8 +673,8 @@ class Statment_Triaxial_Cyclic(Statment_Initial):
                 self._data_customer = customer
                 self._data_physical = read_phiz(wb, identification_column=self.identification_column)
                 self._data_test = read_dynemic(wb, combo_params["test_type"], combo_params["k0_condition"])
-                key1 = [i for i in self._data_physical]
-                key2 = [j for j in self._data_test]
+                key1 = list(self._data_physical.keys())
+                key2 = list(self._data_test.keys())
 
                 for i in key1:
                     if i not in key2:
@@ -774,8 +792,7 @@ if __name__ == "__main__":
                                              "K0: K0 = 1"]
                             }
 
-    #Dialog = Statment_Triaxial_Static(data_test_parameters, headlines, fill_keys)
-    Dialog = Statment_Rezonant_Column()
+    Dialog = Statment_Triaxial_Cyclic(data_test_parameters, headlines, fill_keys)
     Dialog.show()
     app.setStyle('Fusion')
 

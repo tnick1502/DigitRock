@@ -1,36 +1,26 @@
 
-
-
-
-
-
-
-
-
-
-def find_E(p, p_ref, Eref, m)->float:
-    """Функция """
-    return Eref * (p / p_ref) ** m
-
-def define_m(p, E, p_ref, Eref)->float:
-    """Функция аппроксимации значений p, E функцией из плаксис для получения параметра m
+def openfile(file_path, columns_key, separator="\t", index_start_string=1):
+    """ункция считывания данных с файла прибора
     arguments:
-        p: давление МПа
-        E: касательный модуль МПа
-        p_ref: референтное давление МПа
-        Eref: референтный касательный модуль МПа
-    return:
-        m:степенной показатель
-    """
-    popt, pcov = curve_fit(lambda px, m: (Eref * ((px / p_ref) ** m)), p, E, method='dogbox')
-    return popt
+        file_path - Путь к файлу
+        columns_key - список с именами столбцов
+        separator - разделитель
+        begin - строка начала считывания"""
+    # Открываем файл
+    f = open(file_path)
+    # Счиитываем все строки
+    lines = f.readlines()
+    f.close()
 
-if __name__ == '__main__':
+    read_data = {}
 
-    #file = "C:/Users/Пользователь/Desktop/Тест/Циклическое трехосное нагружение/Архив/19-1/Косинусное значение напряжения.txt"
-    file = "C:/Users/Пользователь/Desktop/Опыты/Опыт Виброползучесть/Песок 1/E50/Косинусное значения напряжения.txt"
-    file2 = "C:/Users/Пользователь/Desktop/Тест/Девиаторное нагружение/Архив/10-2/0.2.log"
-    a = ModelVibrationCreep()
-    a.set_static_test_path(file2)
-    a.set_dynamic_test_path(file)
-    a.plotter()
+    for key in columns_key:  # по нужным столбцам
+        index = (lines[0].split(separator).index(key))
+        try:
+            read_data[key] = list(map(lambda x: float(x.split(separator)[index]), lines[index_start_string:]))
+        except ValueError: # когда столбец не число
+            read_data[key] = list(map(lambda x: x.split(separator)[index], lines[index_start_string:]))
+
+    return read_data
+
+print(int(3.9))

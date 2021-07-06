@@ -122,7 +122,7 @@ def k0_test_type_column(test_type):
 # Чтение данных
 def generator_of_cell_with_lab_number(wb):
     """Функция генерирует последовательность строк с заполненными данными по лабномеру"""
-    for i in range(7, len(wb['Лист1']['A'])):
+    for i in range(7, len(wb['Лист1']['A'])  + 5):
         if str(wb["Лист1"]['A' + str(i)].value) != "None":
             yield i
 
@@ -333,7 +333,7 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
     Передается документ excel, сейсмо или шторм, откуда K0"""
     Data = {}
 
-    for i in range(7, len(wb['Лист1']['A'])):
+    for i in range(7, len(wb['Лист1']['A'])+5):
         if str(wb["Лист1"]['A' + str(i)].value) != "None":
             if str(wb["Лист1"]['IG' + str(i)].value) != "None":
                 key = str(wb["Лист1"]['IG' + str(i)].value)
@@ -447,11 +447,11 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                             y2 = np.array([0, 3, 5, 10, 15, 26, 90])
                             x2 = np.array([0, 5.25, 6, 6.75, 7.5, 8.5, 12])
                             Ninter = interp1d(x2, y2, kind='cubic')
-                            N = int(Ninter(M))
+                            N = int(Ninter(M)) + 1
                             if N == 0:
                                 N = 1
                         else:
-                            N = 1
+                            N = 5
                         try:
                             MSF = round((10 ** (2.24) / ((float(M)) ** (2.56))), 2)
                             tau *= MSF
@@ -473,7 +473,7 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                                      "groundwater": Groundwater, "ro": ro_statment,
                                      "balnost": Balnost, "magnituda": M,
                                      "rd": rd, "N": N, "MSF": MSF, "I": Balnost,
-                                     "sigma1": sig1, "t": tau, "CSR": round(sig1/tau, 2),
+                                     "sigma1": sig1, "t": tau, "CSR": round(tau/sig1, 2),
                                      "sigma3": round(sig1*K0),
                                      "frequency": 0.5,
                                      "ige": float_from_excel(
@@ -506,7 +506,7 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
                                      "groundwater": Groundwater, "ro": ro_statment,
                                      "balnost": "-", "magnituda": "-",
                                      "rd": "-", "MSF": "-", "I": "-",
-                                     "rw" : rw, "Hw" : Hw, "CSR": round(sig1/tau, 2),
+                                     "rw" : rw, "Hw" : Hw, "CSR": round(tau/sig1, 2),
                                      "sigma1": sig1, "t": tau,
                                      "sigma3": round(sig1 * K0),
                                      "n_fail": n_fail, "Mcsr": Mcsr,
@@ -517,7 +517,6 @@ def read_dynemic(wb, test_mode, K0_mode, ro_mode = "Плотность: 2"):
 
             except ValueError:
                 pass
-
     return Data
 
 def read_dynemic_rc(wb, K0_mode, pref_mode):

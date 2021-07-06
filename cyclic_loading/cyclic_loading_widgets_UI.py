@@ -592,14 +592,14 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         while (self.table.rowCount() > 0):
             self.table.removeRow(0)
 
-        self.table.setColumnCount(7)
+        self.table.setColumnCount(9)
         #self.table.horizontalHeader().resizeSection(1, 200)
         self.table.setHorizontalHeaderLabels(
-            ["Лаб. ном.", "Глубина", "Наименование грунта", "Обжимающее давление", "CSR", "Общее число циклов",
-             "Цикл разрушения"])
+            ["Лаб. ном.", "Глубина", "Наименование грунта", "𝜎3, кПа", "𝜎1, кПа", "t, кПа", "CSR", "Число циклов",
+             "Nfail"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setDefaultSectionSize(25)
-        self.table.horizontalHeader().setMinimumSectionSize(150)
+        self.table.horizontalHeader().setMinimumSectionSize(100)
 
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
@@ -607,6 +607,8 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(7, QHeaderView.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(8, QHeaderView.Fixed)
 
     def _fill_table(self):
         """Заполнение таблицы параметрами"""
@@ -618,6 +620,8 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
                                     str(self._data[lab_number]["depth"]),
                                     self._data[lab_number]["name"],
                                     str(self._data[lab_number]['sigma3']),
+                                     str(self._data[lab_number]['sigma1']),
+                                     str(self._data[lab_number]['t']),
                                     str(self._data[lab_number]['CSR']),
                                     str(self._data[lab_number]['N']),
                                     str(self._data[lab_number]['n_fail']) if self._data[lab_number]['n_fail']
@@ -638,7 +642,7 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
                 return None
 
         for string_number, lab_number in enumerate(self._data):
-            self._data[lab_number]["n_fail"] = read_n_fail(self.table.item(string_number, 6).text())
+            self._data[lab_number]["n_fail"] = read_n_fail(self.table.item(string_number, 8).text())
 
             if self._data[lab_number]["n_fail"]:
                 self._data[lab_number]["Mcsr"] = None

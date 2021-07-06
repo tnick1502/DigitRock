@@ -30,22 +30,8 @@ class TriaxialCyclicLoading_Identification_Tab(QWidget):
         """Определяем основную структуру данных"""
         super().__init__()
         self.layout = QVBoxLayout(self)
-        data_test_parameters = {"equipment": ["Выберите прибор", "Прибор: Вилли", "Прибор: Геотек"],
-                                "test_type": ["Режим испытания", "Сейсморазжижение", "Штормовое разжижение"],
-                                "k0_condition": ["Тип определения K0",
-                                                 "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
-                                                 "K0: K0 из ведомости", "K0: Формула Джекки",
-                                                 "K0: K0 = 1"]
-                                }
 
-        headlines = ["Лаб. ном.", "Модуль деформации E, кПа", "Сцепление с, МПа",
-                     "Угол внутреннего трения, град",
-                     "Обжимающее давление 𝜎3", "K0", "Косательное напряжение τ, кПа",
-                     "Число циклов N, ед.", "Бальность, балл", "Магнитуда", "Понижающий коэф. rd"]
-
-        fill_keys = ["lab_number", "E", "c", "fi", "sigma3", "K0", "t", "N", "I", "magnituda", "rd"]
-
-        self.table = Statment_Triaxial_Cyclic(data_test_parameters, headlines, fill_keys, identification_column="HW")
+        self.table = Statment_Triaxial_Cyclic()
         self.layout.addWidget(self.table)
 
         self.table.signal[object].connect(self.click)
@@ -242,9 +228,10 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
 
         self.tab_1.folder[str].connect(self.tab_2.save_widget.get_save_directory)
         self.tab_1.click_emit[object].connect(self.tab_2.widget.set_params)
+        self.tab_1.click_emit[object].connect(self.tab_2.widget.identification.set_data)
         self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
 
-        self.button_predict_liquefaction = QPushButton("Предсказание разжижения")
+        self.button_predict_liquefaction = QPushButton("Прогнозирование разжижаемости")
         self.button_predict_liquefaction.setFixedHeight(50)
         self.button_predict_liquefaction.clicked.connect(self._predict_liquefaction)
         self.tab_1.table.splitter_table_vertical.addWidget(self.button_predict_liquefaction)
@@ -256,6 +243,9 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
 
             if dialog.exec() == QDialog.Accepted:
                 self.tab_1.table._data_test = dialog.get_data()
+
+    def identification_set_data(self, data):
+        self.tab_2.widget.identification.set_data(data)
 
     def save_report(self):
 

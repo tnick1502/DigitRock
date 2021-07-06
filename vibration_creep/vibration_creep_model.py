@@ -15,10 +15,9 @@ import numpy as np
 import os
 import sys
 import matplotlib.pyplot as plt
-import scipy.ndimage as ndimage
 import copy
 
-from general.general_functions import AttrDict, point_to_xy, Point
+from general.general_functions import point_to_xy, Point
 from configs.plot_params import plotter_params
 from static_loading.triaxial_static_loading_test_model import ModelTriaxialStaticLoad, ModelTriaxialStaticLoadSoilTest
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, ModelTriaxialCyclicLoadingSoilTest
@@ -371,16 +370,16 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
 if __name__ == '__main__':
 
     #file = "C:/Users/Пользователь/Desktop/Тест/Циклическое трехосное нагружение/Архив/19-1/Косинусное значение напряжения.txt"
-    file = "C:/Users/Пользователь/Desktop/Опыты/Опыт Виброползучесть/Песок 1/E50/Косинусное значения напряжения.txt"
+    """file = "C:/Users/Пользователь/Desktop/Опыты/Опыт Виброползучесть/Песок 1/E50/Косинусное значения напряжения.txt"
     file2 = "C:/Users/Пользователь/Desktop/Тест/Девиаторное нагружение/Архив/10-2/0.2.log"
     a = ModelVibrationCreep()
     a.set_static_test_path(file2)
     a.set_dynamic_test_path(file)
-    a.plotter()
+    a.plotter()"""
 
 
 
-    """a = ModelVibrationCreepSoilTest()
+    a = ModelVibrationCreepSoilTest()
     static_params = {'E': 50000.0, 'sigma_3': 100, 'sigma_1': 300, 'c': 0.025, 'fi': 45, 'qf': 593.8965363, 'K0': 0.5,
              'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
              'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
@@ -400,5 +399,5 @@ if __name__ == '__main__':
                                "frequency": [1, 5 ,10], "n_fail": None, "Mcsr": 100}
 
     a.set_dynamic_test_params(dynamic_params)
-    a.plotter()"""
+    a.plotter()
 
