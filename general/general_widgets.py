@@ -10,7 +10,7 @@ import os
 from openpyxl import load_workbook
 
 from general.excel_functions import read_customer, read_dynemic, read_mech, resave_xls_to_xlsx, cfe_test_type_columns, \
-    k0_test_type_column, column_fullness_test, read_phiz, read_dynemic_rc
+    k0_test_type_column, column_fullness_test, read_phiz, read_dynemic_rc, read_vibration_creep
 from general.initial_tables import Table_Castomer, Table_Physical_Properties, Table_Vertical
 
 class Float_Slider(QSlider):  # получает на входе размер окна. Если передать 0 то размер автоматический
@@ -536,6 +536,52 @@ class Statment_Triaxial_Static(Statment_Initial):
 
 class Statment_Vibration_Creep(Statment_Triaxial_Static):
     """Класс обработки файла задания для трехосника"""
+    def __init__(self):
+        data_test_parameters = {"static_equipment": ["Выберите прибор статики", "ЛИГА", "АСИС ГТ.2.0.5", "GIESA UP-25a"],
+                                "dynamic_equipment": ["Выберите прибор динамики", "Wille", "Геотек"],
+                                "k0_condition": ["Тип определения K0",
+                                                 "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
+                                                 "K0: K0 из ведомости", "K0: Формула Джекки",
+                                                 "K0: K0 = 1"]}
+
+        headlines = [
+            "Лаб. ном.",
+            "Модуль деформации E, кПа",
+            "Сцепление с, МПа",
+            "Угол внутреннего трения, град",
+            "Максимальный девиатор qf, кПа",
+            "Обжимающее давление sigma3, кПа",
+            "Касательное напряжение, кПа",
+            "Kd, д.е.",
+            "Частота, Гц",
+            "K0",
+            "Коэффициент Пуассона",
+            "Коэффициент консолидации Cv",
+            "Коэффициент вторичной консолидации Ca",
+            "Угол дилатансии, град",
+            "OCR",
+            "Показатель степени жесткости"]
+
+        fill_keys = [
+            "lab_number",
+            "E",
+            "c",
+            "fi",
+            "qf",
+            "sigma_3",
+            "t",
+            "Kd",
+            "frequency",
+            "K0",
+            "poisson",
+            "Cv",
+            "Ca",
+            "dilatancy",
+            "OCR",
+            "m"]
+
+        super().__init__(data_test_parameters, headlines, fill_keys, identification_column="HW")
+
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path != "":
@@ -544,7 +590,7 @@ class Statment_Vibration_Creep(Statment_Triaxial_Static):
 
             combo_params = self.open_line.get_data()
 
-            columns_marker_cfe = cfe_test_type_columns(combo_params["test_type"])
+            columns_marker_cfe = cfe_test_type_columns("Виброползучесть")
             columns_marker_k0 = k0_test_type_column(combo_params["k0_condition"])
             marker, customer = read_customer(wb)
 
@@ -553,8 +599,14 @@ class Statment_Vibration_Creep(Statment_Triaxial_Static):
                 assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker_cfe)),\
                     "Заполните K0 в ведомости"
                 assert not marker, "Проверьте "# + customer
-                assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=["BC", "BD", "BE"]), \
+                assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=cfe_test_type_columns("Виброползучесть")), \
                     "Заполните данные консолидации('CC', 'CF')"
+                assert column_fullness_test(wb, columns=["AO"],
+                                            initial_columns=cfe_test_type_columns("Виброползучесть")), \
+                    "Заполните амплитуду ('AO')"
+                assert column_fullness_test(wb, columns=["CB"],
+                                            initial_columns=cfe_test_type_columns("Виброползучесть")), \
+                    "Заполните амплитуду ('CB')"
 
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
@@ -563,8 +615,7 @@ class Statment_Vibration_Creep(Statment_Triaxial_Static):
                 self.data_customer = customer
 
                 self.data_physical = read_phiz(wb)
-                self.data_test = read_mech(wb, combo_params["k0_condition"], combo_params["test_type"])
-
+                self.data_test = read_vibration_creep(wb, combo_params["k0_condition"])
                 key1 = [i for i in self.data_physical]
                 key2 = [j for j in self.data_test]
 
@@ -572,49 +623,20 @@ class Statment_Vibration_Creep(Statment_Triaxial_Static):
                     if i not in key2:
                         self.data_physical.pop(i)
 
-            if len(self.data_test) < 1:
-                QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
-                                    + str(columns_marker_cfe), QMessageBox.Ok)
-            else:
-                self.customer_line.set_data(self.data_customer)
-                self.table_physical_properties.set_data(self.data_physical)
-                self.statment_directory.emit(self.path)
-                self.open_line.text_file_path.setText(self.path)
-
-            """if column_fullness_test(wb, columns=columns_marker_k0, initial_columns=columns_marker_cfe) is not True:
-                Info("Заполните K0 в ведомости", "", False)
-            elif column_fullness_test(wb, columns=["CC", "CF"], initial_columns=["BC", "BD", "BE"]) is not True:
-                Info("Заполните данные консолидации('CC', 'CF')", "", False)
-            elif marker:
-                Info("Проверьте " + customer, "", False)
-            else:
-
-                self.data_customer = customer
-
-                self.customer_line.set_data(self.data_customer)
-
-                self.data_physical = read_phiz(wb)
-                self.data_test = read_mech(wb, combo_params["k0_condition"], combo_params["test_type"])
-
-                key1 = [i for i in self.data_physical]
-                key2 = [j for j in self.data_test]
-
-                for i in key1:
-                    if i not in key2:
-                        self.data_physical.pop(i)
-
-                self.table_physical_properties.set_data(self.data_physical)
-                self.statment_directory.emit(self.path)
-                self.open_line.text_file_path.setText(self.path)
-                #self.table_vertical = Table_Vertical(self.headlines, self.fill_keys)"""
+                if len(self.data_test) < 1:
+                    QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
+                                        + str(columns_marker_cfe), QMessageBox.Ok)
+                else:
+                    self.customer_line.set_data(self.data_customer)
+                    self.table_physical_properties.set_data(self.data_physical)
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
 
     def table_physical_properties_click(self, lab_number):
         data = self.data_test[lab_number]
         self.lab_number = lab_number
         data["lab_number"] = lab_number
         data["data_phiz"] = self.data_physical[lab_number]
-        type = self.open_line.get_data()
-        data["test_type"] = type["test_type"]
         self.table_vertical.set_data(data)
         self.signal.emit(data)
 
@@ -792,7 +814,7 @@ if __name__ == "__main__":
                                              "K0: K0 = 1"]
                             }
 
-    Dialog = Statment_Triaxial_Cyclic(data_test_parameters, headlines, fill_keys)
+    Dialog = Statment_Vibration_Creep()
     Dialog.show()
     app.setStyle('Fusion')
 

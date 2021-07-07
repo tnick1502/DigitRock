@@ -917,7 +917,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                                         deviation=0.003,
                                                         Ca=-self._test_params.Ca,
                                                         E=self._test_params.E,
-                                                        sigma_3=self._test_params.Cv,
+                                                        sigma_3=self._test_params.sigma_3,
                                                         max_time=self._draw_params.max_time,
                                                         approximate=True)
         elif random == 2:
@@ -926,7 +926,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                                         deviation=0.003,
                                                         Ca=-self._test_params.Ca,
                                                         E=self._test_params.E,
-                                                        sigma_3=self._test_params.Cv,
+                                                        sigma_3=self._test_params.sigma_3,
                                                         max_time=self._draw_params.max_time,
                                                         approximate=False)
         elif random == 3:
@@ -935,7 +935,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                                         deviation=0.003,
                                                         Ca=-self._test_params.Ca,
                                                         E=self._test_params.E,
-                                                        sigma_3=self._test_params.Cv,
+                                                        sigma_3=self._test_params.sigma_3,
                                                         max_time=self._draw_params.max_time)
 
         self._test_data.cell_volume_strain = self._test_data.pore_volume_strain + \

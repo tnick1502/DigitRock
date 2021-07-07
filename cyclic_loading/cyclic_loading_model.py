@@ -576,7 +576,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         # Наклон графика деформации
         if self._test_params.cycles_count > 300:
-            self._draw_params.strain_slant = np.random.uniform(220, 300)
+            self._draw_params.strain_slant = np.random.uniform(0.3, 0.5)*self._test_params.cycles_count
         else:
             self._draw_params.strain_slant = self._test_params.cycles_count * np.random.uniform(0.7, 0.8)
 
@@ -620,7 +620,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             fail_cycle = self._test_params.cycles_count
 
             if fail_cycle > 300:
-                self._draw_params.strain_slant = np.random.uniform(200, 150)
+                self._draw_params.strain_slant = np.random.uniform(0.5, 0.6)*self._test_params.cycles_count
             else:
                 self._draw_params.strain_slant = fail_cycle*np.random.uniform(0.5, 0.6)
 
@@ -678,8 +678,10 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                                                  E_module,
                                                                                                  self._draw_params.strain_max,
                                                                                                  self._draw_params.strain_slant,
-                                                                                                 phase_shift=np.random.uniform(0.505, 0.52)*np.pi)
+                                                                                                 phase_shift=np.random.uniform(0.501, 0.505)*np.pi)
             self._test_data.strain -= self._test_data.strain[0]
+            plt.plot(self._test_data.cycles[len(self._load_stage.strain):], self._test_data.strain)
+            plt.show()
             self._test_data.strain = np.hstack((self._load_stage.strain,
                                                 self._test_data.strain + self._load_stage.strain[-1]))
 
@@ -809,16 +811,16 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator/2, self.critical_line)
         if Msf:
-            if self._test_params.reverse:
-                if self._test_params.Kd:
-                    if self._test_params.Kd >= 0.9:
-                        k = 1
-                    else:
-                        k = 1 + (1 - self._test_params.Kd)*1.2
-                    self._draw_params.strain_max = self._load_stage.strain[-1] * (1-self._test_params.Kd) * k
+            if self._test_params.Kd:
+                if self._test_params.Kd >= 0.9:
+                    k = 1
                 else:
-                    self._draw_params.strain_max = np.random.uniform(0, 0.005)
-                    self._draw_params.strain_max *=\
+                    k = 1 + (1 - self._test_params.Kd) * 1.2
+                self._draw_params.strain_max = self._load_stage.strain[-1] * (1 - self._test_params.Kd) * k
+
+            elif self._test_params.reverse:
+                self._draw_params.strain_max = np.random.uniform(0, 0.005)
+                self._draw_params.strain_max *=\
                         ModelTriaxialCyclicLoadingSoilTest.influence_of_frequency_on_strain(self._test_params.frequency)
             else:
                 self._draw_params.strain_max = np.random.uniform(0.05 / Msf, 0.06 / Msf)

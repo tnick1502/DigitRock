@@ -42,14 +42,6 @@ class VibrationCreepUI(QWidget):
         """Создание данных интерфейса"""
         self.layout = QVBoxLayout()
 
-        self.buttons_group = QGroupBox("Функции обработки")
-        self.buttons_group_layout = QHBoxLayout()
-        self.buttons_group.setLayout(self.buttons_group_layout)
-        self.static_test_button = QPushButton("Обработчик статики")
-        self.buttons_group_layout.addWidget(self.static_test_button)
-        self.layout.addWidget(self.buttons_group)
-
-
         self.main_graph = QGroupBox("График виброползучести")
         self.main_graph_layout = QVBoxLayout()
         self.main_graph.setLayout(self.main_graph_layout)
@@ -69,7 +61,7 @@ class VibrationCreepUI(QWidget):
         self.vibration_creep_frame_layout.setSpacing(0)
         self.vibration_creep_frame_layout.addWidget(self.vibration_creep_canvas)
         self.vibration_creep_toolbar = NavigationToolbar(self.vibration_creep_canvas, self)
-        self.dyn_phase_ax = self.vibration_creep_figure.add_axes([0.65, 0.25, .3, .5])
+        self.dyn_phase_ax = self.vibration_creep_figure.add_axes([0.4, 0.25, .3, .5])
         self.dyn_phase_ax.set_title('Динамическая нагрузка', fontsize=10)
         self.dyn_phase_ax.set_xticks([])
         self.dyn_phase_ax.set_yticks([])
@@ -132,10 +124,10 @@ class VibrationCreepUI(QWidget):
             self.dyn_phase_ax.set_xlim(*lims)
 
             for i, color in zip(range(len(plot_data["strain_dynamic"])), ["tomato", "forestgreen", "purple"]):
-                plot_data["creep_curve"][i] -= plot_data["creep_curve"][i][0]
+                #plot_data["creep_curve"][i][1] = 0
                 self.vibration_creep_ax.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5,
                                  linewidth=1.5,
-                                 color=color, label="Kd = " + str(result_data[i]["Kd"]) + "; frequency = " + str(
+                                 color=color, label="Kd = " + str(result_data[i]["Kd"]) + "; f = " + str(
                         plot_data["frequency"][i]) + " Hz")
 
                 self.dyn_phase_ax.plot(plot_data["creep_curve"][i],
@@ -195,45 +187,34 @@ class VibrationCreepOpenTestUI(QWidget):
     def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__()
-
-        self.test_data = None
-
         self._create_UI()
 
     def _create_UI(self):
-        self.layout = QHBoxLayout(self)
+        self.layout = QVBoxLayout()
 
-        self.box = QGroupBox("Файл прибора")
-        self.box_layout = QHBoxLayout()
-        self.box.setLayout(self.box_layout)
+        self.buttons_group = QGroupBox("Файлы приборов")
+        self.buttons_group_layout = QHBoxLayout()
+        self.buttons_group.setLayout(self.buttons_group_layout)
 
-        self.button_open = QPushButton("Открыть файл прибора")
-        #self.button_open.setFixedHeight(50)
+        self.line_1_layout = QHBoxLayout()
+        self.open_static_test_button = QPushButton("Файл статики")
+        self.static_test_line = QLineEdit()
+        self.static_test_line.setDisabled(True)
+        self.line_1_layout.addWidget(self.open_static_test_button)
+        self.line_1_layout.addWidget(self.static_test_line)
 
-        self.file_path = QLineEdit()
-        font = self.file_path.font()
-        font.setPointSize(50)
-        #self.file_path.setDisabled(True)
-        #self.file_path.setFixedHeight(50)
-        self.box_layout.addWidget(self.button_open)
-        self.box_layout.addWidget(self.file_path)
+        self.line_2_layout = QHBoxLayout()
+        self.open_dynamic_test_button = QPushButton("Файл динамики")
+        self.dynamic_test_line = QLineEdit()
+        self.dynamic_test_line.setDisabled(True)
+        self.line_2_layout.addWidget(self.open_dynamic_test_button)
+        self.line_2_layout.addWidget(self.dynamic_test_line)
 
-        self.table = Table()
-        self.table.setFixedHeight(50)
-        self.table.setFixedWidth(400)
-        self.table.set_data([["𝜎1, кПа", "𝜎3, кПа", "τ, кПа",
-                             "Частота, Гц"], ["", "", "", ""]], resize="Stretch")
-        self.box_layout.addWidget(self.table)
+        self.buttons_group_layout.addLayout(self.line_1_layout)
+        self.buttons_group_layout.addLayout(self.line_2_layout)
+        self.layout.addWidget(self.buttons_group)
 
-        self.button_plot = QPushButton("Построить график")
-        self.button_plot.setFixedHeight(50)
-        self.box_layout.addWidget(self.button_plot)
-
-        self.button_screen = QPushButton("Скриншот")
-        self.button_screen.setFixedHeight(50)
-        self.box_layout.addWidget(self.button_screen)
-
-        self.layout.addWidget(self.box)
+        self.setLayout(self.layout)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
     def set_file_path(self, path):
@@ -265,6 +246,6 @@ if __name__ == '__main__':
 
     # Now use a palette to switch to dark colors:
     app.setStyle('Fusion')
-    ex = VibrationCreepUI()
+    ex = VibrationCreepOpenTestUI()
     ex.show()
     sys.exit(app.exec_())

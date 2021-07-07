@@ -549,7 +549,7 @@ if __name__ == "__main__":
     t_test = 5*(((0.848 * 3.8 * 3.8) / (4 * Cv)))
 
 
-    x1, y1 = function_consalidation2(Cv=Cv, Ca=-0.01, point_time=1/2, max_time=t_test, deviation=0.003)
+    x1, y1 = function_consalidation2(Cv=Cv, Ca=-0.01, point_time=1/2, max_time=t_test*100, deviation=0.003)
     #x2, y2 = function_consalidation(Cv=Cv, Ca=-0.01,  point_time=1/2, max_time=t_test,deviation=0.003, approximate=True)
     #x3, y3 = function_consalidation_without_Cv(Cv=Cv, Ca=-0.01, point_time=1,deviation=0.003, max_time=t_test)
 

@@ -174,7 +174,6 @@ class ModelVibrationCreep:
         ax_dyn_phase.set_xlim(*lims)
 
         for i, color in zip(range(len(plot_data["strain_dynamic"])), ["tomato", "forestgreen", "purple"]):
-            plot_data["creep_curve"][i][1] = 0
             ax_deviator.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5, linewidth=1.5,
                              color=color, label="Kd = " + str(result_data[i]["Kd"]) + "; frequency = " + str(plot_data["frequency"][i]) + " Hz")
 
@@ -342,15 +341,14 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
         # Массив результатов с данными TestResultModelVibrationCreep
         self._test_results = []
 
-    def set_static_test_params(self, params):
+    def set_test_params(self, params):
         self._static_test_data.set_test_params(params)
 
-    def set_dynamic_test_params(self, params):
         for frequency, Kd in zip(params["frequency"], params["Kd"]):
             self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest(False))
             params_for_current_test = copy.copy(params)
             params_for_current_test["frequency"] = frequency
-            params_for_current_test["E"] = params_for_current_test["E"]*np.random.uniform(0.9, 1.1)
+            params_for_current_test["E"] = params_for_current_test["E"]*np.random.uniform(0.85, 1.1)
             params_for_current_test["Kd"] = Kd
             self._dynamic_tests_models[-1].set_test_params(params_for_current_test)
 
@@ -385,19 +383,10 @@ if __name__ == '__main__':
              'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
                                                                                              'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73, 'r': '-', 'rd': '-', 'n': '-', 'e': '-', 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-', 'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0, '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-', '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type':
                          'Трёхосное сжатие (E)'}
-    a.set_static_test_params(static_params)
-    dynamic_params = {'E': 50000.0, 'c': 0.023, 'fi': 45, 'qf': 593.8965363, "Kd": [0.86, 0.8, 0.7],
-     'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8, 'Ip': 17.9,
-     'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 100,
-     'MSF': '2.82', 'I': 2.0, 'sigma1': 100, 't': 10, 'sigma3': 100, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
-     'data_phiz': {'borehole': 'rete', 'depth': 9.8,
-                   'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'ige': '-',
-                   'rs': 2.73, 'r': 1.76, 'rd': 1.23, 'n': 55.0, 'e': 1.22, 'W': 43.4, 'Sr': 0.97, 'Wl': 47.1,
-                   'Wp': 29.2, 'Ip': 17.9, 'Il': 0.79, 'Ir': 6.8, 'str_index': 'l', 'gw_depth': 0.0, 'build_press': '-',
-                   'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 0.1,
-                   '005': 17.7, '001': 35.0, '0002': 18.8, '0000': 28.1, 'Nop': 20}, 'test_type': 'Сейсморазжижение',
-                               "frequency": [1, 5 ,10], "n_fail": None, "Mcsr": 100}
+    #a.set_static_test_params(static_params)
+    dynamic_params = {'E': 11300.0, 'sigma_3': 100, 'sigma_1': 271.6, 'c': 0.028, 'fi': 45, 'qf': 171.6, 'K0': 0.8, 'Cv': 0.135, 'Ca': 1e-05, 'poisson': 0.36, 'build_press': '-', 'pit_depth': '-', 'Eur': '-', 'dilatancy': 12.85, 'OCR': 1, 'm': None, 'N': 4343, 'n_fail': None, 'Mcsr': 343.0873024216593, 't': 5.0, 'sigma3': 100, 'sigma1': 271.6, 'frequency': [52.0], 'Kd': [0.71], 'lab_number': '1-1', 'data_phiz': {'borehole': 'rtrth', 'depth': 0.4, 'name': 'Суглинок легкий тугопластичный пылеватый с примесью органического вещества', 'ige': '-', 'rs': 3.0, 'r': 2.0, 'rd': 1.58, 'n': 41.2, 'e': 0.7, 'W': 25.8, 'Sr': 0.99, 'Wl': 31.4, 'Wp': 20.9, 'Ip': 10.5, 'Il': 0.46, 'Ir': 4.4, 'str_index': 'l', 'gw_depth': 0.0, 'build_press': '-', 'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 3.3, '005': 23.2, '001': 44.5, '0002': 13.3, '0000': 15.4, 'Nop': 7, 'flag': False}}
 
-    a.set_dynamic_test_params(dynamic_params)
+
+    a.set_test_params(dynamic_params)
     a.plotter()
 
