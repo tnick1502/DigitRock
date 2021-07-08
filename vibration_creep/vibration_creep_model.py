@@ -221,13 +221,13 @@ class ModelVibrationCreep:
         if self._static_test_data.get_test_results()["qf"] is not None:
             for dyn_test, test_result in zip(self._dynamic_tests, self._test_results):
                 if dyn_test.strain_dynamic is not None:
-                    qf = self._static_test_data.get_test_results()["qf"]
+                    #qf = self._static_test_data.get_test_results()["qf"]
 
                     test_result.E50, test_result.E50d = \
                         ModelVibrationCreep.find_E50d(dyn_test.strain_dynamic, dyn_test.deviator_dynamic,
                                                       start_dynamic=dyn_test.start_dynamic)
                     test_result.Kd = np.round((test_result.E50d / test_result.E50), 2)
-
+                    #print("data from test processing", len(dyn_test.time), len(dyn_test.deviator_dynamic))
                     dyn_test.time, dyn_test.creep_curve = \
                         ModelVibrationCreep.plastic_creep(dyn_test.strain_dynamic, dyn_test.deviator_dynamic,
                                                           dyn_test.time, start_dynamic=dyn_test.start_dynamic)
@@ -262,7 +262,6 @@ class ModelVibrationCreep:
         time_creep = []
 
         nul = np.mean(deviator)  # (max(Y)+min(Y))/2
-
         for i in range(0, len(deviator) - 1):
             if deviator[i] > nul and deviator[i + 1] < nul:
                 creep.append(strain[i])
@@ -342,10 +341,17 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
         self._test_results = []
 
     def set_test_params(self, params):
+        self._dynamic_tests = []
+        self._dynamic_tests_models = []
+        self._test_results = []
+
         self._static_test_data.set_test_params(params)
 
+        #print("length before = ", len(self._dynamic_tests))
+
         for frequency, Kd in zip(params["frequency"], params["Kd"]):
-            self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest(False))
+            self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest())
+            #print("length now = ", len(self._dynamic_tests))
             params_for_current_test = copy.copy(params)
             params_for_current_test["frequency"] = frequency
             params_for_current_test["E"] = params_for_current_test["E"]*np.random.uniform(0.85, 1.1)
@@ -361,6 +367,8 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
             self._dynamic_tests[-1].frequency = test_data["frequency"]
             self._dynamic_tests[-1].start_dynamic = test_data["start_dynamic"]
             self._test_results.append(TestResultModelVibrationCreep())
+
+        #print("length after = ", len(self._dynamic_tests))
 
         self._test_processing()
 
