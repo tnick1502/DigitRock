@@ -5,6 +5,7 @@ import sys
 
 from vibration_creep.vibration_creep_widgets_UI import VibrationCreepUI
 from vibration_creep.vibration_creep_model import ModelVibrationCreepSoilTest
+from general.initial_tables import Table_Vertical
 
 class VibrationCreepSoilTestWidget(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -16,10 +17,52 @@ class VibrationCreepSoilTestWidget(QWidget):
         self._create_Ui()
 
     def _create_Ui(self):
-        self.layout = QVBoxLayout(self)
-        self.layout_1 = QHBoxLayout(self)
+        self.layout = QHBoxLayout(self)
+        self.layout_1 = QVBoxLayout(self)
         self.test_widget = VibrationCreepUI()
+
+        headlines = [
+            "Лаб. ном.",
+            "Модуль деформации E, кПа",
+            "Сцепление с, МПа",
+            "Угол внутреннего трения, град",
+            "Максимальный девиатор qf, кПа",
+            "Обжимающее давление sigma3, кПа",
+            "Касательное напряжение, кПа",
+            "Kd, д.е.",
+            "Частота, Гц",
+            "K0",
+            "Коэффициент Пуассона",
+            "Коэффициент консолидации Cv",
+            "Коэффициент вторичной консолидации Ca",
+            "Угол дилатансии, град",
+            "OCR",
+            "Показатель степени жесткости"]
+        fill_keys = [
+            "lab_number",
+            "E",
+            "c",
+            "fi",
+            "qf",
+            "sigma_3",
+            "t",
+            "Kd",
+            "frequency",
+            "K0",
+            "poisson",
+            "Cv",
+            "Ca",
+            "dilatancy",
+            "OCR",
+            "m"]
+        self.identification = Table_Vertical(headlines, fill_keys)
+        self.identification.setFixedWidth(350)
+        self.identification.setFixedHeight(700)
         self.layout.addWidget(self.test_widget)
+        self.layout_1.addWidget(self.identification)
+        self.layout_1.addStretch(-1)
+        self.layout_1.addLayout(self.layout_1)
+        self.layout.addLayout(self.layout_1)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
     def set_test_params(self, params):

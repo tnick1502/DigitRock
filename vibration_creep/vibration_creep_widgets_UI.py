@@ -34,7 +34,7 @@ class VibrationCreepUI(QWidget):
         """Определяем основную структуру данных"""
         super().__init__()
         # Параметры построения для всех графиков
-        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.2, "wspace": 0.12, "hspace": 0.07, "left": 0.1}
+        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.15, "wspace": 0.12, "hspace": 0.07, "left": 0.1}
 
         self._create_UI()
 
@@ -61,7 +61,7 @@ class VibrationCreepUI(QWidget):
         self.vibration_creep_frame_layout.setSpacing(0)
         self.vibration_creep_frame_layout.addWidget(self.vibration_creep_canvas)
         self.vibration_creep_toolbar = NavigationToolbar(self.vibration_creep_canvas, self)
-        self.dyn_phase_ax = self.vibration_creep_figure.add_axes([0.4, 0.25, .3, .5])
+        self.dyn_phase_ax = self.vibration_creep_figure.add_axes([0.67, 0.18, .3, .5])
         self.dyn_phase_ax.set_title('Динамическая нагрузка', fontsize=10)
         self.dyn_phase_ax.set_xticks([])
         self.dyn_phase_ax.set_yticks([])
@@ -98,9 +98,8 @@ class VibrationCreepUI(QWidget):
         self.setLayout(self.layout)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
-    def plot(self, plot_data, result_data ):
+    def plot(self, plot_data, result_data):
         """Построение графиков опыта"""
-
         self.vibration_creep_ax.clear()
         self.vibration_creep_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
         self.vibration_creep_ax.set_ylabel("Девиатор q, кПА")
@@ -116,39 +115,35 @@ class VibrationCreepUI(QWidget):
         self.creep_ax.set_xscale("log")
 
 
-        try:
-            self.vibration_creep_ax.plot(plot_data["strain"], plot_data["deviator"], alpha=0.5, linewidth=2)
-            lims = [min([min(x) for x in plot_data["creep_curve"]]),
-                    max([max(x) for x in plot_data["creep_curve"]]) * 1.05]
+        self.vibration_creep_ax.plot(plot_data["strain"], plot_data["deviator"], alpha=0.5, linewidth=2)
+        lims = [min([min(x) for x in plot_data["creep_curve"]]),
+                max([max(x) for x in plot_data["creep_curve"]]) * 1.05]
 
-            self.dyn_phase_ax.set_xlim(*lims)
+        self.dyn_phase_ax.set_xlim(*lims)
+        for i, color in zip(range(len(plot_data["strain_dynamic"])), ["tomato", "forestgreen", "purple"]):
+            #plot_data["creep_curve"][i][1] = 0
+            self.vibration_creep_ax.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5,
+                             linewidth=1.5,
+                             color=color, label="Kd = " + str(result_data[i]["Kd"]) + "; f = " + str(
+                    plot_data["frequency"][i]) + " Hz")
 
-            for i, color in zip(range(len(plot_data["strain_dynamic"])), ["tomato", "forestgreen", "purple"]):
-                #plot_data["creep_curve"][i][1] = 0
-                self.vibration_creep_ax.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5,
-                                 linewidth=1.5,
-                                 color=color, label="Kd = " + str(result_data[i]["Kd"]) + "; f = " + str(
-                        plot_data["frequency"][i]) + " Hz")
+            self.dyn_phase_ax.plot(plot_data["creep_curve"][i],
+                              plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) -
+                                                               len(plot_data["creep_curve"][i]):],
+                              alpha=0.5, linewidth=1, color=color)
 
-                self.dyn_phase_ax.plot(plot_data["creep_curve"][i],
-                                  plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) -
-                                                                   len(plot_data["creep_curve"][i]):],
-                                  alpha=0.5, linewidth=1, color=color)
+            if plot_data["creep_curve"][i] is not None:
+                self.creep_ax.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,
+                              label="frequency = " + str(plot_data["frequency"][i]) + " Hz")
 
-                if plot_data["creep_curve"][i] is not None:
-                    self.creep_ax.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,
-                                  label="frequency = " + str(plot_data["frequency"][i]) + " Hz")
+            if plot_data["E50d"][i]:
+                self.vibration_creep_ax.plot(*plot_data["E50d"][i], **plotter_params["black_dotted_line"])
 
-                if plot_data["E50d"][i]:
-                    self.vibration_creep_ax.plot(*plot_data["E50d"][i], **plotter_params["black_dotted_line"])
 
-                # if plot_data["E50"][i]:
-                # ax_deviator.plot(*plot_data["E50"][i], **plotter_params["black_dotted_line"])
-
-                self.vibration_creep_ax.legend()
-                self.creep_ax.legend()
-        except:
-            pass
+            self.vibration_creep_ax.legend(loc="lower right", bbox_to_anchor=(0.65, 0))
+            self.creep_ax.legend()
+            self.vibration_creep_canvas.draw()
+            self.creep_canvas.draw()
 
     def save_canvas(self):
         """Сохранение графиков для передачи в отчет"""

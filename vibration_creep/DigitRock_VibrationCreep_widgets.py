@@ -18,7 +18,6 @@ from vibration_creep.vibration_creep_widgets import VibrationCreepSoilTestWidget
 from general.general_widgets import Statment_Vibration_Creep
 from general.reports import report_triaxial_cyclic
 
-
 class VibrationCreepSoilTest_Tab(QWidget):
     def __init__(self):
         """Определяем основную структуру данных"""
@@ -46,15 +45,18 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
 
         self.tab_widget = QTabWidget()
         self.tab_1 = Statment_Vibration_Creep()
-        self.tab_2 = VibrationCreepSoilTest_Tab()
+        self.tab_2 = VibrationCreepSoilTestWidget()
+        self.tab_3 = Save_Dir("Циклическое трехосное нагружение")
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Обработка")
+        self.tab_widget.addTab(self.tab_3, "Сохранение отчета")
         self.layout.addWidget(self.tab_widget)
 
-        self.tab_1.statment_directory[str].connect(self.tab_2.save_widget.get_save_directory)
-        self.tab_1.signal[object].connect(self.tab_2.widget.set_test_params)
-        self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
+        self.tab_1.statment_directory[str].connect(self.tab_3.get_save_directory)
+        #self.tab_1.signal[object].connect(self.tab_2.widget.identification.set_data)
+        self.tab_1.signal[object].connect(self.tab_2.set_test_params)
+        self.tab_3.save_button.clicked.connect(self.save_report)
 
     def identification_set_data(self, data):
         self.tab_2.widget.identification.set_data(data)
@@ -144,7 +146,7 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
-        except TypeError as error:
+        except TypeError:
             QMessageBox.critical(self, "Ошибка", "Не загружен файл опыта", QMessageBox.Ok)
 
         except PermissionError:
