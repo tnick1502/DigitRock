@@ -52,17 +52,19 @@ class VibrationCreepUI(QWidget):
         self.vibration_creep_frame_layout = QVBoxLayout()
         self.vibration_creep_frame.setLayout(self.vibration_creep_frame_layout)
         self.vibration_creep_figure = plt.figure()
-        self.vibration_creep_figure.subplots_adjust(right= 0.98, top = 0.98, bottom = 0.05, wspace = 0.05, hspace = 0, left= 0.1)
+        self.vibration_creep_figure.subplots_adjust(right=0.98, top=0.98, bottom=0.05, wspace=0.05, hspace=0, left=0.1)
         self.vibration_creep_canvas = FigureCanvas(self.vibration_creep_figure)
         self.vibration_creep_ax = self.vibration_creep_figure.add_subplot(2, 1, 1)
-        self.vibration_creep_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.vibration_creep_ax.set_xlabel("Деформация $ε_1$, д.е.")
         self.vibration_creep_ax.set_ylabel("Девиатор q, кПА")
         self.vibration_creep_canvas.draw()
         self.vibration_creep_frame_layout.setSpacing(0)
         self.vibration_creep_frame_layout.addWidget(self.vibration_creep_canvas)
         self.vibration_creep_toolbar = NavigationToolbar(self.vibration_creep_canvas, self)
-        self.dyn_phase_ax = self.vibration_creep_figure.add_subplot(4, 1, 4)#self.vibration_creep_figure.add_axes([0.67, 0.18, .3, .5])
+        self.dyn_phase_ax = self.vibration_creep_figure.add_subplot(3, 1, 3)#self.vibration_creep_figure.add_axes([0.67, 0.18, .3, .5])
         #self.dyn_phase_ax.set_title('Динамическая нагрузка', fontsize=10)
+        self.dyn_phase_ax.set_xlabel("Деформация $ε_1$, д.е.")
+        self.dyn_phase_ax.set_ylabel("Девиатор q, кПА")
         self.dyn_phase_ax.set_xticks([])
         self.dyn_phase_ax.set_yticks([])
         self.vibration_creep_frame_layout.addWidget(self.vibration_creep_toolbar)
@@ -75,6 +77,7 @@ class VibrationCreepUI(QWidget):
         self.creep_graph.setLayout(self.creep_graph_layout)
 
         self.creep_frame = QFrame()
+        self.creep_frame.setFixedHeight(300)
         self.creep_frame.setFrameShape(QFrame.StyledPanel)
         self.creep_frame.setStyleSheet('background: #ffffff')
         self.creep_frame_layout = QVBoxLayout()
@@ -84,7 +87,7 @@ class VibrationCreepUI(QWidget):
         self.creep_canvas = FigureCanvas(self.creep_figure)
         self.creep_ax = self.creep_figure.add_subplot(111)
         self.creep_ax.set_xlabel("Время")
-        self.creep_ax.set_ylabel("Относительная деформация $ε_1$, д.е.")
+        self.creep_ax.set_ylabel("Деформация $ε_1$, д.е.")
         self.creep_ax.set_xscale("log")
         self.creep_canvas.draw()
         self.creep_frame_layout.setSpacing(0)
@@ -101,11 +104,13 @@ class VibrationCreepUI(QWidget):
     def plot(self, plot_data, result_data):
         """Построение графиков опыта"""
         self.vibration_creep_ax.clear()
-        self.vibration_creep_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.vibration_creep_ax.set_xlabel("Деформация $ε_1$, д.е.")
         self.vibration_creep_ax.set_ylabel("Девиатор q, кПА")
 
         self.dyn_phase_ax.clear()
-        self.dyn_phase_ax.set_title('Динамическая нагрузка', fontsize=10)
+        #self.dyn_phase_ax.set_title('Динамическая нагрузка')#, fontsize=10)
+        self.dyn_phase_ax.set_xlabel("Деформация $ε_1$, д.е.")
+        self.dyn_phase_ax.set_ylabel("Девиатор q, кПА")
         self.dyn_phase_ax.set_xticks([])
         self.dyn_phase_ax.set_yticks([])
 
@@ -130,7 +135,7 @@ class VibrationCreepUI(QWidget):
             self.dyn_phase_ax.plot(plot_data["creep_curve"][i],
                               plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) -
                                                                len(plot_data["creep_curve"][i]):],
-                              alpha=0.5, linewidth=1, color=color)
+                              alpha=0.5, linewidth=1.5, color=color)
 
             if plot_data["creep_curve"][i] is not None:
                 self.creep_ax.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,

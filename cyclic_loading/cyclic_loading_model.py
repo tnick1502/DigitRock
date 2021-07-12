@@ -218,6 +218,7 @@ class ModelTriaxialCyclicLoading:
             self._test_result.conclusion = "Грунт склонен к разжижению"
         elif self._test_result.fail_cycle_criterion_strain:
             self._test_result.conclusion = "Грунт динамически неустойчив"
+            self._test_result.fail_cycle = None
         else:
             self._test_result.conclusion = "Грунт не склонен к разжижению"
 

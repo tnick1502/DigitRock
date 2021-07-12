@@ -821,7 +821,7 @@ def write_to_excel(path, Lab, params):
     iLab_new = 0
     iLab = 0
 
-    for i in range(7, len(wb['Лист1']['A'])):
+    for i in range(7, len(wb['Лист1']['A']) + 5):
 
         if str(wb["Лист1"]['IG' + str(i)].value) == Lab:
             iLab_new = i
