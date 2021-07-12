@@ -18,6 +18,7 @@ from cyclic_loading.cyclic_loading_widgets import CyclicLoadingProcessingWidget,
 from general.general_widgets import Statment_Triaxial_Cyclic
 from general.reports import report_triaxial_cyclic
 from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI_PredictLiquefaction
+from general.excel_functions import write_to_excel, write_cyclic_result_to_excel
 
 class TriaxialCyclicLoading_Identification_Tab(QWidget):
     """Класс создания окна для обработки файла ведомости"""
@@ -294,7 +295,8 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
 
             params = self.tab_2.widget._model.get_test_params()
 
-            test_parameter = {'sigma3': params["sigma_3"], 'sigma1': params["sigma_1"], 'tau': params["t"], 'K0': 1,
+            test_parameter = {'sigma3': params["sigma_3"], 'sigma1': params["sigma_1"], 'tau': params["t"],
+                              'K0': params["K0"],
                               'frequency': params["frequency"],
                               "Hw": params.get("Hw", None),
                               "rw": params.get("rw", None),
@@ -311,6 +313,9 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
             results = {'PPRmax': test_result['max_PPR'], 'EPSmax': test_result['max_strain'],
                        'res': test_result['conclusion'], 'nc': check_none(test_result['fail_cycle'])}
 
+            if test_result["fail_cycle"] is None:
+                test_result["fail_cycle"] = "-"
+
             report_triaxial_cyclic(file_name, self.tab_1.table.get_customer_data(),
                                    self.tab_1.table.get_physical_data(),
                                    self.tab_1.table.get_lab_number(),
@@ -325,6 +330,18 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
 
             shutil.copy(file_name, self.tab_2.save_widget.report_directory + "/" + file_name[len(file_name) -
                                                                                  file_name[::-1].index("/"):])
+
+            write_to_excel(self.tab_1.table.path, self.tab_1.table.get_lab_number(),
+                           (round(test_result['max_strain'], 3),
+                            round(test_result['max_PPR'], 3),
+                            round(params["sigma_1"], 3),
+                            round(params["sigma_3"], 3),
+                            round(params["t"], 3),
+                            round(params["K0"], 3),
+                            params["frequency"],
+                            test_result["fail_cycle"]))
+
+
             QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
             self.tab_1.table.table_physical_properties.set_row_color(
                 self.tab_1.table.table_physical_properties.get_row_by_lab_naumber(self.tab_1.table.get_lab_number()))
@@ -333,7 +350,7 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
         except TypeError as error:
-            QMessageBox.critical(self, "Ошибка", "Не загружен файл опыта", QMessageBox.Ok)
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)

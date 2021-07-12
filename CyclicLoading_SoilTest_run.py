@@ -2,6 +2,7 @@ import os
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from cyclic_loading.DigitRock_Cyclic_widgets import DigitRock_CyclicLoadingSoilTest
+
 class App(QMainWindow):  # Окно и виджеты на нем
 
     def __init__(self):
@@ -14,7 +15,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.setWindowTitle(self.title)
         #self.setWindowIcon(QIcon(icons + "ST.png"))
         self.setGeometry(self.left, self.top, 1200, 900)
-        self.showFullScreen()
+        #self.showFullScreen()
 
         self.table_widget = DigitRock_CyclicLoadingSoilTest()
         self.setCentralWidget(self.table_widget)

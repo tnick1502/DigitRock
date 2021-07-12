@@ -437,6 +437,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         except KeyError:
             self._test_params.qf = 0
             self._test_params.deviator_start_value = self._test_params.sigma_1 - self._test_params.sigma_3
+            self._test_params.Kd = None
 
         #self._test_params.n_fail, Mcsr = define_fail_cycle(self._test_params.cycles_count, self._test_params.sigma_1,
                                        #self._test_params.t, self._test_params.physical["Ip"],
