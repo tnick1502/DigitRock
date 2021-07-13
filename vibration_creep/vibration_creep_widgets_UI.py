@@ -83,7 +83,7 @@ class VibrationCreepUI(QWidget):
         self.creep_frame_layout = QVBoxLayout()
         self.creep_frame.setLayout(self.creep_frame_layout)
         self.creep_figure = plt.figure()
-        self.creep_figure.subplots_adjust(**self.plot_params)
+        self.creep_figure.subplots_adjust(right=0.98, top=0.98, bottom=0.19, wspace=0.05, hspace=0, left=0.1)
         self.creep_canvas = FigureCanvas(self.creep_figure)
         self.creep_ax = self.creep_figure.add_subplot(111)
         self.creep_ax.set_xlabel("Время")
@@ -145,7 +145,7 @@ class VibrationCreepUI(QWidget):
                 self.vibration_creep_ax.plot(*plot_data["E50d"][i], **plotter_params["black_dotted_line"])
 
 
-            self.vibration_creep_ax.legend(loc="lower right", bbox_to_anchor=(0.65, 0))
+            self.vibration_creep_ax.legend(loc="lower right")#, bbox_to_anchor=(0.65, 0))
             self.creep_ax.legend()
             self.vibration_creep_canvas.draw()
             self.creep_canvas.draw()

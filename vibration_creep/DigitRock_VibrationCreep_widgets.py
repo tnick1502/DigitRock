@@ -54,7 +54,7 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
         self.layout.addWidget(self.tab_widget)
 
         self.tab_1.statment_directory[str].connect(self.tab_3.get_save_directory)
-        #self.tab_1.signal[object].connect(self.tab_2.widget.identification.set_data)
+        self.tab_1.signal[object].connect(self.tab_2.identification.set_data)
         self.tab_1.signal[object].connect(self.tab_2.set_test_params)
         self.tab_3.save_button.clicked.connect(self.save_report)
 

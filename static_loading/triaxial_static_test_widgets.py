@@ -431,7 +431,6 @@ class TriaxialStaticWidgetSoilTest(TriaxialStaticWidget):
        # self.set_test_params()
     def set_model(self, model):
         self._model = model
-
         self.deviator_loading_sliders.set_sliders_params(self._model.get_deviator_loading_draw_params())
         self.consolidation_sliders.set_sliders_params(self._model.get_consolidation_draw_params())
 

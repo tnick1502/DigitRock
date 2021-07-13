@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMessageBox, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMessageBox, QHBoxLayout, QTabWidget
 import numpy as np
 import sys
 
@@ -6,6 +6,8 @@ import sys
 from vibration_creep.vibration_creep_widgets_UI import VibrationCreepUI
 from vibration_creep.vibration_creep_model import ModelVibrationCreepSoilTest
 from general.initial_tables import Table_Vertical
+from static_loading.triaxial_static_test_widgets import TriaxialStaticWidgetSoilTest
+
 
 class VibrationCreepSoilTestWidget(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -16,11 +18,17 @@ class VibrationCreepSoilTestWidget(QWidget):
         self._model = ModelVibrationCreepSoilTest()
         self._create_Ui()
 
-    def _create_Ui(self):
-        self.layout = QHBoxLayout(self)
-        self.layout_1 = QVBoxLayout(self)
-        self.test_widget = VibrationCreepUI()
+        self.static_widget.deviator_loading_sliders.signal[object].connect(self._static_model_change)
+        self.static_widget.consolidation_sliders.signal[object].connect(self._static_model_change)
 
+    def _create_Ui(self):
+
+        self.layout = QHBoxLayout(self)
+        self.widget = QWidget()
+        self.layout_dynamic_widget = QHBoxLayout()
+        self.widget.setLayout(self.layout_dynamic_widget)
+        self.dynamic_widget = VibrationCreepUI()
+        self.layout_1 = QVBoxLayout()
         headlines = [
             "Лаб. ном.",
             "Модуль деформации E, кПа",
@@ -58,23 +66,43 @@ class VibrationCreepSoilTestWidget(QWidget):
         self.identification = Table_Vertical(headlines, fill_keys)
         self.identification.setFixedWidth(350)
         self.identification.setFixedHeight(700)
-        self.layout.addWidget(self.test_widget)
+        self.layout_dynamic_widget.addWidget(self.dynamic_widget)
         self.layout_1.addWidget(self.identification)
         self.layout_1.addStretch(-1)
         self.layout_1.addLayout(self.layout_1)
-        self.layout.addLayout(self.layout_1)
-        self.layout.setContentsMargins(5, 5, 5, 5)
+        self.layout_dynamic_widget.addLayout(self.layout_1)
+        self.layout_dynamic_widget.setContentsMargins(5, 5, 5, 5)
+
+        self.static_widget = TriaxialStaticWidgetSoilTest()
+
+        self.tab_widget = QTabWidget()
+        self.tab_1 = self.static_widget
+        self.tab_2 = self.widget
+
+        self.tab_widget.addTab(self.tab_1, "Статический опыт")
+        self.tab_widget.addTab(self.tab_2, "Динамический опыт")
+        self.layout.addWidget(self.tab_widget)
 
     def set_test_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
         self._model.set_test_params(params)
+        self.static_widget.set_model(self._model._static_test_data)
+        self.static_widget.item_identification.set_data(params)
+        self._plot()
+
+    def _static_model_change(self):
+        self._model._static_test_data = self.static_widget._model
         self._plot()
 
     def _plot(self):
         """Построение графиков опыта"""
         plots = self._model.get_plot_data()
         res = self._model.get_test_results()
-        self.test_widget.plot(plots, res)
+        self.dynamic_widget.plot(plots, res)
+
+        #plots = self._model._static_test_data.get_plot_data()
+        #res = self._model._static_test_data.get_test_results()
+        #self.static_widget.plot(plots, res)
 
 
 if __name__ == '__main__':
