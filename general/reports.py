@@ -483,6 +483,54 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, 177 * mm)
 
+def test_mode_vibration_creep(canvas, test_parameter):
+
+    d = test_parameter["d"]
+    h = test_parameter["h"]
+
+    frequency = ""
+    for i in range(len(test_parameter["frequency"])):
+        frequency += zap(test_parameter["frequency"][i], 1) + "; "
+
+    t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
+               ["Режим испытания:", "", test_parameter["Rezhim"], "", "", "", "", "", ""],
+               ["Оборудование:", "", test_parameter["Oborudovanie"]],
+               ["Параметры образца:", "", "Высота, мм:", zap(str(h).replace(".", ","), 2), "Диаметр, мм:", zap(str(d).replace(".", ","), 2),
+                Paragraph('''<p>Частота, Гц</p>''', LeftStyle), frequency],
+                #Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(str(ro).replace(".", ","), 2)],
+               [Paragraph('''<p>σ'<sub rise="2.5" size="6">3</sub>, кПа:</p>''', LeftStyle), "", zap(test_parameter["sigma_3"], 0),
+                "", "", "",
+                Paragraph('''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''', LeftStyle), "", zap(test_parameter["t"], 0)]],
+              colWidths=19.444444* mm, rowHeights=4 * mm)
+
+    t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                ('SPAN', (0, 1), (1, 1)), ('SPAN', (2, 1), (-1, 1)),
+                ('SPAN', (0, 2), (1, 2)), ('SPAN', (2, 2), (-1, 2)),
+                ('SPAN', (0, 3), (1, 3)), ('SPAN', (7, 3), (8, 3)), ('SPAN', (7, 3), (8, 3)),
+                ('SPAN', (0, 4), (1, 4)), ('SPAN', (3, 4), (4, 4)), ('SPAN', (6, 4), (7, 4)),
+                ('SPAN', (0, 5), (1, 5)), ('SPAN', (3, 5), (4, 5)), ('SPAN', (6, 5), (7, 5)),
+                ('SPAN', (0, 6), (1, 6)), ('SPAN', (3, 6), (4, 6)), ('SPAN', (6, 6), (7, 6)),
+                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("BACKGROUND", (0, 1), (1, 1), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, 2), (1, 2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, 3), (1, 3), HexColor(0xebebeb)),
+                ("BACKGROUND", (2, 3), (2, 3), HexColor(0xebebeb)),
+                ("BACKGROUND", (4, 3), (4, 3), HexColor(0xebebeb)),
+                ("BACKGROUND", (6, 3), (6, 3), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, 4), (1, 6), HexColor(0xebebeb)),
+                ("BACKGROUND", (3, 4), (4, 6), HexColor(0xebebeb)),
+                ("BACKGROUND", (6, 4), (7, 6), HexColor(0xebebeb)),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, 185 * mm)
+
 def test_mode_consolidation(canvas, Data):
 
 
@@ -662,7 +710,6 @@ def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8):
 
 def result_table_consolidation(canvas, Res, pick, scale = 0.8):
 
-
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
@@ -787,10 +834,10 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, 118 * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 36 * mm, 68 * mm)
+        renderPDF.draw(b, canvas, 36 * mm, 64 * mm)
     except AttributeError:
         print("lksdfksdfkmsdf")
 
@@ -803,7 +850,6 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
 
     tableData.append([Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["qf"], ""])
     tableData.append([Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["E50"], ""])
-    tableData.append([Paragraph('''<p>Коэффициент пуассона µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (-1, r)),
@@ -816,14 +862,11 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
                 ('SPAN', (-2, -2), (-1, -2)),
                 #('SPAN', (2, -2), (3, -2)),
                 #('SPAN', (4, -2), (5, -2)),
-                ('SPAN', (0, -3), (3, -3)),
-                ('SPAN', (-2, -3), (-1, -3)),
                 #('SPAN', (2, -3), (3, -3)),
               #  ('SPAN', (4, -3), (5, -3)),
 
                 ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
                 ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -837,7 +880,6 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
 
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (42-(( r-30)*4)) * mm)
-
 
 def result_table_CF(canvas, Res, pick, scale = 0.8):
 
@@ -1241,6 +1283,40 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     test_mode_consolidation(canvas, test_parameter)
 
     result_table_CF(canvas, res, [picks[2], picks[3]])
+
+    canvas.save()
+
+def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    canvas = Canvas(Name, pagesize=A4)
+
+    code = SaveCode(version)
+
+    main_frame(canvas, path, Data_customer, code, "1/2")
+    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "-ВП")
+
+    parameter_table(canvas, Data_phiz, Lab)
+    test_mode_vibration_creep(canvas, test_parameter)
+
+    #result_table_deviator(canvas, res, [picks[0], picks[1]])
+
+    canvas.showPage()
+
+    main_frame(canvas, path, Data_customer, code, "2/2")
+    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "-ВП")
+
+    parameter_table(canvas, Data_phiz, Lab)
+    test_mode_vibration_creep(canvas, test_parameter)
+
+    result_table_deviator(canvas, res_static, [picks[1], picks[2]])
 
     canvas.save()
 

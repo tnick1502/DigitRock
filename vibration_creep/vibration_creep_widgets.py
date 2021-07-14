@@ -20,6 +20,7 @@ class VibrationCreepSoilTestWidget(QWidget):
 
         self.static_widget.deviator_loading_sliders.signal[object].connect(self._static_model_change)
         self.static_widget.consolidation_sliders.signal[object].connect(self._static_model_change)
+        self.static_widget.deviator_loading.slider_cut.sliderMoved.connect(self._static_model_change)
 
     def _create_Ui(self):
 
@@ -89,6 +90,12 @@ class VibrationCreepSoilTestWidget(QWidget):
         self.static_widget.set_model(self._model._static_test_data)
         self.static_widget.item_identification.set_data(params)
         self._plot()
+
+    def get_test_params(self):
+        return self._model.get_test_params()
+
+    def get_test_results(self):
+        return self._model.get_test_results()
 
     def _static_model_change(self):
         self._model._static_test_data = self.static_widget._model

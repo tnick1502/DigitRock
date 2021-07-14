@@ -1499,8 +1499,8 @@ if __name__ == '__main__':
     # plt.xlabel("Относительная вертикальная деформация $ε_1$, д.е")
     # plt.ylabel("Девиатор q, кПа")
     #    x1, y1, x_log1, y_0_xca1, point_time1 = function_consalidation(Cv=0.379, point_time=1, reverse=1, last_point=250)
-    x, y, z, z1, loop, a = curve(2169, 56000, xc=0.1, x2=0.24, qf2=1163, qocr=0, m_given=0.35,
-                              amount_points=500, angle_of_dilatacy=6)
+    x, y, z, z1, loop, a = curve(595, 28000, xc=0.07, x2=0.16, qf2=500, qocr=0, m_given=0.35,
+                              amount_points=50, angle_of_dilatacy=6)
 
     i, = np.where(x >= max(x) - 0.15)
     x = x[i[0]:] - x[i[0]]
@@ -1509,10 +1509,15 @@ if __name__ == '__main__':
     y = y[i[0]:] - y[i[0]]
     pu, d = find_puasson_dilatancy(x, y, z)
     d = d[0]
-    E, q = find_E50_qf(x, y)
-    print(E)
+    y += np.random.uniform(-1, 1, len(y))
+    #E, q = find_E50_qf(x, y)
+    #print(E)
     i = np.argmax(y)
-    plt.plot(x, z, label="Статическая кривая")
+    y -= y[0]
+    plt.plot(x, y)
+    with open("C:/Users/Пользователь/Desktop/test_file.txt", "w") as file:
+        for i in range(len(y)):
+            file.write(str(np.round(-x[i], 4)).replace(".", ",") + "\t" + str(np.round(y[i], 4)).replace(".", ",")+ "\n")
     # plt.plot(x, z1, label="Статическая кривая")
     # plt.scatter(x[i], z[i], color = "red")
     # plt.plot(ff, f(ff), linewidth =3, label = "Динамическая кривая")

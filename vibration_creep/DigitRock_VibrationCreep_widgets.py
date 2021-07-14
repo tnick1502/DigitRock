@@ -16,25 +16,7 @@ import shutil
 from general.save_widget import Save_Dir
 from vibration_creep.vibration_creep_widgets import VibrationCreepSoilTestWidget
 from general.general_widgets import Statment_Vibration_Creep
-from general.reports import report_triaxial_cyclic
-
-class VibrationCreepSoilTest_Tab(QWidget):
-    def __init__(self):
-        """Определяем основную структуру данных"""
-        super().__init__()
-        self.widget = VibrationCreepSoilTestWidget()
-        self._create_UI()
-
-    def _create_UI(self):
-        self.layout = QVBoxLayout(self)
-        self.save_widget = Save_Dir("Циклическое трехосное нагружение")
-        self.save_widget.setFixedHeight(240)
-        self.widget.layout.addWidget(self.save_widget)
-        self.layout.addWidget(self.widget)
-        self.layout.setContentsMargins(5, 5, 5, 5)
-
-    def set_params(self, params):
-        self.widget.set_test_params(params)
+from general.reports import report_VibrationCreep
 
 class DigitRock_VibrationCreepSoilTest(QWidget):
     def __init__(self):
@@ -46,7 +28,7 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = Statment_Vibration_Creep()
         self.tab_2 = VibrationCreepSoilTestWidget()
-        self.tab_3 = Save_Dir("Циклическое трехосное нагружение")
+        self.tab_3 = Save_Dir("Виброползучесть")
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Обработка")
@@ -62,95 +44,48 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
         self.tab_2.widget.identification.set_data(data)
 
     def save_report(self):
+        #try:
+            #assert self.tab_1.get_lab_number(), "Не выбран образец в ведомости"
+        params = self.tab_2.get_test_params()
 
-        def check_none(s):
-            if s:
-                return str(s)
-            else:
-                return "-"
+        test_parameter = {'sigma_3': params["sigma_3"], 't': params["t"],
+                          'frequency': params["frequency"],
+                          'Rezhim': 'Изотропная реконсолидация, девиаторное циклическое нагружение',
+                          'Oborudovanie': "Wille Geotechnik 13-HG/020:001", 'h': 76, 'd': 38}
 
-        test_parameter = self.tab_1.table.open_line.get_data()
+        test_result = self.tab_2.get_test_results()
 
-        try:
-            assert self.tab_1.table.get_lab_number(), "Не выбран образец в ведомости"
-            len(self.tab_2.widget._model._test_data.cycles)
-            # assert self.tab_2.test_processing_widget.model._test_data.cycles, "Не выбран файл прибора"
-            file_path_name = self.tab_1.table.get_lab_number().replace("/", "-").replace("*", "")
+        save = self.tab_3.arhive_directory + "/" + self.tab_1.get_lab_number()
+        save = save.replace("*", "")
+        if os.path.isdir(save):
+            pass
+        else:
+            os.mkdir(save)
 
-            save = self.tab_2.save_widget.arhive_directory + "/" + file_path_name
-            save = save.replace("*", "")
+        Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-ВП" + ".pdf"
 
-            if os.path.isdir(save):
-                pass
-            else:
-                os.mkdir(save)
+        pick_deviator, _ = self.tab_2.static_widget.deviator_loading.save_canvas()
 
-            if test_parameter["test_type"] == "Сейсморазжижение":
-                file_name = save + "/" + "Отчет " + file_path_name + "-С" + ".pdf"
-            elif test_parameter["test_type"] == "Штормовое разжижение":
-                file_name = save + "/" + "Отчет " + file_path_name + "-ШТ" + ".pdf"
+        pick_vc, pick_c = self.tab_2.dynamic_widget.save_canvas()
 
-            """if test_parameter['equipment'] == "Прибор: Геотек":
-                test_time = geoteck_text_file(save, self.Powerf, self.Arrays["PPR"], self.Arrays["Strain"], self.Data["sigma3"], self.Data["frequency"], self.Data["Points"], self.file.Data_phiz[self.file.Lab]["Ip"])
+        report_VibrationCreep(save + "/" + Name, self.tab_1.get_customer_data(),
+                             self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
+                             os.getcwd() + "/project_data/",
+                             test_parameter, self.tab_2.static_widget.get_test_results(),
+                             [pick_vc, pick_deviator, pick_c], 1.1)
 
-            elif test_parameter['equipment'] == "Прибор: Вилли":
-                test_time = willie_text_file(save, self.Powerf, self.Arrays["PPR"], self.Arrays["Strain"], self.Data["frequency"], self.Data["N"], self.Data["Points"],
-                                 self.Setpoint, self.Arrays["cell_press"], self.file.Data_phiz[self.file.Lab]["Ip"])"""
+        shutil.copy(save + "/" + Name, self.tab_3.report_directory + "/" + Name)
+        QMessageBox.about(self, "Сообщение", "Успешно сохранено")
 
-            if test_parameter['equipment'] == 'Прибор: Вилли':
-                equipment = "Wille Geotechnik 13-HG/020:001"
-                h = 76
-                d = 38
-            else:
-                equipment = "Динамический стабилометр Геотек"
-                h = 100
-                d = 50
-
-            params = self.tab_2.widget._model.get_test_params()
-
-            test_parameter = {'sigma3': params["sigma_3"], 'sigma1': params["sigma_1"], 'tau': params["t"], 'K0': 1,
-                              'frequency': params["frequency"],
-                              "Hw": params.get("Hw", None),
-                              "rw": params.get("rw", None),
-                              'I': self.tab_1.table.get_test_data()[self.tab_1.table.get_lab_number()]["balnost"],
-                              'M': self.tab_1.table.get_test_data()[self.tab_1.table.get_lab_number()]["magnituda"],
-                              'MSF': self.tab_1.table.get_test_data()[self.tab_1.table.get_lab_number()]['MSF'],
-                              'rd': self.tab_1.table.get_test_data()[self.tab_1.table.get_lab_number()]['rd'],
-                              'type': test_parameter["test_type"],
-                              'Rezhim': 'Анизотропная реконсолидация, девиаторное циклическое нагружение',
-                              'Oborudovanie': equipment, 'h': h, 'd': d}
-
-            test_result = self.tab_2.widget._model.get_test_results()
-
-            results = {'PPRmax': test_result['max_PPR'], 'EPSmax': test_result['max_strain'],
-                       'res': test_result['conclusion'], 'nc': check_none(test_result['fail_cycle'])}
-
-            report_triaxial_cyclic(file_name, self.tab_1.table.get_customer_data(),
-                                   self.tab_1.table.get_physical_data(),
-                                   self.tab_1.table.get_lab_number(),
-                                   os.getcwd() + "/project_data/", test_parameter, results,
-                                   self.tab_2.widget.test_widget.save_canvas(), __version__)
-
-            try:
-                if test_parameter['Oborudovanie'] == "Wille Geotechnik 13-HG/020:001":
-                    self.tab_2.generate_log_file(save)
-            except AttributeError:
-                pass
-
-            shutil.copy(file_name, self.tab_2.save_widget.report_directory + "/" + file_name[len(file_name) -
-                                                                                 file_name[::-1].index("/"):])
-            QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
-            self.tab_1.table.table_physical_properties.set_row_color(
-                self.tab_1.table.table_physical_properties.get_row_by_lab_naumber(self.tab_1.table.get_lab_number()))
-
-        except AssertionError as error:
+        """except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
-        except TypeError:
-            QMessageBox.critical(self, "Ошибка", "Не загружен файл опыта", QMessageBox.Ok)
+        except TypeError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
         except PermissionError:
-            QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
+            QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)"""
+
 
 
 if __name__ == '__main__':

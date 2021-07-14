@@ -789,16 +789,16 @@ def write_cyclic_result_to_excel(path, Lab, Eps, PPR):
 
     wb.save(path)
 
-def set_cell_data(path, cell, value, sheet="Лист1", color=None)->None:
+def set_cell_data(path: str, cell: str, value, sheet: str="Лист1", color=None)->None:
     """Запись в файл excel
-    :argument
-        lab_number->str: Лабораторный номер
-        column->str: Ячейка для записи
-        value: Записываемое значение
-        sheet->str: Лист для записи
-        color->str: цвет шрифта записи
-    :return
-        None"""
+
+    :argument path: путь к файлу excel в формате xlsx
+    :argument cell: Ячейка ('A1')
+    :argument value: Записываемое значение
+    :argument sheet: Лист для записи
+    :argument color: цвет шрифта записи
+
+    :return None"""
 
     wb = load_workbook(path)
     wb[sheet][cell] = value
@@ -863,7 +863,6 @@ def write_rc_result_to_excel(path, Lab, G0, gam):
         wb["Лист1"]['HK' + str(iLab)] = gam
 
     wb.save(path)
-
 
 
 def get_column_letters(last_letter='IV'):

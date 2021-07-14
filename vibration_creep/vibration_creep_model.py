@@ -340,10 +340,14 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
         # Массив результатов с данными TestResultModelVibrationCreep
         self._test_results = []
 
+        self._test_params = None
+
     def set_test_params(self, params):
         self._dynamic_tests = []
         self._dynamic_tests_models = []
         self._test_results = []
+
+        self._test_params = params
 
         self._static_test_data.set_test_params(params)
 
@@ -371,6 +375,12 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
         #print("length after = ", len(self._dynamic_tests))
 
         self._test_processing()
+
+    def get_test_params(self):
+        return self._test_params
+
+    def get_test_results(self):
+        return [self._test_results[i].get_dict() for i in range(len(self._test_results))]
 
 
 if __name__ == '__main__':

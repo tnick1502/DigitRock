@@ -123,7 +123,6 @@ class VibrationCreepUI(QWidget):
         self.vibration_creep_ax.plot(plot_data["strain"], plot_data["deviator"], alpha=0.5, linewidth=2)
         lims = [min([min(x) for x in plot_data["creep_curve"]]),
                 max([max(x) for x in plot_data["creep_curve"]]) * 1.05]
-
         self.dyn_phase_ax.set_xlim(*lims)
         for i, color in zip(range(len(plot_data["strain_dynamic"])), ["tomato", "forestgreen", "purple"]):
             #plot_data["creep_curve"][i][1] = 0
@@ -171,13 +170,13 @@ class VibrationCreepUI(QWidget):
             canvas.draw()
             return path
 
-        return [save(fig, can, size, ax, "svg") for fig, can, size, ax in zip([self.deviator_figure,
-                                                                               self.volume_strain_figure],
-                                                                              [self.deviator_canvas,
-                                                                               self.volume_strain_canvas],
-                                                                              [[6, 2], [6, 2]],
-                                                                              [self.deviator_ax,
-                                                                               self.volume_strain_ax])]
+        return [save(fig, can, size, ax, "svg") for fig, can, size, ax in zip([self.vibration_creep_figure,
+                                                                               self.creep_figure],
+                                                                              [self.vibration_creep_canvas,
+                                                                               self.creep_canvas],
+                                                                              [[6, 4], [6, 2]],
+                                                                              [self.vibration_creep_ax,
+                                                                               self.creep_ax])]
 
 class VibrationCreepOpenTestUI(QWidget):
     """Виджет для открытия файла прибора и определения параметров опыта"""

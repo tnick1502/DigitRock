@@ -612,31 +612,31 @@ class Statment_Vibration_Creep(Statment_Triaxial_Static):
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
             else:
-                self.data_customer = customer
+                self._data_customer = customer
 
-                self.data_physical = read_phiz(wb)
-                self.data_test = read_vibration_creep(wb, combo_params["k0_condition"])
-                key1 = [i for i in self.data_physical]
-                key2 = [j for j in self.data_test]
+                self._data_physical = read_phiz(wb)
+                self._data_test = read_vibration_creep(wb, combo_params["k0_condition"])
+                key1 = [i for i in self._data_physical]
+                key2 = [j for j in self._data_test]
 
                 for i in key1:
                     if i not in key2:
-                        self.data_physical.pop(i)
+                        self._data_physical.pop(i)
 
-                if len(self.data_test) < 1:
+                if len(self._data_test) < 1:
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
                                         + str(columns_marker_cfe), QMessageBox.Ok)
                 else:
-                    self.customer_line.set_data(self.data_customer)
-                    self.table_physical_properties.set_data(self.data_physical)
+                    self.customer_line.set_data(self._data_customer)
+                    self.table_physical_properties.set_data(self._data_physical)
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
 
     def table_physical_properties_click(self, lab_number):
-        data = self.data_test[lab_number]
-        self.lab_number = lab_number
+        data = self._data_test[lab_number]
+        self._lab_number = lab_number
         data["lab_number"] = lab_number
-        data["data_phiz"] = self.data_physical[lab_number]
+        data["data_phiz"] = self._data_physical[lab_number]
         self.table_vertical.set_data(data)
         self.signal.emit(data)
 
