@@ -549,7 +549,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             self._modeling_strain()
         self._test_processing()
 
-    def generate_log_file(self, file_path):
+    def generate_log_file(self, file_path, post_name=None):
         ModelTriaxialCyclicLoadingSoilTest.generate_willie_log_file(file_path, self._test_data.deviator,
                                                                     self._test_data.PPR, self._test_data.strain,
                                                                     self._test_params.frequency,
@@ -557,7 +557,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                     self._test_params.points_in_cycle,
                                                                     self._test_data.setpoint,
                                                                     self._test_data.cell_pressure,
-                                                                    self._test_params.physical["Ip"])
+                                                                    self._test_params.physical["Ip"],
+                                                                    post_name)
 
     def _define_draw_params(self, Mcsr=None):
         """Определение параметров отрисовки графиков.
@@ -1139,10 +1140,13 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         return time, strain, deviator
 
     @staticmethod
-    def generate_willie_log_file(file_path, deviator, PPR, strain, frequency, N, points_in_cycle, setpoint, cell_pressure, Ip):
+    def generate_willie_log_file(file_path, deviator, PPR, strain, frequency, N, points_in_cycle, setpoint, cell_pressure, Ip, post_name=None):
         """Сохранение текстового файла формата Willie.
                     Передается папка, массивы"""
-        p = os.path.join(file_path, "Косинусное значение напряжения.txt")
+        if post_name:
+            p = os.path.join(file_path, "Косинусное значение напряжения " + post_name + ".txt")
+        else:
+            p = os.path.join(file_path, "Косинусное значение напряжения.txt")
 
         def wille_number_format(x):
             x = "{:.6f}".format(x)

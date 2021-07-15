@@ -53,8 +53,6 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
                           'Rezhim': 'Изотропная реконсолидация, девиаторное циклическое нагружение',
                           'Oborudovanie': "Wille Geotechnik 13-HG/020:001", 'h': 76, 'd': 38}
 
-        test_result = self.tab_2.get_test_results()
-
         save = self.tab_3.arhive_directory + "/" + self.tab_1.get_lab_number()
         save = save.replace("*", "")
         if os.path.isdir(save):
@@ -64,14 +62,17 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
 
         Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-ВП" + ".pdf"
 
-        pick_deviator, _ = self.tab_2.static_widget.deviator_loading.save_canvas()
+        pick_deviator, _ = self.tab_2.static_widget.deviator_loading.save_canvas(format=["jpg", "svg"])
 
         pick_vc, pick_c = self.tab_2.dynamic_widget.save_canvas()
+
+        self.tab_2.save_log(save)
+        self.tab_2.static_widget._model.save_log_file(save + "/" + "Test.1.log")
 
         report_VibrationCreep(save + "/" + Name, self.tab_1.get_customer_data(),
                              self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
                              os.getcwd() + "/project_data/",
-                             test_parameter, self.tab_2.static_widget.get_test_results(),
+                             test_parameter, self.tab_2.static_widget.get_test_results(), self.tab_2.get_test_results(),
                              [pick_vc, pick_deviator, pick_c], 1.1)
 
         shutil.copy(save + "/" + Name, self.tab_3.report_directory + "/" + Name)

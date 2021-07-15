@@ -101,6 +101,9 @@ class VibrationCreepSoilTestWidget(QWidget):
         self._model._static_test_data = self.static_widget._model
         self._plot()
 
+    def save_log(self, directory):
+        self._model.save_log(directory)
+
     def _plot(self):
         """Построение графиков опыта"""
         plots = self._model.get_plot_data()

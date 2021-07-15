@@ -382,6 +382,10 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
     def get_test_results(self):
         return [self._test_results[i].get_dict() for i in range(len(self._test_results))]
 
+    def save_log(self, directory):
+        for i in range(len(self._dynamic_tests_models)):
+            self._dynamic_tests_models[i].generate_log_file(directory, post_name="f = " + str(self._test_params["frequency"][i]))
+
 
 if __name__ == '__main__':
 

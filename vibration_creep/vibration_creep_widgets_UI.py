@@ -170,13 +170,14 @@ class VibrationCreepUI(QWidget):
             canvas.draw()
             return path
 
-        return [save(fig, can, size, ax, "svg") for fig, can, size, ax in zip([self.vibration_creep_figure,
+        return [save(fig, can, size, ax, format) for fig, can, size, ax, format in zip([self.vibration_creep_figure,
                                                                                self.creep_figure],
                                                                               [self.vibration_creep_canvas,
                                                                                self.creep_canvas],
                                                                               [[6, 4], [6, 2]],
                                                                               [self.vibration_creep_ax,
-                                                                               self.creep_ax])]
+                                                                               self.creep_ax],
+                                                                                      ["jpg", "jpg"])]
 
 class VibrationCreepOpenTestUI(QWidget):
     """Виджет для открытия файла прибора и определения параметров опыта"""

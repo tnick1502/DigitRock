@@ -440,7 +440,7 @@ class Statment_Triaxial_Static(Statment_Initial):
     """Класс обработки файла задания для трехосника"""
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
-        if self.path != "":
+        if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
             try:
                 wb = load_workbook(self.path, data_only=True)
 
@@ -584,7 +584,7 @@ class Statment_Vibration_Creep(Statment_Triaxial_Static):
 
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
-        if self.path != "":
+        if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
 
             wb = load_workbook(self.path, data_only=True)
 

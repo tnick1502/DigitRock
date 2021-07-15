@@ -210,7 +210,6 @@ def read_phiz_line(wb, i, identification_column=None, identification_color=None)
             flag = False
     else:
         flag = False
-
     data = {"borehole" : str(wb["Лист1"]['B' + str(i)].value),
                          "depth": float_from_excel(wb["Лист1"]['C' + str(i)].value),
                          "name": float_from_excel(wb["Лист1"]['D' + str(i)].value),
