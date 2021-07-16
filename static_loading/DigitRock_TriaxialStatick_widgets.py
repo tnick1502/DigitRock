@@ -199,7 +199,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
             test_parameter = {"equipment": read_parameters["equipment"],
                               "mode": "КД, девиаторное нагружение в кинематическом режиме",
                               "sigma_3": self.tab_2._model.deviator_loading._test_params.sigma_3,
-                              "K0": "1",
+                              "K0": self.tab_2._model.consolidation._test_params.K0,
                               "h": 76,
                               "d": 38}
 

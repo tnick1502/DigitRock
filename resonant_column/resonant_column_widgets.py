@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMessageBox, QDialog, QHBoxLayout, \
     QTableWidget, QGroupBox, QPushButton, QComboBox, QDialogButtonBox, QHeaderView, QTableWidgetItem
-from PyQt5 import QtGui, Qt
+from PyQt5 import QtGui
+from PyQt5.QtCore import Qt
 import numpy as np
 import sys
 
@@ -116,7 +117,7 @@ class PredictRCTestResults(QDialog):
         self._data_customer = data_customer
         self.setWindowTitle("Резонансная колонка")
         self.create_IU()
-        self._original_keys_for_sort = list(data.keys())
+        #self._original_keys_for_sort = list(data.keys())
         #self._set_data(data)
         #self.table_castomer.set_data(data_customer)
         self.resize(1400, 800)
@@ -157,7 +158,6 @@ class PredictRCTestResults(QDialog):
         self.layout.addLayout(self.l)
 
         self.table = QTableWidget()
-        self.table.itemChanged.connect(self._set_color_on_fail)
         self._clear_table()
         self.layout.addWidget(self.table)
 
@@ -179,23 +179,21 @@ class PredictRCTestResults(QDialog):
         while (self.table.rowCount() > 0):
             self.table.removeRow(0)
 
-        self.table.setColumnCount(9)
+        self.table.setColumnCount(6)
         #self.table.horizontalHeader().resizeSection(1, 200)
         self.table.setHorizontalHeaderLabels(
-            ["Лаб. ном.", "Глубина", "Наименование грунта", "𝜎3, кПа", "𝜎1, кПа", "t, кПа", "CSR", "Число циклов",
-             "Nfail"])
+            ["Лаб. ном.", "Глубина", "Наименование грунта", "Реф.давление, МПа", "G0, МПА",
+             "𝛾07, д.е."])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setDefaultSectionSize(25)
-        self.table.horizontalHeader().setMinimumSectionSize(100)
+        self.table.horizontalHeader().setMinimumSectionSize(150)
 
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(7, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(8, QHeaderView.Fixed)
+
 
     def _fill_table(self):
         """Заполнение таблицы параметрами"""

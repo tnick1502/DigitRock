@@ -10,6 +10,7 @@ from scipy.optimize import differential_evolution
 import warnings
 import sys
 import json
+from typing import List, Dict
 import copy
 from dataclasses import dataclass
 from scipy.optimize import fsolve
@@ -39,6 +40,7 @@ class AttrDict:
 
 @dataclass
 class Point:
+    """Класс реализует точку с координатами x, y"""
     x: float
     y: float
 
@@ -57,8 +59,8 @@ class Point:
         """Метод для реализации поведения if Point:. озвращант False если одна из координат не заполнена"""
         return None not in self.__dict__.values()
 
-def point_to_xy(*args):
-    """Функция принимает точки и разбивает их на массивы x, y"""
+def point_to_xy(*args) -> List:
+    """Функция принимает точки класса Point и разбивает их на массивы x, y"""
     x = []
     y = []
     for arg in args:
@@ -666,6 +668,62 @@ def define_type_ground(data_gran, Ip, Ir):
         type_ground = 8  # Глина
 
     return type_ground
+
+# Refactor
+def define_kf(physical_data: Dict) -> float:
+    """ Определение коэффициента фильтрации по грансоставу
+        :param data: словарь с физическими параметрами
+        :return: kf в метрах/сутки"""
+
+    try:
+        e = float(physical_data["e"])
+    except TypeError:
+        e = np.ramdom.uniform(0.5, 0.8)
+
+    # Функция сигмоиды для kf
+    kf_sigmoida = lambda e, e_min, e_max, k_min, k_max: sigmoida(e, amplitude=(k_max - k_min) / 2,
+                                                                 x_indent=e_min + (e_max - e_min) / 2,
+                                                                 y_indent=k_min + (k_max - k_min) / 2,
+                                                                 shape=e_max - e_min)
+    # Общие параметры сигмоиды
+    e_borders = [0.3, 1.2]
+
+    # Зависимость коэффициента фильтрации от грансостава
+    dependence_kf_on_type_ground = {
+        1: kf_sigmoida(e, *e_borders, 8.64, 86.4),
+        2: kf_sigmoida(e, *e_borders, 8.64, 86.4),
+        3: kf_sigmoida(e, *e_borders, 0.864, 86.4),
+        4: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-2), 0.864),
+        5: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-2), 0.864),
+        6: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-4), 8.64 * 10 ** (-2)),
+        7: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-5), 8.64 * 10 ** (-4)),
+        8: kf_sigmoida(e, *e_borders, 0.0000001, 8.64 * 10 ** (-5))
+    }
+
+    return dependence_kf_on_type_ground[define_type_ground(physical_data, physical_data["Ip"], physical_data["Ir"])]
+# Refactor
+def define_Cv(physical_data: Dict, m: float = 0.6) -> float:
+    """ Определение коэффициента первичной консолидации Сv в см^2/мин
+        :param physical_data: словарь с физическими параметрами
+        :param m: коэффициент относительной сжимаемости
+        :return: Cv в см^2/мин"""
+
+    kf = define_kf(physical_data)
+
+    # Переведем м/сут в см/мин
+    kf *= 0.0694444
+
+    # Переведем 1/МПа в 1 / (кгс / см2)
+    m /= 10.197162
+
+    # Удельный вес воды в кгс/см3
+    gamma = 0.001
+
+    Cv = kf / (m * gamma)
+
+    if Cv > 2:
+        return np.random.uniform(1.5, 2)
+    return Cv
 
 
 def unique_number(length=5, prefix=None, postfix=None, digits=True, upper=True) -> str:

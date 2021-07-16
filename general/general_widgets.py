@@ -454,8 +454,8 @@ class Statment_Triaxial_Static(Statment_Initial):
                     assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker_cfe)), \
                         "Заполните K0 в ведомости"
                     assert not marker, "Проверьте "  # + customer
-                    assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=list(columns_marker_cfe)), \
-                        "Заполните данные консолидации('CC', 'CF')"
+                    #assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=list(columns_marker_cfe)), \
+                        #"Заполните данные консолидации('CC', 'CF')"
 
                 except AssertionError as error:
                     QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
@@ -495,32 +495,6 @@ class Statment_Triaxial_Static(Statment_Initial):
                         self.statment_directory.emit(self.path)
                         self.open_line.text_file_path.setText(self.path)
 
-                    """if column_fullness_test(wb, columns=columns_marker_k0, initial_columns=columns_marker_cfe) is not True:
-                        Info("Заполните K0 в ведомости", "", False)
-                    elif column_fullness_test(wb, columns=["CC", "CF"], initial_columns=cfe_test_type_columns(combo_params["test_type"])) is not True:
-                        Info("Заполните данные консолидации('CC', 'CF')", "", False)
-                    elif marker:
-                        Info("Проверьте " + customer, "", False)
-                    else:
-                        self.table_physical_properties._clear_table()
-                        
-                        self.data_customer = customer
-                        self.customer_line.set_data(self.data_customer)
-        
-                        self.data_physical = read_phiz(wb)
-                        self.data_test = read_mech(wb, combo_params["k0_condition"], combo_params["test_type"])
-        
-                        key1 = [i for i in self.data_physical]
-                        key2 = [j for j in self.data_test]
-        
-                        for i in key1:
-                            if i not in key2:
-                                self.data_physical.pop(i)
-        
-                        self.table_physical_properties.set_data(self.data_physical)
-                        self.statment_directory.emit(self.path)
-                        self.open_line.text_file_path.setText(self.path)
-                        #self.table_vertical = Table_Vertical(self.headlines, self.fill_keys)"""
             except TypeError:
                 pass
 

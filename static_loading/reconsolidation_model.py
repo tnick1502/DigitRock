@@ -748,7 +748,7 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                                    + initial_vertical_deformation
 
         dict = {
-            'Time': [float("{:.3f}".format(x)) for x in
+            'Time': [float("{:.3f}".format(x/60)) for x in
                      (dict_accum['time'] + np.random.uniform(-0.1, 0.1, len(dict_accum['time'])))],
             'Action': dict_accum['action_accum'],
             'Action_Changed': dict_accum['action_changed_accum'],
