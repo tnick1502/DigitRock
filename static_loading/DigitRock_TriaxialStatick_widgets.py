@@ -26,25 +26,8 @@ class Tab_File_Data(QWidget):
         # Создаем вкладки
         self.layout = QVBoxLayout(self)
         #self.layout.setMargin(0)
-        data_test_parameters = {"equipment": ["Выберите прибор", "ЛИГА", "АСИС ГТ.2.0.5", "GIESA UP-25a"],
-                                "test_type": ["Выберите тип испытания", "Трёхосное сжатие (E)", "Трёхосное сжатие (F, C)",
-                     "Трёхосное сжатие (F, C, E)",
-                     "Трёхосное сжатие с разгрузкой"],
-                                "k0_condition": ["Тип определения K0",
-                                                 "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
-                                                 "K0: K0 из ведомости", "K0: Формула Джекки",
-                                                 "K0: K0 = 1"]}
 
-        headlines = ["Лаб. ном.", "Модуль деформации E, кПа", "Сцепление с, МПа",
-                     "Угол внутреннего трения, град",
-                     "Максимальный девиатор qf, кПа",
-                     "Обжимающее давление sigma3, кПа", "K0", "Коэффициент Пуассона",
-                     "Коэффициент консолидации Cv", "Коэффициент вторичной консолидации Ca",
-                     "Давление от здания, кПа", "Глубина котлована, м", "Модуль разгрузки Eur, кПа", "Угол дилатансии, град", "OCR", "Показатель степени жесткости"]
-        fill_keys = ["lab_number", "E", "c", "fi", "qf", "sigma_3", "K0", "poisson", "Cv", "Ca", "build_press",
-                     "pit_depth", "Eur", "dilatancy", "OCR", "m"]
-
-        self.file = Statment_Triaxial_Static(data_test_parameters, headlines, fill_keys, identification_color="FF6961")
+        self.file = Statment_Triaxial_Static()
 
         #self.layout.addWidget(self.Button1)
         self.layout.addWidget(self.file)
@@ -93,7 +76,6 @@ class DigitRock_TriaxialStatick(QWidget):
         #self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
     def save_report(self):
-
         try:
             assert self.tab_1.file.get_lab_number(), "Не выбран образец в ведомости"
             #assert self.tab_2.test_processing_widget.model._test_data.cycles, "Не выбран файл прибора"
@@ -188,6 +170,9 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
         elif param["test_type"] == 'Трёхосное сжатие (E)':
             self.tab_2.item_identification.set_data(params)
             self.tab_2.set_params(params)
+        elif param["test_type"] == "Трёхосное сжатие с разгрузкой":
+            self.tab_2.item_identification.set_data(params)
+            self.tab_2.set_params(params)
 
     def save_report(self):
 
@@ -213,6 +198,21 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 os.mkdir(save)
 
             if read_parameters["test_type"] == "Трёхосное сжатие (E)":
+                assert self.tab_2._model.deviator_loading._test_params.sigma_3, "Не загружен файл опыта"
+                Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
+                self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
+
+                report_consolidation(save + "/" + Name, self.tab_1.file.get_customer_data(),
+                                 self.tab_1.file.get_physical_data(), self.tab_1.file.get_lab_number(),
+                                 os.getcwd() + "/project_data/",
+                                 test_parameter, test_result,
+                                 (*self.tab_2.consolidation.save_canvas(),
+                                  *self.tab_2.deviator_loading.save_canvas()), 1.1)
+
+                set_cell_data(self.tab_1.file.path,
+                              "BK" + str(self.tab_1.file.get_physical_data()[self.tab_1.file.get_lab_number()]["Nop"]),
+                              test_result["E50"], sheet="Лист1", color="FF6961")
+            elif read_parameters["test_type"] == "Трёхосное сжатие с разгрузкой":
                 assert self.tab_2._model.deviator_loading._test_params.sigma_3, "Не загружен файл опыта"
                 Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
                 self.tab_2._model.save_log_file(save + "/" + "Test.1.log")

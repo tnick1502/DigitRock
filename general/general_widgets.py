@@ -438,6 +438,29 @@ class Statment_Initial(QWidget):
 
 class Statment_Triaxial_Static(Statment_Initial):
     """Класс обработки файла задания для трехосника"""
+    def __init__(self):
+        data_test_parameters = {"equipment": ["Выберите прибор", "ЛИГА", "АСИС ГТ.2.0.5", "GIESA UP-25a"],
+                                "test_type": ["Выберите тип испытания", "Трёхосное сжатие (E)",
+                                              "Трёхосное сжатие (F, C)",
+                                              "Трёхосное сжатие (F, C, E)",
+                                              "Трёхосное сжатие с разгрузкой"],
+                                "k0_condition": ["Тип определения K0",
+                                                 "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
+                                                 "K0: K0 из ведомости", "K0: Формула Джекки",
+                                                 "K0: K0 = 1"]}
+
+        headlines = ["Лаб. ном.", "Модуль деформации E, кПа", "Сцепление с, МПа",
+                     "Угол внутреннего трения, град",
+                     "Максимальный девиатор qf, кПа",
+                     "Обжимающее давление sigma3, кПа", "K0", "Коэффициент Пуассона",
+                     "Коэффициент консолидации Cv", "Коэффициент вторичной консолидации Ca",
+                     "Давление от здания, кПа", "Глубина котлована, м", "Модуль разгрузки Eur, кПа",
+                     "Угол дилатансии, град", "OCR", "Показатель степени жесткости"]
+        fill_keys = ["lab_number", "E", "c", "fi", "qf", "sigma_3", "K0", "poisson", "Cv", "Ca", "build_press",
+                     "pit_depth", "Eur", "dilatancy", "OCR", "m"]
+
+        super().__init__(data_test_parameters, headlines, fill_keys, identification_color="FF6961")
+
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
@@ -573,8 +596,6 @@ class Statment_Vibration_Creep(Statment_Triaxial_Static):
                 assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker_cfe)),\
                     "Заполните K0 в ведомости"
                 assert not marker, "Проверьте "# + customer
-                assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=cfe_test_type_columns("Виброползучесть")), \
-                    "Заполните данные консолидации('CC', 'CF')"
                 assert column_fullness_test(wb, columns=["AO"],
                                             initial_columns=cfe_test_type_columns("Виброползучесть")), \
                     "Заполните амплитуду ('AO')"

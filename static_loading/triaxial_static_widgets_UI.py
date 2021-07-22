@@ -487,20 +487,32 @@ class ModelTriaxialConsolidationUI(QWidget):
     def save_canvas(self):
         """Сохранение графиков для передачи в отчет"""
         def save(figure, canvas, size_figure, ax, file_type):
-            ax.get_legend().remove()
-            canvas.draw()
+            try:
+                ax.get_legend().remove()
+                canvas.draw()
 
-            path = BytesIO()
-            size = figure.get_size_inches()
-            figure.set_size_inches(size_figure)
-            if file_type == "svg":
-                figure.savefig(path, format='svg', transparent=True)
-            elif file_type == "jpg":
-                figure.savefig(path, format='jpg', dpi=200, bbox_inches='tight')
-            path.seek(0)
-            figure.set_size_inches(size)
-            ax.legend()
-            canvas.draw()
+                path = BytesIO()
+                size = figure.get_size_inches()
+                figure.set_size_inches(size_figure)
+                if file_type == "svg":
+                    figure.savefig(path, format='svg', transparent=True)
+                elif file_type == "jpg":
+                    figure.savefig(path, format='jpg', dpi=200, bbox_inches='tight')
+                path.seek(0)
+                figure.set_size_inches(size)
+                ax.legend()
+                canvas.draw()
+            except AttributeError:
+                path = BytesIO()
+                size = figure.get_size_inches()
+                figure.set_size_inches(size_figure)
+                if file_type == "svg":
+                    figure.savefig(path, format='svg', transparent=True)
+                elif file_type == "jpg":
+                    figure.savefig(path, format='jpg', dpi=200, bbox_inches='tight')
+                path.seek(0)
+                figure.set_size_inches(size)
+
             return path
 
         return [save(fig, can, size, ax, "svg") for fig, can, size, ax in zip([self.sqrt_figure,

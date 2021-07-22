@@ -725,15 +725,15 @@ def define_Cv(physical_data: Dict, m: float = 0.6) -> float:
         return np.random.uniform(1.5, 2)
     return Cv
 
-
-def unique_number(length=5, prefix=None, postfix=None, digits=True, upper=True) -> str:
+# Refactor
+def unique_number(length: int = 5, prefix: str = None, postfix: str = None, digits: bool =True, upper: bool = True) -> str:
     """Функция создает уникальный шифр
     :argument
-        :param length -> int - длина генерируемой части (default 5)
-        :param prefix -> str - префикс к генерируемой последовательности (default None)
-        :param postfix -> str - постфикс к генерируемой последовательности (default None)
-        :param digits -> bool - включает/ выключает наличие цифр (default True)
-        :param upper -> bool - сделать все буквы заглавными/строчными(default True)
+        :param length- длина генерируемой части (default 5)
+        :param prefix - префикс к генерируемой последовательности (default None)
+        :param postfix - постфикс к генерируемой последовательности (default None)
+        :param digits - включает/ выключает наличие цифр (default True)
+        :param upper - сделать все буквы заглавными/строчными(default True)
     :return -> str
     """
     charters = string.ascii_letters + string.digits if digits else string.ascii_letters
@@ -1206,14 +1206,25 @@ def define_m(e, Il):
         default_e = [0.5, 0.8, 1.2]
         default_m = [0.5, 0.6, 0.6, 0.7, 0.8, 0.8, 0.4, 0.5, 0.6, 0.7, 0.7, 0.9, 0.2, 0.3, 0.4, 0.6, 0.8, 1.0]
 
+        if Il < default_Il[0]:
+            Il = default_Il[0]
+        if Il > default_Il[-1]:
+            Il = default_Il[-1]
+        if e < default_e[0]:
+            e = default_e[0]
+        if e > default_e[-1]:
+            e = default_e[-1]
+
         default_e_Il = []
         for _e in default_e:
             default_e_Il.extend(list(map(lambda Il: [_e, Il], default_Il)))
 
-        m = griddata(default_e_Il, default_m, (e, Il), method='cubic')
+        m = griddata(default_e_Il, default_m, (e, Il), method='cubic').item()
 
-        try: return round(m, 2)
-        except: round(np.random.uniform(0.5, 0.65), 2)
+        try:
+            return round(m, 2)
+        except:
+            round(np.random.uniform(0.5, 0.65), 2)
 
 
 def define_OCR_from_xc(xc):

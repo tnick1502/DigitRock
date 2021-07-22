@@ -830,14 +830,13 @@ def result_table_deviator1(canvas, Res, pick, scale = 0.8):
 
 def result_table_deviator(canvas, Res, pick, scale = 0.8):
 
-
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 118 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 36 * mm, 64 * mm)
+        renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
     except AttributeError:
         a = ImageReader(pick[1])
         canvas.drawImage(a, 32 * mm, 60 * mm,
@@ -855,7 +854,112 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
 
     tableData.append([Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["qf"], ""])
     tableData.append([Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["E50"], ""])
+    tableData.append([Paragraph('''<p>Коэффициент пуассона µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+    if Res["Eur"]:
+        a = 4
+        tableData.append([Paragraph('''<p>Разгрузочный модуль E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["Eur"], ""])
+        style = [('SPAN', (0, 0), (-1, 0)),
+                ('SPAN', (0, 1), (-1, r)),
+
+                ('SPAN', (0, -1), (3, -1)),
+                ('SPAN', (-2, -1), (-1, -1)),
+                #('SPAN', (2, -1), (3, -1)),
+                #('SPAN', (4, -1), (5, -1)),
+                ('SPAN', (0, -2), (3, -2)),
+                ('SPAN', (-2, -2), (-1, -2)),
+                #('SPAN', (2, -2), (3, -2)),
+                #('SPAN', (4, -2), (5, -2)),
+                ('SPAN', (0, -3), (3, -3)),
+                ('SPAN', (-2, -3), (-1, -3)),
+
+                ('SPAN', (0, -4), (3, -4)),
+                ('SPAN', (-2, -4), (-1, -4)),
+                #('SPAN', (2, -3), (3, -3)),
+              #  ('SPAN', (4, -3), (5, -3)),
+
+                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+
+                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                ("ALIGN", (0, r+1), (0, -1), "LEFT"),
+                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+    else:
+        a = 0
+        style = [('SPAN', (0, 0), (-1, 0)),
+                ('SPAN', (0, 1), (-1, r)),
+
+                ('SPAN', (0, -1), (3, -1)),
+                ('SPAN', (-2, -1), (-1, -1)),
+                #('SPAN', (2, -1), (3, -1)),
+                #('SPAN', (4, -1), (5, -1)),
+                ('SPAN', (0, -2), (3, -2)),
+                ('SPAN', (-2, -2), (-1, -2)),
+                #('SPAN', (2, -2), (3, -2)),
+                #('SPAN', (4, -2), (5, -2)),
+                ('SPAN', (0, -3), (3, -3)),
+                ('SPAN', (-2, -3), (-1, -3)),
+                #('SPAN', (2, -3), (3, -3)),
+              #  ('SPAN', (4, -3), (5, -3)),
+
+                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+
+                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                ("ALIGN", (0, r+1), (0, -1), "LEFT"),
+                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+    t.setStyle(style)
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, (42-((r-30)*4) - a) * mm)
+
+def result_table_deviator_reload(canvas, Res, pick, scale = 0.8):
+
+    try:
+        a = svg2rlg(pick[0])
+        a.scale(scale, scale)
+        renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+        b = svg2rlg(pick[1])
+        b.scale(scale, scale)
+        renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
+    except AttributeError:
+        a = ImageReader(pick[1])
+        canvas.drawImage(a, 32 * mm, 60 * mm,
+                         width=160 * mm, height=54 * mm)
+        b = ImageReader(pick[0])
+        canvas.drawImage(b, 32 * mm, 114 * mm,
+                         width=160 * mm, height=54 * mm)
+
+    #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
+
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    r = 28
+    for i in range(r):
+        tableData.append([""])
+
+    tableData.append([Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["qf"], ""])
+    tableData.append([Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["E50"], ""])
+    tableData.append([Paragraph('''<p>Коэффициент пуассона µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+    if Res["Eur"]:
+        tableData.append([Paragraph('''<p>Разгрузочный модуль E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["Eur"], ""])
+    t = Table(tableData, colWidths=175/6 * mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (-1, r)),
 
@@ -867,11 +971,14 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
                 ('SPAN', (-2, -2), (-1, -2)),
                 #('SPAN', (2, -2), (3, -2)),
                 #('SPAN', (4, -2), (5, -2)),
+                ('SPAN', (0, -3), (3, -3)),
+                ('SPAN', (-2, -3), (-1, -3)),
                 #('SPAN', (2, -3), (3, -3)),
               #  ('SPAN', (4, -3), (5, -3)),
 
                 ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
                 ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -885,6 +992,7 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
 
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (42-(( r-30)*4)) * mm)
+
 
 def result_vibration_creep(canvas, Res, pick, scale = 0.8):
 
@@ -1313,7 +1421,7 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     main_frame(canvas, path, Data_customer, code, "1/1")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248-2010)"], "-ТС")
+                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "-ТС")
 
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_consolidation(canvas, test_parameter)
@@ -1337,7 +1445,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     main_frame(canvas, path, Data_customer, code, "1/2")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248-2010)"], "-ТД")
+                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "-ТД")
 
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_consolidation(canvas, test_parameter)
@@ -1349,7 +1457,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     main_frame(canvas, path, Data_customer, code, "2/2")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248-2010)"], "-ТД")
+                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "-ТД")
 
     parameter_table(canvas, Data_phiz, Lab)
     test_parameter["sigma_3"] = "-"
@@ -1416,7 +1524,7 @@ def StampReport(M, R, p1, p2, Nop, path, version = 1):  # p1 - папка сох
 
 
 
-    name = ["ИСПЫТАНИЕ ШАРИКОВЫМ ШТАМПОМ (ГОСТ 12248-2010)",""]
+    name = ["ИСПЫТАНИЕ ШАРИКОВЫМ ШТАМПОМ (ГОСТ 12248.3-2020)",""]
     Data = {}
     Data["Rezhim"] = "Статическое нагружение"
     Data["Oborudovanie"] = "Оборудование: АСИС ГТ.2.0.5"

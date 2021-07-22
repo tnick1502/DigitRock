@@ -563,16 +563,30 @@ def sensor_accuracy(x, y, qf, x50, xc):
 
 
 def loop(x, y, Eur, y_rel_p):
-    ip1, = np.where(y >= y_rel_p)  # ищем нужный индекс в исходном массиве
+
+    # ip1, = np.where(np.abs(y-y_rel_p) <= 0.0001)  # ищем нужный индекс в исходном массиве
+    ip1, = np.where(y >= y_rel_p)
+
+    if not np.size(ip1) > 0:
+        y_rel_p = np.max(y)
+        ip1, = np.where(y >= y_rel_p)
+
     # точка появления петли
     point1_x = x[ip1[0]]
     point1_y = y[ip1[0]]
+
     # точка конца петли
-    din_koef = -3 * 10 ** (-9) * Eur + 0.00095
+    index_x2, = np.where(y == np.max(y))
+    k = (0.3 / (-x[index_x2[-1]])) * point1_x + 0.4
+    din_koef = -3 * 10 ** (-9) * Eur + k * point1_x ## 0.00095
     point3_x = point1_x + din_koef
     ip3, = np.where(x >= point3_x)
-    point3_y = y[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
     point3_x = x[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
+    if point3_x <= point1_x:
+        ip3[0] = ip1[0]+1
+        point3_x = x[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
+    point3_y = y[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
+
 
     d1_p3 = (y[ip3[0] + 1] - y[ip3[0]]) / (x[ip3[0] + 1] - x[ip3[0]])  # производная
     # кривой девиаторного нагружения в точке конца петли
@@ -581,25 +595,34 @@ def loop(x, y, Eur, y_rel_p):
     if E0 < Eur:
         E0 = 1.1 * Eur
 
+
     # нижняя граница петли
     point2_y = 10
 
     # ограничение на угол наклона участка повтороной нагрузки,
     # чтобы исключить пересечение петли и девиаторной кривой
     min_E0 = point1_y / point1_x  # максимальный угол наклона петли
-    if Eur < min_E0:
-        Eur = 1.1 * E0
 
-    point2_x = -(point1_y - Eur * point1_x) / Eur  # вычисляется из оординаты
+    if Eur < 1.1 * min_E0:
+        print("\nВНИМАНИЕ: Eur изменен!\n")
+        Eur = 1.1 * min_E0
+        E0 = 1.1 * Eur
+
+    point2_x = (point2_y - point1_y + Eur * point1_x) / Eur  # вычисляется из оординаты
     # и угла наклона петли
     ip2x, = np.where(x >= point2_x)
     point2_x = x[ip2x[0]]  # ???
+
+    if ip2x[0] >= ip1[0]: # если точка 2 совпадает с точкой один или правее, то меняем точку 2 на предыдущую
+        print("\nВНИМАНИЕ: Eur изменен!\n")
+        ip2x[0] = ip1[0] - 1
+        point2_x = x[ip2x[0]]
 
     x1_l = np.linspace(point1_x, point2_x, int(abs(point2_x - point1_x) / (x[1] - x[0]) + 1))  # участок разгрузки
     x2_l = np.linspace(point2_x, point3_x,
                        int(abs(point3_x - point2_x) / (x[1] - x[0]) + 1))  # участок повторной нагрузки
 
-    din_pr = 0.8 * Eur + 60000  # производная в точке начала разгрузки (близка к бесконечности) #???
+    din_pr = 2 * Eur ## 0.8 * Eur + 60000  # производная в точке начала разгрузки (близка к бесконечности) #???
     spl1 = interpolate.make_interp_spline([point2_x, point1_x],
                                           [point2_y, point1_y], k=3,
                                           bc_type=([(2, 0)], [(1, din_pr)]))
@@ -609,10 +632,21 @@ def loop(x, y, Eur, y_rel_p):
     icp, = np.where(crosspoint_y >= y1_l)
     crosspoint_x = x1_l[icp[0]]  # точка пересечения участка разгрузки и повторной нагрузки
 
+    '''
     spl2 = interpolate.make_interp_spline([point2_x, crosspoint_x, point3_x],
                                           [point2_y, crosspoint_y, point3_y], k=3,
                                           bc_type=([(1, E0)], [(1, d1_p3)]))  # участок повторной нагрузки
     y2_l = spl2(x2_l)
+    '''
+
+    b_c = bezier_curve([point2_x - 0.2 * point2_x, E0 * (point2_x - 0.2 * point2_x) + (point2_y - E0 * point2_x)],
+                       [point2_x, point2_y],
+                       [point3_x, point3_y],
+                       [point3_x - 0.1 * point3_x, d1_p3 * (point3_x - 0.1 * point3_x) + (point3_y - d1_p3 * point3_x)],
+                       [point2_x, point2_y],
+                       [point3_x, point3_y],
+                       x2_l)
+    y2_l = b_c
 
     # устраняем повторяющуюся точку 2
     x2_l = x2_l[1:]
@@ -1040,6 +1074,11 @@ def curve(qf, e50, **kwargs):
     Eur = kwargs.get('Eur')
     y_rel_p = kwargs.get('y_rel_p')
 
+    if y_rel_p > qf:
+        y_rel_p = qf
+    if y_rel_p < 20.0:
+        y_rel_p = 20.0
+
     if xc>0.11:
         xc=0.15
 
@@ -1236,9 +1275,9 @@ def curve(qf, e50, **kwargs):
                                             angle_of_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x, point2_x,
                                             point3_x)
     y2 = y2[:index_x2[0]]
-
-    y1 += deviation_volume_strain(x, x_given, x[np.argmax(y)], 0.008, 0.001)
-    y2 += deviation_volume_strain(x, x_given, 0.15, 0.005, 0.002)
+    if not Eur:
+        y1 += deviation_volume_strain(x, x_given, x[np.argmax(y)], 0.008, 0.001)
+        y2 += deviation_volume_strain(x, x_given, 0.15, 0.005, 0.002)
 
 
     random_param = np.random.uniform(-0.00125 / 4., 0.00125 / 4., len(y1))
@@ -1483,6 +1522,8 @@ def volumetric_deformation_test(m_given, v_d_xc, angle_of_dilatacy, angle_of_end
     return x, y, z, x_given, v_d_given, xc, v_d_xc
 
 
+
+
 if __name__ == '__main__':
     versions = {
         "Triaxial_Dynamic_Soil_Test": 1.71,
@@ -1499,8 +1540,10 @@ if __name__ == '__main__':
     # plt.xlabel("Относительная вертикальная деформация $ε_1$, д.е")
     # plt.ylabel("Девиатор q, кПа")
     #    x1, y1, x_log1, y_0_xca1, point_time1 = function_consalidation(Cv=0.379, point_time=1, reverse=1, last_point=250)
+
     x, y, z, z1, loop, a = curve(595, 28000, xc=0.07, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                              amount_points=50, angle_of_dilatacy=6)
+                                 amount_points=500, angle_of_dilatacy=6)
+
 
     i, = np.where(x >= max(x) - 0.15)
     x = x[i[0]:] - x[i[0]]
@@ -1515,9 +1558,9 @@ if __name__ == '__main__':
     i = np.argmax(y)
     y -= y[0]
     plt.plot(x, y)
-    with open("C:/Users/Пользователь/Desktop/test_file.txt", "w") as file:
-        for i in range(len(y)):
-            file.write(str(np.round(-x[i], 4)).replace(".", ",") + "\t" + str(np.round(y[i], 4)).replace(".", ",")+ "\n")
+    #with open("C:/Users/Пользователь/Desktop/test_file.txt", "w") as file:
+        #for i in range(len(y)):
+            #file.write(str(np.round(-x[i], 4)).replace(".", ",") + "\t" + str(np.round(y[i], 4)).replace(".", ",")+ "\n")
     # plt.plot(x, z1, label="Статическая кривая")
     # plt.scatter(x[i], z[i], color = "red")
     # plt.plot(ff, f(ff), linewidth =3, label = "Динамическая кривая")

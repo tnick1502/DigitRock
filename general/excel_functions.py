@@ -295,16 +295,19 @@ def read_mech(wb, K0_mode, test_mode = "Трёхосное сжатие (F, C, E
                     try:
                         Ca = round(float_from_excel(wb["Лист1"]['CF' + str(i)].value), 5)
                     except TypeError:
-                        Ca = np.random.uniform(0.001, 0.005)
+                        Ca = np.random.uniform(0.003, 0.01)
 
                     build_press = float_from_excel(wb["Лист1"]['AK' + str(i)].value)
                     pit_depth = float_from_excel(wb["Лист1"]['AL' + str(i)].value)
 
 
                     if test_mode == "Трёхосное сжатие с разгрузкой":
-                        Eur = round(dependence_E0_Il(data_physical["Il"])*E)
+                        try:
+                            Eur = round(float_from_excel(wb["Лист1"]['GI' + str(i)].value), 3)
+                        except TypeError:
+                            Eur = round(dependence_E0_Il(data_physical["Il"])*E)
                     else:
-                        Eur = "-"
+                        Eur = None
 
                     OCR = float_from_excel(wb["Лист1"]['GB' + str(i)].value)
                     if OCR == "-":
@@ -554,9 +557,15 @@ def read_vibration_creep(wb, K0_mode, test_mode="Виброползучесть"
                                                    data_physical["Ip"], data_physical["Il"], data_physical["Ir"],
                                                    data_physical["10"], data_physical["5"], data_physical["2"])
 
-                    Cv = round(float_from_excel(wb["Лист1"]['CC' + str(i)].value), 3)
+                    try:
+                        Cv = round(float_from_excel(wb["Лист1"]['CC' + str(i)].value), 3)
+                    except TypeError:
+                        Cv = define_Cv(data_physical)
 
-                    Ca = round(float_from_excel(wb["Лист1"]['CF' + str(i)].value), 5)
+                    try:
+                        Ca = round(float_from_excel(wb["Лист1"]['CF' + str(i)].value), 5)
+                    except TypeError:
+                        Ca = np.random.uniform(0.001, 0.005)
 
                     build_press = float_from_excel(wb["Лист1"]['AK' + str(i)].value)
                     pit_depth = float_from_excel(wb["Лист1"]['AL' + str(i)].value)
