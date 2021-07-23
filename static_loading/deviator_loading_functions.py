@@ -1102,7 +1102,7 @@ def curve(qf, e50, **kwargs):
     xc = x_old[index_xc[0]]
 
     # x_given определяется на 20 процентах нагружения
-    index_02qf, = np.where(y >= 0.25 * qf)
+    index_02qf, = np.where(y >= 0.5 * qf)
     x_given = x_old[index_02qf[0]]
     x_end = 0.15  # последняя точка обьемной деформации
     # обрезаем массив до x_end
@@ -1260,6 +1260,7 @@ def curve(qf, e50, **kwargs):
     # y1, v_d_given = volumetric_deformation(x_old, x_given, m_given, xc + np.random.uniform(0.005, 0.01), v_d2, x_end, angle_of_dilatacy,
     #                                        angle_of_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x, point2_x,
     #                                        point3_x)
+
     y1, v_d_given = volumetric_deformation(x_old, x_given, m_given, xc, v_d2, x_end, angle_of_dilatacy,
                                            angle_of_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x, point2_x,
                                            point3_x)
@@ -1557,7 +1558,7 @@ if __name__ == '__main__':
     #print(E)
     i = np.argmax(y)
     y -= y[0]
-    plt.plot(x, y)
+    plt.plot(x, z)
     #with open("C:/Users/Пользователь/Desktop/test_file.txt", "w") as file:
         #for i in range(len(y)):
             #file.write(str(np.round(-x[i], 4)).replace(".", ",") + "\t" + str(np.round(y[i], 4)).replace(".", ",")+ "\n")

@@ -29,6 +29,7 @@ from general.general_functions import sigmoida, make_increas, line_approximate, 
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, define_qf, define_E50
 from static_loading.deviator_loading_functions import curve
 from configs.plot_params import plotter_params
+from intersect import intersection
 
 
 class ModelTriaxialDeviatorLoading:
@@ -163,13 +164,19 @@ class ModelTriaxialDeviatorLoading:
             E50 = None
 
         if self._test_result.Eur:
-            i_min = np.argmin(self._test_data.deviator_cut[self._test_data.reload_points_cut[0]:
-                                                           self._test_data.reload_points_cut[1]]) +\
-                    self._test_data.reload_points_cut[0]
-            Eur = point_to_xy(Point(x=self._test_data.strain_cut[self._test_data.reload_points_cut[0]],
-                                    y=self._test_data.deviator_cut[self._test_data.reload_points_cut[0]]),
-                              Point(x=self._test_data.strain_cut[i_min],
-                                    y=self._test_data.deviator_cut[i_min]))
+
+            b = self._test_data.deviator_cut[self._test_data.reload_points_cut[1]] - \
+                self._test_result.Eur*1000*self._test_data.strain_cut[self._test_data.reload_points_cut[1]]
+
+            line_ = line(self._test_result.Eur*1000, b, self._test_data.strain_cut)
+            _begin, = np.where(line_ >= self._test_data.deviator_cut[self._test_data.reload_points_cut[1]])
+            _end, = np.where(line_ >= self._test_data.deviator_cut[self._test_data.reload_points_cut[2]])
+
+            Eur = point_to_xy(Point(x=self._test_data.strain_cut[_begin[0]],
+                                    y=line_[_begin[0]]),
+                              Point(x=self._test_data.strain_cut[_end[0]],
+                                    y=line_[_end[0]]))
+
         else:
             Eur = None
 
@@ -189,6 +196,7 @@ class ModelTriaxialDeviatorLoading:
                 "volume_strain_approximate": self._test_data.volume_strain_approximate,
                 "E50": E50,
                 "Eur": Eur,
+                "sigma_3": self._test_params.sigma_3,
                 "dilatancy": dilatancy}
 
     def check_none(self):
@@ -281,7 +289,8 @@ class ModelTriaxialDeviatorLoading:
                                        self._test_data.deviator[self._test_cut_position.left]
         if self._test_data.reload_points:
             self._test_data.reload_points_cut = [self._test_data.reload_points[0] - self._test_cut_position.left,
-                                                 self._test_data.reload_points[1] - self._test_cut_position.left]
+                                                 self._test_data.reload_points[1] - self._test_cut_position.left,
+                                                 self._test_data.reload_points[2] - self._test_cut_position.left]
 
     def _test_processing(self):
         """Обработка опыта девиаторного нагружения"""
@@ -345,16 +354,21 @@ class ModelTriaxialDeviatorLoading:
     def define_Eur(strain, deviator, reload):
         """Поиск Eur"""
         # Проверяем, есть ли разгрзка и не отрезали ли ее
-        if reload is not None:
-            if reload[0] > 0 and reload != [0, 0]:
-                try:
-                    point1 = np.argmin(deviator[reload[0]: reload[1]]) + reload[0]  # минимум на разгрузке
-                    point2 = reload[0]  # максимум на разгрузке
 
-                    if (strain[point2] - strain[point1]) < 0.000001:
-                        Eur = None
-                    else:
-                        Eur = round(((deviator[point2] - deviator[point1]) / (strain[point2] - strain[point1])) / 1000, 2)
+        if reload is not None:
+            if reload[0] > 0 and reload != [0, 0, 0]:
+                try:
+                    #point1 = reload[1]#np.argmin(deviator[reload[0]: reload[2]]) + reload[0]  # минимум на разгрузке
+                    #point2 = reload[0]  # максимум на разгрузке
+
+                    #if (strain[point2] - strain[point1]) < 0.000001:
+                        #Eur = None
+                    #else:
+                        #Eur = round(((deviator[point2] - deviator[point1]) / (strain[point2] - strain[point1])) / 1000, 2)
+                    x, y = intersection(strain[reload[0]:reload[1]], deviator[reload[0]:reload[1]],
+                                        strain[reload[1]:reload[2]], deviator[reload[1]:reload[2]])
+
+                    Eur = round(((y[0] - deviator[reload[1]]) / (x[0] - strain[reload[1]])) / 1000, 2)
 
                 except ValueError:
                     Eur = None
@@ -371,10 +385,10 @@ class ModelTriaxialDeviatorLoading:
         qf = np.max(deviator)
 
         # Найдкм коэффициент пуассона
-        strain25 = (np.interp(qf / 4, deviator, strain))
+        strain50 = (np.interp(qf / 2, deviator, strain))
         index_02qf, = np.where(deviator >= 0.25 * qf)
 
-        puasson = abs(((np.interp(strain25, strain, volume_strain)) + strain25) / (2 * - strain25))
+        puasson = (1 + (np.interp(strain50, strain, volume_strain) / strain50))/2
 
         # Найдкм угол дилатансии
         i_top = np.argmax(deviator)
@@ -485,7 +499,6 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                                 # self._test_params.data_physical[
                                                                                      #"Ir"])) / 2, 2))
 
-        print(self._test_params.get_dict())
         self._test_modeling()
 
     def set_velocity_delta_h(self, velocity, delta_h_consolidation):
@@ -961,8 +974,14 @@ if __name__ == '__main__':
 
     file = r"C:\Users\Пользователь\PycharmProjects\Willie\Test.1.log"
     file = r"Z:\МДГТ - Механика\3. Трехосные испытания\1365\Test\Test.1.log"
-    param = {'E': 30495, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5,
-             'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
+
+    """a = ModelTriaxialDeviatorLoading()
+    from static_loading.triaxial_static_loading_test_model import ModelTriaxialStaticLoad
+    a.set_test_data(ModelTriaxialStaticLoad.open_geotek_log(file)["deviator_loading"])
+    a.plotter()
+    plt.show()"""
+    param = {'E50': 30495, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5, "Eur": 50000,
+             'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0,
              'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
                                                                                          'depth': 19.0,
                                                                                          'name': 'Песок крупный неоднородный',

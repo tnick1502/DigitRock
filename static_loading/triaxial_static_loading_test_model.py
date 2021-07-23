@@ -176,6 +176,8 @@ class ModelTriaxialStaticLoad:
                 try:
                     begin_upload = read_data['Action'].index('CyclicUnloading')
                     deviator_loading["reload_points"] = [begin_upload - begin_deviator_loading,
+                                                         read_data['Action'].index('CyclicLoading') -
+                                                         begin_deviator_loading,
                                                          read_data['Action'][begin_upload:].index('WaitLimit') +
                                                          begin_upload - begin_deviator_loading]
                 except (ValueError, IndexError):

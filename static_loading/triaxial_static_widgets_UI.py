@@ -33,7 +33,8 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         super().__init__()
         # Параметры построения для всех графиков
         self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.12}
-
+        self.plot_params_dev = {"right": 0.88, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.12}
+        self.plot_params_epsV = {"right": 0.98, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.15}
         self._create_UI()
 
     def _create_UI(self):
@@ -85,12 +86,16 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_frame.setStyleSheet('background: #ffffff')
         self.deviator_frame_layout = QVBoxLayout()
         self.deviator_figure = plt.figure()
-        self.deviator_figure.subplots_adjust(**self.plot_params)
+        self.deviator_figure.subplots_adjust(**self.plot_params_dev)
         self.deviator_canvas = FigureCanvas(self.deviator_figure)
         self.deviator_ax = self.deviator_figure.add_subplot(111)
         self.deviator_ax.grid(axis='both', linewidth='0.4')
         self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
         self.deviator_ax.set_ylabel("Девиатор q, кПА")
+
+        self.deviator_ax2 = self.deviator_ax.twinx()
+        self.deviator_ax2.set_ylabel("Вертикальное напряжение $𝜎_1$, кПА")
+
         self.deviator_canvas.draw()
         self.deviator_frame_layout.setSpacing(0)
         self.deviator_frame_layout.addWidget(self.deviator_canvas)
@@ -103,7 +108,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.volume_strain_frame.setStyleSheet('background: #ffffff')
         self.volume_strain_frame_layout = QVBoxLayout()
         self.volume_strain_figure = plt.figure()
-        self.volume_strain_figure.subplots_adjust(**self.plot_params)
+        self.volume_strain_figure.subplots_adjust(**self.plot_params_epsV)
         self.volume_strain_canvas = FigureCanvas(self.volume_strain_figure)
         self.volume_strain_ax = self.volume_strain_figure.add_subplot(111)
         self.volume_strain_ax.grid(axis='both', linewidth='0.4')
@@ -140,6 +145,8 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
             if plots["strain"] is not None:
                 self.deviator_ax.plot(plots["strain"], plots["deviator"], **plotter_params["main_line"])
                 self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"], **plotter_params["main_line"])
+                lim = self.deviator_ax.get_ylim()
+                self.deviator_ax2.set_ylim([lim[0]+plots["sigma_3"], lim[1]+plots["sigma_3"]])
 
                 if plots["E50"]:
                     self.deviator_ax.plot(*plots["E50"], **plotter_params["sandybrown_dotted_line"])
