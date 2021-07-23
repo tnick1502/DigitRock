@@ -449,7 +449,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         """Установка основных параметров опыта"""
         self._test_params.qf = test_params.get("qf", None)
         self._test_params.sigma_3 = test_params.get("sigma_3", None)
-        self._test_params.E50 = test_params.get("E", None)
+        self._test_params.E50 = test_params.get("E50", None)
         self._test_params.c = test_params.get("c", None)
         self._test_params.fi = test_params.get("fi", None)
         self._test_params.Eur = test_params.get("Eur", None)
@@ -457,7 +457,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         xc, residual_strength = ModelTriaxialDeviatorLoadingSoilTest.define_xc_value_residual_strength(
             test_params["data_phiz"], test_params["sigma_3"],
-            test_params["qf"], test_params["E"])
+            test_params["qf"], test_params["E50"])
 
         self._draw_params.fail_strain = xc
         self._draw_params.residual_strength_param = \
@@ -484,6 +484,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                                  #self._test_params.data_physical["Ip"],
                                                                                 # self._test_params.data_physical[
                                                                                      #"Ir"])) / 2, 2))
+
+        print(self._test_params.get_dict())
         self._test_modeling()
 
     def set_velocity_delta_h(self, velocity, delta_h_consolidation):

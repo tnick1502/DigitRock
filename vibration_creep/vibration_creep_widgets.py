@@ -32,7 +32,7 @@ class VibrationCreepSoilTestWidget(QWidget):
         self.layout_1 = QVBoxLayout()
         headlines = [
             "Лаб. ном.",
-            "Модуль деформации E, кПа",
+            "Модуль деформации E50, кПа",
             "Сцепление с, МПа",
             "Угол внутреннего трения, град",
             "Максимальный девиатор qf, кПа",
@@ -49,7 +49,7 @@ class VibrationCreepSoilTestWidget(QWidget):
             "Показатель степени жесткости"]
         fill_keys = [
             "lab_number",
-            "E",
+            "E50",
             "c",
             "fi",
             "qf",

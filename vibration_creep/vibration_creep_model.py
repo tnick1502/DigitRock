@@ -358,7 +358,7 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
             #print("length now = ", len(self._dynamic_tests))
             params_for_current_test = copy.copy(params)
             params_for_current_test["frequency"] = frequency
-            params_for_current_test["E"] = params_for_current_test["E"]*np.random.uniform(0.85, 1.1)
+            params_for_current_test["E50"] = params_for_current_test["E50"]*np.random.uniform(0.85, 1.1)
             params_for_current_test["Kd"] = Kd
             self._dynamic_tests_models[-1].set_test_params(params_for_current_test)
 

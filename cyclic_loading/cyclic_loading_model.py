@@ -424,7 +424,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.physical = params["data_phiz"]
         self._test_params.c = params["c"]
         self._test_params.fi = params["fi"]
-        self._test_params.E = params["E"]
+        self._test_params.E = params["E50"]
         self._test_params.frequency = params["frequency"]
         self._test_params.points_in_cycle = 20
         self._test_params.deviator_start_value = self._test_params.sigma_1 - self._test_params.sigma_3

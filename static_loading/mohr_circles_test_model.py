@@ -282,7 +282,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 for i in range(len(qf)):
                     mohr_params[i]["qf"] = round(qf[i], 3)
                     mohr_params[i]["sigma_1"] = round(mohr_params[i]["qf"] + mohr_params[i]["sigma_3"], 3)
-                    mohr_params[i]["E"] = define_E50(self._test_params["E"], self._test_params["c"] * 1000,
+                    mohr_params[i]["E50"] = define_E50(self._test_params["E50"], self._test_params["c"] * 1000,
                                                      self._test_params["fi"], mohr_params[i]["sigma_3"],
                                                      self._test_params["sigma_3"], self._test_params["m"])
 

@@ -97,12 +97,12 @@ class CyclicLoadingSoilTestWidget(QWidget):
         self.layout = QVBoxLayout(self)
         self.layout_1 = QHBoxLayout(self)
         self.test_widget = CyclicLoadingUISoilTest()
-        headlines = ["Лаб. ном.", "Модуль деформации E, кПа", "Сцепление с, МПа",
+        headlines = ["Лаб. ном.", "Модуль деформации E50, кПа", "Сцепление с, МПа",
                      "Угол внутреннего трения, град", "CSR",
                      "Обжимающее давление 𝜎3", "K0", "Косательное напряжение τ, кПа",
                      "Число циклов N, ед.", "Бальность, балл", "Магнитуда", "Понижающий коэф. rd", "MSF"]
 
-        fill_keys = ["lab_number", "E", "c", "fi", "CSR", "sigma3", "K0", "t", "N", "I", "magnituda", "rd", "MSF"]
+        fill_keys = ["lab_number", "E50", "c", "fi", "CSR", "sigma3", "K0", "t", "N", "I", "magnituda", "rd", "MSF"]
         self.identification = Table_Vertical(headlines, fill_keys)
         self.identification.setFixedWidth(300)
         self.layout_1.addWidget(self.test_widget)

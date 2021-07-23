@@ -864,7 +864,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         """Установка основных параметров опыта"""
         self._test_params.Cv = test_params["Cv"]
         self._test_params.Ca = test_params["Ca"]
-        self._test_params.E = test_params["E"]
+        self._test_params.E = test_params["E50"]
         self._test_params.sigma_3 = test_params["sigma_3"]
         self._test_params.K0 = test_params["K0"]
 
