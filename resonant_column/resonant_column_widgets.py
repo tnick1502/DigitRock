@@ -11,6 +11,7 @@ from resonant_column.rezonant_column_hss_model import ModelRezonantColumn, Model
 from general.initial_tables import Table_Castomer
 from general.excel_functions import create_json_file, read_json_file
 from general.report_general_statment import save_report
+from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
 
 class RezonantColumnProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -117,9 +118,9 @@ class PredictRCTestResults(QDialog):
         self._data_customer = data_customer
         self.setWindowTitle("Резонансная колонка")
         self.create_IU()
-        #self._original_keys_for_sort = list(data.keys())
-        #self._set_data(data)
-        #self.table_castomer.set_data(data_customer)
+        self._original_keys_for_sort = list(data.keys())
+        self._set_data(data)
+        self.table_castomer.set_data(data_customer)
         self.resize(1400, 800)
 
         self.open_data_button.clicked.connect(self._read_data_from_json)
@@ -154,6 +155,17 @@ class PredictRCTestResults(QDialog):
         self.button_box_layout.addWidget(self.save_button)
 
         self.l.addStretch(-1)
+        self.sliders = TriaxialStaticLoading_Sliders({
+            "G0_ratio": "Коэффициент G0",
+            "threshold_shear_strain_ratio": "Коэффициент жесткости"})
+        self.sliders.set_sliders_params(
+            {
+                "G0_ratio": {"value": 1, "borders": [0.1, 5]},
+                "threshold_shear_strain_ratio": {"value": 1, "borders": [0.1, 5]}
+            })
+
+        self.l.addWidget(self.sliders)
+
         self.l.addWidget(self.button_box)
         self.layout.addLayout(self.l)
 
@@ -179,10 +191,10 @@ class PredictRCTestResults(QDialog):
         while (self.table.rowCount() > 0):
             self.table.removeRow(0)
 
-        self.table.setColumnCount(6)
+        self.table.setColumnCount(7)
         #self.table.horizontalHeader().resizeSection(1, 200)
         self.table.setHorizontalHeaderLabels(
-            ["Лаб. ном.", "Глубина", "Наименование грунта", "Реф.давление, МПа", "G0, МПА",
+            ["Лаб. ном.", "Глубина", "Наименование грунта", "Реф.давление, МПа", "Коэфф. пористости e", "G0, МПА",
              "𝛾07, д.е."])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setDefaultSectionSize(25)
@@ -193,7 +205,7 @@ class PredictRCTestResults(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.Fixed)
-
+        self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.Fixed)
 
     def _fill_table(self):
         """Заполнение таблицы параметрами"""
@@ -201,12 +213,16 @@ class PredictRCTestResults(QDialog):
         self.table.setRowCount(len(self._data))
 
         for string_number, lab_number in enumerate(self._data):
-            for i, val in enumerate([lab_number,
-                                    str(self._data[lab_number]["depth"]),
-                                    self._data[lab_number]["name"],
-                                    str(self._data[lab_number]['Pref']),
-                                     str(self._data[lab_number]['G0']),
-                                     str(self._data[lab_number]['threshold_shear_strain']),]):
+            for i, val in enumerate([
+                lab_number,
+                str(self._data[lab_number]["depth"]),
+                self._data[lab_number]["name"],
+                str(self._data[lab_number]['Pref']),
+                str(self._data[lab_number]['e']),
+                str(self._data[lab_number]['G0']),
+                str(self._data[lab_number]['threshold_shear_strain'])
+            ]):
+
                 self.table.setItem(string_number, i, QTableWidgetItem(val))
 
         self._table_is_full = True

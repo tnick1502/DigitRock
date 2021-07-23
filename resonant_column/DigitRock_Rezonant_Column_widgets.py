@@ -4,7 +4,7 @@
     """
 __version__ = 1
 
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QFileDialog, QMessageBox, QTabWidget
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QFileDialog, QMessageBox, QTabWidget, QDialog
 from PyQt5.QtCore import pyqtSignal
 import os
 import sys
@@ -15,6 +15,7 @@ from resonant_column.resonant_column_widgets import RezonantColumnProcessingWidg
 from general.general_widgets import Statment_Rezonant_Column
 from general.reports import report_rc
 from general.excel_functions import set_cell_data
+from resonant_column.resonant_column_widgets import PredictRCTestResults
 
 class RezonantColumn_Processing_Tab(QWidget):
     def __init__(self):
@@ -143,6 +144,20 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
         self.tab_1.signal[object].connect(self.tab_2.test.identification_widget.set_params)
         self.tab_2.save.save_button.clicked.connect(self.save_report)
         self.tab_2.test.test_widget.sliders.signal[object].connect(self._params_slider_moove)
+
+        self.button_predict = QPushButton("Прогнозирование")
+        self.button_predict.setFixedHeight(50)
+        self.button_predict.clicked.connect(self._predict)
+        self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
+
+    def _predict(self):
+        if self.tab_1._data_test is not None:
+            dialog = PredictRCTestResults(self.tab_1._data_test, self.tab_1.get_customer_data())
+            dialog.show()
+
+            if dialog.exec() == QDialog.Accepted:
+                pass
+                #self.tab_1.table._data_test = dialog.get_data()
 
     def _params_slider_moove(self, params):
         self.tab_2.test._model.set_draw_params(params)

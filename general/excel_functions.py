@@ -9,6 +9,7 @@ from openpyxl.utils import get_column_letter, column_index_from_string
 
 from cyclic_loading.cyclic_stress_ratio_function import define_fail_cycle
 from general.general_functions import define_Cv
+from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
 
 
 
@@ -112,6 +113,9 @@ def cfe_test_type_columns(test_type):
 
     elif test_type == "Виброползучесть":
         return ["BS", "BT", "BU"]
+
+    elif test_type == "Резонансная колонка":
+        return ["BC", "BD", "BE"]
 
 def k0_test_type_column(test_type):
     """Функция возвращает столбцы для считывания K0 по типу испытания"""
@@ -616,59 +620,38 @@ def read_vibration_creep(wb, K0_mode, test_mode="Виброползучесть"
 def read_dynemic_rc(wb, K0_mode, pref_mode):
     """Чтение динамических свойств из ведомости
     Передается документ excel"""
-    Data = {}
+    data = {}
+    for i in generator_of_cell_with_lab_number(wb):
+        key = currect_lab_number(wb, i)
+        if key:
+            c, fi, E = define_c_fi_E(wb, "Резонансная колонка", i)
+            if fi != "-" and c != "-" and E != "-":
+                # Расчет напряжений
+                data_physical = read_phiz_line(wb, i)
 
-    for i in range(7, len(wb['Лист1']['A'])):
-        if str(wb["Лист1"]['A' + str(i)].value) != "None":
-
-            fi = float_from_excel(wb["Лист1"]["BD" + str(i)].value)
-            c = float_from_excel(wb["Лист1"]["BC" + str(i)].value)
-            E = float_from_excel(wb["Лист1"]["BE" + str(i)].value)
-
-            if fi == "-":
-                pass
-            else:
-
-                Ip = float_from_excel(wb["Лист1"]['Y' + str(i)].value)
-                Il = float_from_excel(wb["Лист1"]['Z' + str(i)].value)
-
-                if K0_mode == "K0: По ГОСТ-65353":
-                    if Ip == "-":
-                        K0 = 0.5
-                    elif Ip < 1:
-                        K0 = 0.5
-                    elif Ip > 1 and Il < 0.25:
-                        K0 = 0.6
-                    elif Ip > 1 and 0.25 <= Il <= 0.75:
-                        K0 = 0.7
-                    elif Ip > 1 and Il > 0.75:
-                        K0 = 0.8
-                    else:
-                        K0 = 0.5
-                elif K0_mode == "K0: K0nc из ведомости":
-                    K0 = float_from_excel(wb["Лист1"]['GZ' + str(i)].value)
-                elif K0_mode == "K0: K0 из ведомости":
-                    K0 = float_from_excel(wb["Лист1"]['GY' + str(i)].value)
-                elif K0_mode == "K0: Формула Джекки":
-                    K0 = round((1 - np.sin(np.pi * fi / 180)), 2)
-                elif K0_mode == "K0: K0 = 1":
-                    K0 = 1
-                else:
-                    K0 = 1
+                K0 = define_K0(wb, K0_mode, i, data_physical["Il"], fi)
 
                 if pref_mode == "Pref: Pref из столбца FV":
-                    pref = round(float_from_excel(wb["Лист1"]['FV' + str(i)].value), 2)
+                    p_ref = round(float_from_excel(wb["Лист1"]['FV' + str(i)].value), 2)
                 elif pref_mode == "Pref: Через бытовое давление":
-                    pref = round(2 * K0 * float_from_excel(wb["Лист1"]['C' + str(i)].value) * 10/1000, 2)
+                    p_ref = round(2 * K0 * float_from_excel(wb["Лист1"]['C' + str(i)].value) * 10 / 1000, 2)
 
-                Data[str(wb["Лист1"]['A' + str(i)].value)] = {"E": E,
-                                                                "c": c,
-                                                                "fi": fi,
-                                                                "K0": K0,
-                                                                "Pref" : pref,
-                                                                "Nop": i}
+                G0, threshold_shear_strain = define_G0_threshold_shear_strain(p_ref, data_physical, E, c, fi, K0)
 
-    return Data
+                data[str(wb["Лист1"]['A' + str(i)].value)] = {
+                    "E": E,
+                    "c": c,
+                    "fi": fi,
+                    "name": str(wb["Лист1"]['D' + str(i)].value),
+                    "depth": float_from_excel(wb["Лист1"]['C' + str(i)].value),
+                    "e": data_physical["e"],
+                    "K0": K0,
+                    "Pref": p_ref,
+                    "G0": G0,
+                    "threshold_shear_strain": threshold_shear_strain,
+                    "Nop": i
+                }
+    return data
 
 # Заказчик
 def read_customer(wb):

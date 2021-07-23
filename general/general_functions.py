@@ -1305,10 +1305,9 @@ if __name__ == '__main__':
                                                    "2": {"title": "Глубина", "cell": "C"}}}
                   }
 
-    rcParams = {'font.family': 'Times New Roman',
-                'font.size': '10',
-                'axes.edgecolor': 'black',
-                'axes.grid': True,}
+    rcParams = {'font_size': 46,
+                'transparency': 45,
+                'text': "НЕ ДЛЯ\nОТЧЕТА"}
 
 
-    create_json_file("C:/Users/Пользователь/PycharmProjects/DigitRock/configs/rcParams.json", rcParams)
+    create_json_file("C:/Users/Пользователь/Desktop/configs.json", rcParams)
