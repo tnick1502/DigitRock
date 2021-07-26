@@ -149,11 +149,15 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                 self.deviator_ax2.set_ylim([lim[0]+plots["sigma_3"], lim[1]+plots["sigma_3"]])
 
                 if plots["E50"]:
-                    self.deviator_ax.plot(*plots["E50"], **plotter_params["sandybrown_dotted_line"])
+                    self.deviator_ax.plot(*plots["E50"],  label="$E_{50}$" + ", MПа = " + str(res["E50"]),
+                                          **plotter_params["sandybrown_dotted_line"])
+                    self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"], label="$E$" + ", MПа = " + str(res["E"][0]),
+                                           **plotter_params["black_dotted_line"])
                 if plots["Eur"]:
                     self.deviator_ax.plot(*plots["Eur"], **plotter_params["sandybrown_dotted_line"])
 
-                self.deviator_ax.plot([], [], label="$E_{50}$" + ", MПа = " + str(res["E50"]), color="#eeeeee")
+                #self.deviator_ax.plot([], [], label="$E_{50}$" + ", MПа = " + str(res["E50"]), color="#eeeeee")
+                #self.deviator_ax.plot([], [], label="$E$" + ", MПа = " + str(res["E"][0]), color="#eeeeee")
                 self.deviator_ax.plot([], [], label="$q_{f}$" + ", MПа = " + str(round(res["qf"], 2)), color="#eeeeee")
                 if res["Eur"]:
                     self.deviator_ax.plot([], [], label="$E_{ur}$" + ", MПа = " + str(res["Eur"]), color="#eeeeee")
@@ -163,7 +167,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                                       **plotter_params["dotted_line"])
                 if plots["dilatancy"]:
                     self.volume_strain_ax.plot(plots["dilatancy"]["x"], plots["dilatancy"]["y"],
-                                          **plotter_params["dotted_line"])
+                                          **plotter_params["black_dotted_line"])
 
                 self.volume_strain_ax.set_xlim(self.deviator_ax.get_xlim())
 

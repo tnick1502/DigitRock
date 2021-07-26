@@ -291,7 +291,6 @@ def read_mech(wb, K0_mode, test_mode = "Трёхосное сжатие (F, C, E
                     poissson = define_poissons_ratio(float_from_excel(wb["Лист1"]['EP' + str(i)].value),
                                                    data_physical["Ip"], data_physical["Il"], data_physical["Ir"],
                                                    data_physical["10"], data_physical["5"], data_physical["2"])
-                    E50 = E * (1 - ((2 * poissson ** 2) / (1 - poissson)))
 
                     try:
                         Cv = round(float_from_excel(wb["Лист1"]['CC' + str(i)].value), 3)
@@ -333,7 +332,7 @@ def read_mech(wb, K0_mode, test_mode = "Трёхосное сжатие (F, C, E
 
                     m = define_m(data_physical["e"], data_physical["Il"])
                     #m = round(np.random.uniform(0.8, 0.95), 2)
-                    data[key] = {"E50": E50, "sigma_3": sigma_3, "sigma_1": sigma_1, "c": c, "fi": fi,
+                    data[key] = {"E50": E, "sigma_3": sigma_3, "sigma_1": sigma_1, "c": c, "fi": fi,
                                  "qf": qf, "K0": K0, "Cv": Cv, "Ca": Ca, "poisson": poissson,
                                  "build_press": build_press, "pit_depth": pit_depth, "Eur": Eur,
                                  "dilatancy": dilatancy, "OCR": OCR, "m": m}
@@ -563,7 +562,6 @@ def read_vibration_creep(wb, K0_mode, test_mode="Виброползучесть"
                                                    data_physical["Ip"], data_physical["Il"], data_physical["Ir"],
                                                    data_physical["10"], data_physical["5"], data_physical["2"])
 
-                    E50 = E * (1 - ((2 * poissson ** 2) / (1 - poissson)))
 
                     try:
                         Cv = round(float_from_excel(wb["Лист1"]['CC' + str(i)].value), 3)
@@ -605,7 +603,7 @@ def read_vibration_creep(wb, K0_mode, test_mode="Виброползучесть"
                     Kd = list(map(lambda x: float(x.replace(",", ".").strip(" ")),
                                          str(wb["Лист1"]['CB' + str(i)].value).split(";")))
 
-                    data[key] = {"E50": E50, "sigma_3": sigma_3, "sigma_1": sigma_1, "c": c, "fi": fi,
+                    data[key] = {"E50": E, "sigma_3": sigma_3, "sigma_1": sigma_1, "c": c, "fi": fi,
                                  "qf": qf, "K0": K0, "Cv": Cv, "Ca": Ca, "poisson": poissson,
                                  "build_press": build_press, "pit_depth": pit_depth, "Eur": Eur,
                                  "dilatancy": dilatancy, "OCR": OCR, "m": m,

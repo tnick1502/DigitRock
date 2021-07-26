@@ -27,6 +27,7 @@ from scipy.interpolate import make_interp_spline
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, mirrow_element, \
     define_dilatancy, define_type_ground, AttrDict, find_line_area, interpolated_intercept, Point, point_to_xy, \
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, define_qf, define_E50
+from typing import Dict
 from static_loading.deviator_loading_functions import curve
 from configs.plot_params import plotter_params
 from intersect import intersection
@@ -87,6 +88,7 @@ class ModelTriaxialDeviatorLoading:
 
         # Результаты опыта
         self._test_result = AttrDict({"E50": None,
+                                      "E": None,
                                       "Eur": None,
                                       "qf": None,
                                       "poissons_ratio": None,
@@ -160,6 +162,9 @@ class ModelTriaxialDeviatorLoading:
             E50 = point_to_xy(Point(x=0, y=0), Point(
                     x=0.9 * self._test_result.qf * 1000/ (self._test_result.E50*1000),
                     y=0.9 * self._test_result.qf * 1000))
+            E = {"x": self._test_result.E[1],
+                 "y": self._test_result.E[2]}
+
         else:
             E50 = None
 
@@ -195,6 +200,7 @@ class ModelTriaxialDeviatorLoading:
                 "volume_strain": self._test_data.volume_strain_cut,
                 "volume_strain_approximate": self._test_data.volume_strain_approximate,
                 "E50": E50,
+                "E": E,
                 "Eur": Eur,
                 "sigma_3": self._test_params.sigma_3,
                 "dilatancy": dilatancy}
@@ -232,10 +238,12 @@ class ModelTriaxialDeviatorLoading:
             ax_deviator.plot(plots["strain_cut"], plots["deviator_cut"], **plotter_params["main_line"])
             if plots["E50"]:
                 ax_deviator.plot(*plots["E50"], **plotter_params["sandybrown_dotted_line"])
+                ax_deviator.plot(plots["E"]["x"], plots["E"]["y"], **plotter_params["sandybrown_dotted_line"])
             if plots["Eur"]:
                 ax_deviator.plot(*plots["Eur"], **plotter_params["sandybrown_dotted_line"])
 
             ax_deviator.plot([], [], label="$E_{50}$" + ", MПа = " + str(res["E50"]), color="#eeeeee")
+            ax_deviator.plot([], [], label="$E$" + ", MПа = " + str(res["E"][0]), color="#eeeeee")
             ax_deviator.plot([], [], label="$q_{f}$" + ", MПа = " + str(res["qf"]), color="#eeeeee")
             if res["Eur"]:
                 ax_deviator.plot([], [], label="$E_{ur}$" + ", MПа = " + str(res["Eur"]), color="#eeeeee")
@@ -307,6 +315,9 @@ class ModelTriaxialDeviatorLoading:
                                   self._test_data.deviator_cut,
                                     self._test_data.volume_strain_approximate)
 
+        self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
+                                  self._test_data.deviator_cut, self._test_params.sigma_3)
+
     @staticmethod
     def find_friction_step(strain, deviator):
         """Функция поиска начального хода штока"""
@@ -349,6 +360,20 @@ class ModelTriaxialDeviatorLoading:
             np.interp(qf / 2, np.array([deviator[imin], deviator[imax]]), np.array([strain[imin], strain[imax]])))
 
         return round(E50 / 1000, 2), round(qf / 1000, 3)
+
+    @staticmethod
+    def define_E(strain, deviator, sigma_3):
+        """Определение параметров qf и E50"""
+        i_start_E, = np.where(deviator >= sigma_3)
+        i_end_E, = np.where(deviator >= 1.6*sigma_3)
+        A1, B1 = line_approximate(strain[i_start_E[0]:i_end_E[0]], deviator[i_start_E[0]:i_end_E[0]])
+
+        E = (line(A1, B1, strain[i_start_E[0]]) - line(A1, B1, strain[i_end_E[0]])) / (strain[i_start_E[0]] -
+                                                                                       strain[i_end_E[0]])
+        i_end_for_plot, = np.where(line(A1, B1, strain) >= 0.9 * np.max(deviator))
+
+        return (round(E / 1000, 2), [strain[i_start_E[0]], strain[i_end_for_plot[0]]],
+                    [line(A1, B1, strain[i_start_E[0]]), line(A1, B1, strain[i_end_for_plot[0]])])
 
     @staticmethod
     def define_Eur(strain, deviator, reload):
@@ -396,9 +421,8 @@ class ModelTriaxialDeviatorLoading:
         if strain[i_top] >= 0.14:
             dilatancy = None
         else:
-
             scale = (max(volume_strain) - min(volume_strain)) / 5
-            x_area = 0.003
+            x_area = 0.002
             try:
                 if x_area <= (strain[i_top + 1] - strain[i_top - 1]):
                     x_area = (strain[i_top + 2] - strain[i_top - 2])
@@ -419,8 +443,15 @@ class ModelTriaxialDeviatorLoading:
                 dilatancy_begin, = np.where(line(A1, B1, strain) >= volume_strain[i_top] - scale)
                 dilatancy_end, = np.where(line(A1, B1, strain) >= volume_strain[i_top] + scale)
 
+                delta_EpsV = line(A1, B1, strain[dilatancy_end[0]]) - line(A1, B1, strain[dilatancy_begin[0]])
+                delta_Eps1 = (strain[dilatancy_end[0]] - strain[dilatancy_begin[0]])
+
+                #dilatancy_value = round(A1 * (180 / np.pi))
+
+                dilatancy_value = np.rad2deg(np.arcsin(delta_EpsV / (delta_EpsV + 2 * delta_Eps1)))
+
                 dilatancy = (
-                    round(A1 * (180 / np.pi), 2), [strain[dilatancy_begin[0]], strain[dilatancy_end[0]]],
+                    round(dilatancy_value, 2), [strain[dilatancy_begin[0]], strain[dilatancy_end[0]]],
                     [line(A1, B1, strain[dilatancy_begin[0]]), line(A1, B1, strain[dilatancy_end[0]])])
 
             except IndexError:
@@ -447,6 +478,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                       "E50": None,
                                       "c": None,
                                       "fi": None,
+                                      "unloading_borders": None,
                                       "data_phiz": None,
                                       "u": 0,
                                       "delta_h_consolidation": 0,
@@ -479,6 +511,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.residual_strength = test_params["qf"]*residual_strength
         self._draw_params.qocr = 0
 
+        if self._test_params.Eur:
+            self.unloading_borders = ModelTriaxialDeviatorLoadingSoilTest.define_unloading_points(
+                test_params["data_phiz"], self._test_params.sigma_3/test_params["K0"])
+
         self._draw_params.poisson = test_params.get("poisson")#,
                                                     #define_poissons_ratio("-", self._test_params.data_physical["Ip"],
                                                                           #self._test_params.data_physical["Il"],
@@ -486,7 +522,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                           #self._test_params.data_physical["10"],
                                                                           #self._test_params.data_physical["5"],
                                                                           #self._test_params.data_physical["2"]))
-        self._draw_params.dilatancy = test_params.get("dilatancy")#, round((
+        #self._draw_params.dilatancy = test_params.get("dilatancy")#, round((
                                                     #ModelTriaxialDeviatorLoadingSoilTest.define_dilatancy_from_xc_qres(
                                                     #xc,residual_strength) + define_dilatancy(
                                                     #self._test_params.data_physical,
@@ -498,6 +534,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                                  #self._test_params.data_physical["Ip"],
                                                                                 # self._test_params.data_physical[
                                                                                      #"Ir"])) / 2, 2))
+        alpha = np.deg2rad(test_params.get("dilatancy"))
+
+        self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(alpha) / (1 - np.sin(alpha))))
 
         self._test_modeling()
 
@@ -546,7 +585,6 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             if max_time <= 500:
                 max_time = 500
 
-
             if self._test_params.qf >= 150:
                 if self._test_params.Eur:
                     self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
@@ -558,7 +596,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                         amount_points=max_time,
                                                                         angle_of_dilatacy=self._draw_params.dilatancy,
                                                                         Eur=self._test_params.Eur,
-                                                                        y_rel_p=self._test_params.qf * np.random.uniform(0.75, 0.85))
+                                                                        y_rel_p=self.unloading_borders[0],
+                                                                        point2_y=self.unloading_borders[1])
                 else:
                     self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
                     self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
@@ -597,7 +636,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                     amount_points=max_time,
                                                     angle_of_dilatacy=self._draw_params.dilatancy,
                                                     Eur=self._test_params.Eur*k,
-                                                    y_rel_p=self._test_params.qf*k * np.random.uniform(0.75, 0.85))
+                                                    y_rel_p=self.unloading_borders[0]*k,
+                                                    point2_y=self.unloading_borders[1]*k)
                 else:
                     self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
                     self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
@@ -969,6 +1009,52 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         return data
 
+    @staticmethod
+    def define_unloading_points(physical_data: Dict, sigma_1: float) -> float:
+        """ Рассчет начала разгрузки в зависимости от грансостава и среднеобжимающего давления
+            :param physical_data: словарь с физическими параметрами
+            :param sigma_1: эффективное значение sigma_3c
+            :return: девиатор начала разгрузки"""
+
+        def type_from_Il_loam(physical_data):
+            if physical_data["Il"] != "-":
+                if physical_data["Il"] <= 0.5:
+                    return [0.1, 0.2]
+                elif physical_data["Il"] > 0.5:
+                    return [0.08, 0.15]
+            else:
+                return [0, 0]
+
+        def type_from_Il_clay(physical_data):
+            if physical_data["Il"] != "-":
+                if physical_data["Il"] <= 0.5:
+                    return [0.06, 0.15]
+                elif physical_data["Il"] > 0.5:
+                    return [0.05, 0.1]
+            else:
+                return [0, 0]
+
+        # Функция рассчета начала разгрузки по ГОСТ 12248-2020
+        deviator_start_unloading = lambda sigma, step_1, step_2: sigma_1 * (step_1 + step_2)
+
+        # Рассчет начала разгрузки в зависимости от грансостава
+        dependence_deviator_start_unloading_on_type_ground = {
+            1: deviator_start_unloading(sigma_1, 0.3, 0.3),
+            2: deviator_start_unloading(sigma_1, 0.3, 0.3),
+            3: deviator_start_unloading(sigma_1, 0.3, 0.3),
+            4: deviator_start_unloading(sigma_1, 0.3, 0.3),
+            5: deviator_start_unloading(sigma_1, 0.3, 0.3),
+            6: deviator_start_unloading(sigma_1, 0.1, 0.2),
+            7: deviator_start_unloading(sigma_1, *type_from_Il_loam(physical_data)),
+            8: deviator_start_unloading(sigma_1, *type_from_Il_clay(physical_data)),
+            9: deviator_start_unloading(sigma_1, 0.05, 0.1)
+        }
+
+        return (
+        dependence_deviator_start_unloading_on_type_ground[define_type_ground(physical_data, physical_data["Ip"],
+                                                                              physical_data["Ir"])] + sigma_1,
+        sigma_1 + 10)
+
 
 if __name__ == '__main__':
 
@@ -980,9 +1066,9 @@ if __name__ == '__main__':
     a.set_test_data(ModelTriaxialStaticLoad.open_geotek_log(file)["deviator_loading"])
     a.plotter()
     plt.show()"""
-    param = {'E50': 30495, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5, "Eur": 50000,
+    param = {'E50': 50000, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5, "Eur": None,
              'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0,
-             'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
+             'dilatancy': 5, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
                                                                                          'depth': 19.0,
                                                                                          'name': 'Песок крупный неоднородный',
                                                                                          'ige': '-', 'rs': 2.73,

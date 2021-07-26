@@ -562,7 +562,7 @@ def sensor_accuracy(x, y, qf, x50, xc):
     return y
 
 
-def loop(x, y, Eur, y_rel_p):
+def loop(x, y, Eur, y_rel_p, point2_y):
 
     # ip1, = np.where(np.abs(y-y_rel_p) <= 0.0001)  # ищем нужный индекс в исходном массиве
     ip1, = np.where(y >= y_rel_p)
@@ -595,9 +595,6 @@ def loop(x, y, Eur, y_rel_p):
     if E0 < Eur:
         E0 = 1.1 * Eur
 
-
-    # нижняя граница петли
-    point2_y = 10
 
     # ограничение на угол наклона участка повтороной нагрузки,
     # чтобы исключить пересечение петли и девиаторной кривой
@@ -659,7 +656,7 @@ def loop(x, y, Eur, y_rel_p):
     return x_loop, y_loop, point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, x1_l, x2_l, y1_l, y2_l
 
 
-def dev_loading(qf, e50, x50, xc, x2, qf2, qocr, gaus_or_par, amount_points, y_rel_p, Eur):
+def dev_loading(qf, e50, x50, xc, x2, qf2, qocr, gaus_or_par, amount_points, y_rel_p, Eur, point2_y):
     '''кусочная функция: на участкe [0,xc]-сумма функций гиперболы и
     (экспоненты или тангенса) и кусочной функции синуса и парболы
     на участке [xc...]-половина функции Гаусса или параболы'''
@@ -764,7 +761,7 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, qocr, gaus_or_par, amount_points, y_r
     x_loop, y_loop, point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, x1_l, x2_l, y1_l, y2_l = loop(xnew,
                                                                                                               y_smooth,
                                                                                                               Eur,
-                                                                                                              y_rel_p)
+                                                                                                              y_rel_p, point2_y)
     index_point1_x, = np.where(xnew >= point1_x)
     index_point3_x, = np.where(xnew >= point3_x)
     index_point1_y, = np.where(y_smooth >= point1_y)
@@ -1065,6 +1062,11 @@ def curve(qf, e50, **kwargs):
     except KeyError:
         kwargs["y_rel_p"] = 0.8 * qf
 
+    try:
+        kwargs["point2_y"]
+    except KeyError:
+        kwargs["point2_y"] = 10
+
     xc = kwargs.get('xc')
     x2 = kwargs.get('x2')
     qf2 = kwargs.get('qf2')
@@ -1073,6 +1075,7 @@ def curve(qf, e50, **kwargs):
     amount_points = kwargs.get('amount_points')
     Eur = kwargs.get('Eur')
     y_rel_p = kwargs.get('y_rel_p')
+    point2_y = kwargs.get('point2_y')
 
     if y_rel_p > qf:
         y_rel_p = qf
@@ -1091,7 +1094,7 @@ def curve(qf, e50, **kwargs):
         qf, e50, x50, xc, x2, qf2,
         qocr, gaus_or_par,
         amount_points, y_rel_p,
-        Eur)  # x_old - без участка разгрузки, возвращается для обьемной деформации
+        Eur, point2_y)  # x_old - без участка разгрузки, возвращается для обьемной деформации
     # x - c участком разгрузки или без в зависимости от того передан ли Eur
 
     # ограничение на хс (не меньше чем x_given)
@@ -1542,8 +1545,18 @@ if __name__ == '__main__':
     # plt.ylabel("Девиатор q, кПа")
     #    x1, y1, x_log1, y_0_xca1, point_time1 = function_consalidation(Cv=0.379, point_time=1, reverse=1, last_point=250)
 
-    x, y, z, z1, loop, a = curve(595, 28000, xc=0.07, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                 amount_points=500, angle_of_dilatacy=6)
+    {'E50': 29710.0, 'sigma_3': 186.4, 'sigma_1': 981.1, 'c': 0.001, 'fi': 42.8, 'qf': 794.7, 'K0': 0.5,
+     'Cv': 1.906625504418318, 'Ca': 0.006335165735463461, 'poisson': 0.34, 'build_press': 500.0, 'pit_depth': 7.0,
+     'Eur': 61121, 'dilatancy': 10.55, 'OCR': 1, 'm': 0.64, 'lab_number': '7а-1',
+     'data_phiz': {'borehole': '7а', 'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73,
+                   'r': '-', 'rd': '-', 'n': '-', 'e': 0.5, 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-',
+                   'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0,
+                   '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-',
+                   '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
+    (596.48, 382.8)
+
+    x, y, z, z1, loop, a = curve(794.7, 29710.0, xc=0.07, x2=0.16, qf2=500, qocr=0, m_given=0.35,
+                                 amount_points=500, angle_of_dilatacy=6, Eur=30000, y_rel_p=596, point2_y=382)
 
 
     i, = np.where(x >= max(x) - 0.15)
@@ -1558,7 +1571,7 @@ if __name__ == '__main__':
     #print(E)
     i = np.argmax(y)
     y -= y[0]
-    plt.plot(x, z)
+    plt.plot(x, y)
     #with open("C:/Users/Пользователь/Desktop/test_file.txt", "w") as file:
         #for i in range(len(y)):
             #file.write(str(np.round(-x[i], 4)).replace(".", ",") + "\t" + str(np.round(y[i], 4)).replace(".", ",")+ "\n")

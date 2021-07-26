@@ -666,9 +666,10 @@ def define_type_ground(data_gran, Ip, Ir):
         type_ground = 7  # Суглинок
     else:  # data['Ip'] >= 17:
         type_ground = 8  # Глина
+    if data_gran["Ir"] != "-" and data_gran["Ir"] >= 10:
+        type_ground = 9
 
     return type_ground
-
 # Refactor
 def define_kf(physical_data: Dict) -> float:
     """ Определение коэффициента фильтрации по грансоставу

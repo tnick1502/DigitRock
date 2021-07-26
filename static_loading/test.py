@@ -52,6 +52,5 @@ if __name__ == "__main__":
     window = LoadingWindow1()
     sys.exit(app.exec_())"""
     import numpy as np
-    print(round(1.5), round(2.5))
-    print(np.round(1.5), np.round(2.5))
+    print(np.rad2deg(np.arcsin(1)))
 
