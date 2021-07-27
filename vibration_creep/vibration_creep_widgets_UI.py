@@ -141,7 +141,7 @@ class VibrationCreepUI(QWidget):
                               label="frequency = " + str(plot_data["frequency"][i]) + " Hz")
 
             if plot_data["E50d"][i]:
-                self.vibration_creep_ax.plot(*plot_data["E50d"][i], **plotter_params["black_dotted_line"])
+                self.vibration_creep_ax.plot(*plot_data["E50d"][i], **plotter_params["static_loading_black_dotted_line"])
 
 
             self.vibration_creep_ax.legend(loc="lower right")#, bbox_to_anchor=(0.65, 0))

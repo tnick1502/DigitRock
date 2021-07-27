@@ -32,9 +32,9 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         """Определяем основную структуру данных"""
         super().__init__()
         # Параметры построения для всех графиков
-        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.12}
-        self.plot_params_dev = {"right": 0.88, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.12}
-        self.plot_params_epsV = {"right": 0.98, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.15}
+        self.plot_params = {"right": 0.88, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.12}
+        #self.plot_params_dev = {"right": 0.88, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.12}
+        #self.plot_params_epsV = {"right": 0.98, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.15}
         self._create_UI()
 
     def _create_UI(self):
@@ -86,7 +86,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_frame.setStyleSheet('background: #ffffff')
         self.deviator_frame_layout = QVBoxLayout()
         self.deviator_figure = plt.figure()
-        self.deviator_figure.subplots_adjust(**self.plot_params_dev)
+        self.deviator_figure.subplots_adjust(**self.plot_params)
         self.deviator_canvas = FigureCanvas(self.deviator_figure)
         self.deviator_ax = self.deviator_figure.add_subplot(111)
         self.deviator_ax.grid(axis='both', linewidth='0.4')
@@ -94,7 +94,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_ax.set_ylabel("Девиатор q, кПА")
 
         self.deviator_ax2 = self.deviator_ax.twinx()
-        self.deviator_ax2.set_ylabel("Вертикальное напряжение $𝜎_1$, кПА")
+        self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', кПА")
 
         self.deviator_canvas.draw()
         self.deviator_frame_layout.setSpacing(0)
@@ -108,7 +108,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.volume_strain_frame.setStyleSheet('background: #ffffff')
         self.volume_strain_frame_layout = QVBoxLayout()
         self.volume_strain_figure = plt.figure()
-        self.volume_strain_figure.subplots_adjust(**self.plot_params_epsV)
+        self.volume_strain_figure.subplots_adjust(**self.plot_params)
         self.volume_strain_canvas = FigureCanvas(self.volume_strain_figure)
         self.volume_strain_ax = self.volume_strain_figure.add_subplot(111)
         self.volume_strain_ax.grid(axis='both', linewidth='0.4')
@@ -143,31 +143,35 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
             self.volume_strain_ax.set_ylabel("Объемная деформация $ε_v$, д.е.")
 
             if plots["strain"] is not None:
-                self.deviator_ax.plot(plots["strain"], plots["deviator"], **plotter_params["main_line"])
-                self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"], **plotter_params["main_line"])
+                self.deviator_ax.plot(plots["strain"], plots["deviator"],
+                                      **plotter_params["static_loading_main_line"])
+
+                self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"],
+                                      **plotter_params["static_loading_gray_line"])
+
                 lim = self.deviator_ax.get_ylim()
-                self.deviator_ax2.set_ylim([lim[0]+plots["sigma_3"], lim[1]+plots["sigma_3"]])
+                self.deviator_ax2.set_ylim([lim[0]+plots["sigma_3"], lim[1] + plots["sigma_3"]])
 
                 if plots["E50"]:
                     self.deviator_ax.plot(*plots["E50"],  label="$E_{50}$" + ", MПа = " + str(res["E50"]),
-                                          **plotter_params["sandybrown_dotted_line"])
-                    self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"], label="$E$" + ", MПа = " + str(res["E"][0]),
-                                           **plotter_params["black_dotted_line"])
+                                          **plotter_params["static_loading_black_dotted_line"])
                 if plots["Eur"]:
-                    self.deviator_ax.plot(*plots["Eur"], **plotter_params["sandybrown_dotted_line"])
+                    self.deviator_ax.plot(*plots["Eur"], **plotter_params["static_loading_red_dotted_line"],
+                                          label="$E_{ur}$" + ", MПа = " + str(res["Eur"]))
+                else:
+                    self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"],
+                                          **plotter_params["static_loading_red_dotted_line"],
+                                          label="$E$" + ", MПа = " + str(res["E"][0]))
 
                 #self.deviator_ax.plot([], [], label="$E_{50}$" + ", MПа = " + str(res["E50"]), color="#eeeeee")
                 #self.deviator_ax.plot([], [], label="$E$" + ", MПа = " + str(res["E"][0]), color="#eeeeee")
-                self.deviator_ax.plot([], [], label="$q_{f}$" + ", MПа = " + str(round(res["qf"], 2)), color="#eeeeee")
-                if res["Eur"]:
-                    self.deviator_ax.plot([], [], label="$E_{ur}$" + ", MПа = " + str(res["Eur"]), color="#eeeeee")
 
-                self.volume_strain_ax.plot(plots["strain"], plots["volume_strain"], **plotter_params["main_line"])
+                self.volume_strain_ax.plot(plots["strain"], plots["volume_strain"], **plotter_params["static_loading_main_line"])
                 self.volume_strain_ax.plot(plots["strain"], plots["volume_strain_approximate"],
-                                      **plotter_params["dotted_line"])
+                                      **plotter_params["static_loading_red_dotted_line"])
                 if plots["dilatancy"]:
                     self.volume_strain_ax.plot(plots["dilatancy"]["x"], plots["dilatancy"]["y"],
-                                          **plotter_params["black_dotted_line"])
+                                          **plotter_params["static_loading_black_dotted_line"])
 
                 self.volume_strain_ax.set_xlim(self.deviator_ax.get_xlim())
 
@@ -361,7 +365,7 @@ class ModelTriaxialConsolidationUI(QWidget):
             if plots is not None:
                 # Квадратный корень
                 # Основной график
-                self.sqrt_ax.plot(plots["time_sqrt"], plots["volume_strain_approximate"], **plotter_params["main_line"])
+                self.sqrt_ax.plot(plots["time_sqrt"], plots["volume_strain_approximate"], **plotter_params["static_loading_main_line"])
                 # Точки концов линий
                 self.sqrt_ax.scatter(*plots["sqrt_line_points"].line_start_point, zorder=5, color="dimgray")
                 self.sqrt_ax.scatter(*plots["sqrt_line_points"].line_end_point, zorder=5, color="dimgray")
@@ -371,23 +375,27 @@ class ModelTriaxialConsolidationUI(QWidget):
                     # Основные линии обработки
                     self.sqrt_ax.plot(*point_to_xy(plots["sqrt_line_points"].line_start_point,
                                               plots["sqrt_line_points"].line_end_point),
-                                 **plotter_params["sandybrown_line"])
+                                 **plotter_params["static_loading_sandybrown_line"])
 
                 if plots["sqrt_line_points"].Cv:
                     self.sqrt_ax.plot(
                         *point_to_xy(plots["sqrt_line_points"].line_start_point, plots["sqrt_line_points"].Cv),
-                        **plotter_params["sandybrown_line"])
+                        **plotter_params["static_loading_sandybrown_line"])
 
                     # Точки обработки
                     self.sqrt_ax.scatter(*plots["sqrt_line_points"].Cv, zorder=5, color="tomato")
 
                     # Пунктирные линии
-                    self.sqrt_ax.plot(*plots["sqrt_t90_vertical_line"], **plotter_params["black_dotted_line"])
-                    self.sqrt_ax.plot(*plots["sqrt_t90_horizontal_line"], **plotter_params["black_dotted_line"])
+                    self.sqrt_ax.plot(*plots["sqrt_t90_vertical_line"],
+                                      **plotter_params["static_loading_black_dotted_line"])
+                    self.sqrt_ax.plot(*plots["sqrt_t90_horizontal_line"],
+                                      **plotter_params["static_loading_black_dotted_line"])
 
                     if plots["sqrt_t100_vertical_line"]:
-                        self.sqrt_ax.plot(*plots["sqrt_t100_vertical_line"], **plotter_params["black_dotted_line"])
-                        self.sqrt_ax.plot(*plots["sqrt_t100_horizontal_line"], **plotter_params["black_dotted_line"])
+                        self.sqrt_ax.plot(*plots["sqrt_t100_vertical_line"],
+                                          **plotter_params["static_loading_black_dotted_line"])
+                        self.sqrt_ax.plot(*plots["sqrt_t100_horizontal_line"],
+                                          **plotter_params["static_loading_black_dotted_line"])
 
                     # Текстовые подписи
                     self.sqrt_ax.text(*plots["sqrt_t90_text"], '$\sqrt{t_{90}}$', horizontalalignment='center',
@@ -420,17 +428,17 @@ class ModelTriaxialConsolidationUI(QWidget):
             if plots is not None:
                 # Логарифм
                 # Основной график
-                self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"], **plotter_params["main_line"])
+                self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"], **plotter_params["static_loading_main_line"])
 
                 # Линии обработки
                 if plots["log_line_points"]:
                     # Основные линии обработки
                     self.log_ax.plot(*point_to_xy(plots["log_line_points"].first_line_start_point,
                                              plots["log_line_points"].first_line_end_point),
-                                **plotter_params["sandybrown_line"])
+                                **plotter_params["static_loading_sandybrown_line"])
                     self.log_ax.plot(*point_to_xy(plots["log_line_points"].second_line_start_point,
                                              plots["log_line_points"].second_line_end_point),
-                                **plotter_params["sandybrown_line"])
+                                **plotter_params["static_loading_sandybrown_line"])
 
                     # Точки концов линий
                     self.log_ax.scatter(*plots["log_line_points"].first_line_start_point, zorder=5, color="dimgray")
@@ -444,8 +452,10 @@ class ModelTriaxialConsolidationUI(QWidget):
                         self.log_ax.scatter(*plots["d0"], zorder=5, color="tomato")
 
                         # Пунктирные линии
-                        self.log_ax.plot(*plots["log_t100_vertical_line"], **plotter_params["black_dotted_line"])
-                        self.log_ax.plot(*plots["log_t100_horizontal_line"], **plotter_params["black_dotted_line"])
+                        self.log_ax.plot(*plots["log_t100_vertical_line"],
+                                         **plotter_params["static_loading_black_dotted_line"])
+                        self.log_ax.plot(*plots["log_t100_horizontal_line"],
+                                         **plotter_params["static_loading_black_dotted_line"])
 
                         # Текстовые подписи
                         self.log_ax.text(*plots["log_t100_text"], '$\sqrt{t_{100}}$', horizontalalignment='center',
@@ -476,14 +486,18 @@ class ModelTriaxialConsolidationUI(QWidget):
             self.log_ax.set_ylabel("Объемная деформация $ε_v$, д.е.")
 
             if plots is not None:
-                self.sqrt_ax.plot(plots["time_sqrt_origin"], plots["volume_strain"], **plotter_params["main_line"],
+                self.sqrt_ax.plot(plots["time_sqrt_origin"], plots["volume_strain"],
+                                  **plotter_params["static_loading_main_line"],
                                   label="Опытные данные")
-                self.sqrt_ax.plot(plots["time_sqrt"], plots["volume_strain_approximate"], **plotter_params["help_line"],
+                self.sqrt_ax.plot(plots["time_sqrt"], plots["volume_strain_approximate"],
+                                  **plotter_params["static_loading_red_line"],
                                   label="Аппроксимация")
 
-                self.log_ax.plot(plots["time_log_origin"], plots["volume_strain"], **plotter_params["main_line"],
+                self.log_ax.plot(plots["time_log_origin"], plots["volume_strain"],
+                                 **plotter_params["static_loading_main_line"],
                                  label="Опытные данные")
-                self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"], **plotter_params["help_line"],
+                self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"],
+                                 **plotter_params["static_loading_red_line"],
                                  label="Аппроксимация")
 
                 self.sqrt_ax.legend()
@@ -592,7 +606,7 @@ class ModelTriaxialReconsolidationUI(QWidget):
             self.ax.set_ylabel("Поровое давление, кПа")
 
             if plots:
-                self.ax.plot(plots["cell_pressure"], plots["pore_pressure"], **plotter_params["main_line"])
+                self.ax.plot(plots["cell_pressure"], plots["pore_pressure"], **plotter_params["static_loading_main_line"])
                 self.ax.plot([], [], label="Scempton ratio = " + str(res["scempton"]),
                         color="#eeeeee")
                 self.ax.legend()

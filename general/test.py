@@ -1,4 +1,3 @@
-import os
-path="C:/Users"
-path=os.path.realpath(path)
-os.startfile(path)
+import numpy as np
+print()
+np.rad2deg(np.arcsin(-1))
