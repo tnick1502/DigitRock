@@ -240,6 +240,34 @@ class ModelTriaxialConsolidation:
                     sqrt_t100_horizontal_line = None
                     sqrt_t100_text = None
                     sqrt_strain100_text = None
+
+
+                index_sqrt_strain_50, = np.where(
+                    self._test_data.volume_strain_approximate <= self._test_result.strain50_sqrt)
+
+                if len(index_sqrt_strain_50):
+                    sqrt_t50_vertical_line = point_to_xy(Point(x=self._test_data.time_sqrt[index_sqrt_strain_50[0]],
+                                                                y=max(self._test_data.volume_strain_approximate[0],
+                                                                      self.processed_points_sqrt.line_start_point.y) - 5 * mooveY),
+                                                          Point(x=self._test_data.time_sqrt[index_sqrt_strain_50[0]],
+                                                                y=self._test_data.volume_strain_approximate[
+                                                                    index_sqrt_strain_50[0]]))
+                    sqrt_t50_horizontal_line = point_to_xy(
+                        Point(x=4 * mooveX, y=self._test_data.volume_strain_approximate[index_sqrt_strain_50[0]]),
+                        Point(x=self._test_data.time_sqrt[index_sqrt_strain_50[0]],
+                              y=self._test_data.volume_strain_approximate[index_sqrt_strain_50[0]]))
+
+                    sqrt_t50_text = Point(x=self._test_data.time_sqrt[index_sqrt_strain_50[0]],
+                                           y=max(self._test_data.volume_strain_approximate[0],
+                                                 self.processed_points_sqrt.Cv.y) - 2.70 * mooveY)
+
+                    sqrt_strain50_text = Point(x=4 * mooveX,
+                                                y=self._test_data.volume_strain_approximate[index_sqrt_strain_50[0]])
+                else:
+                    sqrt_t50_vertical_line = None
+                    sqrt_t50_horizontal_line = None
+                    sqrt_t50_text = None
+                    sqrt_strain50_text = None
             else:
                 sqrt_t100_vertical_line = None
                 sqrt_t100_horizontal_line = None
@@ -274,6 +302,11 @@ class ModelTriaxialConsolidation:
 
                     "time_sqrt": self._test_data.time_sqrt,
                     "sqrt_line_points": self.processed_points_sqrt,
+
+                    "sqrt_t50_vertical_line": sqrt_t50_vertical_line,
+                    "sqrt_t50_horizontal_line": sqrt_t50_horizontal_line,
+                    "sqrt_t50_text": sqrt_t50_text,
+                    "sqrt_strain50_text": sqrt_strain50_text,
 
                     "sqrt_t90_vertical_line": sqrt_t90_vertical_line,
                     "sqrt_t90_horizontal_line": sqrt_t90_horizontal_line,
@@ -353,6 +386,35 @@ class ModelTriaxialConsolidation:
                     sqrt_t100_horizontal_line = None
                     sqrt_t100_text = None
                     sqrt_strain100_text = None
+
+                index_sqrt_strain_50, = np.where(
+                    self._test_data.volume_strain_approximate <= self._test_result.strain50_sqrt)
+
+                if len(index_sqrt_strain_50):
+                    sqrt_t50_vertical_line = point_to_xy(Point(x=self._test_data.time_sqrt[index_sqrt_strain_50[0]],
+                                                                y=max(self._test_data.volume_strain_approximate[0],
+                                                                      self.processed_points_sqrt.line_start_point.y) - 5 * mooveY),
+                                                          Point(x=self._test_data.time_sqrt[index_sqrt_strain_50[0]],
+                                                                y=self._test_data.volume_strain_approximate[
+                                                                    index_sqrt_strain_50[0]]))
+                    sqrt_t50_horizontal_line = point_to_xy(
+                        Point(x=4 * mooveX, y=self._test_data.volume_strain_approximate[index_sqrt_strain_50[0]]),
+                        Point(x=self._test_data.time_sqrt[index_sqrt_strain_50[0]],
+                              y=self._test_data.volume_strain_approximate[index_sqrt_strain_50[0]]))
+
+                    sqrt_t50_text = Point(x=self._test_data.time_sqrt[index_sqrt_strain_50[0]],
+                                           y=max(self._test_data.volume_strain_approximate[0],
+                                                 self.processed_points_sqrt.Cv.y) - 2.70 * mooveY)
+
+                    sqrt_strain50_text = Point(x=4 * mooveX,
+                                                y=self._test_data.volume_strain_approximate[index_sqrt_strain_50[0]])
+                else:
+                    sqrt_t50_vertical_line = None
+                    sqrt_t50_horizontal_line = None
+                    sqrt_t50_text = None
+                    sqrt_strain50_text = None
+
+
             else:
                 sqrt_t100_vertical_line = None
                 sqrt_t100_horizontal_line = None
@@ -364,6 +426,11 @@ class ModelTriaxialConsolidation:
 
                     "time_sqrt": self._test_data.time_sqrt,
                     "sqrt_line_points": self.processed_points_sqrt,
+
+                    "sqrt_t50_vertical_line": sqrt_t50_vertical_line,
+                    "sqrt_t50_horizontal_line": sqrt_t50_horizontal_line,
+                    "sqrt_t50_text": sqrt_t50_text,
+                    "sqrt_strain50_text": sqrt_strain50_text,
 
                     "sqrt_t90_vertical_line": sqrt_t90_vertical_line,
                     "sqrt_t90_horizontal_line": sqrt_t90_horizontal_line,
@@ -444,16 +511,16 @@ class ModelTriaxialConsolidation:
 
             # Квадратный корень
             # Основной график
-            ax_sqrt.plot(plots["time_sqrt"], plots["volume_strain_approximate"], **plotter_params["main_line"])
+            ax_sqrt.plot(plots["time_sqrt"], plots["volume_strain_approximate"], **plotter_params["static_loading_main_line"])
 
             # Линии обработки
             if plots["sqrt_line_points"]:
                 # Основные линии обработки
                 ax_sqrt.plot(*point_to_xy(plots["sqrt_line_points"].line_start_point, plots["sqrt_line_points"].line_end_point),
-                             **plotter_params["sandybrown_line"])
+                             **plotter_params["static_loading_sandybrown_line"])
                 if plots["sqrt_line_points"].Cv:
                     ax_sqrt.plot(*point_to_xy(plots["sqrt_line_points"].line_start_point, plots["sqrt_line_points"].Cv),
-                                 **plotter_params["sandybrown_line"])
+                                 **plotter_params["static_loading_sandybrown_line"])
 
                     # Точки концов линий
                     ax_sqrt.scatter(*plots["sqrt_line_points"].line_start_point, zorder=5, color="dimgray")
@@ -463,17 +530,23 @@ class ModelTriaxialConsolidation:
                     ax_sqrt.scatter(*plots["sqrt_line_points"].Cv, zorder=5, color="tomato")
 
                     # Пунктирные линии
-                    ax_sqrt.plot(*plots["sqrt_t90_vertical_line"], **plotter_params["black_dotted_line"])
-                    ax_sqrt.plot(*plots["sqrt_t90_horizontal_line"], **plotter_params["black_dotted_line"])
+                    ax_sqrt.plot(*plots["sqrt_t90_vertical_line"], **plotter_params["static_loading_black_dotted_line"])
+                    ax_sqrt.plot(*plots["sqrt_t90_horizontal_line"], **plotter_params["static_loading_black_dotted_line"])
 
                     if plots["sqrt_t100_vertical_line"]:
-                        ax_sqrt.plot(*plots["sqrt_t100_vertical_line"], **plotter_params["black_dotted_line"])
-                        ax_sqrt.plot(*plots["sqrt_t100_horizontal_line"], **plotter_params["black_dotted_line"])
+                        ax_sqrt.plot(*plots["sqrt_t50_vertical_line"], **plotter_params["static_loading_black_dotted_line"])
+                        ax_sqrt.plot(*plots["sqrt_t50_horizontal_line"], **plotter_params["static_loading_black_dotted_line"])
+                        ax_sqrt.plot(*plots["sqrt_t100_vertical_line"], **plotter_params["static_loading_black_dotted_line"])
+                        ax_sqrt.plot(*plots["sqrt_t100_horizontal_line"], **plotter_params["static_loading_black_dotted_line"])
 
                     # Текстовые подписи
                     ax_sqrt.text(*plots["sqrt_t90_text"], '$\sqrt{t_{90}}$', horizontalalignment='center',
                                  verticalalignment='bottom')
                     ax_sqrt.text(*plots["sqrt_strain90_text"], '$ε_{90}$', horizontalalignment='right',
+                                 verticalalignment='center')
+                    ax_sqrt.text(*plots["sqrt_t50_text"], '$\sqrt{t_{50}}$', horizontalalignment='center',
+                                 verticalalignment='bottom')
+                    ax_sqrt.text(*plots["sqrt_strain50_text"], '$ε_{50}$', horizontalalignment='right',
                                  verticalalignment='center')
                     if plots["sqrt_t100_text"]:
                         ax_sqrt.text(*plots["sqrt_t100_text"], '$\sqrt{t_{100}}$', horizontalalignment='center',
@@ -489,17 +562,17 @@ class ModelTriaxialConsolidation:
 
             # Логарифм
             # Основной график
-            ax_log.plot(plots["time_log"], plots["volume_strain_approximate"], **plotter_params["main_line"])
+            ax_log.plot(plots["time_log"], plots["volume_strain_approximate"], **plotter_params["static_loading_main_line"])
 
             # Линии обработки
             if plots["log_line_points"]:
                 # Основные линии обработки
                 ax_log.plot(*point_to_xy(plots["log_line_points"].first_line_start_point,
                                          plots["log_line_points"].first_line_end_point),
-                            **plotter_params["sandybrown_line"])
+                            **plotter_params["static_loading_sandybrown_line"])
                 ax_log.plot(*point_to_xy(plots["log_line_points"].second_line_start_point,
                                          plots["log_line_points"].second_line_end_point),
-                            **plotter_params["sandybrown_line"])
+                            **plotter_params["static_loading_sandybrown_line"])
 
                 # Точки концов линий
                 ax_log.scatter(*plots["log_line_points"].first_line_start_point, zorder=5, color="dimgray")
@@ -513,8 +586,8 @@ class ModelTriaxialConsolidation:
                     ax_log.scatter(*plots["d0"], zorder=5, color="tomato")
 
                     # Пунктирные линии
-                    ax_log.plot(*plots["log_t100_vertical_line"], **plotter_params["black_dotted_line"])
-                    ax_log.plot(*plots["log_t100_horizontal_line"], **plotter_params["black_dotted_line"])
+                    ax_log.plot(*plots["log_t100_vertical_line"], **plotter_params["static_loading_black_dotted_line"])
+                    ax_log.plot(*plots["log_t100_horizontal_line"], **plotter_params["static_loading_black_dotted_line"])
 
                     # Текстовые подписи
                     ax_log.text(*plots["log_t100_text"], '$\sqrt{t_{100}}$', horizontalalignment='center',
@@ -649,16 +722,36 @@ class ModelTriaxialConsolidation:
                                                      self._test_data.volume_strain_approximate[0]) / 0.9) +
                                                    self._test_data.volume_strain_approximate[0]),
                 self._test_data.volume_strain_approximate)
+
+
             if self._test_result.t100_sqrt==0 or self._test_result.strain100_sqrt==0:
                 self._test_result.t100_sqrt = None
+                self._test_result.t50_sqrt = None
+                self._test_result.strain50_sqrt = None
                 self._test_result.strain100_sqrt = None
             else:
-                self._test_result.t100_sqrt = self._test_result.t100_sqrt**2
+                self._test_result.t100_sqrt = self._test_result.t100_sqrt ** 2
+
+                self._test_result.t50_sqrt, self._test_result.strain50_sqrt = interpolated_intercept(
+                    self._test_data.time_sqrt, np.full(len(self._test_data.time_sqrt),
+
+                                                       (self._test_result.strain100_sqrt -
+                                                        self._test_data.volume_strain_approximate[0])/2 +
+                                                       self._test_data.volume_strain_approximate[0]),
+                    self._test_data.volume_strain_approximate)
+
+                self._test_result.t50_sqrt = self._test_result.t50_sqrt ** 2
+
+                self._test_result.velocity = (76 - self._test_data.delta_h_consolidation) * 0.15 / \
+                                             (self._test_result.t50_sqrt * 64)
+
         else:
             self._test_result.Cv_sqrt = None
+            self._test_result.t50_sqrt = None
             self._test_result.t90_sqrt = None
             self._test_result.t100_sqrt = None
             self._test_result.strain100_sqrt = None
+            self._test_result.strain50_sqrt = None
 
     def _log_processing(self, processed_points_log=None):
 
@@ -684,9 +777,6 @@ class ModelTriaxialConsolidation:
                                                                                   self._test_result.d0) / 2)),
                                               self._test_data.volume_strain_approximate)
             self._test_result.t50_log = round(np.e ** strain50[0])
-
-            self._test_result.velocity = (76 - self._test_data.delta_h_consolidation) * 0.15 / \
-                                             (self._test_result.t50_log * 64)
 
 
             self._test_result.Cv_log = round(((3.8 * 3.8 * 0.197) / (4 * self._test_result.t50_log)), 3)
@@ -1013,8 +1103,8 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 if __name__ == '__main__':
     file = r"C:\Users\Пользователь\PycharmProjects\Willie\Test.1.log"
     file = r"Z:\МДГТ - Механика\3. Трехосные испытания\1365\Test\Test.1.log"
-    param = {'E': 30495, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5,
-             'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
+    param = {'E50': 30495, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5,
+             'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0,
              'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
                                                                                          'depth': 19.0,
                                                                                          'name': 'Песок крупный неоднородный',

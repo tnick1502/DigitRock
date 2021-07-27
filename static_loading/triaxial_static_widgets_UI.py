@@ -396,6 +396,10 @@ class ModelTriaxialConsolidationUI(QWidget):
                                           **plotter_params["static_loading_black_dotted_line"])
                         self.sqrt_ax.plot(*plots["sqrt_t100_horizontal_line"],
                                           **plotter_params["static_loading_black_dotted_line"])
+                        self.sqrt_ax.plot(*plots["sqrt_t50_vertical_line"],
+                                          **plotter_params["static_loading_black_dotted_line"])
+                        self.sqrt_ax.plot(*plots["sqrt_t50_horizontal_line"],
+                                          **plotter_params["static_loading_black_dotted_line"])
 
                     # Текстовые подписи
                     self.sqrt_ax.text(*plots["sqrt_t90_text"], '$\sqrt{t_{90}}$', horizontalalignment='center',
@@ -407,11 +411,17 @@ class ModelTriaxialConsolidationUI(QWidget):
                                      verticalalignment='bottom')
                         self.sqrt_ax.text(*plots["sqrt_strain100_text"], '$ε_{100}$', horizontalalignment='right',
                                      verticalalignment='center')
+                        self.sqrt_ax.text(*plots["sqrt_t50_text"], '$\sqrt{t_{50}}$', horizontalalignment='center',
+                                          verticalalignment='bottom')
+                        self.sqrt_ax.text(*plots["sqrt_strain50_text"], '$ε_{50}$', horizontalalignment='right',
+                                          verticalalignment='center')
 
                     self.sqrt_ax.plot([], [], label="$C_{v}$" + " = " + str(res["Cv_sqrt"]),
                                  color="#eeeeee")
                     self.sqrt_ax.plot([], [], label="$t_{100}$" + " = " + str(round(res["t100_sqrt"])),
                                  color="#eeeeee")
+                    self.sqrt_ax.plot([], [], label="$t_{50}$" + " = " + str(round(res["t50_sqrt"], 3)),
+                                      color="#eeeeee")
                     self.sqrt_ax.legend()
 
             self.sqrt_canvas.draw()
