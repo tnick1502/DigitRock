@@ -233,7 +233,6 @@ def function_consalidation_without_Cv(Cv=3, volume_strain_90=-np.random.uniform(
     if Ca =="-":
         Ca = np.random.uniform(0.01, 0.001)
     Cv *= 1.5
-    Ca *= -1
     # Проверка заданного времени консолидации. Если его нет, найдем автоматически, с условием выполнения t100
     if not max_time:
         max_time = np.random.uniform(((0.848 * 38 * 38) / (4 * Cv)) * 3, (((0.848 * 38 * 38) / (4 * Cv))) * 4)
@@ -548,8 +547,18 @@ if __name__ == "__main__":
     Cv = 2
     t_test = 5*(((0.848 * 3.8 * 3.8) / (4 * Cv)))
 
+    #print(test_params["Cv"], test_params["Ca"], test_params["E50"], test_params["sigma_3"], test_params["K0"],
+          #self._draw_params.max_time, self._draw_params.volume_strain_90)
 
-    x1, y1 = function_consalidation(Cv=Cv, Ca=-0.005, point_time=1/60, max_time=t_test*4, deviation=0.003)
+    1.772
+    0.00683413097031166
+    28440.0
+    186.4
+    0.5
+    7.7679012557423475
+    0.17770291565322646
+    x1, y1 = function_consalidation_without_Cv(Cv=1.772, Ca=-0.00683413097031166, point_time=1/120, max_time=7.7679012557423475,
+                                    volume_strain_90=-0.17770291565322646, E=28440.0, sigma_3=186.4)
     #x2, y2 = function_consalidation(Cv=Cv, Ca=-0.01,  point_time=1/2, max_time=t_test,deviation=0.003, approximate=True)
     #x3, y3 = function_consalidation_without_Cv(Cv=Cv, Ca=-0.01, point_time=1,deviation=0.003, max_time=t_test)
 

@@ -414,12 +414,16 @@ class ModelTriaxialConsolidation:
                     sqrt_t50_text = None
                     sqrt_strain50_text = None
 
-
             else:
                 sqrt_t100_vertical_line = None
                 sqrt_t100_horizontal_line = None
                 sqrt_t100_text = None
                 sqrt_strain100_text = None
+
+                sqrt_t50_vertical_line = None
+                sqrt_t50_horizontal_line = None
+                sqrt_t50_text = None
+                sqrt_strain50_text = None
 
 
             return {"volume_strain_approximate": self._test_data.volume_strain_approximate,
@@ -967,6 +971,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._test_data.volume_strain = self._test_data.pore_volume_strain
         self.change_borders(0, len(self._test_data.time))
 
+
     def set_delta_h_reconsolidation(self, delta_h_reconsolidation):
         self._test_data.delta_h_reconsolidation = round(delta_h_reconsolidation, 5)
 
@@ -1000,6 +1005,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 
     def _test_modeling(self):
         """Функция моделирования опыта"""
+
         random = np.random.choice([2, 3])
         if self._test_params.Cv >= 0.1:
             point_time = 1/60

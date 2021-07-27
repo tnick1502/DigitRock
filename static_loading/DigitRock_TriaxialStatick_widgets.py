@@ -212,6 +212,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 set_cell_data(self.tab_1.file.path,
                               "BK" + str(self.tab_1.file.get_physical_data()[self.tab_1.file.get_lab_number()]["Nop"]),
                               test_result["E50"], sheet="Лист1", color="FF6961")
+
             elif read_parameters["test_type"] == "Трёхосное сжатие с разгрузкой":
                 assert self.tab_2._model.deviator_loading._test_params.sigma_3, "Не загружен файл опыта"
                 Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-Р" + ".pdf"
@@ -225,7 +226,10 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                                   *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), 1.1)
 
                 set_cell_data(self.tab_1.file.path,
-                              "BK" + str(self.tab_1.file.get_physical_data()[self.tab_1.file.get_lab_number()]["Nop"]),
+                              'GI' + str(self.tab_1.file.get_physical_data()[self.tab_1.file.get_lab_number()]["Nop"]),
+                              test_result["Eur"], sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.file.path,
+                              "BN" + str(self.tab_1.file.get_physical_data()[self.tab_1.file.get_lab_number()]["Nop"]),
                               test_result["E50"], sheet="Лист1", color="FF6961")
 
             elif read_parameters["test_type"] == "Трёхосное сжатие (F, C, E)":
