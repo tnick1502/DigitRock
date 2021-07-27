@@ -1,3 +1,4 @@
 import numpy as np
-print()
-np.rad2deg(np.arcsin(-1))
+
+if None < 1.1 * 3:
+    print("\nВНИМАНИЕ: Eur изменен!\n")

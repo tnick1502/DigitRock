@@ -18,7 +18,8 @@ import numpy as np
 import copy
 import os
 import matplotlib.pyplot as plt
-from scipy.optimize import fsolve
+from typing import List
+from scipy.optimize import fsolve, curve_fit
 
 from static_loading.triaxial_static_loading_test_model import ModelTriaxialStaticLoad, ModelTriaxialStaticLoadSoilTest
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, mirrow_element, \
@@ -33,7 +34,8 @@ class ModelMohrCircles:
         # Основные модели опыта
         self._tests = []
         self._test_data = AttrDict({"fi": None, "c": None})
-        self._test_result = AttrDict({"fi": None, "c": None})
+        self._test_result = AttrDict({"fi": None, "c": None, "m": None})
+        self._test_reference_params = AttrDict({"p_ref": None, "Eref": None})
 
     def add_test(self, file_path):
         """Добавление опытов"""
@@ -62,6 +64,10 @@ class ModelMohrCircles:
         if len(self._tests) >= 2:
             self._tests.sort(key=sort_key)
 
+    def set_reference_params(self, p_ref, Eref):
+        self._test_reference_params.p_ref = p_ref
+        self._test_reference_params.Eref = Eref
+
     def get_sigma_3_1(self):
         """Получение массивов давлений грунтов"""
         if len(self._tests) >= 2:
@@ -73,6 +79,18 @@ class ModelMohrCircles:
                 sigma_3.append(round((results["sigma_3"] - results["u"]), 3))
                 sigma_1.append(round(results["sigma_3"] + results["qf"] - results["u"], 3))
             return sigma_3, sigma_1
+
+        return None, None
+
+    def get_E50(self):
+        """Получение массивов давлений грунтов"""
+        if len(self._tests) >= 2:
+            E50 = []
+
+            for test in self._tests:
+                results = test.deviator_loading.get_test_results()
+                E50.append(round(results["E50"], 3))
+            return E50
 
         return None, None
 
@@ -96,6 +114,12 @@ class ModelMohrCircles:
             c, fi = ModelMohrCircles.mohr_cf_stab(sigma_3, sigma_1)
             self._test_result.c = round(np.arctan(c), 3)
             self._test_result.fi = round(np.rad2deg(np.arctan(fi)), 1)# round(np.rad2deg(np.arctan(fi)), 1)
+
+            if self._test_reference_params.p_ref and self._test_reference_params.Eref:
+                E50 = self.get_E50()
+                self._test_result.m = ModelMohrCircles.calculate_m(sigma_3, E50, self._test_reference_params.Eref/1000,
+                                                                    self._test_reference_params.p_ref/1000,
+                                                                    self._test_params["c"], self._test_params["fi"])
 
     def get_test_results(self):
         return self._test_result.get_dict()
@@ -162,6 +186,7 @@ class ModelMohrCircles:
 
             ax_cycles.plot([], [], label="c" + ", МПа = " + str(res["c"]), color="#eeeeee")
             ax_cycles.plot([], [], label="fi" + ", град. = " + str(res["fi"]), color="#eeeeee")
+            ax_cycles.plot([], [], label="m" + ", МПа$^{-1}$ = " + str(res["m"]), color="#eeeeee")
 
             ax_cycles.set_xlim(*plots["x_lims"])
             ax_cycles.set_ylim(*plots["y_lims"])
@@ -233,6 +258,24 @@ class ModelMohrCircles:
 
         return cS, phiS
 
+    @staticmethod
+    def calculate_m(sigma_3: List, E50: List, Eref: float, p_ref: float, c: float, fi: float) -> float:
+        """Функция поиска степенного параметра упрочнения из нескольких опытов
+        :param sigma_3 - массив обжимающих давлений
+        :param E50 - массив модулей E50
+        :param Eref - модуль деформации Е50 при референтном давлении
+        :param p_ref - референтное давление"""
+
+        fi = np.deg2rad(fi)
+
+        def E50_from_sigma_3(sigma, m):
+            return (Eref * ((c * np.cos(fi) + sigma * np.sin(fi)) / (
+                    c * np.cos(fi) + p_ref * np.sin(fi))) ** m)
+
+        popt, pcov = curve_fit(E50_from_sigma_3, sigma_3, E50)
+        m = popt
+        return np.round(m[0], 2)
+
 class ModelMohrCirclesSoilTest(ModelMohrCircles):
     """Класс моделирования опыта FCE"""
     def __init__(self):
@@ -261,6 +304,9 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
             self._tests = []
 
             mohr_params = []
+
+            self.set_reference_params(self._test_params["sigma_3"], self._test_params["E50"])
+
             for num, sigma_3 in enumerate(self._reference_pressure_array):
                 mohr_params.append(copy.copy(self._test_params))
                 mohr_params[num]["sigma_3"] = sigma_3
@@ -286,10 +332,6 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                                                      self._test_params["fi"], mohr_params[i]["sigma_3"],
                                                      self._test_params["sigma_3"], self._test_params["m"])
 
-                #print(mohr_params[0]["sigma_1"])
-                #print(mohr_params[1]["sigma_1"])
-                #print(mohr_params[2]["sigma_1"])
-
                 c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab([x["sigma_3"]/1000 for x in mohr_params],
                                                                    [x["sigma_1"]/1000 for x in mohr_params])
                 c = round(np.arctan(c), 3)
@@ -297,7 +339,6 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
 
             for param in mohr_params:
                 self.add_test(param)
-            #print(self.get_sigma_3_1())
 
     def save_log_files(self, directory):
         """Метод генерирует файлы испытания для всех кругов"""
@@ -373,9 +414,9 @@ if __name__ == '__main__':
     #open_geotek_log(file)
 
     #a = ModelTriaxialStaticLoadSoilTest()
-    param = {'E': 30495, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5,
-             'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
-             'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
+    param = {'E50': 30495, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5,
+             'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0,
+             'dilatancy': 4.95, 'OCR': 1, 'm': 0.5, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
                                                                                              'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73, 'r': '-', 'rd': '-', 'n': '-', 'e': '-', 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-', 'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0, '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-', '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие (E)'}
 
 

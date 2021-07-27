@@ -282,6 +282,8 @@ class MohrWidget(QWidget):
 
             self.mohr_ax.plot([], [], label="c" + ", МПа = " + str(res["c"]), color="#eeeeee")
             self.mohr_ax.plot([], [], label="fi" + ", град. = " + str(res["fi"]), color="#eeeeee")
+            if res["m"]:
+                self.mohr_ax.plot([], [], label="m" + ", МПа$^{-1}$ = " + str(res["m"]), color="#eeeeee")
 
             self.mohr_ax.set_xlim(*plots["x_lims"])
             self.mohr_ax.set_ylim(*plots["y_lims"])

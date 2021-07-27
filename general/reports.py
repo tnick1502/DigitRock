@@ -766,84 +766,96 @@ def result_table_consolidation(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (42-(( r-30)*4)) * mm)
 
-def result_table_deviator1(canvas, Res, pick, scale = 0.8):
-
-
-    try:
-        a = svg2rlg(pick[0])
-        a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 81 * mm)
-        b = svg2rlg(pick[1])
-        b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 120 * mm, 81 * mm)
-    except AttributeError:
-        a = ImageReader(pick[0])
-        canvas.drawImage(a, 31 * mm, 81 * mm,
-                             width=80* mm, height=80 * mm)
-        b = ImageReader(pick[1])
-        canvas.drawImage(b, 115 * mm, 81 * mm,
-                             width=80 * mm, height=80 * mm)
-
-    #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
+def result_table_deviator(canvas, Res, pick, scale = 0.8):
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
-    r = 25
+    r = 28
     for i in range(r):
         tableData.append([""])
 
-    tableData.append([Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["qf"], ""])
-    tableData.append([Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["E50"], ""])
-    tableData.append([Paragraph('''<p>Коэффициент пуассона µ, д.е.:</p>''', LeftStyle), "", "", "", Res["puasson"], ""])
-    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
-    t.setStyle([('SPAN', (0, 0), (-1, 0)),
-                ('SPAN', (0, 1), (-1, r)),
-
-                ('SPAN', (0, -1), (3, -1)),
-                ('SPAN', (-2, -1), (-1, -1)),
-                #('SPAN', (2, -1), (3, -1)),
-                #('SPAN', (4, -1), (5, -1)),
-                ('SPAN', (0, -2), (3, -2)),
-                ('SPAN', (-2, -2), (-1, -2)),
-                #('SPAN', (2, -2), (3, -2)),
-                #('SPAN', (4, -2), (5, -2)),
-                ('SPAN', (0, -3), (3, -3)),
-                ('SPAN', (-2, -3), (-1, -3)),
-                #('SPAN', (2, -3), (3, -3)),
-              #  ('SPAN', (4, -3), (5, -3)),
-
-                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
-
-                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (0, 0), (-1, r), "CENTER"),
-                ("ALIGN", (0, r+1), (0, -1), "LEFT"),
-                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
-
-    t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (42-(( r-30)*4)) * mm)
-
-def result_table_deviator(canvas, Res, pick, scale = 0.8):
-
-    try:
+    if Res["Eur"]:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
-        b = svg2rlg(pick[1])
-        b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
-    except AttributeError:
-        a = ImageReader(pick[1])
-        canvas.drawImage(a, 32 * mm, 60 * mm,
-                         width=160 * mm, height=54 * mm)
-        b = ImageReader(pick[0])
-        canvas.drawImage(b, 32 * mm, 114 * mm,
-                         width=160 * mm, height=54 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, 66 * mm)
+        tableData.append(
+            [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
+             Res["qf"], ""])
+        tableData.append(
+            [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
+             Res["E50"], ""])
+        tableData.append(
+            [Paragraph('''<p>Коэффициент пуассона µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+        tableData.append(
+            [Paragraph('''<p>Разгрузочный модуль E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "",
+             "", Res["Eur"], ""])
+
+    else:
+        tableData.append(
+            [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
+             Res["qf"], ""])
+        tableData.append(
+            [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
+             Res["E50"], ""])
+        tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", Res["E"][0], ""])
+        tableData.append(
+            [Paragraph('''<p>Коэффициент пуассона µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+
+        try:
+            a = svg2rlg(pick[0])
+            a.scale(scale, scale)
+            renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+            b = svg2rlg(pick[1])
+            b.scale(scale, scale)
+            renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
+        except AttributeError:
+            a = ImageReader(pick[1])
+            canvas.drawImage(a, 32 * mm, 60 * mm,
+                             width=160 * mm, height=54 * mm)
+            b = ImageReader(pick[0])
+            canvas.drawImage(b, 32 * mm, 114 * mm,
+                             width=160 * mm, height=54 * mm)
+
+    style = [('SPAN', (0, 0), (-1, 0)),
+             ('SPAN', (0, 1), (-1, r)),
+
+             ('SPAN', (0, -1), (3, -1)),
+             ('SPAN', (-2, -1), (-1, -1)),
+             # ('SPAN', (2, -1), (3, -1)),
+             # ('SPAN', (4, -1), (5, -1)),
+             ('SPAN', (0, -2), (3, -2)),
+             ('SPAN', (-2, -2), (-1, -2)),
+             # ('SPAN', (2, -2), (3, -2)),
+             # ('SPAN', (4, -2), (5, -2)),
+             ('SPAN', (0, -3), (3, -3)),
+             ('SPAN', (-2, -3), (-1, -3)),
+
+             ('SPAN', (0, -4), (3, -4)),
+             ('SPAN', (-2, -4), (-1, -4)),
+             # ('SPAN', (2, -3), (3, -3)),
+             #  ('SPAN', (4, -3), (5, -3)),
+
+             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+
+             ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+             ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+             ("FONTSIZE", (0, 0), (-1, -1), 8),
+             # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+             ("ALIGN", (0, 0), (-1, r), "CENTER"),
+             ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+             ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+             ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+    t.setStyle(style)
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, (42-((r-30)*4) - 4) * mm)
+
+def result_table_deviator1(canvas, Res, pick, scale = 0.8):
 
     #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
 
@@ -852,11 +864,20 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
     for i in range(r):
         tableData.append([""])
 
-    tableData.append([Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["qf"], ""])
-    tableData.append([Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["E50"], ""])
-    tableData.append([Paragraph('''<p>Коэффициент пуассона µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
     if Res["Eur"]:
-        a = 4
+        a = svg2rlg(pick[0])
+        a.scale(scale, scale)
+        renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+
+        tableData.append(
+            [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
+             Res["qf"], ""])
+        tableData.append(
+            [Paragraph('''<p>Модуль деформации E50<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "",
+             "", Res["E50"], ""])
+        tableData.append(
+            [Paragraph('''<p>Коэффициент поперечной деформации µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"],
+             ""])
         tableData.append([Paragraph('''<p>Разгрузочный модуль E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "", "", Res["Eur"], ""])
         style = [('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (-1, r)),
@@ -893,7 +914,34 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
 
     else:
-        a = 0
+        try:
+            a = svg2rlg(pick[0])
+            a.scale(scale, scale)
+            renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+            b = svg2rlg(pick[1])
+            b.scale(scale, scale)
+            renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
+        except AttributeError:
+            a = ImageReader(pick[1])
+            canvas.drawImage(a, 32 * mm, 60 * mm,
+                             width=160 * mm, height=54 * mm)
+            b = ImageReader(pick[0])
+            canvas.drawImage(b, 32 * mm, 114 * mm,
+                             width=160 * mm, height=54 * mm)
+
+        tableData.append(
+            [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
+             Res["qf"], ""])
+        tableData.append(
+            [Paragraph('''<p>Модуль деформации E50<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "",
+             "", Res["E50"], ""])
+        tableData.append(
+            [Paragraph('''<p>Разгрузочный модуль E, МПа:</p>''', LeftStyle), "", "",
+             "", Res["E"], ""])
+        tableData.append(
+            [Paragraph('''<p>Коэффициент поперечной деформации µ, д.е.:</p>''', LeftStyle), "", "", "",
+             Res["poissons_ratio"],
+             ""])
         style = [('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (-1, r)),
 
@@ -928,7 +976,8 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (42-((r-30)*4) - a) * mm)
+    t.drawOn(canvas, 25 * mm, (42-((r-30)*4) - 4) * mm)
+
 
 def result_table_deviator_reload(canvas, Res, pick, scale = 0.8):
 

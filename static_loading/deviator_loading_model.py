@@ -447,11 +447,14 @@ class ModelTriaxialDeviatorLoading:
                 dilatancy_begin, = np.where(line(A1, B1, strain) >= volume_strain[i_top] - scale)
                 dilatancy_end, = np.where(line(A1, B1, strain) >= volume_strain[i_top] + scale)
 
+                if dilatancy_begin[0] == 0:
+                    dilatancy_begin, = np.where(line(A1, B1, strain) <= volume_strain[i_top] - scale)
+                    dilatancy_end, = np.where(line(A1, B1, strain) >= volume_strain[i_top] + scale)
+
                 delta_EpsV = line(A1, B1, strain[dilatancy_end[0]]) - line(A1, B1, strain[dilatancy_begin[0]])
                 delta_Eps1 = (strain[dilatancy_end[0]] - strain[dilatancy_begin[0]])
 
                 #dilatancy_value = round(A1 * (180 / np.pi))
-                print(delta_EpsV / (delta_EpsV + 2 * delta_Eps1))
                 dilatancy_value = np.rad2deg(np.arcsin(delta_EpsV / (delta_EpsV + 2 * delta_Eps1)))
 
                 dilatancy = (

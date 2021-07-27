@@ -723,8 +723,8 @@ def define_Cv(physical_data: Dict, m: float = 0.6) -> float:
     Cv = kf / (m * gamma)
 
     if Cv > 2:
-        return np.random.uniform(1.5, 2)
-    return Cv
+        return np.round(np.random.uniform(1.5, 2), 4)
+    return np.round(Cv, 4)
 
 # Refactor
 def unique_number(length: int = 5, prefix: str = None, postfix: str = None, digits: bool =True, upper: bool = True) -> str:
@@ -1050,7 +1050,7 @@ def define_sigma_3(K0, z):
 
 def define_E50(E50ref, c, fi, sigma_3, p_ref, m, deviation=0.1):
     """Расчет E50 через параметр умрочнения"""
-    fi=np.deg2rad(fi)
+    fi = np.deg2rad(fi)
     up = c*np.cos(fi)+sigma_3*np.sin(fi)
     down = c*np.cos(fi)+p_ref*np.sin(fi)
     E50 = (E50ref*(up/down)**m) * np.random.uniform(1 - deviation, 1 + deviation)

@@ -191,7 +191,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         except:
             pass
 
-    def save_canvas(self, format=["svg", "svg"]):
+    def save_canvas(self, format=["svg", "svg"], size=[[6, 2], [6, 2]]):
         """Сохранение графиков для передачи в отчет"""
         def save(figure, canvas, size_figure, ax, file_type):
 
@@ -213,7 +213,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         return [save(fig, can, size, ax, _format) for fig, can, size, ax, _format in zip([self.deviator_figure,
                                                                             self.volume_strain_figure],
-                                                   [self.deviator_canvas, self.volume_strain_canvas], [[6, 2], [6, 2]],
+                                                   [self.deviator_canvas, self.volume_strain_canvas], size,
                                                                               [self.deviator_ax, self.volume_strain_ax],
                                                                                          format)]
 
