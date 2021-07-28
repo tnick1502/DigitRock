@@ -32,7 +32,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         """Определяем основную структуру данных"""
         super().__init__()
         # Параметры построения для всех графиков
-        self.plot_params = {"right": 0.88, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.12}
+        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.12}
         #self.plot_params_dev = {"right": 0.88, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.12}
         #self.plot_params_epsV = {"right": 0.98, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.15}
         self._create_UI()
@@ -93,9 +93,6 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
         self.deviator_ax.set_ylabel("Девиатор q, кПА")
 
-        self.deviator_ax2 = self.deviator_ax.twinx()
-        self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', кПА")
-
         self.deviator_canvas.draw()
         self.deviator_frame_layout.setSpacing(0)
         self.deviator_frame_layout.addWidget(self.deviator_canvas)
@@ -149,19 +146,36 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                 self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"],
                                       **plotter_params["static_loading_gray_line"])
 
-                lim = self.deviator_ax.get_ylim()
-                self.deviator_ax2.set_ylim([lim[0]+plots["sigma_3"], lim[1] + plots["sigma_3"]])
-
                 if plots["E50"]:
-                    self.deviator_ax.plot(*plots["E50"],  label="$E_{50}$" + ", MПа = " + str(res["E50"]),
+                    self.deviator_ax.plot(*plots["E50"],
+                                          label="$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]),
                                           **plotter_params["static_loading_black_dotted_line"])
                 if plots["Eur"]:
                     self.deviator_ax.plot(*plots["Eur"], **plotter_params["static_loading_red_dotted_line"],
                                           label="$E_{ur}$" + ", MПа = " + str(res["Eur"]))
                 else:
-                    self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"],
-                                          **plotter_params["static_loading_red_dotted_line"],
-                                          label="$E$" + ", MПа = " + str(res["E"][0]))
+                    if hasattr(self, "deviator_ax2"):
+                        self.deviator_ax2.clear()
+                        self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', кПА", fontsize=8)
+                        self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
+                    else:
+                        self.deviator_ax2 = self.deviator_figure.add_axes([0.62, 0.3, .35, .35])
+                        self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', кПА", fontsize=8)
+                        self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
+
+                    #lim = self.deviator_ax.get_xlim()
+                    #self.deviator_ax2.set_xlim([lim[0], lim[1]])
+
+                    self.deviator_ax2.plot(plots["strain"], plots["deviator"] + plots["sigma_3"],
+                                      **plotter_params["static_loading_main_line"])
+
+                    self.deviator_ax2.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"],
+                                      **plotter_params["static_loading_red_dotted_line"])
+                                      #label="$E$" + ", MПа = " + str(res["E"][0]) + "\n" + "$E$" + ", MПа = " + str(res["E"][0]))
+                    plt.xticks(fontsize=8)
+                    plt.yticks(fontsize=8)
+                    #self.deviator_ax2.set_xticklabels(self.deviator_ax2.get_xticks(), size=8)
+                    #self.deviator_ax2.set_yticklabels(self.deviator_ax2.get_yticks(), size=8)
 
                 #self.deviator_ax.plot([], [], label="$E_{50}$" + ", MПа = " + str(res["E50"]), color="#eeeeee")
                 #self.deviator_ax.plot([], [], label="$E$" + ", MПа = " + str(res["E"][0]), color="#eeeeee")
@@ -182,7 +196,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                                           label="Dilatancy angle" + ", град. = " + str(res["dilatancy_angle"][0]),
                                           color="#eeeeee")
 
-                self.deviator_ax.legend()
+                self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.75))
                 self.volume_strain_ax.legend()
 
             self.deviator_canvas.draw()

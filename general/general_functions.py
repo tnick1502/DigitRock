@@ -722,8 +722,10 @@ def define_Cv(physical_data: Dict, m: float = 0.6) -> float:
 
     Cv = kf / (m * gamma)
 
-    if Cv > 2:
-        return np.round(np.random.uniform(1.5, 2), 4)
+    if Cv > 1.2:
+        return np.round(np.random.uniform(0.7, 1.2), 4)
+    elif Cv <= 0.02:
+        return np.round(np.random.uniform(0.01, 0.02), 4)
     return np.round(Cv, 4)
 
 # Refactor

@@ -300,7 +300,7 @@ def read_mech(wb, K0_mode, test_mode = "Трёхосное сжатие (F, C, E
                     try:
                         Ca = round(float_from_excel(wb["Лист1"]['CF' + str(i)].value), 5)
                     except TypeError:
-                        Ca = np.random.uniform(0.003, 0.01)
+                        Ca = np.round(np.random.uniform(0.01, 0.03), 5)
 
                     build_press = float_from_excel(wb["Лист1"]['AK' + str(i)].value)
                     pit_depth = float_from_excel(wb["Лист1"]['AL' + str(i)].value)
@@ -571,7 +571,7 @@ def read_vibration_creep(wb, K0_mode, test_mode="Виброползучесть"
                     try:
                         Ca = round(float_from_excel(wb["Лист1"]['CF' + str(i)].value), 5)
                     except TypeError:
-                        Ca = np.round(np.random.uniform(0.001, 0.005), 5)
+                        Ca = np.round(np.random.uniform(0.01, 0.03), 5)
 
                     build_press = float_from_excel(wb["Лист1"]['AK' + str(i)].value)
                     pit_depth = float_from_excel(wb["Лист1"]['AL' + str(i)].value)

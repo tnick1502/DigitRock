@@ -27,7 +27,7 @@ from scipy.interpolate import make_interp_spline
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, mirrow_element, \
     define_dilatancy, define_type_ground, AttrDict, find_line_area, interpolated_intercept, Point, point_to_xy, \
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, define_qf, define_E50
-from typing import Dict
+from typing import Dict, List
 from static_loading.deviator_loading_functions import curve
 from configs.plot_params import plotter_params
 from intersect import intersection
@@ -163,7 +163,7 @@ class ModelTriaxialDeviatorLoading:
                     x=0.9 * self._test_result.qf * 1000/ (self._test_result.E50*1000),
                     y=0.9 * self._test_result.qf * 1000))
             E = {"x": self._test_result.E[1],
-                 "y": self._test_result.E[2]}
+                 "y": np.array(self._test_result.E[2])}
 
         else:
             E50 = None
@@ -316,7 +316,7 @@ class ModelTriaxialDeviatorLoading:
                                     self._test_data.volume_strain_approximate)
 
         self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
-                                  self._test_data.deviator_cut, self._test_params.sigma_3/self._test_params.K0)
+                                  self._test_data.deviator_cut, self._test_params.sigma_3)
 
     @staticmethod
     def find_friction_step(strain, deviator):
@@ -362,22 +362,27 @@ class ModelTriaxialDeviatorLoading:
         return round(E50 / 1000, 2), round(qf / 1000, 3)
 
     @staticmethod
-    def define_E(strain, deviator, sigma_1):
+    def define_E(strain, deviator, sigma_3):
         """Определение параметров qf и E50"""
-        i_start_E, = np.where(deviator >= sigma_1)
-        i_end_E, = np.where(deviator >= 1.6*sigma_1)
+        i_start_E = 0 #i_start_E, = np.where(deviator >= sigma_3)
+        i_end_E, = np.where(deviator >= 0.6*sigma_3)
+
         if len(i_end_E):
             i_end_E = i_end_E[0]
         else:
             i_end_E = len(deviator) - 1
-        A1, B1 = line_approximate(strain[i_start_E[0]:i_end_E], deviator[i_start_E[0]:i_end_E])
 
-        E = (line(A1, B1, strain[i_start_E[0]]) - line(A1, B1, strain[i_end_E])) / (strain[i_start_E[0]] -
+        A1, B1 = line_approximate(strain[i_start_E:i_end_E], deviator[i_start_E:i_end_E])
+
+        E = (line(A1, B1, strain[i_start_E]) - line(A1, B1, strain[i_end_E])) / (strain[i_start_E] -
                                                                                        strain[i_end_E])
         i_end_for_plot, = np.where(line(A1, B1, strain) >= 0.9 * np.max(deviator))
 
-        return (round(E / 1000, 2), [strain[i_start_E[0]], strain[i_end_for_plot[0]]],
-                    [line(A1, B1, strain[i_start_E[0]]), line(A1, B1, strain[i_end_for_plot[0]])])
+        #return (round(E / 1000, 2), [strain[i_start_E[0]], strain[i_end_for_plot[0]]],
+                #[line(A1, B1, strain[i_start_E[0]]), line(A1, B1, strain[i_end_for_plot[0]])])
+
+        return (round(E / 1000, 2), [strain[i_start_E], strain[i_end_for_plot[0]]],
+                    [line(A1, B1, strain[i_start_E]), line(A1, B1, strain[i_end_for_plot[0]])])
 
     @staticmethod
     def define_Eur(strain, deviator, reload):
@@ -582,110 +587,116 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.residual_strength = params["residual_strength"]
         self._draw_params.qocr = params["qocr"]
         self._draw_params.poisson = params["poisson"]
-        self._draw_params.dilatancy = params["dilatancy"]
+        #self._draw_params.dilatancy = params["dilatancy"]
+        self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(params["dilatancy"])) /
+                                                           (1 - np.sin(np.deg2rad(params["dilatancy"])))))
 
         self._test_modeling()
 
     def _test_modeling(self):
         """Функция моделирования опыта"""
-        try:
-            # Время проведения опыта
-            max_time = int((0.15 * (76 - self._test_params.delta_h_consolidation))/self._test_params.velocity)
+        # Время проведения опыта
+        print(self._test_params.velocity)
+        max_time = int((0.15 * (76 - self._test_params.delta_h_consolidation))/self._test_params.velocity)
 
-            if max_time <= 500:
-                max_time = 500
+        if max_time <= 500:
+            max_time = 500
 
-            if self._test_params.qf >= 150:
-                if self._test_params.Eur:
-                    self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                    self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
-                                                                        x2=self._draw_params.residual_strength_param,
-                                                                        qf2=self._draw_params.residual_strength,
-                                                                        qocr=self._draw_params.qocr,
-                                                                        m_given=self._draw_params.poisson,
-                                                                        amount_points=max_time,
-                                                                        angle_of_dilatacy=self._draw_params.dilatancy,
-                                                                        Eur=self._test_params.Eur,
-                                                                        y_rel_p=self.unloading_borders[0],
-                                                                        point2_y=self.unloading_borders[1])
-                else:
-                    self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                    self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
-                        self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
-                        x2=self._draw_params.residual_strength_param,
-                        qf2=self._draw_params.residual_strength,
-                        qocr=self._draw_params.qocr,
-                        m_given=self._draw_params.poisson,
-                        amount_points=max_time,
-                        angle_of_dilatacy=self._draw_params.dilatancy)
-
-                self._test_data.deviator = np.round(self._test_data.deviator, 3)
-                self._test_data.strain = np.round(
-                    self._test_data.strain * (76 - self._test_params.delta_h_consolidation)/ (
-                                                     76 - self._test_params.delta_h_consolidation), 6)
-
-                self._test_data.pore_volume_strain = np.round((self._test_data.pore_volume_strain * np.pi * 19 ** 2 * (
-                            76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
-                            76 - self._test_params.delta_h_consolidation)), 6)
-                self._test_data.cell_volume_strain = np.round((self._test_data.cell_volume_strain * np.pi * 19 ** 2 * (
-                            76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
-                            76 - self._test_params.delta_h_consolidation)), 6)
-
-
+        if self._test_params.qf >= 150:
+            if self._test_params.Eur:
+                self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
+                                                                    x2=self._draw_params.residual_strength_param,
+                                                                    qf2=self._draw_params.residual_strength,
+                                                                    qocr=self._draw_params.qocr,
+                                                                    m_given=self._draw_params.poisson,
+                                                                    amount_points=max_time,
+                                                                    angle_of_dilatacy=self._draw_params.dilatancy,
+                                                                    Eur=self._test_params.Eur,
+                                                                    y_rel_p=self.unloading_borders[0],
+                                                                    point2_y=self.unloading_borders[1])
             else:
-                k = 250/self._test_params.qf
-                if self._test_params.Eur:
-                    self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                    self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(self._test_params.qf*k,
-                                                    self._test_params.E50*k,
-                                                    xc=self._draw_params.fail_strain,
-                                                    x2=self._draw_params.residual_strength_param,
-                                                    qf2=self._draw_params.residual_strength*k,
-                                                    qocr=self._draw_params.qocr,
-                                                    m_given=self._draw_params.poisson,
-                                                    amount_points=max_time,
-                                                    angle_of_dilatacy=self._draw_params.dilatancy,
-                                                    Eur=self._test_params.Eur*k,
-                                                    y_rel_p=self.unloading_borders[0]*k,
-                                                    point2_y=self.unloading_borders[1]*k)
-                else:
-                    self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                    self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
-                        self._test_params.qf * k,
-                        self._test_params.E50 * k,
-                        xc=self._draw_params.fail_strain,
-                        x2=self._draw_params.residual_strength_param,
-                        qf2=self._draw_params.residual_strength * k,
-                        qocr=self._draw_params.qocr,
-                        m_given=self._draw_params.poisson,
-                        amount_points=max_time,
-                        angle_of_dilatacy=self._draw_params.dilatancy)
-                self._test_data.deviator /= k
+                self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
+                    self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
+                    x2=self._draw_params.residual_strength_param,
+                    qf2=self._draw_params.residual_strength,
+                    qocr=self._draw_params.qocr,
+                    m_given=self._draw_params.poisson,
+                    amount_points=max_time,
+                    angle_of_dilatacy=self._draw_params.dilatancy)
 
-            # Действия для того, чтобы полученный массив данных записывался в словарь для последующей обработки
-            k = np.max(np.round(self._test_data.deviator[begin:] - self._test_data.deviator[begin], 3)) / self._test_params.qf
-            self._test_data.deviator = np.round(self._test_data.deviator/k, 3)
-
+            self._test_data.deviator = np.round(self._test_data.deviator, 3)
             self._test_data.strain = np.round(
-                self._test_data.strain * (76 - self._test_params.delta_h_consolidation) / (
-                        76 - self._test_params.delta_h_consolidation), 6)
+                self._test_data.strain * (76 - self._test_params.delta_h_consolidation)/ (
+                                                 76 - self._test_params.delta_h_consolidation), 6)
 
             self._test_data.pore_volume_strain = np.round((self._test_data.pore_volume_strain * np.pi * 19 ** 2 * (
-                    76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
-                    76 - self._test_params.delta_h_consolidation)), 6)
+                        76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
+                        76 - self._test_params.delta_h_consolidation)), 6)
             self._test_data.cell_volume_strain = np.round((self._test_data.cell_volume_strain * np.pi * 19 ** 2 * (
-                    76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
-                    76 - self._test_params.delta_h_consolidation)), 6)
+                        76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
+                        76 - self._test_params.delta_h_consolidation)), 6)
 
-            self._test_data.volume_strain = self._test_data.pore_volume_strain
+        else:
+            k = 250/self._test_params.qf
+            if self._test_params.Eur:
+                self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(self._test_params.qf*k,
+                                                self._test_params.E50*k,
+                                                xc=self._draw_params.fail_strain,
+                                                x2=self._draw_params.residual_strength_param,
+                                                qf2=self._draw_params.residual_strength*k,
+                                                qocr=self._draw_params.qocr,
+                                                m_given=self._draw_params.poisson,
+                                                amount_points=max_time,
+                                                angle_of_dilatacy=self._draw_params.dilatancy,
+                                                Eur=self._test_params.Eur*k,
+                                                y_rel_p=self.unloading_borders[0]*k,
+                                                point2_y=self.unloading_borders[1]*k)
+            else:
+                self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
+                    self._test_params.qf * k,
+                    self._test_params.E50 * k,
+                    xc=self._draw_params.fail_strain,
+                    x2=self._draw_params.residual_strength_param,
+                    qf2=self._draw_params.residual_strength * k,
+                    qocr=self._draw_params.qocr,
+                    m_given=self._draw_params.poisson,
+                    amount_points=max_time,
+                    angle_of_dilatacy=self._draw_params.dilatancy)
+            self._test_data.deviator /= k
 
-            #i_end, = np.where(self._test_data.strain > self._draw_params.fail_strain + np.random.uniform(0.03, 0.04))
-            #if len(i_end):
-                #self.change_borders(begin, i_end[0])
-            #else:
-            self.change_borders(begin, len(self._test_data.volume_strain))
-        except (ValueError, IndexError, TypeError, RuntimeError) as err:
-            print(err)
+        i_end = ModelTriaxialDeviatorLoadingSoilTest.define_final_loading_point(self._test_data.deviator, 0.08)
+
+        self._test_data.strain = self._test_data.strain[:i_end]
+        self._test_data.deviator = self._test_data.deviator[:i_end]
+        self._test_data.pore_volume_strain = self._test_data.pore_volume_strain[:i_end]
+        self._test_data.cell_volume_strain = self._test_data.cell_volume_strain[:i_end]
+
+        # Действия для того, чтобы полученный массив данных записывался в словарь для последующей обработки
+        k = np.max(np.round(self._test_data.deviator[begin:] - self._test_data.deviator[begin], 3)) / self._test_params.qf
+        self._test_data.deviator = np.round(self._test_data.deviator/k, 3)
+
+        self._test_data.strain = np.round(
+            self._test_data.strain * (76 - self._test_params.delta_h_consolidation) / (
+                    76 - self._test_params.delta_h_consolidation), 6)
+
+        self._test_data.pore_volume_strain = np.round((self._test_data.pore_volume_strain * np.pi * 19 ** 2 * (
+                76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
+                76 - self._test_params.delta_h_consolidation)), 6)
+        self._test_data.cell_volume_strain = np.round((self._test_data.cell_volume_strain * np.pi * 19 ** 2 * (
+                76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
+                76 - self._test_params.delta_h_consolidation)), 6)
+
+        self._test_data.volume_strain = self._test_data.pore_volume_strain
+
+        #i_end, = np.where(self._test_data.strain > self._draw_params.fail_strain + np.random.uniform(0.03, 0.04))
+        #if len(i_end):
+            #self.change_borders(begin, i_end[0])
+        #else:
+        self.change_borders(begin, len(self._test_data.volume_strain))
 
     @staticmethod
     def define_k_q(il, e0, sigma3):
@@ -1064,6 +1075,19 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         dependence_deviator_start_unloading_on_type_ground[define_type_ground(physical_data, physical_data["Ip"],
                                                                               physical_data["Ir"])] + sigma_1,
         sigma_1 + 10)
+
+    @staticmethod
+    def define_final_loading_point(deviator: List, persent: float) -> int:
+        """ Рассчет начала разгрузки в зависимости от грансостава и среднеобжимающего давления
+            :param deviator: массив девиаторного нагружения
+            :param persent: процент падения девиатора (в сотых)
+            :return: индекс точки падения девиатора на заданный процент"""
+
+        i_max = np.argmax(deviator)
+
+        i, = np.where(deviator[i_max:] <= (1 - persent) * np.max(deviator))
+
+        return i[0] + i_max if len(i) != 0 else len(deviator)
 
 
 if __name__ == '__main__':
