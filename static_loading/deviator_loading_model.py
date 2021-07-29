@@ -401,8 +401,10 @@ class ModelTriaxialDeviatorLoading:
                         #Eur = round(((deviator[point2] - deviator[point1]) / (strain[point2] - strain[point1])) / 1000, 2)
                     x, y = intersection(strain[reload[0]:reload[1]], deviator[reload[0]:reload[1]],
                                         strain[reload[1]:reload[2]], deviator[reload[1]:reload[2]])
-
-                    Eur = round(((y[0] - deviator[reload[1]]) / (x[0] - strain[reload[1]])) / 1000, 2)
+                    if len(x) > 0:
+                        Eur = round(((y[0] - deviator[reload[1]]) / (x[0] - strain[reload[1]])) / 1000, 2)
+                    else:
+                        Eur = None
 
                 except ValueError:
                     Eur = None
@@ -610,7 +612,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                     qf2=self._draw_params.residual_strength,
                                                                     qocr=self._draw_params.qocr,
                                                                     m_given=self._draw_params.poisson,
-                                                                    amount_points=max_time,
+                                                                    amount_points=max_time*6,
                                                                     angle_of_dilatacy=self._draw_params.dilatancy,
                                                                     Eur=self._test_params.Eur,
                                                                     y_rel_p=self.unloading_borders[0],
@@ -649,7 +651,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                 qf2=self._draw_params.residual_strength*k,
                                                 qocr=self._draw_params.qocr,
                                                 m_given=self._draw_params.poisson,
-                                                amount_points=max_time,
+                                                amount_points=max_time*6,
                                                 angle_of_dilatacy=self._draw_params.dilatancy,
                                                 Eur=self._test_params.Eur*k,
                                                 y_rel_p=self.unloading_borders[0]*k,

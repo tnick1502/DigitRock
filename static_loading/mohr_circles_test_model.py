@@ -334,7 +334,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
 
                 c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab([x["sigma_3"]/1000 for x in mohr_params],
                                                                    [x["sigma_1"]/1000 for x in mohr_params])
-                c = round(np.arctan(c), 3)
+                c = round(c, 3)
                 fi = round(np.rad2deg(np.arctan(fi)), 1)
 
             for param in mohr_params:
@@ -357,20 +357,26 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         fi = np.tan(np.deg2rad(fi))
 
         # выбираем случайную окружность. считаем ее индекс:
-        fixed_circle_index = np.random.randint(0, len(sigma1) - 1)
+        # Исправление: Вторая окружность никогда не меньше первой
+        # поэтому выбираем из первой и тертьей
+        fixed_circle_index = 1 # circles_pos[np.random.randint(0, 1)]  # np.random.randint(0, len(sigma1) - 1)
 
         # генерируем случайной значение
-        a = np.random.uniform(np.min(sigma1 - sigma3) / 5, np.min(sigma1 - sigma3) / 4)
+        a = np.random.uniform(np.min(sigma1 - sigma3) / 5, np.min(sigma1 - sigma3) / 4) / 2
+
 
         # создаем копию массива для зашумленных значений
         sigma1_with_noise = copy.deepcopy(sigma1)
 
         # добавляем шум к зафиксированной окружности
-        sigma1_with_noise[fixed_circle_index] -= a
+        if np.random.randint(0, 2) == 0:
+            sigma1_with_noise[fixed_circle_index] -= a
+
+        else:
+            sigma1_with_noise[fixed_circle_index] += a
 
         def func(x):
             '''x - массив sigma_1 без зафиксированной окружности'''
-
             # возвращаем зафиксированную огружность для подачи в фукнцию mohr_cf_stab
             x = np.insert(x, fixed_circle_index, sigma1_with_noise[fixed_circle_index])
             # определяем новые фи и с для измененной окружности
@@ -385,7 +391,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         root = fsolve(func, initial)
         sigma1_with_noise = np.insert(root, fixed_circle_index, sigma1_with_noise[fixed_circle_index])
         qf_with_noise = sigma1_with_noise - sigma3
-
+        c_new, fi_new = ModelMohrCirclesSoilTest.mohr_cf_stab(np.round(sigma3, 3), np.round(sigma1_with_noise, 3))
         return np.round(qf_with_noise, 1)
 
 
