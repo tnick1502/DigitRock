@@ -678,8 +678,8 @@ def define_kf(physical_data: Dict) -> float:
 
     try:
         e = float(physical_data["e"])
-    except TypeError:
-        e = np.ramdom.uniform(0.5, 0.8)
+    except ValueError:
+        e = np.random.uniform(0.5, 0.8)
 
     # Функция сигмоиды для kf
     kf_sigmoida = lambda e, e_min, e_max, k_min, k_max: sigmoida(e, amplitude=(k_max - k_min) / 2,

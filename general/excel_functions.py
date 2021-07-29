@@ -309,72 +309,71 @@ def read_mech(wb, K0_mode, test_mode = "Трёхосное сжатие (F, C, E
     for i in generator_of_cell_with_lab_number(wb):
         key = currect_lab_number(wb, i)
         if key:
-            try:
-                c, fi, E = define_c_fi_E(wb, test_mode, i)
-                E *= 1000
-                if fi != "-" and c != "-" and E != "-":
+            c, fi, E = define_c_fi_E(wb, test_mode, i)
+            E *= 1000
+            if fi != "-" and c != "-" and E != "-":
 
-                    # Расчет напряжений
-                    data_physical = read_phiz_line(wb, i)
+                # Расчет напряжений
+                data_physical = read_phiz_line(wb, i)
 
-                    K0 = define_K0(wb, K0_mode, i, data_physical["Il"], fi)
+                K0 = define_K0(wb, K0_mode, i, data_physical["Il"], fi)
 
-                    sigma_3 = define_sigma_3(K0, data_physical["depth"])
-                    if sigma_3 < 100:
-                        sigma_3 = 100
-                    qf = define_qf(sigma_3, c, fi)
-                    sigma_1 = round(qf + sigma_3, 1)
+                sigma_3 = define_sigma_3(K0, data_physical["depth"])
+                if sigma_3 < 100:
+                    sigma_3 = 100
+                qf = define_qf(sigma_3, c, fi)
+                sigma_1 = round(qf + sigma_3, 1)
 
-                    poissson = define_poissons_ratio(float_from_excel(wb["Лист1"]['EP' + str(i)].value),
-                                                   data_physical["Ip"], data_physical["Il"], data_physical["Ir"],
-                                                   data_physical["10"], data_physical["5"], data_physical["2"])
+                poissson = define_poissons_ratio(float_from_excel(wb["Лист1"]['EP' + str(i)].value),
+                                               data_physical["Ip"], data_physical["Il"], data_physical["Ir"],
+                                               data_physical["10"], data_physical["5"], data_physical["2"])
 
+                try:
+                    Cv = round(float_from_excel(wb["Лист1"]['CC' + str(i)].value), 3)
+                except TypeError:
+                    Cv = define_Cv(data_physical)
+
+                try:
+                    Ca = round(float_from_excel(wb["Лист1"]['CF' + str(i)].value), 5)
+                except TypeError:
+                    Ca = np.round(np.random.uniform(0.01, 0.03), 5)
+
+                build_press = float_from_excel(wb["Лист1"]['AK' + str(i)].value)
+                pit_depth = float_from_excel(wb["Лист1"]['AL' + str(i)].value)
+
+
+                if test_mode == "Трёхосное сжатие с разгрузкой":
                     try:
-                        Cv = round(float_from_excel(wb["Лист1"]['CC' + str(i)].value), 3)
+                        Eur = round(float_from_excel(wb["Лист1"]['GI' + str(i)].value)*1000, 3)
                     except TypeError:
-                        Cv = define_Cv(data_physical)
+                        Eur = round(define_Eur(data_physical["Il"])*E)
+                else:
+                    Eur = None
 
-                    try:
-                        Ca = round(float_from_excel(wb["Лист1"]['CF' + str(i)].value), 5)
-                    except TypeError:
-                        Ca = np.round(np.random.uniform(0.01, 0.03), 5)
+                OCR = float_from_excel(wb["Лист1"]['GB' + str(i)].value)
+                if OCR == "-":
+                    OCR = 1
 
-                    build_press = float_from_excel(wb["Лист1"]['AK' + str(i)].value)
-                    pit_depth = float_from_excel(wb["Лист1"]['AL' + str(i)].value)
+                dilatancy = round((define_dilatancy_from_xc_qres(define_xc_qf_E(qf, E),
+                                                          define_k_q(data_physical["Il"], data_physical["e"],
+                                                                     sigma_3)) + define_dilatancy(data_physical,
+                                                                                                  data_physical["rs"],
+                                                                                                  data_physical["e"],
+                                                                                                  sigma_1, sigma_3, fi,
+                                                                                                  define_OCR_from_xc(
+                                                                                                      define_xc_qf_E(qf,
+                                                                                                                     E)),
+                                                                                                  data_physical["Ip"],
+                                                                                                  data_physical["Ir"]))/2, 2)
 
+                m = define_m(data_physical["e"], data_physical["Il"])
+                data[key] = {"E50": E, "sigma_3": sigma_3, "sigma_1": sigma_1, "c": c, "fi": fi,
+                             "qf": qf, "K0": K0, "Cv": Cv, "Ca": Ca, "poisson": poissson,
+                             "build_press": build_press, "pit_depth": pit_depth, "Eur": Eur,
+                             "dilatancy": dilatancy, "OCR": OCR, "m": m}
 
-                    if test_mode == "Трёхосное сжатие с разгрузкой":
-                        try:
-                            Eur = round(float_from_excel(wb["Лист1"]['GI' + str(i)].value)*1000, 3)
-                        except TypeError:
-                            Eur = round(define_Eur(data_physical["Il"])*E)
-                    else:
-                        Eur = None
-
-                    OCR = float_from_excel(wb["Лист1"]['GB' + str(i)].value)
-                    if OCR == "-":
-                        OCR = 1
-
-                    dilatancy = round((define_dilatancy_from_xc_qres(define_xc_qf_E(qf, E),
-                                                              define_k_q(data_physical["Il"], data_physical["e"],
-                                                                         sigma_3)) + define_dilatancy(data_physical,
-                                                                                                      data_physical["rs"],
-                                                                                                      data_physical["e"],
-                                                                                                      sigma_1, sigma_3, fi,
-                                                                                                      define_OCR_from_xc(
-                                                                                                          define_xc_qf_E(qf,
-                                                                                                                         E)),
-                                                                                                      data_physical["Ip"],
-                                                                                                      data_physical["Ir"]))/2, 2)
-
-                    m = define_m(data_physical["e"], data_physical["Il"])
-                    data[key] = {"E50": E, "sigma_3": sigma_3, "sigma_1": sigma_1, "c": c, "fi": fi,
-                                 "qf": qf, "K0": K0, "Cv": Cv, "Ca": Ca, "poisson": poissson,
-                                 "build_press": build_press, "pit_depth": pit_depth, "Eur": Eur,
-                                 "dilatancy": dilatancy, "OCR": OCR, "m": m}
-
-            except ValueError:
-                pass
+            #except ValueError:
+                #pass
     return data
 
 
