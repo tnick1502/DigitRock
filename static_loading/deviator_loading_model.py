@@ -182,8 +182,18 @@ class ModelTriaxialDeviatorLoading:
                               Point(x=self._test_data.strain_cut[_end[0]],
                                     y=line_[_end[0]]))
 
+            _begin, = np.where(self._test_data.deviator_cut >=
+                               self._test_data.deviator_cut[self._test_data.reload_points_cut[1] - 5])
+            _end, = np.where(self._test_data.deviator_cut >=
+                               self._test_data.deviator_cut[self._test_data.reload_points_cut[2] + 5])
+
+            strain_Eur = self._test_data.strain_cut[:_end[0]]
+            deviator_Eur = self._test_data.deviator_cut[:_end[0]]
+
         else:
             Eur = None
+            strain_Eur = None
+            deviator_Eur = None
 
         if self._test_result.dilatancy_angle:
             dilatancy = {"x": self._test_result.dilatancy_angle[1],
@@ -202,6 +212,8 @@ class ModelTriaxialDeviatorLoading:
                 "E50": E50,
                 "E": E,
                 "Eur": Eur,
+                "strain_Eur": strain_Eur,
+                "deviator_Eur": deviator_Eur,
                 "sigma_3": self._test_params.sigma_3,
                 "dilatancy": dilatancy}
 
@@ -1075,8 +1087,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         return (
         dependence_deviator_start_unloading_on_type_ground[define_type_ground(physical_data, physical_data["Ip"],
-                                                                              physical_data["Ir"])] + sigma_1,
-        sigma_1 + 10)
+                                                                              physical_data["Ir"])], 10)
 
     @staticmethod
     def define_final_loading_point(deviator: List, persent: float) -> int:
