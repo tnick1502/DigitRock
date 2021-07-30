@@ -971,7 +971,6 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._test_data.volume_strain = self._test_data.pore_volume_strain
         self.change_borders(0, len(self._test_data.time))
 
-
     def set_delta_h_reconsolidation(self, delta_h_reconsolidation):
         self._test_data.delta_h_reconsolidation = round(delta_h_reconsolidation, 5)
 
@@ -999,9 +998,10 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         """Устанавливает переданные параметры отрисовки, считанные с ползунков, на модель"""
         self._draw_params.max_time = params["max_time"]
         self._draw_params.volume_strain_90 = params["volume_strain_90"]
-        self._test_modeling()
-        self._test_data.volume_strain = self._test_data.pore_volume_strain
-        self.change_borders(0, len(self._test_data.time))
+        while self.get_test_results()["velocity"] is None:
+            self._test_modeling()
+            self._test_data.volume_strain = self._test_data.pore_volume_strain
+            self.change_borders(0, len(self._test_data.time))
 
     def _test_modeling(self):
         """Функция моделирования опыта"""

@@ -275,36 +275,6 @@ def read_mech(wb, K0_mode, test_mode = "Трёхосное сжатие (F, C, E
             Il = np.random.uniform(-0.1, 0.05)
         return sigmoida(Il, 3, 0.5, 5, 1.2)
 
-    def define_E0(Il, E50, q, qf):
-        """Находит модуль деформации в петле
-        Входные параметры: Il - индекс текучести
-                           E50 - молдуль 50% прочности
-                           q - текущая нагрузка
-                           qf - прочность"""
-
-        def define_E_q_after_05(E50, q, qf):
-            """Функция считает модуль в петле"""
-            Emin = qf / 0.15
-            if Emin <= 2000: Emin = np.random.uniform(1500, 2500)
-            k = (E50 - Emin) / 0.5
-            E = (E50 + 0.5 * k) - ((q / qf)) * k
-            if E < Emin:
-                return Emin
-            else:
-                return (E50 + 0.5 * k) - ((q / qf)) * k
-
-        def define_E_q_until_05(E50, q, qf, depemdance_IL):
-            """Функция считает модуль в петле"""
-            k = (0.5 * E50 / 0.5) * depemdance_IL
-            return (0.5 * k + E50) - ((q / qf)) * k
-
-        if q >= 0.5 * qf:  # Модуль плавно деградирует к от Е50 к минимальному
-            return define_E_q_after_05(E50, q, qf)
-        else:
-            if Il == "-":
-                Il = np.random.uniform(-0.1, 0.05)
-            return define_E_q_until_05(E50, q, qf, sigmoida(Il, 1.5, 0.5, 3.5, 1.2))
-
     data = {}
     for i in generator_of_cell_with_lab_number(wb):
         key = currect_lab_number(wb, i)
@@ -343,10 +313,11 @@ def read_mech(wb, K0_mode, test_mode = "Трёхосное сжатие (F, C, E
 
 
                 if test_mode == "Трёхосное сжатие с разгрузкой":
-                    try:
-                        Eur = round(float_from_excel(wb["Лист1"]['GI' + str(i)].value)*1000, 3)
-                    except TypeError:
-                        Eur = round(define_Eur(data_physical["Il"])*E)
+                    Eur = round(define_Eur(data_physical["Il"])*E)
+                    #try:
+                        #Eur = round(float_from_excel(wb["Лист1"]['GI' + str(i)].value)*1000, 3)
+                    #except TypeError:
+                        #Eur = round(define_Eur(data_physical["Il"])*E)
                 else:
                     Eur = None
 

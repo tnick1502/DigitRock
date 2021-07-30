@@ -261,7 +261,7 @@ class StatementStructure(QWidget):
                        "scale_factor": "Размер столбцов",
                        "additional_parameters": "Дополнительные параметры испытаний"}
 
-        self._statement_structures_path = os.path.join(os.getcwd()[:-7] + "/project_data/", "structures.json")
+        self._statement_structures_path = os.path.join(os.getcwd() + "/project_data/", "structures.json")
 
         self._statement_structures = None
         self._statement_structure = None

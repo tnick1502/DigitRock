@@ -91,7 +91,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_ax = self.deviator_figure.add_subplot(111)
         self.deviator_ax.grid(axis='both', linewidth='0.4')
         self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-        self.deviator_ax.set_ylabel("Девиатор q, кПА")
+        self.deviator_ax.set_ylabel("Девиатор q, кПа")
 
         self.deviator_ax2 = self.deviator_figure.add_axes([0.62, 0.3, .35, .35])
         self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', кПА", fontsize=8)
@@ -137,7 +137,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         try:
             self.deviator_ax.clear()
             self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-            self.deviator_ax.set_ylabel("Девиатор q, кПА")
+            self.deviator_ax.set_ylabel("Девиатор q, кПа")
 
             self.volume_strain_ax.clear()
             self.volume_strain_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
@@ -162,7 +162,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                 if plots["Eur"]:
                     #self.deviator_ax.plot(*plots["Eur"], **plotter_params["static_loading_red_dotted_line"],
                                           #label="$E_{ur}$" + ", MПа = " + str(res["Eur"]))
-                    self.deviator_ax2.set_ylabel("Девиатор q', кПА", fontsize=8)
+                    self.deviator_ax2.set_ylabel("Девиатор q, кПа", fontsize=8)
                     self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
                     self.deviator_ax2.plot(plots["strain_Eur"], plots["deviator_Eur"],

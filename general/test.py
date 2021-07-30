@@ -1,7 +1,6 @@
+from typing import TypeVar, Generic, Tuple, Union, Optional
 import numpy as np
 import matplotlib.pyplot as plt
-
-x = np.linspace(0, 1, 100)
 def sigmoida(x, amplitude, x_indent, y_indent, shape):
     """Функция построения сигмоиды
     Входные параметры: x - значение или массив абсцисс
@@ -12,5 +11,7 @@ def sigmoida(x, amplitude, x_indent, y_indent, shape):
 
     k = 10 / shape
     return ((amplitude * 2) / (1 + np.e ** (-k * (x - x_indent)))) + (y_indent - amplitude)
-plt.plot(x, sigmoida(x, 3, 0.5, 5, 1.2))
-plt.show()
+
+r = {"sdf": "ewr"}
+
+print()

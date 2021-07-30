@@ -536,7 +536,7 @@ def test_mode_consolidation(canvas, Data):
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
-               [Paragraph('''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, КПа:</p>''', LeftStyle), "", "", zap(Data["sigma_3"], 2), "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
+               [Paragraph('''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, кПа:</p>''', LeftStyle), "", "", zap(Data["sigma_3"], 2), "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
                ["Оборудование:", "", "", Data["equipment"]],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
@@ -784,7 +784,7 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
             [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
              Res["E50"], ""])
         tableData.append(
-            [Paragraph('''<p>Коэффициент пуассона µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+            [Paragraph('''<p>Коэффициент поперечного расширения µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
         tableData.append(
             [Paragraph('''<p>Разгрузочный модуль E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "",
              "", Res["Eur"], ""])
@@ -798,7 +798,7 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
              Res["E50"], ""])
         tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", Res["E"][0], ""])
         tableData.append(
-            [Paragraph('''<p>Коэффициент пуассона µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+            [Paragraph('''<p>Коэффициент поперечного расширения µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
 
         try:
             a = svg2rlg(pick[0])

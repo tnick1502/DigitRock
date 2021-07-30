@@ -544,6 +544,14 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 test_params["data_phiz"], self._test_params.sigma_3,
             self._test_params.sigma_3/test_params["K0"])
 
+            self._test_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(E50=self._test_params.E50,
+                                                                                        qf=self._test_params.qf,
+                                                                                        Il=
+                                                                                        self._test_params.data_physical[
+                                                                                            "Il"],
+                                                                                        initial_unloading_deviator=
+                                                                                        self.unloading_borders[0])
+
         self._draw_params.poisson = test_params.get("poisson")#,
                                                     #define_poissons_ratio("-", self._test_params.data_physical["Ip"],
                                                                           #self._test_params.data_physical["Il"],
@@ -612,7 +620,6 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         # Время проведения опыта
         print(self._test_params.velocity)
         max_time = int((0.15 * (76 - self._test_params.delta_h_consolidation))/self._test_params.velocity)
-
         if max_time <= 500:
             max_time = 500
 
@@ -801,6 +808,33 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             # clay_il_red_min, clay_il_red_max, il_red, k_q, 'K_IL от sigma3')
 
         return k_q
+
+    @staticmethod
+    def dependence_Eur(E50: float, qf: float, Il: float, initial_unloading_deviator: float) -> float:
+        """ Определение модуля Eur
+        :param E50: модуль деформации
+        :param qf: девиатор разрушения
+        :param Il: показатель текучести
+        :param initial_unloading_deviator: точка начала разгрузки
+        :return: Eur"""
+
+        def dependence_Eur_on_Il(Il):
+            """Находит зависимость коэффициента k (Eur = Esec*k) в зависимости от Il"""
+            if Il == "-":
+                Il = np.random.uniform(-0.1, 0.1)
+            return sigmoida(Il, 1.5, 0.5, 3.5, 1.2)
+
+        def exp_strain(deviator, E50, qf):
+            """Экспоненциальная функция деформации от девиатора"""
+            return np.log(-deviator / qf + 1) / (np.log(0.5) / ((qf / 2) / E50))
+
+        if initial_unloading_deviator >= qf:
+            raise ValueError("Точка начала разгрузки выше девиатора разрушения")
+
+        # Секущий модуль в точке разгрузки
+        Esec = initial_unloading_deviator / exp_strain(initial_unloading_deviator, E50, qf)
+
+        return Esec * dependence_Eur_on_Il(Il)
 
     @staticmethod
     def xc_from_qf_e_if_is(data, sigma3mor, qf_, e50_):

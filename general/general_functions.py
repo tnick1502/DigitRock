@@ -10,11 +10,22 @@ from scipy.optimize import differential_evolution
 import warnings
 import sys
 import json
-from typing import List, Dict
+from typing import List, Dict, TypeVar, Generic, Tuple, Union, Optional
 import copy
 from dataclasses import dataclass
 from scipy.optimize import fsolve
 
+Shape = TypeVar("Shape")
+DType = TypeVar("DType")
+
+class numpyArray(np.ndarray, Generic[Shape, DType]):
+    """
+    Use this to type-annotate numpy arrays, e.g.
+        image: Array['H,W,3', np.uint8]
+        xy_points: Array['N,2', float]
+        nd_mask: Array['...', bool]
+    """
+    pass
 
 class AttrDict:
     def __init__(self, data):
@@ -36,7 +47,6 @@ class AttrDict:
 
     def get_all_values(self):
         return (getattr(self, i) for i in iter(self.__dict__))
-
 
 @dataclass
 class Point:
@@ -633,8 +643,6 @@ def get_all_files(dir):
     return file_paths
 
 
-
-
 # Общие
 def define_type_ground(data_gran, Ip, Ir):
     """Функция определения типа грунта через грансостав"""
@@ -729,7 +737,7 @@ def define_Cv(physical_data: Dict, m: float = 0.6) -> float:
     return np.round(Cv, 4)
 
 # Refactor
-def unique_number(length: int = 5, prefix: str = None, postfix: str = None, digits: bool =True, upper: bool = True) -> str:
+def unique_number(length: int = 5, prefix: str = None, postfix: str = None, digits: bool = True, upper: bool = True) -> str:
     """Функция создает уникальный шифр
     :argument
         :param length- длина генерируемой части (default 5)

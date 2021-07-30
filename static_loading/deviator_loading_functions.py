@@ -25,6 +25,12 @@ from scipy.interpolate import splev, splrep
 
 from general.general_functions import *
 
+def compute_l2_norm(x: numpyArray['N2', float]) -> numpyArray['N1', float]:
+    return x**2
+
+#print(compute_l2_norm(arr = np.array([(1, 2), (3, 1.5), (0, 5.5)])))
+
+
 
 # from consolidation_functions import *
 
