@@ -295,6 +295,9 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
     def set_test_params(self, params):
         self._test_params = params
 
+    def get_test_params(self):
+        return self._test_params
+
     def set_reference_pressure_array(self, reference_pressure_array):
         self._reference_pressure_array = reference_pressure_array
 

@@ -428,9 +428,25 @@ class TriaxialStaticWidgetSoilTest(TriaxialStaticWidget):
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.consolidation_sliders.signal[object].connect(self._consolidation_sliders_moove)
 
+        self.refresh_test_button = QPushButton("Обновить опыт")
+        self.refresh_test_button.clicked.connect(self.refresh)
+        self.layout_wiget.insertWidget(0, self.refresh_test_button)
+
        # self.set_test_params()
     def set_model(self, model):
         self._model = model
+        self.deviator_loading_sliders.set_sliders_params(self._model.get_deviator_loading_draw_params())
+        self.consolidation_sliders.set_sliders_params(self._model.get_consolidation_draw_params())
+
+        self._plot_reconsolidation()
+        self._plot_consolidation_sqrt()
+        self._plot_consolidation_log()
+        self._plot_deviator_loading()
+        self._connect_model_Ui()
+
+    def refresh(self):
+        param = self._model.get_test_params()
+        self._model.set_test_params(param)
         self.deviator_loading_sliders.set_sliders_params(self._model.get_deviator_loading_draw_params())
         self.consolidation_sliders.set_sliders_params(self._model.get_consolidation_draw_params())
 

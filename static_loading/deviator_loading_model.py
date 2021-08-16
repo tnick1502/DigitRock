@@ -373,7 +373,7 @@ class ModelTriaxialDeviatorLoading:
         E50 = (qf / 2) / (
             np.interp(qf / 2, np.array([deviator[imin], deviator[imax]]), np.array([strain[imin], strain[imax]])))
 
-        return np.round(E50 / 1000, 1), np.round(qf / 1000, 1)
+        return np.round(E50 / 1000, 1), np.round(qf / 1000, 3)
 
     @staticmethod
     def define_E(strain, deviator, sigma_3):

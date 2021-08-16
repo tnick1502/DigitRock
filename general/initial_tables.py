@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QHeaderView, QTableWidgetItem, QVBoxLayout, QTableWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QHeaderView, QTableWidgetItem, QVBoxLayout, QTableWidget, QHBoxLayout, \
+    QLineEdit, QGroupBox, QPushButton, QComboBox
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5 import QtGui
 
@@ -228,3 +229,61 @@ class Table_Castomer(QWidget):
         """Получение данных"""
         self._data = data
         self._fill_table()
+
+class ComboBox_Initial_Parameters(QWidget):
+    """Класс отрисовки параметров опыта и открытия ведомости
+    Входные параметры:
+        Словарь, в котором ключ - имя combo_box и ключ для считывания, по ключу лежат списки со значениями"""
+    combo_changes_signal = pyqtSignal() # сигнал сигнализирует о смене параметров для переоткрытия ведомости
+    def __init__(self, data):
+        super().__init__()
+        self.data = data
+        self.create_IU()
+        self.get_data()
+
+    def create_IU(self):
+        self.layout = QHBoxLayout()
+        self.layout.setSpacing(5)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+        self.open_box = QGroupBox("Текущая ведомость")
+        self.open_box_layout = QHBoxLayout()
+        self.button_open = QPushButton("Открыть ведомость")#Button(icons + "Открыть журнал.png", 45, 45, 0.7)
+        self.button_refresh = QPushButton("Обновить")
+        self.open_box_layout.addWidget(self.button_open)
+        self.open_box_layout.addWidget(self.button_refresh)
+        self.text_file_path = QLineEdit()
+        self.text_file_path.setDisabled(True)
+        self.open_box_layout.addWidget(self.text_file_path)
+        self.open_box.setLayout(self.open_box_layout)
+
+        self.parameter_box = QGroupBox("Параметры опыта")
+        self.parameter_box_layout = QHBoxLayout()
+
+        for key in self.data:
+            self.combo_box = QComboBox()
+            self.combo_box.addItems(self.data[key])
+            self.parameter_box_layout.addWidget(self.combo_box)
+            self.combo_box.activated.connect(self._combo_changed)
+            setattr(self, "combo_{}".format(key), self.combo_box)
+
+
+        self.parameter_box.setLayout(self.parameter_box_layout)
+
+        self.layout.addWidget(self.open_box)
+        self.layout.addWidget(self.parameter_box)
+
+        self.setLayout(self.layout)
+
+    def _combo_changed(self):
+        """Изменение параметров"""
+        self.combo_changes_signal.emit()
+
+    def get_data(self):
+        """Чтение выбранных параметров"""
+        data = {}
+        for key in self.data:
+            obj = getattr(self, "combo_{}".format(key))
+            data[key] = obj.currentText()
+        return data
+

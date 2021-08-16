@@ -173,7 +173,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                     plt.yticks(fontsize=8)
 
                 else:
-                    self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', кПА", fontsize=8)
+                    self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', кПa", fontsize=8)
                     self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
                     #lim = self.deviator_ax.get_xlim()

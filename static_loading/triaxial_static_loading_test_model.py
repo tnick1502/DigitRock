@@ -245,16 +245,26 @@ class ModelTriaxialStaticLoadSoilTest:
         self.reconsolidation = ModelTriaxialReconsolidationSoilTest()
         self.consolidation = ModelTriaxialConsolidationSoilTest()
         self.deviator_loading = ModelTriaxialDeviatorLoadingSoilTest()
+        self.test_params = None
 
     def set_test_params(self, test_params):
         """Получение массивов опытов и передача в соответствующий класс"""
+        self.test_params = test_params
         self.reconsolidation.set_test_params(test_params["sigma_3"])
 
-        self.consolidation.set_delta_h_reconsolidation(self.reconsolidation.get_test_results()["delta_h_reconsolidation"])
-        self.consolidation.set_test_params(test_params)
+        velocity = None
+
+        while velocity is None:
+            self.consolidation.set_delta_h_reconsolidation(self.reconsolidation.get_test_results()["delta_h_reconsolidation"])
+            self.consolidation.set_test_params(test_params)
+            velocity = self.consolidation.get_test_results()["velocity"]
+
         self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
                                                    self.consolidation.get_delta_h_consolidation())
         self.deviator_loading.set_test_params(test_params)
+
+    def get_test_params(self):
+        return self.test_params
 
     def get_consolidation_draw_params(self):
         """Метод считывает параметры отрисованных опытов для передачи на ползунки"""

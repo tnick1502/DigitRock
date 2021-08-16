@@ -326,6 +326,9 @@ class MohrWidgetSoilTest(MohrWidget):
         super().__init__()
         self.add_UI()
         self._model = ModelMohrCirclesSoilTest()
+        self.refresh_test_button = QPushButton("Обновить опыт")
+        self.refresh_test_button.clicked.connect(self.refresh)
+        self.layout_wiget.insertWidget(0, self.refresh_test_button)
 
     def add_UI(self):
         """Дополнительный интерфейс"""
@@ -370,6 +373,17 @@ class MohrWidgetSoilTest(MohrWidget):
             self._model._test_modeling()
             self._create_test_tables()
             self._plot()
+
+    def refresh(self):
+        params = self._model.get_test_params()
+        if params:
+            reference_pressure_array = self.get_reference_pressure_array()
+            if reference_pressure_array:
+                self._model.set_reference_pressure_array(reference_pressure_array)
+                self._model.set_test_params(params)
+                self._model._test_modeling()
+                self._create_test_tables()
+                self._plot()
 
     def _processing_test(self):
         """Вызов окна обработки опыта"""

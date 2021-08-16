@@ -11,7 +11,7 @@ from openpyxl import load_workbook
 
 from general.excel_functions import read_customer, read_dynemic, read_mech, resave_xls_to_xlsx, cfe_test_type_columns, \
     k0_test_type_column, column_fullness_test, read_phiz, read_dynemic_rc, read_vibration_creep
-from general.initial_tables import Table_Castomer, Table_Physical_Properties, Table_Vertical
+from general.initial_tables import Table_Castomer, Table_Physical_Properties, Table_Vertical, ComboBox_Initial_Parameters
 
 class Float_Slider(QSlider):  # получает на входе размер окна. Если передать 0 то размер автоматический
     def __init__(self, m):
@@ -271,61 +271,6 @@ class RangeSlider(QSlider):
                                              pos - slider_min, slider_max - slider_min,
                                              opt.upsideDown)
 
-class ComboBox_Initial_Parameters(QWidget):
-    """Класс отрисовки параметров опыта и открытия ведомости
-    Входные параметры:
-        Словарь, в котором ключ - имя combo_box и ключ для считывания, по ключу лежат списки со значениями"""
-    combo_changes_signal = pyqtSignal() # сигнал сигнализирует о смене параметров для переоткрытия ведомости
-    def __init__(self, data):
-        super().__init__()
-        self.data = data
-        self.create_IU()
-        self.get_data()
-
-    def create_IU(self):
-        self.layout = QHBoxLayout()
-        self.layout.setSpacing(5)
-        self.layout.setContentsMargins(5, 5, 5, 5)
-
-        self.open_box = QGroupBox("Текущая ведомость")
-        self.open_box_layout = QHBoxLayout()
-        self.button_open = QPushButton("Открыть ведомость")#Button(icons + "Открыть журнал.png", 45, 45, 0.7)
-        self.open_box_layout.addWidget(self.button_open)
-        self.text_file_path = QLineEdit()
-        self.text_file_path.setDisabled(True)
-        self.open_box_layout.addWidget(self.text_file_path)
-        self.open_box.setLayout(self.open_box_layout)
-
-        self.parameter_box = QGroupBox("Параметры опыта")
-        self.parameter_box_layout = QHBoxLayout()
-
-        for key in self.data:
-            self.combo_box = QComboBox()
-            self.combo_box.addItems(self.data[key])
-            self.parameter_box_layout.addWidget(self.combo_box)
-            self.combo_box.activated.connect(self._combo_changed)
-            setattr(self, "combo_{}".format(key), self.combo_box)
-
-
-        self.parameter_box.setLayout(self.parameter_box_layout)
-
-        self.layout.addWidget(self.open_box)
-        self.layout.addWidget(self.parameter_box)
-
-        self.setLayout(self.layout)
-
-    def _combo_changed(self):
-        """Изменение параметров"""
-        self.combo_changes_signal.emit()
-
-    def get_data(self):
-        """Чтение выбранных параметров"""
-        data = {}
-        for key in self.data:
-            obj = getattr(self, "combo_{}".format(key))
-            data[key] = obj.currentText()
-        return data
-
 class Statment_Initial(QWidget):
     """Класс макет для ведомости
     Входные параметры как у предыдущих классов (ComboBox_Initial_Parameters + Table_Vertical)
@@ -351,6 +296,8 @@ class Statment_Initial(QWidget):
         self.create_IU()
         self.open_line.combo_changes_signal.connect(self.file_open)
         self.table_physical_properties.lab_number_click_signal.connect(self.table_physical_properties_click)
+        self.open_line.button_open.clicked.connect(self.button_open_click)
+        self.open_line.button_refresh.clicked.connect(self.button_refresh_click)
 
     def create_IU(self):
 
@@ -359,7 +306,6 @@ class Statment_Initial(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         self.open_line = ComboBox_Initial_Parameters(self.test_parameters)
-        self.open_line.button_open.clicked.connect(self.button_open_click)
         self.open_line.setFixedHeight(80)
 
         self.customer_line = Table_Castomer()
@@ -412,6 +358,10 @@ class Statment_Initial(QWidget):
             if file != "":
                 self.path = resave_xls_to_xlsx(file)
                 self.file_open()
+
+    def button_refresh_click(self):
+        if self.path:
+            self.file_open()
 
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
