@@ -170,7 +170,7 @@ class MohrWidget(QWidget):
         self.deviator_ax = self.deviator_figure.add_subplot(111)
         self.deviator_ax.grid(axis='both', linewidth='0.4')
         self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-        self.deviator_ax.set_ylabel("Девиатор q, МПА")
+        self.deviator_ax.set_ylabel("Девиатор q, кПа")
         self.deviator_canvas.draw()
         self.deviator_frame_layout.setSpacing(0)
         self.deviator_frame_layout.addWidget(self.deviator_canvas)
@@ -264,7 +264,7 @@ class MohrWidget(QWidget):
     def _plot(self):
         self.deviator_ax.clear()
         self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-        self.deviator_ax.set_ylabel("Девиатор q, МПА")
+        self.deviator_ax.set_ylabel("Девиатор q, кПа")
 
         self.mohr_ax.clear()
         self.mohr_ax.set_xlabel("σ, МПа")
@@ -297,7 +297,8 @@ class MohrWidget(QWidget):
         """Сохранение графиков для передачи в отчет"""
         def save(figure, canvas, size_figure, ax, file_type):
             if canvas == self.mohr_canvas:
-                ax.get_legend().remove()
+                if (ax.get_legend()):
+                    ax.get_legend().remove()
                 canvas.draw()
 
             path = BytesIO()

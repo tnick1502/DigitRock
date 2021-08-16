@@ -152,8 +152,10 @@ class ModelTriaxialDeviatorLoading:
     def get_test_results(self):
         """Получение результатов обработки опыта"""
         dict = self._test_result.get_dict()
-        dict["sigma_3"] = round(self._test_params.get_dict()["sigma_3"]/1000, 2)
-        dict["u"] = round(self._test_params.get_dict()["u"]/1000, 2)
+        dict["sigma_3"] = round(self._test_params.get_dict()["sigma_3"]/1000, 2)\
+            if self._test_params.get_dict()["sigma_3"] is not None else None
+        dict["u"] = round(self._test_params.get_dict()["u"]/1000, 2)\
+            if self._test_params.get_dict()["u"] is not None else None
         return dict
 
     def get_plot_data(self):
@@ -371,7 +373,7 @@ class ModelTriaxialDeviatorLoading:
         E50 = (qf / 2) / (
             np.interp(qf / 2, np.array([deviator[imin], deviator[imax]]), np.array([strain[imin], strain[imax]])))
 
-        return round(E50 / 1000, 2), round(qf / 1000, 3)
+        return np.round(E50 / 1000, 1), np.round(qf / 1000, 1)
 
     @staticmethod
     def define_E(strain, deviator, sigma_3):
@@ -393,7 +395,7 @@ class ModelTriaxialDeviatorLoading:
         #return (round(E / 1000, 2), [strain[i_start_E[0]], strain[i_end_for_plot[0]]],
                 #[line(A1, B1, strain[i_start_E[0]]), line(A1, B1, strain[i_end_for_plot[0]])])
 
-        return (round(E / 1000, 2), [strain[i_start_E], strain[i_end_for_plot[0]]],
+        return (round(E / 1000, 1), [strain[i_start_E], strain[i_end_for_plot[0]]],
                     [line(A1, B1, strain[i_start_E]), line(A1, B1, strain[i_end_for_plot[0]])])
 
     @staticmethod
@@ -404,6 +406,9 @@ class ModelTriaxialDeviatorLoading:
         if reload is not None:
             if reload[0] > 0 and reload != [0, 0, 0]:
                 try:
+                    reload[0] -= 1
+                    reload[1] -= 1
+                    reload[-1] += 1
                     #point1 = reload[1]#np.argmin(deviator[reload[0]: reload[2]]) + reload[0]  # минимум на разгрузке
                     #point2 = reload[0]  # максимум на разгрузке
 
@@ -414,7 +419,7 @@ class ModelTriaxialDeviatorLoading:
                     x, y = intersection(strain[reload[0]:reload[1]], deviator[reload[0]:reload[1]],
                                         strain[reload[1]:reload[2]], deviator[reload[1]:reload[2]])
                     if len(x) > 0:
-                        Eur = round(((y[0] - deviator[reload[1]]) / (x[0] - strain[reload[1]])) / 1000, 2)
+                        Eur = round(((y[0] - deviator[reload[1]]) / (x[0] - strain[reload[1]])) / 1000, 1)
                     else:
                         Eur = None
 

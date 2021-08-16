@@ -108,6 +108,13 @@ def zap(val, prec, none='-'):
     fmt = "{:." + str(int(prec)) + "f}"
     return fmt.format(val).replace(".", ",")
 
+def weirdo_round(val):
+    if isinstance(val, str):
+        return val
+    if val is None:
+        return None
+    return int(val)+(0.5 if val-int(val) >= 0.5 else 0.0)
+
 def SaveCode(version):  # Создает защитный код и записывает его в файл
     Buk = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
                'T','U','W', 'Q', 'V', 'Z']
@@ -144,7 +151,7 @@ def main_frame(canvas, path, Data_customer, code, list):
     canvas.setFont('TimesDj', 12)
     canvas.drawString((130) * mm, (284.8) * mm, "испытательная лаборатория")
     canvas.setFont('Times', 10)
-    canvas.drawString((130) * mm, (281) * mm, "129344, г. Москва, ул. Искры, д.31, к1")
+    canvas.drawString((130) * mm, (281) * mm, "129344, г. Москва, ул. Искры, д.31, к.1")
 
 
 
@@ -236,7 +243,7 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
                ["Протокол испытаний №", "", str_for_excel(Lab + "/" + Data_customer["object_number"] + lname), "", "", "", "", "", "", ""],
                ['Заказчик:', Paragraph(Data_customer["customer"], LeftStyle)],
                ['Объект:', Paragraph(Data_customer["object_name"], LeftStyle)], [""], [""], [""],
-               ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(str(Data_phiz[Lab]["borehole"]) + "; " + str(Data_phiz[Lab]["depth"]).replace(".",","), LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(str(Data_phiz[Lab]["ige"]), LeftStyle)],
+               ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(str(Data_phiz[Lab]["borehole"]) + "; " + str(Data_phiz[Lab]["depth"]).replace(".",",") +" м", LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(str(Data_phiz[Lab]["ige"]), LeftStyle)],
                ['Лабораторный номер №:', "", "", Lab],
                ['Наименование грунта:', "", Paragraph(Data_phiz[Lab]["name"], LeftStyle)], [""]
                ], colWidths = 17.5 * mm, rowHeights = 4 * mm)
@@ -382,7 +389,8 @@ def test_mode_rc(canvas, ro, Data):
                ["Режим испытания:", "", Data["Rezhim"], "", "", "", "", "", ""],
                [Paragraph('''<p>Опорное давление p<sup rise="2.5" size="5">ref</sup>, МПа:</p>''', LeftStyle), "", zap(Data["Pref"], 2)],
                ["Оборудование:", "", Data["Oborudovanie"]],
-               ["Параметры образца:", "", "Высота, мм:", zap(Data["h"], 2), "Диаметр, мм:", zap(Data["d"], 2), Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(ro, 2)]], colWidths=19.444444* mm, rowHeights=4 * mm)
+               ["Параметры образца:", "", "Высота, мм:", zap(Data
+                                                             ["h"], 2), "Диаметр, мм:", zap(Data["d"], 2), Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(ro, 2)]], colWidths=19.444444* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (1, 1)),
                 ('SPAN', (2, 1), (-1, 1)),
@@ -536,7 +544,7 @@ def test_mode_consolidation(canvas, Data):
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
-               [Paragraph('''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, кПа:</p>''', LeftStyle), "", "", zap(Data["sigma_3"], 2), "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
+               [Paragraph('''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, кПа:</p>''', LeftStyle), "", "", zap(weirdo_round(Data["sigma_3"]), 1), "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
                ["Оборудование:", "", "", Data["equipment"]],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
@@ -1385,7 +1393,7 @@ def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     main_frame(canvas, path,  Data_customer, code, "1/1")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ИСПЫТАНИЯ ГРУНТА МЕТОДОМ МАЛОАМПЛИТУДНЫХ ДИНАМИЧЕСКИХ",
-                                "КОЛЕБАНИЙ В РЕЗОНАНСНОЙ КОЛОНКЕ (ГОСТ Р 56353-2015)"], "-РК")
+                                "КОЛЕБАНИЙ В РЕЗОНАНСНОЙ КОЛОНКЕ (ГОСТ Р 56353-2015)"], "/РК")
 
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_rc(canvas, Data_phiz[Lab]["r"], test_parameter)
@@ -1412,11 +1420,11 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
     if test_parameter["type"] == "Сейсморазжижение":
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
-                                "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "-С")
+                                "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/С")
     elif test_parameter["type"] == "Штормовое разжижение":
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
-                                 "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "-ШТ")
+                                 "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/ШТ")
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_triaxial_cyclic(canvas, Data_phiz[Lab]["r"], test_parameter)
     result_table__triaxial_cyclic(canvas, res, [picks[0], picks[1]])
@@ -1470,7 +1478,7 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     main_frame(canvas, path, Data_customer, code, "1/1")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "-ТС")
+                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТС/Р")
 
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_consolidation(canvas, test_parameter)
@@ -1494,7 +1502,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     main_frame(canvas, path, Data_customer, code, "1/2")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "-ТД")
+                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_consolidation(canvas, test_parameter)
@@ -1506,13 +1514,36 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     main_frame(canvas, path, Data_customer, code, "2/2")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "-ТД")
+                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
     parameter_table(canvas, Data_phiz, Lab)
     test_parameter["sigma_3"] = "-"
     test_mode_consolidation(canvas, test_parameter)
 
     result_table_CF(canvas, res, [picks[2], picks[3]])
+
+    canvas.save()
+
+def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    canvas = Canvas(Name, pagesize=A4)
+
+    code = SaveCode(version)
+
+    main_frame(canvas, path, Data_customer, code, "1/1")
+    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
+                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
+
+    parameter_table(canvas, Data_phiz, Lab)
+    test_parameter["sigma_3"] = "-"
+    test_mode_consolidation(canvas, test_parameter)
+
+    result_table_CF(canvas, res, [picks[0],picks[1]])
 
     canvas.save()
 
@@ -1529,7 +1560,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     main_frame(canvas, path, Data_customer, code, "1/2")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "-ВП")
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_vibration_creep(canvas, test_parameter)
@@ -1541,7 +1572,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     main_frame(canvas, path, Data_customer, code, "2/2")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "-ВП")
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_vibration_creep(canvas, test_parameter)
@@ -1596,7 +1627,7 @@ def StampReport(M, R, p1, p2, Nop, path, version = 1):  # p1 - папка сох
     # Лист 1
 
     main_frame(canvas, path, accreditation, code, data, "1/1")
-    sample_identifier_table(canvas, wb, Nop, name, "-ШШ")
+    sample_identifier_table(canvas, wb, Nop, name, "/ШШ")
     parameter_table_ice(canvas, wb, Nop)
     testModeStamm(canvas, wb, Nop, Data)
     ResultStampPart1(canvas, M)

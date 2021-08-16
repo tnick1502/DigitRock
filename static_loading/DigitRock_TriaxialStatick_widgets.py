@@ -10,7 +10,7 @@ import shutil
 from static_loading.triaxial_static_test_widgets import TriaxialStaticWidget, TriaxialStaticWidgetSoilTest
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from general.general_widgets import Statment_Triaxial_Static
-from general.reports import report_consolidation, report_FCE
+from general.reports import report_consolidation, report_FCE, report_FC
 from general.save_widget import Save_Dir
 from general.excel_functions import set_cell_data
 #from test import LoadingWindow
@@ -99,7 +99,10 @@ class DigitRock_TriaxialStatick(QWidget):
 
             if read_parameters["test_type"] == "Трёхосное сжатие (E)":
                 assert self.tab_2._model.deviator_loading._test_params.sigma_3, "Не загружен файл опыта"
-                Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
+                #Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
+                Name = self.tab_1.file.get_lab_number().replace("*", "") + " " +\
+                       self.tab_1.file.get_customer_data()["object_number"] + " ТС Р" + ".pdf"
+
                 report_consolidation(save + "/" + Name, self.tab_1.file.get_customer_data(),
                                  self.tab_1.file.get_physical_data(), self.tab_1.file.get_lab_number(),
                                  os.getcwd() + "/project_data/",
@@ -110,7 +113,9 @@ class DigitRock_TriaxialStatick(QWidget):
                 assert self.tab_3._model._test_result.fi, "Не загружен файл опыта"
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = self.tab_3._model.get_sigma_3_1()
                 test_result["c"], test_result["fi"] = self.tab_3._model.get_test_results()["c"], self.tab_3._model.get_test_results()["fi"]
-                Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
+                # Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
+                Name = self.tab_1.file.get_lab_number().replace("*", "") +\
+                       " " + self.tab_1.file.get_customer_data()["object_number"] + " ТД" + ".pdf"
 
                 report_FCE(save + "/" + Name, self.tab_1.file.get_customer_data(), self.tab_1.file.get_physical_data(),
                            self.tab_1.file.get_lab_number(), os.getcwd() + "/project_data/",
@@ -199,7 +204,9 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
 
             if read_parameters["test_type"] == "Трёхосное сжатие (E)":
                 assert self.tab_2._model.deviator_loading._test_params.sigma_3, "Не загружен файл опыта"
-                Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
+                # Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
+                Name = self.tab_1.file.get_lab_number().replace("*", "") + " " +\
+                       self.tab_1.file.get_customer_data()["object_number"] + " ТС Р" + ".pdf"
                 self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
 
                 report_consolidation(save + "/" + Name, self.tab_1.file.get_customer_data(),
@@ -215,7 +222,9 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
 
             elif read_parameters["test_type"] == "Трёхосное сжатие с разгрузкой":
                 assert self.tab_2._model.deviator_loading._test_params.sigma_3, "Не загружен файл опыта"
-                Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-Р" + ".pdf"
+                # Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-Р" + ".pdf"
+                Name = self.tab_1.file.get_lab_number().replace("*", "") + " " +\
+                       self.tab_1.file.get_customer_data()["object_number"] + " ТС Р" + ".pdf"
                 self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
 
                 report_consolidation(save + "/" + Name, self.tab_1.file.get_customer_data(),
@@ -237,7 +246,9 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
 
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = self.tab_3._model.get_sigma_3_1()
                 test_result["c"], test_result["fi"] = self.tab_3._model.get_test_results()["c"], self.tab_3._model.get_test_results()["fi"]
-                Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
+                #Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
+                Name = self.tab_1.file.get_lab_number().replace("*", "") +\
+                       " " + self.tab_1.file.get_customer_data()["object_number"] + " ТД" + ".pdf"
                 self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
                 self.tab_3._model.save_log_files(save)
 
@@ -250,6 +261,23 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 set_cell_data(self.tab_1.file.path,
                               "BE" + str(self.tab_1.file.get_physical_data()[self.tab_1.file.get_lab_number()]["Nop"]),
                               test_result["E50"], sheet="Лист1", color="FF6961")
+
+            elif read_parameters["test_type"] == 'Трёхосное сжатие (F, C)':
+                assert self.tab_3._model._test_result.fi, "Не загружен файл опыта"
+                test_parameter["K0"] = self.tab_3._model._test_params['K0']
+                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = self.tab_3._model.get_sigma_3_1()
+                test_result["c"], test_result["fi"] = self.tab_3._model.get_test_results()["c"], self.tab_3._model.get_test_results()["fi"]
+                #Name = "Отчет " + self.tab_1.file.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
+                Name = self.tab_1.file.get_lab_number().replace("*", "") + " " +\
+                       self.tab_1.file.get_customer_data()["object_number"] + " ТД" + ".pdf"
+                # self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
+                self.tab_3._model.save_log_files(save)
+
+                report_FC(save + "/" + Name, self.tab_1.file.get_customer_data(), self.tab_1.file.get_physical_data(),
+                           self.tab_1.file.get_lab_number(), os.getcwd() + "/project_data/",
+                           test_parameter, test_result,
+                          (*self.tab_3.save_canvas(),
+                           *self.tab_3.save_canvas()), 1.1)
 
             shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
             QMessageBox.about(self, "Сообщение", "Успешно сохранено")
