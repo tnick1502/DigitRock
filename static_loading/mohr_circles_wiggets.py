@@ -335,17 +335,21 @@ class MohrWidgetSoilTest(MohrWidget):
         self.reference_pressure_array_box = QGroupBox("Обжимающие давления")
         self.reference_pressure_array_box_layout = QVBoxLayout()
         self.reference_pressure_array_box.setLayout(self.reference_pressure_array_box_layout)
-        self.reference_pressure_array_box.setFixedWidth(220)
+        self.reference_pressure_array_box.setFixedWidth(600)
         self.reference_pressure_array_box.setFixedHeight(70)
         self.reference_pressure_array_box_layout.setContentsMargins(5, 5, 5, 5)
 
         self.reference_pressure_array_box_line_1_layout = QHBoxLayout()
+        self.reference_pressure_array_box_line_user = QLineEdit()
         self.reference_pressure_array_box_line = QLineEdit()
-        self.reference_pressure_array_box_line.setText("100, 200, 300")
+        self.reference_pressure_array_box_line.setDisabled(True)
 
-        self.reference_pressure_array_box_line_1_label = QLabel("Массив давлений")
+        self.reference_pressure_array_box_line_1_label = QLabel("Рассчитанные давления")
+        self.reference_pressure_array_box_line_1_label_user = QLabel("Пользовательский массив")
         self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line_1_label)
         self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line)
+        self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line_1_label_user)
+        self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line_user)
         self.reference_pressure_array_box_layout.addLayout(self.reference_pressure_array_box_line_1_layout)
 
         self.layout_wiget.addWidget(self.reference_pressure_array_box)
@@ -353,11 +357,12 @@ class MohrWidgetSoilTest(MohrWidget):
 
     def get_reference_pressure_array(self):
         try:
-            text = self.reference_pressure_array_box_line.text()
-            reference_pressure_array = [float(x.strip(" ")) for x in text.split(",")]
-            assert not (len(reference_pressure_array) < 3), "Недостаточно данных. Введите минимум 3 обжимающих давления"
+            text = self.reference_pressure_array_box_line_user.text()
+            reference_pressure_array = [float(x.strip(" ")) for x in text.split(";")]
+            if len(reference_pressure_array) >=1:
+                assert not (len(reference_pressure_array) < 3), "Недостаточно данных. Введите минимум 3 обжимающих давления"
         except ValueError:
-            QMessageBox.critical(self, "Ошибка", "Введите через запятую значения обжимающих давлений", QMessageBox.Ok)
+            #QMessageBox.critical(self, "Ошибка", "Введите через запятую значения обжимающих давлений", QMessageBox.Ok)
             return None
         except AssertionError as err:
             QMessageBox.critical(self, "Ошибка", str(err), QMessageBox.Ok)
@@ -365,8 +370,17 @@ class MohrWidgetSoilTest(MohrWidget):
         else:
             return reference_pressure_array
 
+    def set_reference_pressure_array(self, reference_pressure_array):
+        self.reference_pressure_array_box_line.setText('; '.join([str(i) for i in reference_pressure_array]))
+
     def set_params(self, params):
-        reference_pressure_array = self.get_reference_pressure_array()
+        reference_pressure_array_user = self.get_reference_pressure_array()
+        reference_pressure_array = ModelMohrCirclesSoilTest.define_reference_pressure_array(params["data_phiz"], params["K0"])
+        self.set_reference_pressure_array(reference_pressure_array)
+
+        if reference_pressure_array_user:
+            reference_pressure_array = reference_pressure_array_user
+
         if reference_pressure_array:
             self._model.set_reference_pressure_array(reference_pressure_array)
             self._model.set_test_params(params)
@@ -377,13 +391,7 @@ class MohrWidgetSoilTest(MohrWidget):
     def refresh(self):
         params = self._model.get_test_params()
         if params:
-            reference_pressure_array = self.get_reference_pressure_array()
-            if reference_pressure_array:
-                self._model.set_reference_pressure_array(reference_pressure_array)
-                self._model.set_test_params(params)
-                self._model._test_modeling()
-                self._create_test_tables()
-                self._plot()
+            self.set_params(params)
 
     def _processing_test(self):
         """Вызов окна обработки опыта"""

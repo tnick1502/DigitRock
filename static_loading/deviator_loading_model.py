@@ -373,7 +373,7 @@ class ModelTriaxialDeviatorLoading:
         E50 = (qf / 2) / (
             np.interp(qf / 2, np.array([deviator[imin], deviator[imax]]), np.array([strain[imin], strain[imax]])))
 
-        return np.round(E50 / 1000, 1), np.round(qf / 1000, 3)
+        return np.round(E50 / 1000, 1), np.round(qf / 1000, 3 )
 
     @staticmethod
     def define_E(strain, deviator, sigma_3):
@@ -623,7 +623,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
     def _test_modeling(self):
         """Функция моделирования опыта"""
         # Время проведения опыта
-        print(self._test_params.velocity)
+        if self._test_params.velocity is None:
+            print("Ошибка в обработки консолидации")
         max_time = int((0.15 * (76 - self._test_params.delta_h_consolidation))/self._test_params.velocity)
         if max_time <= 500:
             max_time = 500
