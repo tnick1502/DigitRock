@@ -248,13 +248,13 @@ class ModelTriaxialDeviatorLoading:
         res = self.get_test_results()
 
         if plots["strain"] is not None:
-            ax_deviator.plot(plots["strain"], plots["deviator"], **plotter_params["main_line"])
-            ax_deviator.plot(plots["strain_cut"], plots["deviator_cut"], **plotter_params["main_line"])
+            ax_deviator.plot(plots["strain"], plots["deviator"], **plotter_params["static_loading_main_line"])
+            ax_deviator.plot(plots["strain_cut"], plots["deviator_cut"], **plotter_params["static_loading_main_line"])
             if plots["E50"]:
-                ax_deviator.plot(*plots["E50"], **plotter_params["sandybrown_dotted_line"])
-                ax_deviator.plot(plots["E"]["x"], plots["E"]["y"], **plotter_params["sandybrown_dotted_line"])
+                ax_deviator.plot(*plots["E50"], **plotter_params["static_loading_sandybrown_dotted_line"])
+                ax_deviator.plot(plots["E"]["x"], plots["E"]["y"], **plotter_params["static_loading_sandybrown_dotted_line"])
             if plots["Eur"]:
-                ax_deviator.plot(*plots["Eur"], **plotter_params["sandybrown_dotted_line"])
+                ax_deviator.plot(*plots["Eur"], **plotter_params["static_loading_sandybrown_dotted_line"])
 
             ax_deviator.plot([], [], label="$E_{50}$" + ", MПа = " + str(res["E50"]), color="#eeeeee")
             ax_deviator.plot([], [], label="$E$" + ", MПа = " + str(res["E"][0]), color="#eeeeee")
@@ -263,10 +263,10 @@ class ModelTriaxialDeviatorLoading:
                 ax_deviator.plot([], [], label="$E_{ur}$" + ", MПа = " + str(res["Eur"]), color="#eeeeee")
 
 
-            ax_volume_strain.plot(plots["strain"], plots["volume_strain"], **plotter_params["main_line"])
-            ax_volume_strain.plot(plots["strain"], plots["volume_strain_approximate"], **plotter_params["dotted_line"])
+            ax_volume_strain.plot(plots["strain"], plots["volume_strain"], **plotter_params["static_loading_main_line"])
+            ax_volume_strain.plot(plots["strain"], plots["volume_strain_approximate"], **plotter_params["static_loading_black_dotted_line"])
             if plots["dilatancy"]:
-                ax_volume_strain.plot(plots["dilatancy"]["x"], plots["dilatancy"]["y"], **plotter_params["dotted_line"])
+                ax_volume_strain.plot(plots["dilatancy"]["x"], plots["dilatancy"]["y"], **plotter_params["static_loading_black_dotted_line"])
 
 
             ax_volume_strain.plot([], [], label="Poissons ratio" + ", д.е. = " + str(res["poissons_ratio"]),
@@ -331,6 +331,17 @@ class ModelTriaxialDeviatorLoading:
 
         self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
                                   self._test_data.deviator_cut, self._test_params.sigma_3)
+
+    def get_processing_parameters(self):
+        "Функция возвращает данные по обрезанию краев графиков"
+        return {
+            "cut": {
+                "left": self._test_cut_position.left,
+                "right": self._test_cut_position.right}
+        }
+
+    def set_processing_parameters(self, params):
+        self.change_borders(params["cut"]["left"], params["cut"]["right"])
 
     @staticmethod
     def find_friction_step(strain, deviator):

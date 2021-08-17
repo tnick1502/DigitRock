@@ -90,9 +90,9 @@ class ModelTriaxialConsolidation:
 
         self.processed_points_log = AttrDict(
             {"first_line_start_point": Point(x=None, y=None),  # Левая точка первого прямолинейного участка
-             "first_line_start_point": Point(x=None, y=None),  # Правая точка первого прямолинейного участка
+             "first_line_end_point": Point(x=None, y=None),  # Правая точка первого прямолинейного участка
              "second_line_start_point": Point(x=None, y=None),  # Левая точка второго прямолинейного участка
-             "second_line_start_point": Point(x=None, y=None),
+             "second_line_end_point": Point(x=None, y=None),
              "Cv": Point(x=None, y=None)})  # Правая точка второго прямолинейного участка
 
         # Результаты опыта
@@ -671,6 +671,78 @@ class ModelTriaxialConsolidation:
             object.y = y
             self._log_processing(processed_points_log=self.processed_points_log)
 
+    def get_processing_parameters(self):
+        "Словарь данных обработки для преобработки"
+        return {
+            "cut": {
+                "left": self._test_cut_position.left,
+                "right": self._test_cut_position.right
+            },
+
+            "interpolate": {
+                "type": self._interpolation_type,
+                "param": self._interpolation_param
+            },
+
+            "points": {
+                "sqrt": {
+                    "line_start_point": {
+                        "x": self.processed_points_sqrt.line_start_point.x,
+                        "y": self.processed_points_sqrt.line_start_point.y
+                    },
+                    "line_end_point": {
+                        "x": self.processed_points_sqrt.line_end_point.x,
+                        "y": self.processed_points_sqrt.line_end_point.y
+                    }
+                },
+                "log": {
+                    "first_line_start_point": {
+                        "x": self.processed_points_log.first_line_start_point.x,
+                        "y": self.processed_points_log.first_line_start_point.y
+                    },
+                    "first_line_end_point": {
+                        "x": self.processed_points_log.first_line_end_point.x,
+                        "y": self.processed_points_log.first_line_end_point.y
+                    },
+                    "second_line_start_point": {
+                        "x": self.processed_points_log.second_line_start_point.x,
+                        "y": self.processed_points_log.second_line_start_point.y
+                    },
+                    "second_line_end_point": {
+                        "x": self.processed_points_log.second_line_end_point.x,
+                        "y": self.processed_points_log.second_line_end_point.y
+                    },
+                }
+            }
+                }
+
+    def set_processing_parameters(self, params):
+        self._test_cut_position.left = params["cut"]["left"]
+        self._test_cut_position.right = params["cut"]["right"]
+        self._cut()
+        self._interpolate_volume_strain(type=params["interpolate"]["type"], param=params["interpolate"]["param"])
+        processed_points_sqrt = AttrDict(
+            {
+                "line_start_point": Point(x=params["points"]["sqrt"]["line_start_point"]["x"],
+                                          y=params["points"]["sqrt"]["line_start_point"]["y"]),
+                "line_end_point": Point(x=params["points"]["sqrt"]["line_end_point"]["x"],
+                                          y=params["points"]["sqrt"]["line_end_point"]["y"])
+            })
+        processed_points_log = AttrDict(
+            {
+                "first_line_start_point": Point(x=params["points"]["log"]["first_line_start_point"]["x"],
+                                                y=params["points"]["log"]["first_line_start_point"]["y"]),
+                "first_line_end_point": Point(x=params["points"]["log"]["first_line_end_point"]["x"],
+                                              y=params["points"]["log"]["first_line_end_point"]["y"]),
+                "second_line_start_point": Point(x=params["points"]["log"]["second_line_start_point"]["x"],
+                                                 y=params["points"]["log"]["second_line_start_point"]["y"]),
+                "second_line_end_point": Point(x=params["points"]["log"]["second_line_end_point"]["x"],
+                                               y=params["points"]["log"]["second_line_end_point"]["y"])
+            })
+
+        self._sqrt_processing(processed_points_sqrt)
+        self._log_processing(processed_points_log)
+
     def _interpolate_volume_strain(self, type="poly", param=8):
         """Интерполяция объемной деформации для удобства обработки"""
 
@@ -981,7 +1053,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
        return ModelTriaxialConsolidationSoilTest.dictionary_consalidation(self._test_data.time,
                                                                           self._test_data.pore_volume_strain,
                                                                           self._test_data.cell_volume_strain,
-                                                                          velocity=100, sigma_3=self._test_params.sigma_3,
+                                                                          velocity=10, sigma_3=self._test_params.sigma_3,
                                                                           delta_h_consolidation=self._test_data.delta_h_consolidation,
                                                                           delta_h_reconsolidation=self._test_data.delta_h_reconsolidation,
                                                                           effective_stress_after_reconsolidation=effective_stress_after_reconsolidation)
@@ -1070,10 +1142,9 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 
         # Добавим набор нагрузки к основным массивам
         time = np.hstack((load_stage_time_array, time + load_stage_time_array[-1]))
-
+        print(pore_volume_strain[0], pore_volume_strain[-1])
         pore_volume_strain = np.hstack((load_stage_pore_volume_strain, pore_volume_strain))
         cell_volume_strain = np.hstack((load_stage_cell_volume_strain, cell_volume_strain))
-
         # На нэтапе нагружения 'LoadStage', на основном опыте Stabilization
         index_last_loadstage, = np.where(time >= load_stage_time)
         action = ['LoadStage' for _ in range(index_last_loadstage[0])] + \
@@ -1103,6 +1174,8 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             "VerticalPress_kPa": cell_press + np.random.uniform(-0.1, 0.1, len(time)),
             "Trajectory": np.full(len(time), 'Consolidation')
         }
+
+        print(pore_volume_strain[len(load_stage_time_array)], pore_volume_strain[-1])
         return data
 
 

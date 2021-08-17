@@ -1,3 +1,6 @@
-myList = [1, 2, 3]
-myString = '; '.join([str(i) for i in myList])
+
+
+import os
+s = "c/cv/fg/dfg.t"
+myString = '/'.join(os.path.split(s)[:-1])
 print(myString)

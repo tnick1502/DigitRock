@@ -402,23 +402,27 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         """Функция рассчета обжимающих давлений для кругов мора"""
         if data_physical["build_press"] != "-" and data_physical["pit_depth"] != "-":
             sigma_max = 2 * (data_physical["depth"] - data_physical["pit_depth"]) * 10 + data_physical["build_press"] \
-                if (data_physical["depth"] - data_physical["pit_depth"]) > 0 else data_physical["build_press"]
-            return [np.round(0.25 * sigma_max * K0), np.round(0.5 * sigma_max * K0), np.round(sigma_max * K0)]
+                if (data_physical["depth"] - data_physical["pit_depth"]) > 0 else 2 * 10 * K0
+            return [np.round(0.25 * sigma_max * K0), np.round(0.5 * sigma_max * K0), np.round(sigma_max * K0)] if (
+                    (0.25 * sigma_max * K0) >= 100) else [100, 200, 400]
         else:
             type_ground = define_type_ground(data_physical, data_physical["Ip"], data_physical["Ir"])
 
-            if (type_ground == 1) or (type_ground == 2) or (type_ground == 3 and data_physical["e"] <= 0.55) or (
-                    type_ground == 8 and data_physical["Il"] < 0.25):
+            e = data_physical["e"] if data_physical["e"] != "-" else 0.65
+            Il = data_physical["Il"] if data_physical["Il"] != "-" else 0.5
+
+            if (type_ground == 1) or (type_ground == 2) or (type_ground == 3 and e <= 0.55) or (
+                    type_ground == 8 and Il <= 0.25):
                 return [100, 300, 500]
 
-            elif (type_ground == 3 and 0.7 >= data_physical["e"] > 0.55) or (
-                    type_ground == 4 and data_physical["e"] <= 0.75) or (
-                    (type_ground == 6 or type_ground == 7 ) and data_physical["Il"] <= 0.5):
+            elif (type_ground == 3 and (0.7 >= e > 0.55)) or (type_ground == 4 and e <= 0.75) or (
+                    (type_ground == 6 or type_ground == 7) and data_physical["Il"] <= 0.5) or (
+                    type_ground == 8 and (0.25 < Il <= 0.5)):
                 return [100, 200, 300]
 
-            elif (type_ground == 3 and data_physical["e"] > 0.7) or (
-                    type_ground == 4 and data_physical["e"] > 0.75) or (type_ground == 5) or (
-                    (type_ground == 6 or type_ground == 7 or type_ground == 8) and data_physical["Il"] > 0.5):
+            elif (type_ground == 3 and e > 0.7) or (
+                    type_ground == 4 and e > 0.75) or (type_ground == 5) or (
+                    (type_ground == 6 or type_ground == 7 or type_ground == 8) and Il > 0.5):
                 return [100, 150, 200]
 
             elif type_ground == 9:
