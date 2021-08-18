@@ -156,8 +156,7 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
             dialog.show()
 
             if dialog.exec() == QDialog.Accepted:
-                pass
-                #self.tab_1.table._data_test = dialog.get_data()
+                self.tab_1._data_test = dialog.get_data()
 
     def _params_slider_moove(self, params):
         self.tab_2.test._model.set_draw_params(params)

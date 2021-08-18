@@ -258,11 +258,15 @@ def define_G0_threshold_shear_strain(p_ref, data_physical, E50, c, fi, K0) -> tu
         (G0 МПа, gam07)"""
 
     type_ground = define_type_ground(data_physical, data_physical["Ip"], data_physical["Ir"])
-    e = data_physical["e"]
     if data_physical["Ip"] != "-":
         PI = data_physical["Ip"]
     else:
         PI = 0
+
+    if data_physical["e"] != "-":
+        e = data_physical["e"]
+    else:
+        e = 0.65
 
     # Предварительный рассчет
     G0_plaxis = define_G0_plaxis(p_ref, e, c, fi, type_ground)

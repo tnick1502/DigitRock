@@ -280,7 +280,10 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
                                       "E": None,
                                       "c": None,
                                       "fi": None,
-                                      "physical": None})
+                                      "physical": None,
+                                      "G0": None,
+                                      "threshold_shear_strain": None})
+        self._getted_params = None
 
         # Коэффициенты отвечают за значение смоделированных результатов
         self._draw_params = AttrDict({"G0_ratio": 1,
@@ -289,14 +292,21 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
 
     def set_test_params(self, params):
         """Функция принимает параметры опыта для дальнейших построений"""
+        self._getted_params = params
+
         self._test_params.p_ref = params["Pref"]
         self._test_params.c = params["c"]
         self._test_params.fi = params["fi"]
         self._test_params.E = params["E"]
         self._test_params.K0 = params["K0"]
         self._test_params.physical = params["data_phiz"]
+        self._test_params.G0 = params["G0"]
+        self._test_params.threshold_shear_strain = params["threshold_shear_strain"]
 
         self._test_modeling()
+
+    def get_test_params(self):
+        return self._getted_params
 
     def set_draw_params(self, params):
         """Считывание параметров отрисовки(для передачи на слайдеры)"""
@@ -307,15 +317,15 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
 
     def _test_modeling(self):
         """Моделирование данных опыта"""
-        G0, threshold_shear_strain = define_G0_threshold_shear_strain(self._test_params.p_ref,
-                                                                      self._test_params.physical,
-                                                                      self._test_params.E, self._test_params.c,
-                                                                      self._test_params.fi, self._test_params.K0)
-        G0 *= self._draw_params.G0_ratio
-        threshold_shear_strain *= self._draw_params.threshold_shear_strain_ratio
+        #G0, threshold_shear_strain = define_G0_threshold_shear_strain(self._test_params.p_ref,
+                                                                      #self._test_params.physical,
+                                                                      #self._test_params.E, self._test_params.c,
+                                                                      #self._test_params.fi, self._test_params.K0)
+        self._test_params.G0 *= self._draw_params.G0_ratio
+        self._test_params.threshold_shear_strain *= self._draw_params.threshold_shear_strain_ratio
 
         self._test_data.G_array, self._test_data.shear_strain = \
-            ModelRezonantColumnSoilTest.generate_G_array(G0, threshold_shear_strain)
+            ModelRezonantColumnSoilTest.generate_G_array(self._test_params.G0, self._test_params.threshold_shear_strain)
 
 
         self._test_data.frequency, self._test_data.resonant_curves = \

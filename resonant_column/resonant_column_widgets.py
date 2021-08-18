@@ -4,6 +4,7 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 import numpy as np
 import sys
+import copy
 
 from resonant_column.resonant_column_widgets_UI import RezonantColumnUI, RezonantColumnOpenTestUI, \
     RezonantColumnSoilTestUI, RezonantColumnIdentificationUI
@@ -82,6 +83,9 @@ class RezonantColumnSoilTestWidget(QWidget):
         self.layout = QVBoxLayout(self)
         self.identification_widget = RezonantColumnIdentificationUI()
         self.test_widget = RezonantColumnSoilTestUI()
+        self.refresh_button = QPushButton("Обновить")
+        self.refresh_button.clicked.connect(self._refresh)
+        self.layout.addWidget(self.refresh_button)
         self.layout.addWidget(self.identification_widget)
         self.layout.addWidget(self.test_widget)
         self.layout.setContentsMargins(5, 5, 5, 5)
@@ -104,6 +108,13 @@ class RezonantColumnSoilTestWidget(QWidget):
         self._cut_slider_set_len(len(self._model._test_data.G_array))
         self._plot()
 
+    def _refresh(self):
+        params = self._model.get_test_params()
+        if params:
+            self._model.set_test_params(params)
+            self._cut_slider_set_len(len(self._model._test_data.G_array))
+            self._plot()
+
     def _plot(self):
         """Построение графиков опыта"""
         plots = self._model.get_plot_data()
@@ -118,10 +129,16 @@ class PredictRCTestResults(QDialog):
         self._data_customer = data_customer
         self.setWindowTitle("Резонансная колонка")
         self.create_IU()
+
+        self._G0_ratio = 1
+        self._threshold_shear_strain_ratio = 1
+
         self._original_keys_for_sort = list(data.keys())
         self._set_data(data)
         self.table_castomer.set_data(data_customer)
         self.resize(1400, 800)
+
+        self.sliders.signal[object].connect(self._sliders_moove)
 
         self.open_data_button.clicked.connect(self._read_data_from_json)
         self.save_data_button.clicked.connect(self._save_data_to_json)
@@ -191,10 +208,10 @@ class PredictRCTestResults(QDialog):
         while (self.table.rowCount() > 0):
             self.table.removeRow(0)
 
-        self.table.setColumnCount(7)
+        self.table.setColumnCount(8)
         #self.table.horizontalHeader().resizeSection(1, 200)
         self.table.setHorizontalHeaderLabels(
-            ["Лаб. ном.", "Глубина", "Наименование грунта", "Реф.давление, МПа", "Коэфф. пористости e", "G0, МПА",
+            ["Лаб. ном.", "Глубина", "Наименование грунта", "Реф.давление, МПа", "Коэфф. пористости e", "Е50, МПа", "G0, МПА",
              "𝛾07, д.е."])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setDefaultSectionSize(25)
@@ -206,12 +223,11 @@ class PredictRCTestResults(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(7, QHeaderView.Fixed)
 
     def _fill_table(self):
         """Заполнение таблицы параметрами"""
-
         self.table.setRowCount(len(self._data))
-
         for string_number, lab_number in enumerate(self._data):
             for i, val in enumerate([
                 lab_number,
@@ -219,8 +235,9 @@ class PredictRCTestResults(QDialog):
                 self._data[lab_number]["name"],
                 str(self._data[lab_number]['Pref']),
                 str(self._data[lab_number]['e']),
-                str(self._data[lab_number]['G0']),
-                str(self._data[lab_number]['threshold_shear_strain'])
+                str(np.round(self._data[lab_number]['E'], 1)),
+                str(np.round(self._data[lab_number]['G0']*self._G0_ratio, 1)),
+                str(np.round(self._data[lab_number]['threshold_shear_strain']*self._threshold_shear_strain_ratio, 2))
             ]):
 
                 self.table.setItem(string_number, i, QTableWidgetItem(val))
@@ -230,6 +247,23 @@ class PredictRCTestResults(QDialog):
     def _set_data(self, data):
         """Функция для получения данных"""
         self._data = data
+        self._fill_table()
+
+    def _sort_combo_changed(self):
+        """Изменение способа сортировки combo_box"""
+        if self._table_is_full:
+            if self.combo_box.currentText() == "Сортировка":
+                self._data = {key: self._data[key] for key in self._original_keys_for_sort}
+                self._clear_table()
+            else:
+                self._sort_data(self.combo_box.currentText())
+                self._clear_table()
+
+            self._fill_table()
+
+    def _sliders_moove(self, param):
+        self._G0_ratio = param["G0_ratio"]
+        self._threshold_shear_strain_ratio = param["threshold_shear_strain_ratio"]
         self._fill_table()
 
     def _save_data_to_json(self):
@@ -253,33 +287,26 @@ class PredictRCTestResults(QDialog):
         #self._data = {key: self._data[key] for key in sort_lab_numbers}
         self._data = dict(sorted(self._data.items(), key=lambda x: self._data[x[0]][sort_key]))
 
-    def _sort_combo_changed(self):
-        """Изменение способа сортировки combo_box"""
-        if self._table_is_full:
-            if self.combo_box.currentText() == "Сортировка":
-                self._data = {key: self._data[key] for key in self._original_keys_for_sort}
-                self._clear_table()
-            else:
-                self._sort_data(self.combo_box.currentText())
-                self._clear_table()
-
-            self._fill_table()
-
     def _save_pdf(self):
         save_dir = QFileDialog.getExistingDirectory(self, "Select Directory")
         if save_dir:
-            statement_title = "Прогнозирования разжижения"
-            titles, data, scales = PredictRCTestResults.transform_data_for_statment(self._data)
+            statement_title = "Прогнозирование парметров G0"
+            titles, data, scales = PredictRCTestResults.transform_data_for_statment(self.get_data())
             try:
                 save_report(titles, data, scales, self._data_customer["data"], ['Заказчик:', 'Объект:'],
                             [self._data_customer["customer"], self._data_customer["object_name"]], statement_title,
-                            save_dir, "---", "Прогноз разжижения.pdf")
+                            save_dir, "---", "Прогноз G0.pdf")
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
             except PermissionError:
                 QMessageBox.critical(self, "Ошибка", "Закройте ведомость", QMessageBox.Ok)
 
     def get_data(self):
-        return self._data
+        data = copy.deepcopy(self._data)
+        for string_number, lab_number in enumerate(data):
+            data[lab_number]["G0"] = float(self.table.item(string_number, 6).text())
+            data[lab_number]["threshold_shear_strain"] = float(self.table.item(string_number, 7).text())
+
+        return data
 
     @staticmethod
     def transform_data_for_statment(data):
@@ -291,14 +318,16 @@ class PredictRCTestResults(QDialog):
                     lab_number,
                     str(data[lab_number]["depth"]),
                     data[lab_number]["name"],
-                    str(data[lab_number]['CSR']),
-                    str(data[lab_number]['N']),
-                    str(data[lab_number]['n_fail']) if data[lab_number]['n_fail'] else "-"])
+                    str(data[lab_number]['Pref']),
+                    str(data[lab_number]['e']),
+                    str(np.round(data[lab_number]['E'], 1)),
+                    str(np.round(data[lab_number]['G0'], 1)),
+                    str(np.round(data[lab_number]['threshold_shear_strain'], 2))])
 
-        titles = ["Лаб. номер", "Глубина, м", "Наименование грунта", "CSR, д.е.", "Общее число циклов",
-                   "Цикл разрушения"]
+        titles = ["Лаб. номер", "Глубина, м", "Наименование грунта", "Реф.давление, МПа", "Коэфф. пористости e",
+                  "Е50, МПа", "G0, МПА", "𝛾07, д.е."]
 
-        scale = [70, 70, "*", 70, 70, 70]
+        scale = [70, 70, "*", 70, 70, 70, 70, 70]
 
         return (titles, data_structure, scale)
 

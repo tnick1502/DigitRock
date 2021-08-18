@@ -290,7 +290,7 @@ class RezonantColumnSoilTestUI(RezonantColumnUI):
             {
                 "G0_ratio": {"value": 1, "borders": [0.1, 5]},
                 "threshold_shear_strain_ratio": {"value": 1, "borders": [0.1, 5]},
-                "frequency_step": {"value": 5, "borders": [1, 5]}
+                "frequency_step": {"value": 3, "borders": [1, 5]}
             })
         self.layout.addWidget(self.sliders)
 
