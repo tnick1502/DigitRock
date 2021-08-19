@@ -59,8 +59,8 @@ class ModelTriaxialStaticLoad:
         test_data = ModelTriaxialStaticLoad.open_geotek_log(file_path)
         self.set_test_data(test_data)
         processing_parameters_path = '/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json"
-        #if os.path.exists(processing_parameters_path):
-            #self.set_processing_parameters(read_json_file(processing_parameters_path))
+        if os.path.exists(processing_parameters_path):
+            self.set_processing_parameters(read_json_file(processing_parameters_path))
 
     def plotter(self):
         #self.reconsolidation.plotter()
@@ -278,7 +278,26 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
         self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
                                                    self.consolidation.get_delta_h_consolidation())
+
+        E50 = np.round(test_params["E50"]/1000, 1)
+
         self.deviator_loading.set_test_params(test_params)
+        params = self.deviator_loading.get_test_results()
+        E50_test = params["E50"]
+
+        while E50_test != E50:
+
+            print("Поиск сходимости решения. ", E50_test-E50)
+            #if E50_test > E50:
+                #test_params["E50"] /= 1.0001
+            #else:
+                #test_params["E50"] *= 1.0001
+
+            test_params["E50"] += 10*(E50 - E50_test)
+
+            self.deviator_loading.set_test_params(test_params)
+            params = self.deviator_loading.get_test_results()
+            E50_test = params["E50"]
 
     def get_test_params(self):
         return self.test_params
@@ -420,16 +439,16 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
     @staticmethod
     def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading):
 
-        #data = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(b_test, consolidation, initial=True,
-                                        #skip_keys=["SampleHeight_mm", "SampleDiameter_mm"])
-        #dictionary = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(copy.deepcopy(data), deviator_loading, initial=True,
-                                              #skip_keys=["SampleHeight_mm", "SampleDiameter_mm", "Action_Changed"])
+        data = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(b_test, consolidation, initial=True,
+                                        skip_keys=["SampleHeight_mm", "SampleDiameter_mm"])
+        dictionary = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(copy.deepcopy(data), deviator_loading, initial=True,
+                                              skip_keys=["SampleHeight_mm", "SampleDiameter_mm", "Action_Changed"])
 
-        dictionary = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(consolidation, deviator_loading,
-                                                                              initial=True,
-                                                                              skip_keys=["SampleHeight_mm",
-                                                                                         "SampleDiameter_mm",
-                                                                                         "Action_Changed"])
+        #dictionary = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(consolidation, deviator_loading,
+                                                                              #initial=True,
+                                                                              #skip_keys=["SampleHeight_mm",
+                                                                                         #"SampleDiameter_mm",
+                                                                                         #"Action_Changed"])
 
         dictionary["Time"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["Time"], 3)
         dictionary["Deviator_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["Deviator_kPa"], 3)
@@ -442,9 +461,9 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         dictionary["VerticalDeformation_mm"] = str
 
         dictionary["CellPress_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["CellPress_kPa"], 5)
-        dictionary["CellVolume_mm3"] = dictionary["CellVolume_mm3"]
+        #dictionary["CellVolume_mm3"] = dictionary["CellVolume_mm3"]
         dictionary["PorePress_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["PorePress_kPa"], 5)
-        dictionary["PoreVolume_mm3"] = dictionary["PoreVolume_mm3"]
+        #dictionary["PoreVolume_mm3"] = dictionary["PoreVolume_mm3"]
         dictionary["VerticalPress_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["VerticalPress_kPa"], 5)
 
         return dictionary
@@ -479,7 +498,7 @@ if __name__ == '__main__':
              'Cv': 0.1, 'Ca': 0.01, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
              'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
                                                                                              'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73, 'r': '-', 'rd': '-', 'n': '-', 'e': '-', 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-', 'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0, '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-', '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие (E)'}
-    test = "soil_test"
+    test = "soil_test1"
 
     if test == "soil_test":
         a = ModelTriaxialStaticLoadSoilTest()

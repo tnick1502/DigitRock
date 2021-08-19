@@ -130,7 +130,7 @@ def k0_test_type_column(test_type):
 # Чтение данных
 def generator_of_cell_with_lab_number(wb):
     """Функция генерирует последовательность строк с заполненными данными по лабномеру"""
-    for i in range(7, len(wb['Лист1']['A'])  + 5):
+    for i in range(7, len(wb['Лист1']['A']) + 5):
         if str(wb["Лист1"]['A' + str(i)].value) != "None":
             yield i
 
@@ -311,6 +311,8 @@ def read_mech(wb, K0_mode, test_mode = "Трёхосное сжатие (F, C, E
                 build_press = float_from_excel(wb["Лист1"]['AK' + str(i)].value)
                 pit_depth = float_from_excel(wb["Лист1"]['AL' + str(i)].value)
 
+                if build_press != "-":
+                    build_press *= 1000
 
                 if test_mode == "Трёхосное сжатие с разгрузкой":
                     Eur = round(define_Eur(data_physical["Il"])*E)
