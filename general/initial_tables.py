@@ -287,3 +287,136 @@ class ComboBox_Initial_Parameters(QWidget):
             data[key] = obj.currentText()
         return data
 
+
+#refactor
+class TablePhysicalProperties(QTableWidget):
+    """Класс отрисовывает таблицу физических свойств"""
+    laboratory_number_click_signal = pyqtSignal(str)
+    def __init__(self):
+        super().__init__()
+        self.laboratory_number = ""
+        self.horizontalHeader().setSectionsMovable(True)
+        self.clicked.connect(self.click)
+        self._clear_table()
+
+    def _clear_table(self):
+        """Очистка таблицы и придание соответствующего вида"""
+        while (self.rowCount() > 0):
+            self.removeRow(0)
+
+        self.setRowCount(30)
+        self.setColumnCount(30)
+        #self.table.horizontalHeader().resizeSection(1, 200)
+        self.setHorizontalHeaderLabels(
+            ["Лаб. ном.", "Скважина", "Глубина", "Наименование грунта", "ИГЭ", "rs", "r", "rd", "n", "e", "W", "Sr",
+             "Wl", "Wp", "Ip", "Il", "Ir", "Стр. индекс", "УГВ",
+             "10", "5", "2", "1", "0.5", "0.25", "0.1", "0.05", "0.01", "0.002", "<0.002"])
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        #self.table.horizontalHeader().resizeSection(1, 500)
+
+    def set_row_color(self, row, color=(129, 216, 208)):#color=(62, 180, 137)):
+        """Раскрашиваем строку"""
+        if row is not None:
+            for i in range(self.columnCount()):
+                self.item(row, i).setBackground(QtGui.QColor(*color))
+
+    def get_row_by_lab_naumber(self, lab):
+        """Поиск номера строки по значению лабномера"""
+        for row in range(self.columnCount()):
+            if self.item(row, 0).text() == lab:
+                return row
+        return None
+
+    def set_data(self, data):
+        """Функция для получения данных"""
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        self._clear_table()
+
+        self.setRowCount(len(data))
+
+        for i, lab in enumerate(data):
+            for g, key in enumerate([str(data[lab].physical_properties.__dict__[m]) for m in
+                                     data[lab].physical_properties.__dict__]):
+                if key == "True":
+                    pass
+                    #self.set_row_color(i)
+                elif key == "False":
+                    pass
+                else:
+                    self.setItem(i, g, QTableWidgetItem(replaceNone(key)))
+
+    def click(self, clickedIndex):
+        """Обработчик события клика на ячейку"""
+        try:
+            self.laboratory_number = self.item(clickedIndex.row(), 0).text()
+            self.laboratory_number_click_signal.emit(self.laboratory_number)
+        except AttributeError:
+            pass
+
+    def get_labels(self):
+        #names = []
+        #for i in range(self.table.horizontalHeader().count()):
+            #names.append(self.table.horizontalHeaderItem(i).text())
+        #print(names)
+        header = self.table.horizontalHeader()
+        labels = [header.model().headerData(header.logicalIndex(i), Qt.Horizontal) for i in range(header.count())]
+        print(labels)
+
+class TableVertical(QTableWidget):
+    """Класс реализует отрисовку вертикальной таблицы
+    Входные параметры:
+        headlines - список заголовков, идущих в левом столбце
+        fill_keys - список ключей, по порядку которых данные будут писаться в таблицу(соответствие заголовок-ключ)"""
+    def __init__(self, headlines, fill_keys):
+        super().__init__()
+        self._headlines = headlines
+        self._fill_keys = fill_keys
+        self._clear_table()
+
+    def _clear_table(self):
+        """Очистка таблицы и придание соответствующего вида"""
+        while (self.rowCount() > 0):
+            self.removeRow(0)
+
+        self.verticalHeader().hide()
+        self.setRowCount(len(self._fill_keys))
+
+        self.setColumnCount(2)
+        self.setHorizontalHeaderLabels(["Текущий опыт", "Значения"])
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        for i, name in enumerate(self._headlines):
+            self.setItem(i, 0, QTableWidgetItem(name))
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+    def set_data(self, data):
+        """Получение данных, Заполнение таблицы параметрами"""
+        self._clear_table()
+
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        for i, key in enumerate(self._fill_keys):
+            self.setItem(i, 1, QTableWidgetItem(replaceNone(str(getattr(data, key)))))
+
+
+if __name__ == "__main__":
+    import sys
+    from general.excel_data_parser import getRCExcelData
+    data = getRCExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", "K0: Формула Джекки")
+    app = QApplication(sys.argv)
+
+    headlines = ["Лаб. ном.", "Модуль деформации E50, кПа", "Сцепление с, МПа",
+                 "Угол внутреннего трения, град"]
+
+    fill_keys = ["laboratory_number", "E50", "c", "fi",]
+
+    Dialog = TablePhysicalProperties()
+    Dialog.set_data(data)
+    Dialog.show()
+    app.setStyle('Fusion')
+
+
+    sys.exit(app.exec_())
+
+

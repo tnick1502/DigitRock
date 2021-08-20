@@ -15,10 +15,10 @@ def cyclic_stress_ratio_curve_params(Ip, Il=None, e=None)->tuple:
     :return
         (alpha, betta)"""
 
-    if Ip == "-":
-        return (0.08, 0.7)
+    if Ip:
+        return (-0.0026 * Ip + 0.139, 0.0033 * Ip + 0.91)
     else:
-        return (-0.0026*Ip + 0.139, 0.0033*Ip + 0.91)
+        return (0.08, 0.7)
 
 def define_cyclic_stress_ratio(cycle, alpha, betta)->float:
     """Функция Возвращает значения кривой CSR при заданном цикле

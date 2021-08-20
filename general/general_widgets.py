@@ -11,7 +11,9 @@ from openpyxl import load_workbook
 
 from general.excel_functions import read_customer, read_dynemic, read_mech, resave_xls_to_xlsx, cfe_test_type_columns, \
     k0_test_type_column, column_fullness_test, read_phiz, read_dynemic_rc, read_vibration_creep
-from general.initial_tables import Table_Castomer, Table_Physical_Properties, Table_Vertical, ComboBox_Initial_Parameters
+from general.initial_tables import Table_Castomer, Table_Physical_Properties, Table_Vertical, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties
+
+from general.excel_data_parser import getRCExcelData, getMechanicalExcelData, getCyclicExcelData
 
 class Float_Slider(QSlider):  # получает на входе размер окна. Если передать 0 то размер автоматический
     def __init__(self, m):
@@ -741,25 +743,361 @@ class Statment_Rezonant_Column(Statment_Initial):
 
 
 
+class InitialStatment(QWidget):
+    """Класс макет для ведомости
+    Входные параметры как у предыдущих классов (ComboBox_Initial_Parameters + Table_Vertical)
+    Для кастомизации надо переопределить методы file_open и table_physical_properties_click"""
+    statment_directory = pyqtSignal(str)
+    signal = pyqtSignal(object)
+    def __init__(self, test_parameters, headlines, fill_keys, identification_column=None):
+        super().__init__()
+
+        self.identification_column = identification_column if identification_column else None
+        self.test_parameters = test_parameters
+
+        self._data = None
+        self._data_customer = None
+        self._lab_number = None
+        self.path = ""
+
+        self.create_IU(headlines, fill_keys)
+        self.open_line.combo_changes_signal.connect(self.file_open)
+        self.table_physical_properties.laboratory_number_click_signal.connect(self.table_physical_properties_click)
+        self.open_line.button_open.clicked.connect(self.button_open_click)
+        self.open_line.button_refresh.clicked.connect(self.button_refresh_click)
+
+    def create_IU(self, headlines, fill_keys):
+
+        self.layout = QVBoxLayout()
+        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+        self.open_line = ComboBox_Initial_Parameters(self.test_parameters)
+        self.open_line.setFixedHeight(80)
+
+        self.customer_line = Table_Castomer()
+        #self.customer_line.setFixedHeight(80)
+
+        self.layout_tables = QHBoxLayout()
+        self.table_splitter_propetries = QSplitter(Qt.Horizontal)
+        self.table_physical_properties = TablePhysicalProperties()
+        self.table_vertical = TableVertical(headlines, fill_keys)
+        self.splitter_table_vertical = QSplitter(Qt.Vertical)
+        self.splitter_table_vertical_widget = QWidget()
+        self.splitter_table_vertical.addWidget(self.table_vertical)
+        self.splitter_table_vertical.addWidget(self.splitter_table_vertical_widget)
+        self.splitter_table_vertical.setStretchFactor(0, 8)
+        self.splitter_table_vertical.setStretchFactor(1, 1)
+        #self.table_vertical.setFixedWidth(300)
+        #self.table_vertical.setFixedHeight(40 * len(self.headlines))
+
+        self.table_splitter_propetries = QSplitter(Qt.Horizontal)
+        self.table_splitter_propetries.addWidget(self.table_physical_properties)
+        self.table_splitter_propetries.addWidget(self.splitter_table_vertical)
+        self.table_splitter_propetries.setStretchFactor(0, 2)
+
+        #self.layout_tables.addWidget(self.table_splitter)
+        #self.layout_tables.setAlignment(Qt.AlignTop)
+
+        self.table_splitter_propetries_customer = QSplitter(Qt.Vertical)
+        self.table_splitter_propetries_customer.addWidget(self.customer_line)
+        self.table_splitter_propetries_customer.addWidget(self.table_splitter_propetries)
+        self.table_splitter_propetries_customer.setStretchFactor(0, 1)
+        self.table_splitter_propetries_customer.setStretchFactor(1, 10)
+        self.layout.addWidget(self.open_line)
+        self.layout.addWidget(self.table_splitter_propetries_customer)
+        #self.layout.addLayout(self.layout_tables)
+        self.setLayout(self.layout)
+
+    def button_open_click(self):
+        combo_params = self.open_line.get_data()
+
+        test = True
+        for key in self.test_parameters:
+            if combo_params[key] == self.test_parameters[key][0]:
+                test = False
+                QMessageBox.critical(self, "Предупреждение", "Проверьте заполнение {}".format(key),
+                                           QMessageBox.Ok)
+                break
+
+        if test:
+            file = QFileDialog.getOpenFileName(self, 'Open file')[0]
+            if file != "":
+                self.path = resave_xls_to_xlsx(file)
+                self.file_open()
+
+    def button_refresh_click(self):
+        if self.path:
+            self.file_open()
+
+    def file_open(self):
+        """Открытие и проверка заполненности всего файла веддомости"""
+        pass
+
+    def table_physical_properties_click(self):
+        pass
+
+    def get_customer_data(self):
+        """Возвращает данные по заказчику"""
+        return self._data_customer
+
+    def get_physical_data(self):
+        """Возвращает данные по физике"""
+        return self._data_physical
+
+    def get_test_data(self):
+        """Возвращает данные по физике"""
+        return self._data_test
+
+    def get_lab_number(self):
+        """Возвращает данные по физике"""
+        return self._lab_number
+
+class RezonantColumnStatment(InitialStatment):
+    """Класс обработки файла задания для трехосника"""
+    def __init__(self):
+        data_test_parameters = {"p_ref": ["Выберите референтное давление", "Pref: Pref из столбца FV",
+                                          "Pref: Через бытовое давление"],
+                                "k0_condition": ["Тип определения K0",
+                                                 "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
+                                                 "K0: K0 из ведомости", "K0: Формула Джекки",
+                                                 "K0: K0 = 1"]
+                                }
+
+        headlines = ["Лаб. ном.", "Модуль деформации E50, МПа", "Сцепление с, МПа",
+                     "Угол внутреннего трения, град", "Коэффициент пористости, е",
+                     "Референтное давление, МПа", "K0"]
+
+        fill_keys = ["laboratory_number", "E50", "c", "fi", "e", "reference_pressure", "K0"]
+
+        super().__init__(data_test_parameters, headlines, fill_keys)
+
+    def file_open(self):
+        """Открытие и проверка заполненности всего файла веддомости"""
+        if self.path != "":
+
+            wb = load_workbook(self.path, data_only=True)
+
+            combo_params = self.open_line.get_data()
+
+            if combo_params["p_ref"] == "Pref: Pref из столбца FV":
+                columns_marker = ["FV"]
+            elif combo_params["p_ref"] == "Pref: Через бытовое давление":
+                columns_marker = ["A"]
+            columns_marker_k0 = k0_test_type_column(combo_params["k0_condition"])
+            marker, customer = read_customer(wb)
+
+            try:
+                assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)),\
+                    "Заполните K0 в ведомости"
+                assert column_fullness_test(wb, columns=["BD", "BC", "BE"], initial_columns=list(columns_marker)), \
+                    "Заполните параметры прочности и деформируемости (BD, BC, BE)"
+                assert not marker, "Проверьте заказчиков и даты"# + customer
+
+            except AssertionError as error:
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
+            else:
+                self.open_line.text_file_path.setText("")
+                self._data_customer = customer
+                self._data = getRCExcelData(self.path, combo_params["k0_condition"])
+
+                if len(self._data) < 1:
+                    QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
+                                        + str(columns_marker), QMessageBox.Ok)
+                else:
+                    self.customer_line.set_data(self._data_customer)
+                    self.table_physical_properties.set_data(self._data)
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
+
+    def table_physical_properties_click(self, laboratory_number):
+        data = self._data[laboratory_number]
+        self._laboratory_number = laboratory_number
+        self.table_vertical.set_data(data)
+        self.signal.emit(data)
+
+class TriaxialStaticStatment(InitialStatment):
+    """Класс обработки файла задания для трехосника"""
+    def __init__(self):
+        data_test_parameters = {"equipment": ["Выберите прибор", "ЛИГА", "АСИС ГТ.2.0.5", "GIESA UP-25a"],
+                                "test_type": ["Выберите тип испытания", "Трёхосное сжатие (E)",
+                                              "Трёхосное сжатие (F, C)",
+                                              "Трёхосное сжатие (F, C, E)",
+                                              "Трёхосное сжатие с разгрузкой"],
+                                "k0_condition": ["Тип определения K0",
+                                                 "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
+                                                 "K0: K0 из ведомости", "K0: Формула Джекки",
+                                                 "K0: K0 = 1"]}
+
+        headlines = ["Лаб. ном.", "Модуль деформации E50, кПа", "Сцепление с, МПа",
+                     "Угол внутреннего трения, град",
+                     "Максимальный девиатор qf, кПа",
+                     "Обжимающее давление sigma3, кПа", "K0", "Коэффициент Пуассона",
+                     "Коэффициент консолидации Cv", "Коэффициент вторичной консолидации Ca",
+                     "Давление от здания, кПа", "Глубина котлована, м", "Модуль разгрузки Eur, кПа",
+                     "Угол дилатансии, град", "OCR", "Показатель степени жесткости"]
+        fill_keys = ["laboratory_number", "E50", "c", "fi", "qf", "sigma_3", "K0", "poisons_ratio", "Cv", "Ca", "build_press",
+                     "pit_depth", "Eur", "dilatancy_angle", "OCR", "m"]
+
+        super().__init__(data_test_parameters, headlines, fill_keys)
+
+    def file_open(self):
+        """Открытие и проверка заполненности всего файла веддомости"""
+        if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
+            try:
+                wb = load_workbook(self.path, data_only=True)
+
+                combo_params = self.open_line.get_data()
+
+                columns_marker_cfe = cfe_test_type_columns(combo_params["test_type"])
+                columns_marker_k0 = k0_test_type_column(combo_params["k0_condition"])
+                marker, customer = read_customer(wb)
+
+                try:
+                    assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker_cfe)), \
+                        "Заполните K0 в ведомости"
+                    assert not marker, "Проверьте "  # + customer
+                    #assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=list(columns_marker_cfe)), \
+                        #"Заполните данные консолидации('CC', 'CF')"
+
+                except AssertionError as error:
+                    QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+                else:
+                    self.table_physical_properties._clear_table()
+                    self.open_line.text_file_path.setText("")
+                    self._data_customer = customer
+
+                    self._data = getMechanicalExcelData(self.path, test_mode=combo_params["test_type"],
+                                                        K0_mode=combo_params["k0_condition"])
+
+                    if len(self._data) < 1:
+                        QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта",
+                                             QMessageBox.Ok)
+                    else:
+                        self.customer_line.set_data(self._data_customer)
+                        self.table_physical_properties.set_data(self._data)
+                        self.statment_directory.emit(self.path)
+                        self.open_line.text_file_path.setText(self.path)
+
+            except TypeError as err:
+                print(str(err))
+
+    def table_physical_properties_click(self, laboratory_number):
+        data = self._data[laboratory_number]
+        self._laboratory_number = laboratory_number
+        type = self.open_line.get_data()
+        setattr(data, "test_type", type["test_type"])
+        self.table_vertical.set_data(data)
+        self.signal.emit(data)
+
+class TriaxialCyclicStatment(InitialStatment):
+    """Класс обработки файла задания для трехосника"""
+    def __init__(self):
+        data_test_parameters = {"equipment": ["Выберите прибор", "Прибор: Вилли", "Прибор: Геотек"],
+                                "test_type": ["Режим испытания", "Сейсморазжижение", "Штормовое разжижение"],
+                                "k0_condition": ["Тип определения K0",
+                                                 "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
+                                                 "K0: K0 из ведомости", "K0: Формула Джекки",
+                                                 "K0: K0 = 1"]
+                                }
+
+        headlines = [
+            "Лаб. ном.",
+            "Модуль деформации E50, кПа",
+            "Сцепление с, МПа",
+            "Угол внутреннего трения, град",
+            "CSR",
+            "Обжимающее давление 𝜎3",
+            "K0",
+            "Касательное напряжение τ, кПа",
+            "Число циклов N, ед.",
+            "Бальность, балл",
+            "Магнитуда",
+            "Понижающий коэф. rd",
+            "MSF",
+            "Частота, Гц",
+            "Расчетная высота волны, м",
+            "Плотность воды, кН/м3"]
+
+        fill_keys = ["laboratory_number",
+                     "E50",
+                     "c",
+                     "fi",
+                     "CSR",
+                     "sigma_3",
+                     "K0",
+                     "t",
+                     "cycles_count",
+                     "intensity",
+                     "magnitude",
+                     "rd",
+                     "MSF",
+                     "frequency",
+                     "Hw",
+                     "rw"]
+
+        super().__init__(data_test_parameters, headlines, fill_keys)
+
+    def file_open(self):
+        """Открытие и проверка заполненности всего файла веддомости"""
+        if self.path != "":
+
+            wb = load_workbook(self.path, data_only=True)
+
+            combo_params = self.open_line.get_data()
+
+            columns_marker = cfe_test_type_columns(combo_params["test_type"])
+            columns_marker_k0 = k0_test_type_column(combo_params["k0_condition"])
+            marker, customer = read_customer(wb)
+
+            try:
+                assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)),\
+                    "Заполните K0 в ведомости"
+                assert not marker, "Проверьте "# + customer
+                assert column_fullness_test(wb, columns=["AJ"], initial_columns=list(columns_marker)), \
+                    "Заполните уровень грунтовых вод в ведомости"
+
+                if combo_params["test_type"] == "Штормовое разжижение":
+                    assert column_fullness_test(wb, columns=['HR', 'HS', 'HT','HU'], \
+                                                    initial_columns=list(columns_marker)), "Заполните данные по шторму в ведомости"
+                elif combo_params["test_type"] == "Штормовое разжижение":
+                    assert column_fullness_test(wb, columns=["AM", "AQ"],
+                                                    initial_columns=list(columns_marker)), \
+                        "Заполните магнитуду и бальность"
+            except AssertionError as error:
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
+            else:
+                self.table_physical_properties._clear_table()
+                self.open_line.text_file_path.setText("")
+                self._data_customer = customer
+                self._data = getCyclicExcelData(self.path, combo_params["test_type"], combo_params["k0_condition"])
+
+                if len(self._data) < 1:
+                    QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
+                                        + str(columns_marker), QMessageBox.Ok)
+                else:
+                    self.customer_line.set_data(self._data_customer)
+                    self.table_physical_properties.set_data(self._data)
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
+
+    def table_physical_properties_click(self, laboratory_number):
+        data = self._data[laboratory_number]
+        self._laboratory_number = laboratory_number
+        type = self.open_line.get_data()
+        setattr(data, "test_type", type["test_type"])
+        self.table_vertical.set_data(data)
+        self.signal.emit(data)
+
+
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    headlines = ["Лаб. ном.", "Модуль деформации E, кПа", "Сцепление с, МПа",
-                 "Угол внутреннего трения, град",
-                 "Обжимающее давление 𝜎3", "K0", "Косательное напряжение τ, кПа",
-                 "Число циклов N, ед.", "Бальность, балл", "Магнитуда", "Понижающий коэф. rd"]
-
-    fill_keys = ["lab_number", "E", "c", "fi", "sigma3", "K0", "t", "N", "I", "magnituda", "rd"]
-
-    data_test_parameters = {"equipment": ["Выберите прибор", "Прибор: Вилли", "Прибор: Геотек"],
-                            "test_type": ["Режим испытания", "Сейсморазжижение", "Штормовое разжижение"],
-                            "k0_condition": ["Тип определения K0",
-                                             "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
-                                             "K0: K0 из ведомости", "K0: Формула Джекки",
-                                             "K0: K0 = 1"]
-                            }
-
-    Dialog = Statment_Vibration_Creep()
+    Dialog = TriaxialCyclicStatment()
     Dialog.show()
     app.setStyle('Fusion')
 
