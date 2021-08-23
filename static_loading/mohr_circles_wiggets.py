@@ -375,12 +375,14 @@ class MohrWidgetSoilTest(MohrWidget):
 
     def set_params(self, params):
         reference_pressure_array_user = self.get_reference_pressure_array()
-        reference_pressure_array = ModelMohrCirclesSoilTest.define_reference_pressure_array(params["data_phiz"], params["K0"])
+        reference_pressure_array = ModelMohrCirclesSoilTest.define_reference_pressure_array(
+            params.build_press, params.pit_depth,
+            params.physical_properties.depth, params.physical_properties.e, params.physical_properties.Il,
+            params.physical_properties.type_ground, params.K0)
         self.set_reference_pressure_array(reference_pressure_array)
 
         if reference_pressure_array_user:
             reference_pressure_array = reference_pressure_array_user
-
         if reference_pressure_array:
             self._model.set_reference_pressure_array(reference_pressure_array)
             self._model.set_test_params(params)

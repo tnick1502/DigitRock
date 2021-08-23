@@ -22,6 +22,7 @@ from general.general_widgets import Float_Slider
 from general.general_functions import read_json_file, create_json_file
 from configs.styles import style
 from general.report_general_statment import save_report
+from general.excel_data_parser import dataToDict, dictToData, CyclicData
 
 plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
 plt.style.use('bmh')
@@ -559,7 +560,7 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         self.save_button.setFixedHeight(30)
         self.combo_box = QComboBox()
         self.combo_box.setFixedHeight(30)
-        self.combo_box.addItems(["Сортировка", "CSR", "sigma3", "depth"])
+        self.combo_box.addItems(["Сортировка", "CSR", "sigma_3", "depth"])
         self.button_box_layout.addWidget(self.combo_box)
         self.button_box_layout.addWidget(self.open_data_button)
         self.button_box_layout.addWidget(self.save_data_button)
@@ -617,14 +618,14 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
 
         for string_number, lab_number in enumerate(self._data):
             for i, val in enumerate([lab_number,
-                                    str(self._data[lab_number]["depth"]),
-                                    self._data[lab_number]["name"],
-                                    str(self._data[lab_number]['sigma3']),
-                                     str(self._data[lab_number]['sigma1']),
-                                     str(self._data[lab_number]['t']),
-                                    str(self._data[lab_number]['CSR']),
-                                    str(self._data[lab_number]['N']),
-                                    str(self._data[lab_number]['n_fail']) if self._data[lab_number]['n_fail']
+                                    str(self._data[lab_number].physical_properties.depth),
+                                    self._data[lab_number].physical_properties.soil_name,
+                                    str(self._data[lab_number].sigma_3),
+                                     str(self._data[lab_number].sigma_1),
+                                     str(self._data[lab_number].t),
+                                    str(self._data[lab_number].CSR),
+                                    str(self._data[lab_number].cycles_count),
+                                    str(self._data[lab_number].n_fail) if self._data[lab_number].n_fail
                                      else "-"]):
                 self.table.setItem(string_number, i, QTableWidgetItem(val))
 
@@ -642,18 +643,18 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
                 return None
 
         for string_number, lab_number in enumerate(self._data):
-            self._data[lab_number]["n_fail"] = read_n_fail(self.table.item(string_number, 8).text())
+            self._data[lab_number].n_fail = read_n_fail(self.table.item(string_number, 8).text())
 
-            if self._data[lab_number]["n_fail"]:
-                self._data[lab_number]["Mcsr"] = None
+            if self._data[lab_number].n_fail:
+                self._data[lab_number].Mcsr = None
             else:
-                self._data[lab_number]["Mcsr"] = np.random.uniform(2, 3)
+                self._data[lab_number].Mcsr = np.random.uniform(2, 3)
 
     def _set_color_on_fail(self):
         if self._table_is_full:
             self._update_data()
             for string_number, lab_number in enumerate(self._data):
-                if self._data[lab_number]['n_fail']:
+                if self._data[lab_number].n_fail:
                     self._set_row_color(string_number, color=(255, 99, 71))
                 else:
                     self._set_row_color(string_number, color=(255, 255, 255))
@@ -677,7 +678,7 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         s = QFileDialog.getSaveFileName(self, 'Open file')[0]
         if s:
             s += ".json"
-            create_json_file(s, self._data)
+            create_json_file(s, dataToDict(self._data))
 
     def _read_data_from_json(self):
         s = QFileDialog.getOpenFileName(self, 'Open file')[0]
@@ -692,7 +693,8 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         """Сортировка проб"""
         #sort_lab_numbers = sorted(list(self._data.keys()), key=lambda x: self._data[x][sort_key])
         #self._data = {key: self._data[key] for key in sort_lab_numbers}
-        self._data = dict(sorted(self._data.items(), key=lambda x: self._data[x[0]][sort_key]))
+        #self._data = dict(sorted(self._data.items(), key=lambda x: self._data[x[0]][sort_key]))
+        self._data = dict(sorted(self._data.items(), key=lambda x: getattr(self._data[x[0]], sort_key)))
 
     def _sort_combo_changed(self):
         """Изменение способа сортировки combo_box"""
@@ -730,11 +732,11 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         for string_number, lab_number in enumerate(data):
                 data_structure.append([
                     lab_number,
-                    str(data[lab_number]["depth"]),
-                    data[lab_number]["name"],
-                    str(data[lab_number]['CSR']),
-                    str(data[lab_number]['N']),
-                    str(data[lab_number]['n_fail']) if data[lab_number]['n_fail'] else "-"])
+                    str(data[lab_number].physical_properties.depth),
+                    data[lab_number].physical_properties.soil_name,
+                    str(data[lab_number].CSR),
+                    str(data[lab_number].cycles_count),
+                    str(data[lab_number].n_fail) if data[lab_number].n_fail else "-"])
 
         titles = ["Лаб. номер", "Глубина, м", "Наименование грунта", "CSR, д.е.", "Общее число циклов",
                    "Цикл разрушения"]

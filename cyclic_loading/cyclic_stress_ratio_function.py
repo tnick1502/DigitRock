@@ -113,7 +113,7 @@ def approximate_test_data(cycles, CSR)->tuple:
     return popt
 
 def plotter(alpha, betta, borders=(5, 1000), sample_CSR=None, sample_cycles=None,
-            sample_CSR_array=None, sample_cycles_array=None,save_path=None)->None:
+            sample_CSR_array=None, sample_cycles_array=None, save_path=None) -> None:
     """Функция построения кривой CSR
         :argument
             alpha, betta: Параметры кривой CSR

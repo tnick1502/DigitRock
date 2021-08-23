@@ -5,7 +5,7 @@ import sys
 
 from vibration_creep.vibration_creep_widgets_UI import VibrationCreepUI
 from vibration_creep.vibration_creep_model import ModelVibrationCreepSoilTest
-from general.initial_tables import Table_Vertical
+from general.initial_tables import TableVertical
 from static_loading.triaxial_static_test_widgets import TriaxialStaticWidgetSoilTest
 
 
@@ -30,41 +30,25 @@ class VibrationCreepSoilTestWidget(QWidget):
         self.widget.setLayout(self.layout_dynamic_widget)
         self.dynamic_widget = VibrationCreepUI()
         self.layout_1 = QVBoxLayout()
-        headlines = [
-            "Лаб. ном.",
-            "Модуль деформации E50, кПа",
-            "Сцепление с, МПа",
-            "Угол внутреннего трения, град",
-            "Максимальный девиатор qf, кПа",
-            "Обжимающее давление sigma3, кПа",
-            "Касательное напряжение, кПа",
-            "Kd, д.е.",
-            "Частота, Гц",
-            "K0",
-            "Коэффициент Пуассона",
-            "Коэффициент консолидации Cv",
-            "Коэффициент вторичной консолидации Ca",
-            "Угол дилатансии, град",
-            "OCR",
-            "Показатель степени жесткости"]
-        fill_keys = [
-            "lab_number",
-            "E50",
-            "c",
-            "fi",
-            "qf",
-            "sigma_3",
-            "t",
-            "Kd",
-            "frequency",
-            "K0",
-            "poisson",
-            "Cv",
-            "Ca",
-            "dilatancy",
-            "OCR",
-            "m"]
-        self.identification = Table_Vertical(headlines, fill_keys)
+        fill_keys = {
+            "laboratory_number": "Лаб. ном.",
+            "E50": "Модуль деформации E50, кПа",
+            "c": "Сцепление с, МПа",
+            "fi": "Угол внутреннего трения, град",
+            "qf": "Максимальный девиатор qf, кПа",
+            "sigma_3": "Обжимающее давление 𝜎3, кПа",
+            "t": "Касательное напряжение τ, кПа",
+            "Kd": "Kd, д.е.",
+            "frequency": "Частота, Гц",
+            "K0": "K0, д.е.",
+            "poisons_ratio": "Коэффициент Пуассона, д.е.",
+            "Cv": "Коэффициент консолидации Cv",
+            "Ca": "Коэффициент вторичной консолидации Ca",
+            "dilatancy_angle": "Угол дилатансии, град",
+            "OCR": "OCR",
+            "m": "Показатель степени жесткости"
+        }
+        self.identification = TableVertical(fill_keys)
         self.identification.setFixedWidth(350)
         self.identification.setFixedHeight(700)
         self.layout_dynamic_widget.addWidget(self.dynamic_widget)

@@ -119,7 +119,7 @@ class ModelMohrCircles:
                 E50 = self.get_E50()
                 self._test_result.m = ModelMohrCircles.calculate_m(sigma_3, E50, self._test_reference_params.Eref/1000,
                                                                     self._test_reference_params.p_ref/1000,
-                                                                    self._test_params["c"], self._test_params["fi"])
+                                                                    self._test_params.c, self._test_params.fi)
 
     def get_test_results(self):
         return self._test_result.get_dict()
@@ -308,35 +308,35 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
 
             mohr_params = []
 
-            self.set_reference_params(self._test_params["sigma_3"], self._test_params["E50"])
+            self.set_reference_params(self._test_params.sigma_3, self._test_params.E50)
 
             for num, sigma_3 in enumerate(self._reference_pressure_array):
                 mohr_params.append(copy.copy(self._test_params))
-                mohr_params[num]["sigma_3"] = sigma_3
-                mohr_params[num]["qf"] = define_qf(sigma_3, self._test_params["c"], self._test_params["fi"])
-                mohr_params[num]["sigma_1"] = round(mohr_params[num]["qf"] + mohr_params[num]["sigma_3"])
+                mohr_params[num].sigma_3 = sigma_3
+                mohr_params[num].qf = define_qf(sigma_3, self._test_params.c, self._test_params.fi)
+                mohr_params[num].sigma_1 = round(mohr_params[num].qf + mohr_params[num].sigma_3)
 
             c = 0
             fi = 0
 
             while True:
-                if (c == round(self._test_params["c"], 3) and fi == round(self._test_params["fi"], 1)):
+                if (c == round(self._test_params.c, 3) and fi == round(self._test_params.fi, 1)):
                     break
 
                 qf = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(
-                    np.array([param["sigma_3"] for param in mohr_params]),
-                    np.array([param["sigma_1"] for param in mohr_params]), self._test_params["fi"],
-                    self._test_params["c"] * 1000)
+                    np.array([param.sigma_3 for param in mohr_params]),
+                    np.array([param.sigma_1 for param in mohr_params]), self._test_params.fi,
+                    self._test_params.c * 1000)
 
                 for i in range(len(qf)):
-                    mohr_params[i]["qf"] = round(qf[i], 3)
-                    mohr_params[i]["sigma_1"] = round(mohr_params[i]["qf"] + mohr_params[i]["sigma_3"], 3)
-                    mohr_params[i]["E50"] = define_E50(self._test_params["E50"], self._test_params["c"] * 1000,
-                                                     self._test_params["fi"], mohr_params[i]["sigma_3"],
-                                                     self._test_params["sigma_3"], self._test_params["m"])
+                    mohr_params[i].qf = round(qf[i], 3)
+                    mohr_params[i].sigma_1 = round(mohr_params[i].qf + mohr_params[i].sigma_3, 3)
+                    mohr_params[i].E50 = define_E50(self._test_params.E50, self._test_params.c * 1000,
+                                                     self._test_params.fi, mohr_params[i].sigma_3,
+                                                     self._test_params.sigma_3, self._test_params.m)
 
-                c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab([x["sigma_3"]/1000 for x in mohr_params],
-                                                                   [x["sigma_1"]/1000 for x in mohr_params])
+                c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab([x.sigma_3/1000 for x in mohr_params],
+                                                                   [x.sigma_1/1000 for x in mohr_params])
                 c = round(c, 3)
                 fi = round(np.rad2deg(np.arctan(fi)), 1)
 
@@ -348,7 +348,11 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         if len(self._tests) >= 3:
             for test in self._tests:
                 results = test.deviator_loading.get_test_results()
-                file_name = os.path.join(directory, str(results["sigma_3"]) + ".log")
+                path = os.path.join(directory, str(results["sigma_3"]))
+
+                if not os.path.isdir(path):
+                    os.mkdir(path)
+                file_name = os.path.join(path, "Тест.1.log")
                 test.save_log_file(file_name)
 
     @staticmethod
@@ -398,25 +402,24 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         return np.round(qf_with_noise, 1)
 
     @staticmethod
-    def define_reference_pressure_array(data_physical, K0) -> List:
+    def define_reference_pressure_array(build_press, pit_depth, depth, e, Il, type_ground, K0) -> List:
         """Функция рассчета обжимающих давлений для кругов мора"""
-        if data_physical["build_press"] != "-" and data_physical["pit_depth"] != "-":
-            sigma_max = 2 * (data_physical["depth"] - data_physical["pit_depth"]) * 10 + data_physical["build_press"] \
-                if (data_physical["depth"] - data_physical["pit_depth"]) > 0 else 2 * 10 * K0
+        if build_press and pit_depth:
+            sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10 * K0
+            print("авление ", build_press)
             return [np.round(0.25 * sigma_max * K0), np.round(0.5 * sigma_max * K0), np.round(sigma_max * K0)] if (
                     (0.25 * sigma_max * K0) >= 100) else [100, 200, 400]
         else:
-            type_ground = define_type_ground(data_physical, data_physical["Ip"], data_physical["Ir"])
 
-            e = data_physical["e"] if data_physical["e"] != "-" else 0.65
-            Il = data_physical["Il"] if data_physical["Il"] != "-" else 0.5
+            e = e if e else 0.65
+            Il = Il if Il else 0.5
 
             if (type_ground == 1) or (type_ground == 2) or (type_ground == 3 and e <= 0.55) or (
                     type_ground == 8 and Il <= 0.25):
                 return [100, 300, 500]
 
             elif (type_ground == 3 and (0.7 >= e > 0.55)) or (type_ground == 4 and e <= 0.75) or (
-                    (type_ground == 6 or type_ground == 7) and data_physical["Il"] <= 0.5) or (
+                    (type_ground == 6 or type_ground == 7) and Il <= 0.5) or (
                     type_ground == 8 and (0.25 < Il <= 0.5)):
                 return [100, 200, 300]
 

@@ -410,32 +410,33 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
     def set_test_params(self, params):
         """Функция принимает параметры опыта для дальнейших построений.
         n_fail моделируется из кривой CSR. Если нет разжижения - n_fail = None"""
-        self._test_params.cycles_count = params["N"]
+        self._test_params.cycles_count = params.cycles_count
         if self._test_params.cycles_count < 5:
             self._test_params.cycles_count = 5
 
-        self._test_params.n_fail = params["n_fail"]
-        Mcsr = params["Mcsr"]
+        self._test_params.n_fail = params.n_fail
+        Mcsr = params.Mcsr
 
-        self._test_params.sigma_1 = params["sigma1"]
-        self._test_params.t = params["t"]
-        self._test_params.K0 = params["K0"]
-        self._test_params.sigma_3 = params["sigma3"]
-        self._test_params.physical = params["data_phiz"]
-        self._test_params.c = params["c"]
-        self._test_params.fi = params["fi"]
-        self._test_params.E = params["E50"]
-        self._test_params.frequency = params["frequency"]
+        self._test_params.sigma_1 = params.sigma_1
+        self._test_params.t = params.t
+        self._test_params.K0 = params.K0
+        self._test_params.sigma_3 = params.sigma_3
+        self._test_params.physical = params.physical_properties
+        self._test_params.c = params.c
+        self._test_params.fi = params.fi
+        self._test_params.E = params.E50
+        self._test_params.frequency = params.frequency
         self._test_params.points_in_cycle = 20
         self._test_params.deviator_start_value = self._test_params.sigma_1 - self._test_params.sigma_3
         self._test_params.reverse = ModelTriaxialCyclicLoadingSoilTest.check_revers(self._test_params.sigma_1,
                                                                                      self._test_params.sigma_3,
                                                                                      2*self._test_params.t)
+
         try:
-            self._test_params.qf = params["qf"]
-            self._test_params.Kd = params["Kd"]
+            self._test_params.qf = params.qf
+            self._test_params.Kd = params.Kd
             self._test_params.deviator_start_value = 0
-        except KeyError:
+        except AttributeError:
             self._test_params.qf = 0
             self._test_params.deviator_start_value = self._test_params.sigma_1 - self._test_params.sigma_3
             self._test_params.Kd = None
@@ -557,7 +558,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                     self._test_params.points_in_cycle,
                                                                     self._test_data.setpoint,
                                                                     self._test_data.cell_pressure,
-                                                                    self._test_params.physical["Ip"],
+                                                                    self._test_params.physical.Ip,
                                                                     post_name)
 
     def _define_draw_params(self, Mcsr=None):
@@ -585,7 +586,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         # Значение начального модуля деформации. Амплитуда деформации рассчитывется как амплитуда девиатора деленая
         # на значение модуля
-        self._draw_params.strain_E0 = ModelTriaxialCyclicLoadingSoilTest.define_E0(self._test_params.physical["Il"],
+        self._draw_params.strain_E0 = ModelTriaxialCyclicLoadingSoilTest.define_E0(self._test_params.physical.Il,
                                                 self._test_params.E, self._test_params.t*2, \
                                     define_qf(self._test_params.sigma_3, self._test_params.c , self._test_params.fi))
         # Параметр, отвечающий за рост деформации после цикла разрушения
@@ -607,14 +608,14 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         else:
             self._draw_params.PPR_slant= self._test_params.cycles_count * np.random.uniform(0.7, 0.8)
         # Динамический коэффициент скемптона. Амплитуда PPR = PPR_skempton*_test_params.t/ _test_params.sigma_3
-        self._draw_params.PPR_skempton = ModelTriaxialCyclicLoadingSoilTest.dependence_skempton_Il_frequency(self._test_params.physical["Il"],
+        self._draw_params.PPR_skempton = ModelTriaxialCyclicLoadingSoilTest.dependence_skempton_Il_frequency(self._test_params.physical.Il,
                                                                           self._test_params.frequency)/3
         # Параметр, отвечающий за рост деформации после цикла разрушения
         self._draw_params.PPR_rise_after_fail = np.random.uniform(0.8, 1)
         # Погрешность и коэффициент сглаживания
         self._draw_params.PPR_deviation = 0.01
         self._draw_params.PPR_filter = 0.05
-        self._draw_params.PPR_phase_offset = ModelTriaxialCyclicLoadingSoilTest.initial_PPR_phase_offset(self._test_params.physical["Il"],
+        self._draw_params.PPR_phase_offset = ModelTriaxialCyclicLoadingSoilTest.initial_PPR_phase_offset(self._test_params.physical.Il,
                                                                       self._test_params.frequency)
         if self._test_params.n_fail:
             fail_cycle = self._test_params.n_fail

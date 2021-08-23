@@ -225,13 +225,13 @@ class RezonantColumnIdentificationUI(QWidget):
         self.layout.setContentsMargins(5, 5, 5, 5)
 
     def set_params(self, params):
-        self.lab_number_text.setText(str(params["lab_number"]))
-        self.borehole_text.setText(str(params["data_phiz"]["borehole"]))
-        self.depth_text.setText(str(params["data_phiz"]["depth"]))
-        self.name_text.setText(str(params["data_phiz"]["name"]))
-        self.p_ref_text.setText(str(params["Pref"]))
-        self.e_text.setText(str(params["data_phiz"]["e"]))
-        self.E_text.setText(str(params["E"]))
+        self.lab_number_text.setText(str(params.physical_properties.laboratory_number))
+        self.borehole_text.setText(str(params.physical_properties.borehole))
+        self.depth_text.setText(str(params.physical_properties.depth))
+        self.name_text.setText(str(params.physical_properties.soil_name))
+        self.p_ref_text.setText(str(params.reference_pressure))
+        self.e_text.setText(str(params.e))
+        self.E_text.setText(str(params.E50))
 
 class RezonantColumnOpenTestUI(QWidget):
     """Виджет для открытия файла прибора и определения параметров опыта"""

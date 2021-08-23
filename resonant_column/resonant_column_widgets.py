@@ -13,6 +13,7 @@ from general.initial_tables import Table_Castomer
 from general.excel_functions import create_json_file, read_json_file
 from general.report_general_statment import save_report
 from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
+from general.excel_data_parser import dataToDict, dictToData, RCData
 
 class RezonantColumnProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -165,7 +166,7 @@ class PredictRCTestResults(QDialog):
         self.save_button.setFixedHeight(30)
         self.combo_box = QComboBox()
         self.combo_box.setFixedHeight(30)
-        self.combo_box.addItems(["Сортировка", "Pref", "depth"])
+        self.combo_box.addItems(["Сортировка", "reference_pressure", "depth"])
         self.button_box_layout.addWidget(self.combo_box)
         self.button_box_layout.addWidget(self.open_data_button)
         self.button_box_layout.addWidget(self.save_data_button)
@@ -231,13 +232,13 @@ class PredictRCTestResults(QDialog):
         for string_number, lab_number in enumerate(self._data):
             for i, val in enumerate([
                 lab_number,
-                str(self._data[lab_number]["depth"]),
-                self._data[lab_number]["name"],
-                str(self._data[lab_number]['Pref']),
-                str(self._data[lab_number]['e']),
-                str(np.round(self._data[lab_number]['E'], 1)),
-                str(np.round(self._data[lab_number]['G0']*self._G0_ratio, 1)),
-                str(np.round(self._data[lab_number]['threshold_shear_strain']*self._threshold_shear_strain_ratio, 2))
+                str(self._data[lab_number].physical_properties.depth),
+                self._data[lab_number].physical_properties.soil_name,
+                str(self._data[lab_number].reference_pressure),
+                str(self._data[lab_number].e),
+                str(np.round(self._data[lab_number].E50, 1)),
+                str(np.round(self._data[lab_number].G0 * self._G0_ratio, 1)),
+                str(np.round(self._data[lab_number].threshold_shear_strain *self._threshold_shear_strain_ratio, 2))
             ]):
 
                 self.table.setItem(string_number, i, QTableWidgetItem(val))
@@ -270,22 +271,24 @@ class PredictRCTestResults(QDialog):
         s = QFileDialog.getSaveFileName(self, 'Open file')[0]
         if s:
             s += ".json"
-            create_json_file(s, self._data)
+            create_json_file(s, dataToDict(self._data))
 
     def _read_data_from_json(self):
         s = QFileDialog.getOpenFileName(self, 'Open file')[0]
         if s:
             data = read_json_file(s)
             if sorted(data) == sorted(self._data):
-                self._set_data(data)
+                self._set_data(dictToData(data, RCData))
             else:
                 QMessageBox.critical(self, "Ошибка", "Неверная структура данных", QMessageBox.Ok)
 
-    def _sort_data(self, sort_key="Pref"):
+    def _sort_data(self, sort_key="reference_pressure"):
         """Сортировка проб"""
         #sort_lab_numbers = sorted(list(self._data.keys()), key=lambda x: self._data[x][sort_key])
         #self._data = {key: self._data[key] for key in sort_lab_numbers}
-        self._data = dict(sorted(self._data.items(), key=lambda x: self._data[x[0]][sort_key]))
+        #self._data = dict(sorted(self._data.items(), key=lambda x: self._data[x[0]][sort_key]))
+
+        self._data = dict(sorted(self._data.items(), key=lambda x: getattr(self._data[x[0]], sort_key)))
 
     def _save_pdf(self):
         save_dir = QFileDialog.getExistingDirectory(self, "Select Directory")
@@ -303,8 +306,8 @@ class PredictRCTestResults(QDialog):
     def get_data(self):
         data = copy.deepcopy(self._data)
         for string_number, lab_number in enumerate(data):
-            data[lab_number]["G0"] = float(self.table.item(string_number, 6).text())
-            data[lab_number]["threshold_shear_strain"] = float(self.table.item(string_number, 7).text())
+            data[lab_number].G0 = float(self.table.item(string_number, 6).text())
+            data[lab_number].threshold_shear_strain = float(self.table.item(string_number, 7).text())
 
         return data
 
@@ -316,13 +319,13 @@ class PredictRCTestResults(QDialog):
         for string_number, lab_number in enumerate(data):
                 data_structure.append([
                     lab_number,
-                    str(data[lab_number]["depth"]),
-                    data[lab_number]["name"],
-                    str(data[lab_number]['Pref']),
-                    str(data[lab_number]['e']),
-                    str(np.round(data[lab_number]['E'], 1)),
-                    str(np.round(data[lab_number]['G0'], 1)),
-                    str(np.round(data[lab_number]['threshold_shear_strain'], 2))])
+                    str(data[lab_number].physical_properties.depth),
+                    data[lab_number].physical_properties.soil_name,
+                    str(data[lab_number].reference_pressure),
+                    str(data[lab_number].e),
+                    str(np.round(data[lab_number].E50, 1)),
+                    str(np.round(data[lab_number].G0, 1)),
+                    str(np.round(data[lab_number].threshold_shear_strain, 2))])
 
         titles = ["Лаб. номер", "Глубина, м", "Наименование грунта", "Реф.давление, МПа", "Коэфф. пористости e",
                   "Е50, МПа", "G0, МПА", "𝛾07, д.е."]

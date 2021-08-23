@@ -292,6 +292,7 @@ class ComboBox_Initial_Parameters(QWidget):
 class TablePhysicalProperties(QTableWidget):
     """Класс отрисовывает таблицу физических свойств"""
     laboratory_number_click_signal = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
         self.laboratory_number = ""
@@ -368,9 +369,8 @@ class TableVertical(QTableWidget):
     Входные параметры:
         headlines - список заголовков, идущих в левом столбце
         fill_keys - список ключей, по порядку которых данные будут писаться в таблицу(соответствие заголовок-ключ)"""
-    def __init__(self, headlines, fill_keys):
+    def __init__(self, fill_keys):
         super().__init__()
-        self._headlines = headlines
         self._fill_keys = fill_keys
         self._clear_table()
 
@@ -386,8 +386,8 @@ class TableVertical(QTableWidget):
         self.setHorizontalHeaderLabels(["Текущий опыт", "Значения"])
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        for i, name in enumerate(self._headlines):
-            self.setItem(i, 0, QTableWidgetItem(name))
+        for i, key in enumerate(self._fill_keys):
+            self.setItem(i, 0, QTableWidgetItem(self._fill_keys[key]))
         self.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
     def set_data(self, data):

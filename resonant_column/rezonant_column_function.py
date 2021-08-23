@@ -246,7 +246,7 @@ def define_threshold_shear_strain(E50, G0, p_ref, c, fi, K0, PI):
 
     return gam07
 
-def define_G0_threshold_shear_strain(p_ref, data_physical, E50, c, fi, K0) -> tuple:
+def define_G0_threshold_shear_strain(p_ref, E50, c, fi, K0, type_ground, Ip, e) -> tuple:
     """Функция находит параметр G0 для всех грунтов
     :argument
         p_ref (float): референтное давление
@@ -256,17 +256,8 @@ def define_G0_threshold_shear_strain(p_ref, data_physical, E50, c, fi, K0) -> tu
         K0: коэффициент бокового обжатия
     :return
         (G0 МПа, gam07)"""
-
-    type_ground = define_type_ground(data_physical, data_physical["Ip"], data_physical["Ir"])
-    if data_physical["Ip"] != "-":
-        PI = data_physical["Ip"]
-    else:
-        PI = 0
-
-    if data_physical["e"] != "-":
-        e = data_physical["e"]
-    else:
-        e = 0.65
+    PI = Ip if Ip else 0
+    e = e if e else 0.65
 
     # Предварительный рассчет
     G0_plaxis = define_G0_plaxis(p_ref, e, c, fi, type_ground)
@@ -293,11 +284,10 @@ def define_G0_threshold_shear_strain(p_ref, data_physical, E50, c, fi, K0) -> tu
               define_G0_Shibuya_and_Tanaka_1996(p_ref, e) +
               define_G0_Vrettos_andSavidis_1999(p_ref, e) +
               define_G0_Kallioglou_et_al_2008(p_ref, PI, e) +
-              define_G0_Sas_et_al_2017(p_ref)) / 9) * 0.8 * 0.6 + define_G0_clays(p_ref, data_physical["Ip"], e) * 0.4
+              define_G0_Sas_et_al_2017(p_ref)) / 9) * 0.8 * 0.6 + define_G0_clays(p_ref, Ip, e) * 0.4
 
     G0 = G0_plaxis * 0.7 + G0 * 0.3
-
-    gam07 = define_threshold_shear_strain(E50, G0, p_ref, c, fi, K0, PI)
+    gam07 = define_threshold_shear_strain(E50/1000, G0, p_ref, c, fi, K0, PI)
 
     return (np.round(G0, 2), np.round(gam07, 2))
 

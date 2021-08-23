@@ -353,13 +353,13 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
 
         #print("length before = ", len(self._dynamic_tests))
 
-        for frequency, Kd in zip(params["frequency"], params["Kd"]):
+        for frequency, Kd in zip(params.frequency, params.Kd):
             self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest())
             #print("length now = ", len(self._dynamic_tests))
             params_for_current_test = copy.copy(params)
-            params_for_current_test["frequency"] = frequency
-            params_for_current_test["E50"] = params_for_current_test["E50"]*np.random.uniform(0.85, 1.1)
-            params_for_current_test["Kd"] = Kd
+            params_for_current_test.frequency = frequency
+            params_for_current_test.E50 = params_for_current_test.E50*np.random.uniform(0.85, 1.1)
+            params_for_current_test.Kd = Kd
             self._dynamic_tests_models[-1].set_test_params(params_for_current_test)
 
         for test in self._dynamic_tests_models:
@@ -384,7 +384,7 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
 
     def save_log(self, directory):
         for i in range(len(self._dynamic_tests_models)):
-            self._dynamic_tests_models[i].generate_log_file(directory, post_name="f = " + str(self._test_params["frequency"][i]))
+            self._dynamic_tests_models[i].generate_log_file(directory, post_name="f = " + str(self._test_params.frequency[i]))
 
 
 if __name__ == '__main__':

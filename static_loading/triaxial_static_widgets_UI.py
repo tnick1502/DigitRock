@@ -766,7 +766,7 @@ class ModelTriaxialItemUI(QWidget):
         self.layout.addWidget(self.box)
 
     def set_data(self, data):
-        self.lab.setText(str(data["lab_number"]))
-        self.borehole.setText(str(data["data_phiz"]["borehole"]))
-        self.depth.setText(str(data["data_phiz"]["depth"]))
-        self.name.setText(str(data["data_phiz"]["name"]))
+        self.lab.setText(str(data.physical_properties.laboratory_number))
+        self.borehole.setText(str(data.physical_properties.borehole))
+        self.depth.setText(str(data.physical_properties.depth))
+        self.name.setText(str(data.physical_properties.soil_name))

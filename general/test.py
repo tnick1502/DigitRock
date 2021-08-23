@@ -1,6 +1,13 @@
 
 
-import os
-s = "c/cv/fg/dfg.t"
-myString = '/'.join(os.path.split(s)[:-1])
-print(myString)
+A = {
+    "x": {
+        "a": 3
+    },
+    "y": {
+        "a": 1
+    }
+}
+sort_key = "a"
+ss = dict(sorted(A.items(), key=lambda x: A[x[0]][sort_key]))
+print(ss)

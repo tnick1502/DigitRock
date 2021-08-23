@@ -3,11 +3,12 @@ from openpyxl import load_workbook
 import pandas as pd
 import numpy as np
 import os
-from typing import Dict
+from typing import Dict, List
 from scipy.interpolate import interp1d, griddata
 import pyexcel as p
 from general.general_functions import sigmoida, mirrow_element
 from cyclic_loading.cyclic_stress_ratio_function import define_fail_cycle
+from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
 
 
 PhysicalPropertyPosition = {
@@ -27,7 +28,7 @@ PhysicalPropertyPosition = {
     "Wp": ['X', 23],
     "Ip": ['Y', 24],
     "Il": ['Z', 25],
-    "Ir": ['AE', 31],
+    "Ir": ['AE', 30],
     "stratigraphic_index": ['AH', 34],
     "ground_water_depth": ['AJ', 35],
     "granulometric_10": ['E', 4],
@@ -45,8 +46,8 @@ PhysicalPropertyPosition = {
 }
 
 MechanicalPropertyPosition = {
-    "build_press": ['AK', 37],
-    "pit_depth": ['AL', 36],
+    "build_press": ['AK', 36],
+    "pit_depth": ['AL', 37],
     "OCR":["GB", 183],
     "Cv": ["CC", 80],
     "Ca": ["CF", 83],
@@ -74,6 +75,9 @@ DynamicsPropertyPosition = {
     "Hw": ["HS", 226],
     "frequency_storm": ["HT", 227],
     "cycles_count_storm": ["HT", 225],
+    "frequency_vibration_creep": ["AN", 39],
+    "Kd_vibration_creep": ["CB", 79],
+    "sigma_d_vibration_creep": ["AO", 40],
 }
 
 IdentificationColumns = {
@@ -202,6 +206,13 @@ class PhysicalProperties:
                                                                  self.Ir)
         self._proccessing_properties()
 
+    def getDict(self):
+        return self.__dict__
+
+    def setDict(self, data):
+        for attr in data:
+            setattr(self, attr, data[attr])
+
     def _proccessing_properties(self) -> None:
         """Обработка незаполненых свойств"""
         self.e = np.random.uniform(0.55, 0.7) if not self.e else np.round(self.e, 2)
@@ -250,7 +261,7 @@ class PhysicalProperties:
 @dataclass
 class MechanicalProperties:
     """Расширенный класс с дополнительными обработанными свойствами"""
-    physical_properties: PhysicalProperties = None
+    physical_properties: PhysicalProperties = PhysicalProperties()
     Cv: float = None
     Ca: float = None
     m: float = None
@@ -260,6 +271,7 @@ class MechanicalProperties:
     K0: float = None
     dilatancy_angle: float = None
     sigma_3: float = None
+    qf: float = None
     sigma_1: float = None
     poisons_ratio: float = None
     OCR: float = None
@@ -274,7 +286,19 @@ class MechanicalProperties:
         elif name in self.physical_properties.__dict__:
             return self.physical_properties.__dict__[name]
         else:
-            raise AttributeError("Несуществующий атрибут")
+            raise AttributeError(f"Несуществующий атрибут {name}")
+
+    def getDict(self):
+        data = self.__dict__
+        data["physical_properties"] = self.physical_properties.getDict()
+        return data
+
+    def setDict(self, data):
+        for attr in data:
+            if attr == "physical_properties":
+                self.physical_properties.setDict(data[attr])
+            else:
+                setattr(self, attr, data[attr])
 
     def defineMechanicalProperties(self, data_frame, string, test_mode=None, K0_mode=None,
                                    identification_column=None) -> None:
@@ -285,6 +309,8 @@ class MechanicalProperties:
         self.c, self.fi, self.E50 = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
 
         if self.c and self.fi and self.E50:
+
+            self.E50 *= 1000
 
             Cv = float_df(data_frame.iat[string, MechanicalPropertyPosition["Cv"][1]])
             Ca = float_df(data_frame.iat[string, MechanicalPropertyPosition["Ca"][1]])
@@ -314,18 +340,22 @@ class MechanicalProperties:
                                                                             self.physical_properties.granulometric_5,
                                                                             self.physical_properties.granulometric_2)
 
-            self.dilatancy_angle = MechanicalProperties.define_dilatancy(self.physical_properties, self.sigma_1, self.sigma_3,
-                                                                   self.fi, self.qf, self.E50)
+            self.dilatancy_angle = MechanicalProperties.define_dilatancy(self.sigma_1, self.sigma_3,
+                                                                   self.fi, self.qf, self.E50,
+                                                                         self.physical_properties.type_ground,
+                                                                         self.physical_properties.rs,
+                                                                         self.physical_properties.e,
+                                                                         self.physical_properties.Il)
 
             self.build_press = float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]])
+            if self.build_press:
+                self.build_press *= 1000
+
             self.pit_depth = float_df(data_frame.iat[string, MechanicalPropertyPosition["pit_depth"][1]])
 
             self.OCR = float_df(data_frame.iat[string, MechanicalPropertyPosition["OCR"][1]])
             if not self.OCR:
                 self.OCR = 1
-
-            if self.build_press:
-                self.build_press *= 1000
 
             if test_mode == "Трёхосное сжатие с разгрузкой":
                 self.Eur = True
@@ -523,10 +553,11 @@ class MechanicalProperties:
             else:
                 return np.round(np.random.uniform(0.25, 0.35), round_ratio)
 
-    @staticmethod
-    def define_dilatancy(physical_properties, sigma_1, sigma_3, fi, qf, E50):
 
-        def define_dilatancy(physical_properties, sigma_1, sigma_3, fi, OCR):
+    @staticmethod
+    def define_dilatancy(sigma_1, sigma_3, fi, qf, E50, type_ground, rs, e, Il):
+
+        def define_dilatancy(sigma_1, sigma_3, fi, OCR, type_ground, rs, e):
             """Определяет угол дилатансии
             data_gran - словарь гран состава
             rs - плотность грунта
@@ -568,8 +599,8 @@ class MechanicalProperties:
                 return ID
 
             p = (sigma_1 + 2 * sigma_3) / 3
-            if physical_properties.type_ground <= 5:
-                ID = define_ID(physical_properties.type_ground, physical_properties.rs, physical_properties.e)
+            if type_ground <= 5:
+                ID = define_ID(type_ground, rs, e)
                 IR = ID * (10 - np.log(p)) - 1
                 angle_of_dilatancy = (3 * IR / 0.8)  # в градусах
             else:
@@ -698,26 +729,30 @@ class MechanicalProperties:
             return 5.5 - 30 * xc
 
         return np.round((define_dilatancy_from_xc_qres(define_xc_qf_E(qf, E50),
-                                                       define_k_q(physical_properties.Il, physical_properties.e,
-                                                                  sigma_3)) + define_dilatancy(physical_properties,
-                                                                                               sigma_1, sigma_3, fi,
+                                                       define_k_q(Il, e,
+                                                                  sigma_3)) + define_dilatancy(sigma_1, sigma_3, fi,
                                                                                                define_OCR_from_xc(
                                                                                                    define_xc_qf_E(qf,
-                                                                                                                  E50)), )) / 2,
+                                                                                                                  E50)),
+                                                                                               type_ground, rs, e)) / 2,
                         2)
 
 @dataclass
 class RCData(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
     reference_pressure: float = None
+    G0: float = None
+    threshold_shear_strain: float = None
 
     def defineProperties(self, data_frame, string, K0_mode) -> None:
-
         super().defineMechanicalProperties(data_frame, string, test_mode="Резонансная колонка", K0_mode=K0_mode,
                                    identification_column=IdentificationColumns["Резонансная колонка"])
-        self.reference_pressure = float_df(data_frame.iat[string,
+        if self.c and self.fi and self.E50:
+            self.reference_pressure = float_df(data_frame.iat[string,
                                                           DynamicsPropertyPosition["reference_pressure"][1]])
-
+            self.G0, self.threshold_shear_strain = define_G0_threshold_shear_strain(
+                self.reference_pressure, self.E50, self.c, self.fi, self.K0, self.physical_properties.type_ground,
+                self.physical_properties.Ip, self.physical_properties.e)
 @dataclass
 class CyclicData(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
@@ -742,67 +777,68 @@ class CyclicData(MechanicalProperties):
     def defineProperties(self, data_frame, string, test_mode, K0_mode) -> None:
         super().defineMechanicalProperties(data_frame, string, test_mode=test_mode, K0_mode=K0_mode,
                                            identification_column=IdentificationColumns[test_mode])
+        if self.c and self.fi and self.E50:
 
-        if self.physical_properties.depth <= 9.15:
-            self.rd = str(round((1 - (0.00765 * self.physical_properties.depth)), 3))
-        elif (self.physical_properties.depth > 9.15) and (self.physical_properties.depth < 23):
-            self.rd = str(round((1.174 - (0.0267 * self.physical_properties.depth)), 3))
-        else:
-            self.rd = str(round((1.174 - (0.0267 * 23)), 3))
-
-        if test_mode == "Сейсморазжижение":
-            if self.physical_properties.depth <= self.physical_properties.ground_water_depth:
-                self.sigma_1 = round(2 * 9.81 * self.physical_properties.depth)
-            elif self.physical_properties.depth > self.physical_properties.ground_water_depth:
-                self.sigma_1 = round(2 * 9.81 * self.physical_properties.depth - (
-                        9.81 * (self.physical_properties.depth - self.physical_properties.ground_water_depth)))
-
-            if self.sigma_1 < 10:
-                self.sigma_1 = 10
-
-            acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]])
-            if acceleration:
-                self.intensity = CyclicData.define_intensity(acceleration)
+            if self.physical_properties.depth <= 9.15:
+                self.rd = str(round((1 - (0.00765 * self.physical_properties.depth)), 3))
+            elif (self.physical_properties.depth > 9.15) and (self.physical_properties.depth < 23):
+                self.rd = str(round((1.174 - (0.0267 * self.physical_properties.depth)), 3))
             else:
-                self.intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
-                acceleration = CyclicData.define_acceleration(self.intensity)
+                self.rd = str(round((1.174 - (0.0267 * 23)), 3))
 
-            self.t = round(0.65 * acceleration * (self.sigma_1 / 9.81) * float(self.rd))
-            if self.t < 1:
-                self.t = 1
+            if test_mode == "Сейсморазжижение":
+                if self.physical_properties.depth <= self.physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * self.physical_properties.depth)
+                elif self.physical_properties.depth > self.physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * self.physical_properties.depth - (
+                            9.81 * (self.physical_properties.depth - self.physical_properties.ground_water_depth)))
 
-            self.magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
+                if self.sigma_1 < 10:
+                    self.sigma_1 = 10
 
-            self.cycles_count = CyclicData.define_cycles_count(self.magnitude)
+                acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]])
+                if acceleration:
+                    self.intensity = CyclicData.define_intensity(acceleration)
+                else:
+                    self.intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
+                    acceleration = CyclicData.define_acceleration(self.intensity)
 
-            self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t, self.physical_properties.Ip,
-                                             self.physical_properties.Il, self.physical_properties.e)
+                self.t = round(0.65 * acceleration * (self.sigma_1 / 9.81) * float(self.rd))
+                if self.t < 1:
+                    self.t = 1
 
-            self.frequency = 0.5
+                self.magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
 
-            self.CSR = np.round(self.t / self.sigma_1, 2)
+                self.cycles_count = CyclicData.define_cycles_count(self.magnitude)
 
-        if test_mode == "Штормовое разжижение":
-            self.rw = float_df(data_frame.iat[string, DynamicsPropertyPosition["rw"][1]])
-            self.Hw = float_df(data_frame.iat[string, DynamicsPropertyPosition["Hw"][1]])
+                self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t, self.physical_properties.Ip,
+                                                 self.physical_properties.Il, self.physical_properties.e)
 
-            self.t = np.round((0.5 * self.Hw * self.rw) / 2)
+                self.frequency = 0.5
 
-            self.sigma_1 = np.round((2 - (self.rw / 10)) * 9.81 * self.physical_properties.depth)
-            if self.sigma_1 < 10:
-                self.sigma_1 = 10
+                self.CSR = np.round(self.t / self.sigma_1, 2)
 
-            self.sigma_3 = np.round(self.sigma_1 * self.K0)
+            if test_mode == "Штормовое разжижение":
+                self.rw = float_df(data_frame.iat[string, DynamicsPropertyPosition["rw"][1]])
+                self.Hw = float_df(data_frame.iat[string, DynamicsPropertyPosition["Hw"][1]])
 
-            self.cycles_count = float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]])
+                self.t = np.round((0.5 * self.Hw * self.rw) / 2)
 
-            self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
-                                                       self.physical_properties.Ip, self.physical_properties.Il,
-                                                       self.physical_properties.e)
+                self.sigma_1 = np.round((2 - (self.rw / 10)) * 9.81 * self.physical_properties.depth)
+                if self.sigma_1 < 10:
+                    self.sigma_1 = 10
 
-            self.CSR = np.round(self.t / self.sigma_1, 2)
+                self.sigma_3 = np.round(self.sigma_1 * self.K0)
 
-            self.frequency = float_df(data_frame.iat[string, DynamicsPropertyPosition["frequency_storm"][1]])
+                self.cycles_count = float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]])
+
+                self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
+                                                           self.physical_properties.Ip, self.physical_properties.Il,
+                                                           self.physical_properties.e)
+
+                self.CSR = np.round(self.t / self.sigma_1, 2)
+
+                self.frequency = float_df(data_frame.iat[string, DynamicsPropertyPosition["frequency_storm"][1]])
 
 
     @staticmethod
@@ -832,8 +868,33 @@ class CyclicData(MechanicalProperties):
             N = 5
         return N
 
+@dataclass
+class VibrationCreepData(MechanicalProperties):
+    """Расширенный класс с дополнительными обработанными свойствами"""
+    Kd: List = None
+    frequency: List = None
+    n_fail: int = None
+    Mcsr: float = np.random.uniform(300, 500)
+    t: float = None
+    cycles_count: int = None
 
-def getMechanicalExcelData(excel, test_mode, K0_mode):
+    def defineProperties(self, data_frame, string, K0_mode) -> None:
+        super().defineMechanicalProperties(data_frame, string, test_mode="Виброползучесть", K0_mode=K0_mode,
+                                   identification_column=IdentificationColumns["Резонансная колонка"])
+        if self.c and self.fi and self.E50:
+
+            self.frequency = list(map(lambda x: float(x.replace(",", ".").strip(" ")),
+                                 data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]].split(";")))
+
+            self.Kd = list(map(lambda x: float(x.replace(",", ".").strip(" ")),
+                               data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]].split(";")))
+
+            self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2, 1)
+
+            self.cycles_count = int(np.random.uniform(2000, 5000))
+
+
+def getMechanicalExcelData(excel, test_mode, K0_mode) -> Dict:
     df = createDataFrame(excel)
 
     identification_column = None
@@ -848,7 +909,7 @@ def getMechanicalExcelData(excel, test_mode, K0_mode):
                 data[m_data.laboratory_number] = m_data
     return data
 
-def getRCExcelData(excel, K0_mode):
+def getRCExcelData(excel, K0_mode) -> Dict:
     df = createDataFrame(excel)
     data = {}
     if df is not None:
@@ -859,7 +920,7 @@ def getRCExcelData(excel, K0_mode):
                 data[rc_data.laboratory_number] = rc_data
     return data
 
-def getCyclicExcelData(excel, test_mode, K0_mode):
+def getCyclicExcelData(excel, test_mode, K0_mode) -> Dict:
     df = createDataFrame(excel)
     data = {}
     if df is not None:
@@ -870,7 +931,45 @@ def getCyclicExcelData(excel, test_mode, K0_mode):
                 data[cyclic_data.laboratory_number] = cyclic_data
     return data
 
-#print(getCyclicExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", "Сейсморазжижение", "K0: K0 = 1"))
+def getVibrationCreepExcelData(excel, K0_mode) -> Dict:
+    df = createDataFrame(excel)
+    data = {}
+    if df is not None:
+        for i in range(len(df["Лаб. № пробы"])):
+            vb_data = VibrationCreepData()
+            vb_data.defineProperties(df, i, K0_mode=K0_mode)
+            if vb_data.E50:
+                data[vb_data.laboratory_number] = vb_data
+    return data
+
+
+def dataToDict(data) -> Dict:
+    """Функция сохраняет структуру данных как словарь"""
+    dict_data = {}
+    for key in data:
+        dict_data[key] = data[key].getDict()
+    return dict_data
+
+def dictToData(dict, data_type):
+    """Функция перегоняет словарь в структуру данных"""
+    data = {}
+    for key in dict:
+        data[key] = data_type
+        data[key].setDict(dict[key])
+    return data
+
+
+if __name__ == '__main__':
+    data = getVibrationCreepExcelData("C:/Users/Пользователь/Desktop/Тест/19-21 Хвостовое хозяйство - циклика — копия.xlsx", K0_mode="K0: K0 = 1")
+    x = dataToDict(data)
+    print(data)
+    print(x)
+    data2 = dictToData(x, VibrationCreepData())
+    print(data2)
+
+
+    #print(getCyclicExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", "Сейсморазжижение", "K0: K0 = 1"))
+
 
 
 

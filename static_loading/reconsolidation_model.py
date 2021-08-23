@@ -84,7 +84,7 @@ class ModelTriaxialReconsolidation:
         self._test_data.trajectory = test_data["trajectory"]
 
         self._test_result.scempton = None
-        #self._test_processing()
+        self._test_processing()
 
     def get_test_results(self):
         """

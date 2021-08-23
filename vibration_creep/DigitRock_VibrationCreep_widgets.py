@@ -15,7 +15,7 @@ import shutil
 
 from general.save_widget import Save_Dir
 from vibration_creep.vibration_creep_widgets import VibrationCreepSoilTestWidget
-from general.general_widgets import Statment_Vibration_Creep
+from general.general_widgets import VibrationCreepStatment
 from general.reports import report_VibrationCreep
 
 class DigitRock_VibrationCreepSoilTest(QWidget):
@@ -26,7 +26,7 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
         self.layout = QVBoxLayout(self)
 
         self.tab_widget = QTabWidget()
-        self.tab_1 = Statment_Vibration_Creep()
+        self.tab_1 = VibrationCreepStatment()
         self.tab_2 = VibrationCreepSoilTestWidget()
         self.tab_3 = Save_Dir("Виброползучесть")
 
@@ -48,8 +48,8 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
             #assert self.tab_1.get_lab_number(), "Не выбран образец в ведомости"
         params = self.tab_2.get_test_params()
 
-        test_parameter = {'sigma_3': params["sigma_3"], 't': params["t"],
-                          'frequency': params["frequency"],
+        test_parameter = {'sigma_3': params.sigma_3, 't': params.t,
+                          'frequency': params.frequency,
                           'Rezhim': 'Изотропная реконсолидация, девиаторное циклическое нагружение',
                           'Oborudovanie': "Wille Geotechnik 13-HG/020:001", 'h': 76, 'd': 38}
 
@@ -77,6 +77,9 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
 
         shutil.copy(save + "/" + Name, self.tab_3.report_directory + "/" + Name)
         QMessageBox.about(self, "Сообщение", "Успешно сохранено")
+
+        self.tab_1.table_physical_properties.set_row_color(
+            self.tab_1.table_physical_properties.get_row_by_lab_naumber(self.tab_1.get_lab_number()))
 
         """except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

@@ -27,6 +27,7 @@ from static_loading.reconsolidation_model import ModelTriaxialReconsolidation, M
 from static_loading.consolidation_model import ModelTriaxialConsolidation, ModelTriaxialConsolidationSoilTest
 from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading, ModelTriaxialDeviatorLoadingSoilTest
 from general.general_functions import read_json_file, create_json_file
+from general.excel_data_parser import MechanicalProperties, PhysicalProperties
 
 
 class ModelTriaxialStaticLoad:
@@ -267,7 +268,7 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
     def set_test_params(self, test_params):
         """Получение массивов опытов и передача в соответствующий класс"""
         self.test_params = test_params
-        self.reconsolidation.set_test_params(test_params["sigma_3"])
+        self.reconsolidation.set_test_params(test_params.sigma_3)
 
         velocity = None
 
@@ -279,7 +280,7 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
                                                    self.consolidation.get_delta_h_consolidation())
 
-        E50 = np.round(test_params["E50"]/1000, 1)
+        E50 = np.round(test_params.E50/1000, 1)
 
         self.deviator_loading.set_test_params(test_params)
         params = self.deviator_loading.get_test_results()
@@ -293,7 +294,7 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
             #else:
                 #test_params["E50"] *= 1.0001
 
-            test_params["E50"] += 10*(E50 - E50_test)
+            test_params.E50 += 10*(E50 - E50_test)
 
             self.deviator_loading.set_test_params(test_params)
             params = self.deviator_loading.get_test_results()
@@ -494,11 +495,16 @@ if __name__ == '__main__':
     #open_geotek_log(file)
 
     #a = ModelTriaxialStaticLoadSoilTest()
-    param = {'E50': 30495, 'sigma_3': 200, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 1,
-             'Cv': 0.1, 'Ca': 0.01, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
-             'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
-                                                                                             'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73, 'r': '-', 'rd': '-', 'n': '-', 'e': '-', 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-', 'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0, '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-', '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие (E)'}
-    test = "soil_test1"
+    param = MechanicalProperties(physical_properties=PhysicalProperties(
+        laboratory_number='7а-1', borehole='7а', depth=19.0, soil_name='Песок крупный неоднородный Ntcnjdsq',
+        ige=None, rs=2.73, r=2.73, rd=None, n=None, e=0.5, W=None, Sr=None, Wl=None, Wp=None, Ip=None, Il=0.42,
+        Ir=33.0, stratigraphic_index=None, ground_water_depth=5.0, granulometric_10=None, granulometric_5=None,
+        granulometric_2=6.8, granulometric_1=39.2, granulometric_05=28.0, granulometric_025=9.2, granulometric_01=6.1,
+        granulometric_005=10.7, granulometric_001=None, granulometric_0002=None, granulometric_0000=None,
+        complete_flag=False, sample_number=0, type_ground=9, Rc=None), Cv=2.0, Ca=0.01765, m=0.66,
+        E50=9658.084722901245, c=0.001, fi=42.8, K0=0.8, dilatancy_angle=9.85, sigma_3=100, sigma_1=254.3, qf = 300,
+        poisons_ratio=0.34, OCR=1, build_press=5000.0, pit_depth=None, Eur=None)
+    test = "soil_test"
 
     if test == "soil_test":
         a = ModelTriaxialStaticLoadSoilTest()

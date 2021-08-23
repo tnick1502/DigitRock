@@ -536,44 +536,40 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     def set_test_params(self, test_params):
         """Установка основных параметров опыта"""
-        self._test_params.qf = test_params.get("qf", None)
-        self._test_params.sigma_3 = test_params.get("sigma_3", None)
-        self._test_params.E50 = test_params.get("E50", None)
-        self._test_params.K0 = test_params.get("K0", None)
-        self._test_params.c = test_params.get("c", None)
-        self._test_params.fi = test_params.get("fi", None)
-        self._test_params.Eur = test_params.get("Eur", None)
-        self._test_params.data_physical = test_params.get("data_phiz", None)
+        self._test_params.qf = test_params.qf
+        self._test_params.sigma_3 = test_params.sigma_3
+        self._test_params.E50 = test_params.E50
+        self._test_params.K0 = test_params.K0
+        self._test_params.c = test_params.c
+        self._test_params.fi = test_params.fi
+        self._test_params.Eur = test_params.Eur
+        self._test_params.data_physical = test_params.physical_properties
 
         xc, residual_strength = ModelTriaxialDeviatorLoadingSoilTest.define_xc_value_residual_strength(
-            test_params["data_phiz"], test_params["sigma_3"],
-            test_params["qf"], test_params["E50"])
+            test_params.physical_properties, test_params.sigma_3,
+            test_params.qf, test_params.E50)
 
         self._draw_params.fail_strain = xc
         self._draw_params.residual_strength_param = \
             ModelTriaxialDeviatorLoadingSoilTest.residual_strength_param_from_xc(xc)
-        self._draw_params.residual_strength = test_params["qf"]*residual_strength
+        self._draw_params.residual_strength = test_params.qf*residual_strength
         self._draw_params.qocr = 0
 
         if self._test_params.Eur:
             self.unloading_borders = ModelTriaxialDeviatorLoadingSoilTest.define_unloading_points(
-                test_params["data_phiz"], self._test_params.sigma_3,
-            self._test_params.sigma_3/test_params["K0"])
+                test_params.physical_properties.Il, test_params.physical_properties.type_ground,
+                self._test_params.sigma_3, self._test_params.sigma_3/test_params.K0)
 
-            self._test_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(E50=self._test_params.E50,
-                                                                                        qf=self._test_params.qf,
-                                                                                        Il=
-                                                                                        self._test_params.data_physical[
-                                                                                            "Il"],
-                                                                                        initial_unloading_deviator=
-                                                                                        self.unloading_borders[0])
+            self._test_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
+                E50=self._test_params.E50, qf=self._test_params.qf, Il=test_params.physical_properties.Il,
+                initial_unloading_deviator=self.unloading_borders[0])
 
-        self._draw_params.poisson = test_params.get("poisson")#,
+        self._draw_params.poisson = test_params.poisons_ratio
                                                     #define_poissons_ratio("-", self._test_params.data_physical["Ip"],
                                                                           #self._test_params.data_physical["Il"],
                                                                           #self._test_params.data_physical["Ir"],
                                                                           #self._test_params.data_physical["10"],
-                                                                          #self._test_params.data_physical["5"],
+                                                                            #self._test_params.data_physical["5"],
                                                                           #self._test_params.data_physical["2"]))
         #self._draw_params.dilatancy = test_params.get("dilatancy")#, round((
                                                     #ModelTriaxialDeviatorLoadingSoilTest.define_dilatancy_from_xc_qres(
@@ -587,7 +583,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                                  #self._test_params.data_physical["Ip"],
                                                                                 # self._test_params.data_physical[
                                                                                      #"Ir"])) / 2, 2))
-        alpha = np.deg2rad(test_params.get("dilatancy"))
+        alpha = np.deg2rad(test_params.dilatancy_angle)
 
         self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(alpha) / (1 - np.sin(alpha))))
 
@@ -854,23 +850,14 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         return Esec * dependence_Eur_on_Il(Il)
 
     @staticmethod
-    def xc_from_qf_e_if_is(data, sigma3mor, qf_, e50_):
+    def xc_from_qf_e_if_is(sigma_3, type_ground, e, Ip, Il):
         """Функция находит деформацию пика девиаорного нагружения в зависимости от qf и E50, если по параметрам материала
         пик есть, если нет, возвращает xc = 0.15. Обжимающее напряжение должно быть в кПа"""
+        none_to_zero = lambda x: 0 if not x else x
+        Ip = Ip if Ip else 0
+        Il = Il if Il else 0.5
+        e0 = e if e else 0.65
 
-        def f_zero(a):
-            return 0 if a == '-' else a
-
-        gran_struct = ['10', '5', '2', '1', '05', '025', '01', '005', '001', '0002', '0000']  # гран состав
-        accumulate_gran = [f_zero(data[gran_struct[0]])]  # Накоплено процентное содержание
-        for i in range(10):
-            accumulate_gran.append(accumulate_gran[i] + f_zero(data[gran_struct[i + 1]]))
-
-        # Определяем тип грунта
-        type_ground = define_type_ground(data, data["Ip"], data["Ir"])
-
-        # определяем степень плотности песка (если type_ground = 1...5)
-        e0 = f_zero(data['e'])  # пористость
         if e0 == 0:
             dens_sand = 2  # средней плотности
         elif type_ground <= 3:
@@ -897,10 +884,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         else:
             dens_sand = 0
 
-        sigma3mor = sigma3mor / 1000  # так как дается в КПа, а необходимо в МПа
-        if accumulate_gran[1] > 50:  # Процентное содержание гранул размером 10 и 5 мм больше половины
+        sigma3mor = sigma_3 / 1000  # так как дается в КПа, а необходимо в МПа
+        if type_ground == 3 or type_ground == 4:  # Процентное содержание гранул размером 10 и 5 мм больше половины
             kr_fgs = 1
-        elif f_zero(data['Ip']) == 0:  # число пластичности. Пески (и торф?)
+        elif none_to_zero(Ip) == 0:  # число пластичности. Пески (и торф?)
             if dens_sand == 1 or type_ground == 1:  # любой плотный или гравелистый песок
                 kr_fgs = 1
             elif type_ground == 2:  # крупный песок
@@ -936,21 +923,19 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             else:
                 kr_fgs = 0
 
-        elif data['Ip'] <= 7:  # число пластичности. Супесь
+        elif Ip <= 7:  # число пластичности. Супесь
 
-            if f_zero(data['Il']) > 1:  # показатель текучести. больше 1 - текучий
+            if Il > 1:  # показатель текучести. больше 1 - текучий
                 kr_fgs = 0
-            elif 0 < f_zero(data['Il']) <= 1:  # показатель текучести. от 0 до 1 - пластичный (для супеси)
+            elif 0 < Il <= 1:  # показатель текучести. от 0 до 1 - пластичный (для супеси)
                 kr_fgs = round(np.random.uniform(0, 1))
             else:  # <=0 твердый
                 kr_fgs = 1
 
-        elif data['Ip'] > 7:  # суглинок и глина
-            if f_zero(
-                    data[
-                        'Il']) > 0.5:  # показатель текучести.от 0.5 мягко- и текучепласт., текучий (для суглинков и глины)
+        elif Ip > 7:  # суглинок и глина
+            if Il > 0.5:  # показатель текучести.от 0.5 мягко- и текучепласт., текучий (для суглинков и глины)
                 kr_fgs = 0
-            elif 0.25 < f_zero(data['Il']) <= 0.5:  # от 0.25 до 0.5 тугопластичный (для суглинков и глины)
+            elif 0.25 < Il <= 0.5:  # от 0.25 до 0.5 тугопластичный (для суглинков и глины)
                 kr_fgs = round(np.random.uniform(0, 1))
             else:  # меньше 0.25 твердый и полутвердый (для суглинков и глины)
                 kr_fgs = 1
@@ -986,14 +971,15 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     @staticmethod
     def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E):
-        xc = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(data_phiz, sigma_3, qf, E)
+        xc = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
+                                                                     data_phiz.Ip, data_phiz.Il)
         if xc:
             xc = ModelTriaxialDeviatorLoadingSoilTest.define_xc_qf_E(qf, E)
         else:
             xc = 0.15
 
         if xc != 0.15:
-            residual_strength = ModelTriaxialDeviatorLoadingSoilTest.define_k_q(data_phiz["Il"], data_phiz["e"], sigma_3)
+            residual_strength = ModelTriaxialDeviatorLoadingSoilTest.define_k_q(data_phiz.Il, data_phiz.e, sigma_3)
         else:
             residual_strength = 0.95
 
@@ -1096,26 +1082,26 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         return data
 
     @staticmethod
-    def define_unloading_points(physical_data: Dict, sigma_mean: float, sigma_1: float) -> float:
+    def define_unloading_points(Il, type_ground, sigma_mean: float, sigma_1: float) -> float:
         """ Рассчет начала разгрузки в зависимости от грансостава и среднеобжимающего давления
             :param physical_data: словарь с физическими параметрами
             :param sigma_1: эффективное значение sigma_3c
             :return: девиатор начала разгрузки"""
 
-        def type_from_Il_loam(physical_data):
-            if physical_data["Il"] != "-":
-                if physical_data["Il"] <= 0.5:
+        def type_from_Il_loam(Il):
+            if Il:
+                if Il <= 0.5:
                     return [0.1, 0.2]
-                elif physical_data["Il"] > 0.5:
+                elif Il > 0.5:
                     return [0.08, 0.15]
             else:
                 return [0, 0]
 
-        def type_from_Il_clay(physical_data):
-            if physical_data["Il"] != "-":
-                if physical_data["Il"] <= 0.5:
+        def type_from_Il_clay(Il):
+            if Il:
+                if Il <= 0.5:
                     return [0.06, 0.15]
-                elif physical_data["Il"] > 0.5:
+                elif Il > 0.5:
                     return [0.05, 0.1]
             else:
                 return [0, 0]
@@ -1131,14 +1117,13 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             4: deviator_start_unloading(0.3, 0.3),
             5: deviator_start_unloading(0.3, 0.3),
             6: deviator_start_unloading(0.1, 0.2),
-            7: deviator_start_unloading(*type_from_Il_loam(physical_data)),
-            8: deviator_start_unloading(*type_from_Il_clay(physical_data)),
+            7: deviator_start_unloading(*type_from_Il_loam(Il)),
+            8: deviator_start_unloading(*type_from_Il_clay(Il)),
             9: deviator_start_unloading(0.05, 0.1)
         }
 
         return (
-        dependence_deviator_start_unloading_on_type_ground[define_type_ground(physical_data, physical_data["Ip"],
-                                                                              physical_data["Ir"])], 10)
+        dependence_deviator_start_unloading_on_type_ground[type_ground], 10)
 
     @staticmethod
     def define_final_loading_point(deviator: List, persent: float) -> int:

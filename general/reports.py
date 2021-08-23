@@ -243,9 +243,9 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
                ["Протокол испытаний №", "", str_for_excel(Lab + "/" + Data_customer["object_number"] + lname), "", "", "", "", "", "", ""],
                ['Заказчик:', Paragraph(Data_customer["customer"], LeftStyle)],
                ['Объект:', Paragraph(Data_customer["object_name"], LeftStyle)], [""], [""], [""],
-               ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(str(Data_phiz[Lab]["borehole"]) + "; " + str(Data_phiz[Lab]["depth"]).replace(".",",") +" м", LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(str(Data_phiz[Lab]["ige"]), LeftStyle)],
+               ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(str(Data_phiz.borehole) + "; " + str(Data_phiz.depth).replace(".",",") +" м", LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(str(Data_phiz.ige), LeftStyle)],
                ['Лабораторный номер №:', "", "", Lab],
-               ['Наименование грунта:', "", Paragraph(Data_phiz[Lab]["name"], LeftStyle)], [""]
+               ['Наименование грунта:', "", Paragraph(Data_phiz.soil_name, LeftStyle)], [""]
                ], colWidths = 17.5 * mm, rowHeights = 4 * mm)
 
 
@@ -297,16 +297,16 @@ def parameter_table(canvas, Data_phiz, Lab):  # Таблица характер�
                     Paragraph('''<p>I<sub rise="0.5" size="5">L</sub>, ед.</p>''', CentralStyle),
                     Paragraph('''<p>I<sub rise="0.5" size="6">r</sub>, %</p>''', CentralStyle)]
 
-    data_values = [zap(Data_phiz[Lab]["rs"], 2),
-                 zap(Data_phiz[Lab]["r"], 2),
-                 zap(Data_phiz[Lab]["rd"], 2),
-                 zap(Data_phiz[Lab]["n"], 1),
-                 zap(Data_phiz[Lab]["e"], 2),
-                 zap(Data_phiz[Lab]["W"], 1),
-                 zap(Data_phiz[Lab]["Sr"], 2),
-                 zap(Data_phiz[Lab]["Ip"], 1),
-                 zap(Data_phiz[Lab]["Il"], 2),
-                 zap(Data_phiz[Lab]["Ir"], 1)]
+    data_values = [zap(Data_phiz.rs, 2),
+                 zap(Data_phiz.r, 2),
+                 zap(Data_phiz.rd, 2),
+                 zap(Data_phiz.n, 1),
+                 zap(Data_phiz.e, 2),
+                 zap(Data_phiz.W, 1),
+                 zap(Data_phiz.Sr, 2),
+                 zap(Data_phiz.Ip, 1),
+                 zap(Data_phiz.Il, 2),
+                 zap(Data_phiz.Ir, 1)]
 
 
     t = Table([["ХАРАКТЕРИСТИКИ ГРУНТА"], data_signature, data_values], colWidths=17.5 * mm, rowHeights=4 * mm)
@@ -387,7 +387,7 @@ def test_mode_rc(canvas, ro, Data):
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", Data["Rezhim"], "", "", "", "", "", ""],
-               [Paragraph('''<p>Опорное давление p<sup rise="2.5" size="5">ref</sup>, МПа:</p>''', LeftStyle), "", zap(Data["Pref"], 2)],
+               [Paragraph('''<p>Опорное давление p<sup rise="2.5" size="5">ref</sup>, МПа:</p>''', LeftStyle), "", zap(Data["reference_pressure"], 2)],
                ["Оборудование:", "", Data["Oborudovanie"]],
                ["Параметры образца:", "", "Высота, мм:", zap(Data
                                                              ["h"], 2), "Диаметр, мм:", zap(Data["d"], 2), Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(ro, 2)]], colWidths=19.444444* mm, rowHeights=4 * mm)
@@ -1396,7 +1396,7 @@ def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
                                 "КОЛЕБАНИЙ В РЕЗОНАНСНОЙ КОЛОНКЕ (ГОСТ Р 56353-2015)"], "/РК")
 
     parameter_table(canvas, Data_phiz, Lab)
-    test_mode_rc(canvas, Data_phiz[Lab]["r"], test_parameter)
+    test_mode_rc(canvas, Data_phiz.r, test_parameter)
     result_table_rc(canvas, res, picks)
 
 
@@ -1426,7 +1426,7 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
                                  "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/ШТ")
     parameter_table(canvas, Data_phiz, Lab)
-    test_mode_triaxial_cyclic(canvas, Data_phiz[Lab]["r"], test_parameter)
+    test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter)
     result_table__triaxial_cyclic(canvas, res, [picks[0], picks[1]])
 
 
@@ -1443,7 +1443,7 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
                                  "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"],
                                 "/ШТ")
     parameter_table(canvas, Data_phiz, Lab)
-    test_mode_triaxial_cyclic(canvas, Data_phiz[Lab]["r"], test_parameter)
+    test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter)
     result_table__triaxial_cyclic(canvas, res, [picks[2]])
 
     canvas.showPage()

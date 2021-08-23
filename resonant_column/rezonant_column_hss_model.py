@@ -294,14 +294,14 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         """Функция принимает параметры опыта для дальнейших построений"""
         self._getted_params = params
 
-        self._test_params.p_ref = params["Pref"]
-        self._test_params.c = params["c"]
-        self._test_params.fi = params["fi"]
-        self._test_params.E = params["E"]
-        self._test_params.K0 = params["K0"]
-        self._test_params.physical = params["data_phiz"]
-        self._test_params.G0 = params["G0"]
-        self._test_params.threshold_shear_strain = params["threshold_shear_strain"]
+        self._test_params.p_ref = params.reference_pressure
+        self._test_params.c = params.c
+        self._test_params.fi = params.fi
+        self._test_params.E = params.E50
+        self._test_params.K0 = params.K0
+        self._test_params.physical = params.physical_properties
+        self._test_params.G0 = params.G0
+        self._test_params.threshold_shear_strain = params.threshold_shear_strain
 
         self._test_modeling()
 
@@ -331,7 +331,7 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         self._test_data.frequency, self._test_data.resonant_curves = \
             ModelRezonantColumnSoilTest.generate_resonant_curves(self._test_data.shear_strain, self._test_data.G_array,
                                                                  frequency_step=self._draw_params.frequency_step,
-                                                                 ro=self._test_params.physical["r"] * 1000)
+                                                                 ro=self._test_params.physical.r * 1000)
         self._test_processing()
         #self.plotter()
         #plt.plot(self._test_data.frequency[0], self._test_data.resonant_curves[0])

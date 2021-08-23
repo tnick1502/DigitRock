@@ -12,7 +12,7 @@ import shutil
 
 from general.save_widget import Save_Dir
 from resonant_column.resonant_column_widgets import RezonantColumnProcessingWidget, RezonantColumnSoilTestWidget
-from general.general_widgets import Statment_Rezonant_Column
+from general.general_widgets import RezonantColumnStatment
 from general.reports import report_rc
 from general.excel_functions import set_cell_data
 from resonant_column.resonant_column_widgets import PredictRCTestResults
@@ -39,7 +39,7 @@ class DigitRock_RezonantColumn_Processing(QWidget):
         self.layout = QVBoxLayout(self)
 
         self.tab_widget = QTabWidget()
-        self.tab_1 = Statment_Rezonant_Column()
+        self.tab_1 = RezonantColumnStatment()
         self.tab_2 = RezonantColumn_Processing_Tab()
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
@@ -73,8 +73,8 @@ class DigitRock_RezonantColumn_Processing(QWidget):
             elif test_parameter['equipment'] == "Прибор: Вилли":
                 test_time = willie_text_file(save, self.Powerf, self.Arrays["PPR"], self.Arrays["Strain"], self.Data["frequency"], self.Data["N"], self.Data["Points"],
                                  self.Setpoint, self.Arrays["cell_press"], self.file.Data_phiz[self.file.Lab]["Ip"])"""
-            test_param = self.tab_1.get_test_data()
-            test_parameter = {"Pref": test_param[self.tab_1.get_lab_number()]["Pref"]}
+            test_param = self.tab_1.get_data()
+            test_parameter = {"reference_pressure": test_param.reference_pressure}
 
             test_result = self.tab_2.test._model.get_test_results()
 
@@ -132,7 +132,7 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
         self.layout = QVBoxLayout(self)
 
         self.tab_widget = QTabWidget()
-        self.tab_1 = Statment_Rezonant_Column()
+        self.tab_1 = RezonantColumnStatment()
         self.tab_2 = RezonantColumn_SoilTest_Tab()
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
@@ -151,12 +151,12 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
         self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
 
     def _predict(self):
-        if self.tab_1._data_test is not None:
-            dialog = PredictRCTestResults(self.tab_1._data_test, self.tab_1.get_customer_data())
+        if self.tab_1._data is not None:
+            dialog = PredictRCTestResults(self.tab_1._data, self.tab_1.get_customer_data())
             dialog.show()
 
             if dialog.exec() == QDialog.Accepted:
-                self.tab_1._data_test = dialog.get_data()
+                self.tab_1._data = dialog.get_data()
 
     def _params_slider_moove(self, params):
         self.tab_2.test._model.set_draw_params(params)
@@ -179,14 +179,8 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
 
             file_name = save + "/" + "Отчет " + file_path_name + "-РК" + ".pdf"
 
-            """if test_parameter['equipment'] == "Прибор: Геотек":
-                test_time = geoteck_text_file(save, self.Powerf, self.Arrays["PPR"], self.Arrays["Strain"], self.Data["sigma3"], self.Data["frequency"], self.Data["Points"], self.file.Data_phiz[self.file.Lab]["Ip"])
-
-            elif test_parameter['equipment'] == "Прибор: Вилли":
-                test_time = willie_text_file(save, self.Powerf, self.Arrays["PPR"], self.Arrays["Strain"], self.Data["frequency"], self.Data["N"], self.Data["Points"],
-                                 self.Setpoint, self.Arrays["cell_press"], self.file.Data_phiz[self.file.Lab]["Ip"])"""
-            test_param = self.tab_1.get_test_data()
-            test_parameter = {"Pref": test_param[self.tab_1.get_lab_number()]["Pref"]}
+            test_param = self.tab_1.get_data()
+            test_parameter = {"reference_pressure": test_param.reference_pressure}
 
             test_result = self.tab_2.test._model.get_test_results()
 
@@ -198,12 +192,9 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
                       os.getcwd() + "/project_data/", test_parameter, results,
                       self.tab_2.test.test_widget.save_canvas(), __version__)
 
-            set_cell_data(self.tab_1.path,
-                          "HL" + str(self.tab_1.get_physical_data()[self.tab_1.get_lab_number()]["Nop"]),
-                          test_result["G0"], sheet="Лист1")
-            set_cell_data(self.tab_1.path,
-                          "HK" + str(self.tab_1.get_physical_data()[self.tab_1.get_lab_number()]["Nop"]),
-                          test_result["threshold_shear_strain"], sheet="Лист1")
+            number = self.tab_1.get_physical_data().sample_number + 7
+            set_cell_data(self.tab_1.path, "HL" + str(number), test_result["G0"], sheet="Лист1")
+            set_cell_data(self.tab_1.path, "HK" + str(number), test_result["threshold_shear_strain"], sheet="Лист1")
 
             shutil.copy(file_name, self.tab_2.save.report_directory + "/" + file_name[len(file_name) -
                                                                                       file_name[::-1].index("/"):])

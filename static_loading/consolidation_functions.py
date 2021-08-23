@@ -557,8 +557,8 @@ if __name__ == "__main__":
     0.5
     7.7679012557423475
     0.17770291565322646
-    x1, y1 = function_consalidation_without_Cv(Cv=1.772, Ca=-0.00683413097031166, point_time=1/120, max_time=7.7679012557423475,
-                                    volume_strain_90=-0.17770291565322646, E=28440.0, sigma_3=186.4)
+    x1, y1 = function_consalidation_without_Cv(Cv=2, Ca=-0.01765, point_time=1/120, max_time=706,
+                                    volume_strain_90=-0.17770291565322646, E=96000, sigma_3=50)
     #x2, y2 = function_consalidation(Cv=Cv, Ca=-0.01,  point_time=1/2, max_time=t_test,deviation=0.003, approximate=True)
     #x3, y3 = function_consalidation_without_Cv(Cv=Cv, Ca=-0.01, point_time=1,deviation=0.003, max_time=t_test)
 

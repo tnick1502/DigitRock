@@ -5,7 +5,7 @@ import sys
 
 from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI, CyclicLoadingOpenTestUI, CyclicLoadingUISoilTest
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, ModelTriaxialCyclicLoadingSoilTest
-from general.initial_tables import Table_Vertical
+from general.initial_tables import TableVertical
 
 class CyclicLoadingProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -97,13 +97,25 @@ class CyclicLoadingSoilTestWidget(QWidget):
         self.layout = QVBoxLayout(self)
         self.layout_1 = QHBoxLayout(self)
         self.test_widget = CyclicLoadingUISoilTest()
-        headlines = ["Лаб. ном.", "Модуль деформации E50, кПа", "Сцепление с, МПа",
-                     "Угол внутреннего трения, град", "CSR",
-                     "Обжимающее давление 𝜎3", "K0", "Косательное напряжение τ, кПа",
-                     "Число циклов N, ед.", "Бальность, балл", "Магнитуда", "Понижающий коэф. rd", "MSF"]
-
-        fill_keys = ["lab_number", "E50", "c", "fi", "CSR", "sigma3", "K0", "t", "N", "I", "magnituda", "rd", "MSF"]
-        self.identification = Table_Vertical(headlines, fill_keys)
+        fill_keys = {
+            "laboratory_number": "Лаб. ном.",
+            "E50": "Модуль деформации E50, кПа",
+            "c": "Сцепление с, МПа",
+            "fi": "Угол внутреннего трения, град",
+            "CSR": "CSR, д.е.",
+            "sigma_3": "Обжимающее давление 𝜎3, кПа",
+            "K0": "K0, д.е.",
+            "t": "Касательное напряжение τ, кПа",
+            "cycles_count": "Число циклов N, ед.",
+            "intensity": "Бальность, балл",
+            "magnitude": "Магнитуда",
+            "rd": "Понижающий коэф. rd",
+            "MSF": "MSF",
+            "frequency": "Частота, Гц",
+            "Hw": "Расчетная высота волны, м",
+            "rw": "Плотность воды, кН/м3"
+        }
+        self.identification = TableVertical(fill_keys)
         self.identification.setFixedWidth(300)
         self.layout_1.addWidget(self.test_widget)
         self.layout_1.addWidget(self.identification)
