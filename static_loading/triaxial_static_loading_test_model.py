@@ -29,7 +29,6 @@ from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading, 
 from general.general_functions import read_json_file, create_json_file
 from general.excel_data_parser import MechanicalProperties, PhysicalProperties
 
-
 class ModelTriaxialStaticLoad:
     """Класс моделирования опыта трехосного сжатия
     Структура класса представляет объеденение 3х моделей"""
@@ -144,13 +143,12 @@ class ModelTriaxialStaticLoad:
                                                               np.pi * (19 ** 2) * (76 - consolidation["delta_h_reconsolidation"]))
                 consolidation["time"] = read_data['Time'][begin_consolidation:end_consolidation] - \
                                         read_data['Time'][begin_consolidation]
+
                 if camera == "A":
                     rod_accounting = (read_data['VerticalDeformation'][begin_consolidation:end_consolidation] -
                                       read_data['VerticalDeformation'][begin_consolidation]) / (
                                              np.pi * (10 ** 2) * (76 - delta_h))
                     consolidation["cell_volume_strain"] -= rod_accounting
-
-                print(consolidation["pore_volume_strain"][0], consolidation["pore_volume_strain"][-1])
 
                 return consolidation
             except (ValueError, IndexError):
@@ -244,6 +242,7 @@ class ModelTriaxialStaticLoad:
             delta_h_reconsolidation = test_data["reconsolidation"].get("delta_h", 0)
         else:
             delta_h_reconsolidation = 0
+
         test_data["consolidation"] = define_consolidation(read_data, delta_h_reconsolidation)
 
         if test_data["consolidation"]:
@@ -288,13 +287,13 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
         while E50_test != E50:
 
-            print("Поиск сходимости решения. ", E50_test-E50)
+            #print("Поиск сходимости решения. ", E50_test-E50)
             #if E50_test > E50:
                 #test_params["E50"] /= 1.0001
             #else:
                 #test_params["E50"] *= 1.0001
 
-            test_params.E50 += 10*(E50 - E50_test)
+            test_params.E50 += 50*(E50 - E50_test)
 
             self.deviator_loading.set_test_params(test_params)
             params = self.deviator_loading.get_test_results()
@@ -323,11 +322,13 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         """Метод генерирует логфайл прибора"""
         reconsolidation_dict = self.reconsolidation.get_dict()
         consolidation_dict = self.consolidation.get_dict(self.reconsolidation.get_effective_stress_after_reconsolidation())
+
         deviator_loading_dict = self.deviator_loading.get_dict()
 
         main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
                                                                                          consolidation_dict,
                                                                                          deviator_loading_dict)
+
         ModelTriaxialStaticLoadSoilTest.text_file(file_path, main_dict)
         create_json_file('/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json",
                          self.get_processing_parameters())
@@ -501,10 +502,11 @@ if __name__ == '__main__':
         Ir=33.0, stratigraphic_index=None, ground_water_depth=5.0, granulometric_10=None, granulometric_5=None,
         granulometric_2=6.8, granulometric_1=39.2, granulometric_05=28.0, granulometric_025=9.2, granulometric_01=6.1,
         granulometric_005=10.7, granulometric_001=None, granulometric_0002=None, granulometric_0000=None,
-        complete_flag=False, sample_number=0, type_ground=9, Rc=None), Cv=2.0, Ca=0.01765, m=0.66,
+        complete_flag=False, sample_number=0, type_ground=9, Rc=None), Cv=0.04, Ca=0.01765, m=0.66,
         E50=9658.084722901245, c=0.001, fi=42.8, K0=0.8, dilatancy_angle=9.85, sigma_3=100, sigma_1=254.3, qf = 300,
         poisons_ratio=0.34, OCR=1, build_press=5000.0, pit_depth=None, Eur=None)
-    test = "soil_test"
+
+    test = "soil_test1"
 
     if test == "soil_test":
         a = ModelTriaxialStaticLoadSoilTest()

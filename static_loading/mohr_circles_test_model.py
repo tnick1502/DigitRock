@@ -40,8 +40,7 @@ class ModelMohrCircles:
     def add_test(self, file_path):
         """Добавление опытов"""
         test = ModelTriaxialStaticLoad()
-        test_data = ModelTriaxialStaticLoad.open_geotek_log(file_path)
-        test.set_test_data(test_data)
+        test.set_test_file_path(file_path)
         if self._check_clone(test):
             self._tests.append(test)
             self.sort_tests()
@@ -76,8 +75,8 @@ class ModelMohrCircles:
 
             for test in self._tests:
                 results = test.deviator_loading.get_test_results()
-                sigma_3.append(round((results["sigma_3"] - results["u"]), 3))
-                sigma_1.append(round(results["sigma_3"] + results["qf"] - results["u"], 3))
+                sigma_3.append(round((results["sigma_3"]), 3))
+                sigma_1.append(round(results["sigma_3"] + results["qf"], 3))
             return sigma_3, sigma_1
 
         return None, None

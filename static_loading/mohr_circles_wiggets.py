@@ -85,8 +85,8 @@ class MohrTable(QWidget):
 
     def set_param(self, param):
         self.table_widget.set_data([["", "", ""],
-                                    ["σ3, МПа",
-                                     "σ1, МПа",
+                                    ["σ3', МПа",
+                                     "σ1', МПа",
                                      "u, МПа"],
                                     [param["sigma_3"], param["sigma_1"], param["u"]]], "Stretch")
 
@@ -312,6 +312,7 @@ class MohrWidget(QWidget):
             figure.set_size_inches(size)
             if canvas == self.mohr_canvas:
                 ax.get_legend()
+                ax.legend()
             canvas.draw()
             return path
 

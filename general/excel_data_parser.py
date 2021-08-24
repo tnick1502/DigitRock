@@ -440,8 +440,8 @@ class MechanicalProperties:
 
         Cv = kf / (m * gamma)
 
-        if Cv > 1.2:
-            return np.round(np.random.uniform(0.7, 1.2), 4)
+        if Cv > 0.8:
+            return np.round(np.random.uniform(0.5, 0.8), 4)
         elif Cv <= 0.02:
             return np.round(np.random.uniform(0.01, 0.02), 4)
         return np.round(Cv, 4)
@@ -552,7 +552,6 @@ class MechanicalProperties:
                     return np.round(np.random.uniform(0.3, 0.36), round_ratio)
             else:
                 return np.round(np.random.uniform(0.25, 0.35), round_ratio)
-
 
     @staticmethod
     def define_dilatancy(sigma_1, sigma_3, fi, qf, E50, type_ground, rs, e, Il):
@@ -753,6 +752,7 @@ class RCData(MechanicalProperties):
             self.G0, self.threshold_shear_strain = define_G0_threshold_shear_strain(
                 self.reference_pressure, self.E50, self.c, self.fi, self.K0, self.physical_properties.type_ground,
                 self.physical_properties.Ip, self.physical_properties.e)
+
 @dataclass
 class CyclicData(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
