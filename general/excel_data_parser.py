@@ -9,6 +9,7 @@ import pyexcel as p
 from general.general_functions import sigmoida, mirrow_element
 from cyclic_loading.cyclic_stress_ratio_function import define_fail_cycle
 from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
+from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTest
 
 
 PhysicalPropertyPosition = {
@@ -769,6 +770,7 @@ class CyclicData(MechanicalProperties):
     Hw: float = None
     frequency: float = None
     Mcsr: float = None
+    Msf: float = None
     n_fail: int = None
     sigma_1: float = None
     sigma_3: float = None
@@ -796,23 +798,33 @@ class CyclicData(MechanicalProperties):
                 if self.sigma_1 < 10:
                     self.sigma_1 = 10
 
+                self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
                 acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]])
                 if acceleration:
+                    acceleration *= 9.81
                     self.intensity = CyclicData.define_intensity(acceleration)
                 else:
                     self.intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
                     acceleration = CyclicData.define_acceleration(self.intensity)
 
-                self.t = round(0.65 * acceleration * (self.sigma_1 / 9.81) * float(self.rd))
+                self.magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
+
+                self.t = np.round(0.65 * acceleration * (self.sigma_1 / 9.81) * float(self.rd))
+                self.MSF = np.round((10 ** (2.24) / ((self.magnitude) ** (2.56))), 2)
+                self.t *= self.MSF
                 if self.t < 1:
                     self.t = 1
-
-                self.magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
+                self.t = np.round(self.t)
 
                 self.cycles_count = CyclicData.define_cycles_count(self.magnitude)
 
                 self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t, self.physical_properties.Ip,
                                                  self.physical_properties.Il, self.physical_properties.e)
+
+                self.Msf = ModelTriaxialCyclicLoadingSoilTest.define_Msf(
+                    self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.physical_properties.e,
+                    self.physical_properties.Il, self.qf, self.t)
 
                 self.frequency = 0.5
 
@@ -837,6 +849,11 @@ class CyclicData(MechanicalProperties):
                                                            self.physical_properties.e)
 
                 self.CSR = np.round(self.t / self.sigma_1, 2)
+
+                self.Msf = ModelTriaxialCyclicLoadingSoilTest.define_Msf(
+                    self.c, self.fi, self.Mcsr,
+                    (self.sigma_1 - self.sigma_3) + 2 * self.t,
+                    self.physical_properties.e, self.physical_properties.Il, self.qf, self.t)
 
                 self.frequency = float_df(data_frame.iat[string, DynamicsPropertyPosition["frequency_storm"][1]])
 

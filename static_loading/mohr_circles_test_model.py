@@ -78,7 +78,6 @@ class ModelMohrCircles:
                 sigma_3.append(round((results["sigma_3"]), 3))
                 sigma_1.append(round(results["sigma_3"] + results["qf"], 3))
             return sigma_3, sigma_1
-
         return None, None
 
     def get_E50(self):
@@ -405,7 +404,6 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         """Функция рассчета обжимающих давлений для кругов мора"""
         if build_press and pit_depth:
             sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10 * K0
-            print("авление ", build_press)
             return [np.round(0.25 * sigma_max * K0), np.round(0.5 * sigma_max * K0), np.round(sigma_max * K0)] if (
                     (0.25 * sigma_max * K0) >= 100) else [100, 200, 400]
         else:
