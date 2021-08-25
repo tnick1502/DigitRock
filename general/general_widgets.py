@@ -427,7 +427,7 @@ class RezonantColumnStatment(InitialStatment):
                     "Заполните K0 в ведомости"
                 assert column_fullness_test(wb, columns=["BD", "BC", "BE"], initial_columns=list(columns_marker)), \
                     "Заполните параметры прочности и деформируемости (BD, BC, BE)"
-                assert not marker, "Проверьте заказчиков и даты"# + customer
+                assert not marker, "Проверьте " + customer
 
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
@@ -501,7 +501,7 @@ class TriaxialStaticStatment(InitialStatment):
                 try:
                     assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker_cfe)), \
                         "Заполните K0 в ведомости"
-                    assert not marker, "Проверьте "  # + customer
+                    assert not marker, "Проверьте " + customer
                     #assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=list(columns_marker_cfe)), \
                         #"Заполните данные консолидации('CC', 'CF')"
 
@@ -582,7 +582,7 @@ class TriaxialCyclicStatment(InitialStatment):
             try:
                 assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)),\
                     "Заполните K0 в ведомости"
-                assert not marker, "Проверьте "# + customer
+                assert not marker, "Проверьте " + customer
                 assert column_fullness_test(wb, columns=["AJ"], initial_columns=list(columns_marker)), \
                     "Заполните уровень грунтовых вод в ведомости"
 
@@ -666,7 +666,7 @@ class VibrationCreepStatment(InitialStatment):
             try:
                 assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker_cfe)),\
                     "Заполните K0 в ведомости"
-                assert not marker, "Проверьте "# + customer
+                assert not marker, "Проверьте " + customer
                 assert column_fullness_test(wb, columns=["AO"],
                                             initial_columns=cfe_test_type_columns("Виброползучесть")), \
                     "Заполните амплитуду ('AO')"

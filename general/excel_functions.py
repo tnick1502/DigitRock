@@ -10,6 +10,7 @@ from openpyxl.utils import get_column_letter, column_index_from_string
 from cyclic_loading.cyclic_stress_ratio_function import define_fail_cycle
 from general.general_functions import define_Cv
 from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
+from datetime import datetime
 
 
 
@@ -666,16 +667,18 @@ def read_customer(wb):
 
     data = {"customer" : str(wb["Лист1"]["A1"].value),
             "object_name" : str(wb["Лист1"]["A2"].value),
-            "data" : str(wb["Лист1"]["Q1"].value),
+            "data" : wb["Лист1"]["Q1"].value,
             "accreditation" : str(wb["Лист1"]["I2"].value),
             "object_number" : str(wb["Лист1"]["AI1"].value)}
 
     for i in data:
-
         if data[i] == "None":
             return True, i
 
-    data["data"] = data["data"][:-8]
+    if not isinstance(data["data"], datetime):
+        return True, "date"
+
+    data["data"] = str(data["data"])[:-8]
     return False, data
 
 # Тесты еа заполненность
