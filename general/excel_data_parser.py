@@ -822,9 +822,15 @@ class CyclicData(MechanicalProperties):
                 self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t, self.physical_properties.Ip,
                                                  self.physical_properties.Il, self.physical_properties.e)
 
-                self.Msf = ModelTriaxialCyclicLoadingSoilTest.define_Msf(
-                    self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.physical_properties.e,
-                    self.physical_properties.Il, self.qf, self.t)
+                if self.n_fail:
+                    if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
+                        self.Msf = np.round(np.random.uniform(100, 500), 2)
+                    else:
+                        self.Msf = np.round(np.random.uniform(0.7, 0.9), 2)
+                else:
+                    self.Msf = ModelTriaxialCyclicLoadingSoilTest.define_Msf(
+                        self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.physical_properties.e,
+                        self.physical_properties.Il, self.qf, self.t)
 
                 self.frequency = 0.5
 

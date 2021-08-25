@@ -646,10 +646,14 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
 
         for string_number, lab_number in enumerate(self._data):
             self._data[lab_number].n_fail = read_n_fail(self.table.item(string_number, 8).text())
-            self._data[lab_number].Mcsr = read_n_fail(self.table.item(string_number, 9).text())
+            self._data[lab_number].Msf = float(self.table.item(string_number, 9).text())
 
             if self._data[lab_number].n_fail:
                 self._data[lab_number].Mcsr = None
+                if (self._data[lab_number].sigma_1 - self._data[lab_number].sigma_3) <= 1.5 * self._data[lab_number].t:
+                    self._data[lab_number].Msf = np.round(np.random.uniform(100, 500), 2)
+                else:
+                    self._data[lab_number].Msf = np.round(np.random.uniform(0.7, 0.9), 2)
             else:
                 self._data[lab_number].Mcsr = np.random.uniform(2, 3)
 
@@ -659,6 +663,8 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
             for string_number, lab_number in enumerate(self._data):
                 if self._data[lab_number].n_fail:
                     self._set_row_color(string_number, color=(255, 99, 71))
+                elif self._data[lab_number].Msf <= 1:
+                    self._set_row_color(string_number, color=(255, 215, 0))
                 else:
                     self._set_row_color(string_number, color=(255, 255, 255))
 

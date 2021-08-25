@@ -864,7 +864,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
     @staticmethod
     def define_Msf(c, fi, Mcsr, sigma_3, sigma_1, e, Il, qf, t):
         if (sigma_1 - sigma_3) <= 1.5*t:
-            return np.round(np.random.uniform(30, 100), 2)
+            return np.round(np.random.uniform(100, 500), 2)
 
         max_deviator = sigma_1 - sigma_3 + 2*t
         if Mcsr:
@@ -872,13 +872,13 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             Msf = critical/max_deviator
         else:
             Msf = 1
-        print("Нагрузка ", Msf)
+        #print("Нагрузка ", Msf)
         Msf *= sigmoida(mirrow_element(2*t/qf, 0.5), 0.5, 0.5, 0.5, 1.5)
-        print("циклы ", Msf)
+        #print("циклы ", Msf)
         Msf *= sigmoida(mirrow_element(e, 0.5), 0.7, 0.5, 1, 1.5)
-        print("е ", Msf)
+        #print("е ", Msf)
         Msf *= sigmoida(mirrow_element(Il, 0.5), 0.7, 0.5, 1, 1.5)
-        print("Il ", Msf)
+        #print("Il ", Msf)
 
         if Msf <= 0.7:
             Msf = np.random.uniform(0.6, 0.8)
