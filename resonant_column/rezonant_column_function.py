@@ -206,7 +206,8 @@ def define_G0_plaxis(p_ref, e, c, fi, type_ground):
             type_ground: тип грунта
         :return
             G0, МПа"""
-
+    if not e:
+        e = np.random.uniform(0.6, 0.7)
     # Находим G0_ref по формуле из методички plaxis
     G0_ref = ((2.97 - e) ** 2 / (1 + e)) * 33
 

@@ -26,6 +26,7 @@ from general.general_functions import sigmoida, make_increas, line_approximate, 
     define_dilatancy, define_type_ground, AttrDict, find_line_area, interpolated_intercept, Point, point_to_xy, \
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, define_qf, define_E50
 from configs.plot_params import plotter_params
+from general.excel_data_parser import MechanicalProperties, dictToData, dataToDict
 
 
 class ModelMohrCircles:
@@ -249,7 +250,6 @@ class ModelMohrCircles:
     @staticmethod
     def mohr_cf_stab(sigma3, sigma1):
         """Расчет c и f. Сигма 1 и 3 задаются как массивы любых размеров, U задается как массив, либо как 0 или не задается вообще"""
-
         c, fi = ModelMohrCircles.mohr_cf(sigma3, sigma1, True)
         cS = c / (2 * (fi ** 0.5))
         phiS = ((fi - 1) / (2 * (fi ** 0.5)))
@@ -309,7 +309,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
             self.set_reference_params(self._test_params.sigma_3, self._test_params.E50)
 
             for num, sigma_3 in enumerate(self._reference_pressure_array):
-                mohr_params.append(copy.copy(self._test_params))
+                mohr_params.append(MechanicalProperties(for_copy=self._test_params))
                 mohr_params[num].sigma_3 = sigma_3
                 mohr_params[num].qf = define_qf(sigma_3, self._test_params.c, self._test_params.fi)
                 mohr_params[num].sigma_1 = round(mohr_params[num].qf + mohr_params[num].sigma_3)
@@ -318,7 +318,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
             fi = 0
 
             while True:
-                if (c == round(self._test_params.c, 3) and fi == round(self._test_params.fi, 1)):
+                if (c == np.round(self._test_params.c, 3) and fi == np.round(self._test_params.fi, 1)):
                     break
 
                 qf = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(
@@ -431,37 +431,28 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
 
 if __name__ == '__main__':
 
-    file = r"C:\Users\Пользователь\PycharmProjects\Willie\Test.1.log"
-    file = r"Z:\МДГТ - Механика\3. Трехосные испытания\1365\Test\Test.1.log"
-    #file = r"C:\Users\Пользователь\Desktop\Девиаторное нагружение\Архив\7а-1\Test sigma3=186.4.log"
-    #a = ModelTriaxialStaticLoading()
-    #a.set_test_data(openfile(file)["DeviatorLoading"])
-    #a.plotter()
+    param = {"ee": {'physical_properties': {'laboratory_number': '89-3', 'borehole': 89.0, 'depth': 6.0,
+                                            'soil_name': 'Суглинок полутвёрдый', 'ige': None, 'rs': 2.71, 'r': 2.16,
+                                            'rd': 1.89, 'n': 30.1, 'e': 0.43, 'W': 21.9, 'Sr': 0.88, 'Wl': 21.9,
+                                            'Wp': 12.8,
+                                            'Ip': 9.1, 'Il': 0.13, 'Ir': None, 'stratigraphic_index': None,
+                                            'ground_water_depth': None, 'granulometric_10': None,
+                                            'granulometric_5': None,
+                                            'granulometric_2': None, 'granulometric_1': None, 'granulometric_05': None,
+                                            'granulometric_025': None, 'granulometric_01': None,
+                                            'granulometric_005': None,
+                                            'granulometric_001': None, 'granulometric_0002': None,
+                                            'granulometric_0000': None,
+                                            'complete_flag': False, 'sample_number': 53, 'type_ground': 7, 'Rc': None},
+                    'Cv': 0.128, 'Ca': 0.01126, 'm': 0.6, 'E50': 29600.0, 'c': 0.06, 'fi': 24.6, 'K0': 0.7,
+                    'dilatancy_angle': 17.05, 'sigma_3': 100, 'qf': 329.5, 'sigma_1': 429.5, 'poisons_ratio': 0.34,
+                    'OCR': 1,
+                    'build_press': 150.0, 'pit_depth': 4.0, 'Eur': None}}
 
-
-
-    #file = r"Z:\МДГТ - Механика\3. Трехосные испытания\1375\Test\Test.1.log"
-
-    #a = ModelTriaxialConsolidationSoilTest()
-    #a.set_test_params({"Cv": 0.178,
-                       #"Ca": 0.0001,
-                      # "E": 50000,
-                      # "sigma_3": 100,
-                      # "K0": 1})
-    #a.plotter()
-    #a = ModelTriaxialReconsolidation()
-    #a.open_file(file)
-    #open_geotek_log(file)
-
-    #a = ModelTriaxialStaticLoadSoilTest()
-    param = {'E50': 30495, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5,
-             'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0,
-             'dilatancy': 4.95, 'OCR': 1, 'm': 0.5, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
-                                                                                             'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73, 'r': '-', 'rd': '-', 'n': '-', 'e': '-', 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-', 'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0, '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-', '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие (E)'}
-
+    param = dictToData(param, MechanicalProperties)
 
     a = ModelMohrCirclesSoilTest()
-    a.set_test_params(param)
+    a.set_test_params(param["ee"])
     a.set_reference_pressure_array([100, 200, 400])
     a._test_modeling()
     a.plotter()

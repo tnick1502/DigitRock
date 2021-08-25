@@ -544,7 +544,6 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._test_params.fi = test_params.fi
         self._test_params.Eur = test_params.Eur
         self._test_params.data_physical = test_params.physical_properties
-
         xc, residual_strength = ModelTriaxialDeviatorLoadingSoilTest.define_xc_value_residual_strength(
             test_params.physical_properties, test_params.sigma_3,
             test_params.qf, test_params.E50)
@@ -743,7 +742,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         # Параметры, определяющие распределения
         # Для песков:
 
-        if e0 == "-":
+        if not e0:
             e0 = np.random.uniform(0.5, 0.7)
 
         sand_sigma3_min = 100  # размах напряжений (s3) для сигмоиды
@@ -767,7 +766,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         clay_k_q_min = 0.6  # значения k_q соотв. минимальному ILприведенн
         clay_k_q_max = 0.95  # значения k_q соотв. максимальному ILприведенн
 
-        if il == 0 or il == '-':  # Пески
+        if not il or il == 0:  # Пески
 
             # Заивсимость k_e0 от sigma3
             sand_s3_0 = (sand_sigma3_max + sand_sigma3_min) / 2  # x_0
@@ -831,10 +830,11 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         :param initial_unloading_deviator: точка начала разгрузки
         :return: Eur"""
 
+        if not Il:
+            Il = np.random.uniform(-0.1, 0.1)
+
         def dependence_Eur_on_Il(Il):
             """Находит зависимость коэффициента k (Eur = Esec*k) в зависимости от Il"""
-            if Il == "-":
-                Il = np.random.uniform(-0.1, 0.1)
             return sigmoida(Il, 1.5, 0.5, 3.5, 1.2)
 
         def exp_strain(deviator, E50, qf):
@@ -971,6 +971,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     @staticmethod
     def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E):
+
         xc = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
                                                                      data_phiz.Ip, data_phiz.Il)
         if xc:

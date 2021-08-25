@@ -27,7 +27,7 @@ from static_loading.reconsolidation_model import ModelTriaxialReconsolidation, M
 from static_loading.consolidation_model import ModelTriaxialConsolidation, ModelTriaxialConsolidationSoilTest
 from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading, ModelTriaxialDeviatorLoadingSoilTest
 from general.general_functions import read_json_file, create_json_file
-from general.excel_data_parser import MechanicalProperties, PhysicalProperties
+from general.excel_data_parser import MechanicalProperties, PhysicalProperties, dictToData
 
 class ModelTriaxialStaticLoad:
     """Класс моделирования опыта трехосного сжатия
@@ -266,6 +266,8 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
     def set_test_params(self, test_params):
         """Получение массивов опытов и передача в соответствующий класс"""
+        test_params.physical_properties.e = test_params.physical_properties.e if test_params.physical_properties.e else np.random.uniform(
+            0.6, 0.7)
         self.test_params = test_params
         self.reconsolidation.set_test_params(test_params.sigma_3)
 
@@ -285,13 +287,13 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         params = self.deviator_loading.get_test_results()
         E50_test = params["E50"]
 
-        while E50_test != E50:
+        while np.round(E50_test, 1) != np.round(E50, 1):
 
-            #print("Поиск сходимости решения. ", E50_test-E50)
-            #if E50_test > E50:
-                #test_params["E50"] /= 1.0001
-            #else:
-                #test_params["E50"] *= 1.0001
+            print("Поиск сходимости решения. ", E50_test-E50)
+            if E50_test > E50:
+                test_params.E50 /= 1.0001
+            else:
+                test_params.E50 *= 1.0001
 
             test_params.E50 += 50*(E50 - E50_test)
 
@@ -496,21 +498,26 @@ if __name__ == '__main__':
     #open_geotek_log(file)
 
     #a = ModelTriaxialStaticLoadSoilTest()
-    param = MechanicalProperties(physical_properties=PhysicalProperties(
-        laboratory_number='7а-1', borehole='7а', depth=19.0, soil_name='Песок крупный неоднородный Ntcnjdsq',
-        ige=None, rs=2.73, r=2.73, rd=None, n=None, e=0.5, W=None, Sr=None, Wl=None, Wp=None, Ip=None, Il=0.42,
-        Ir=33.0, stratigraphic_index=None, ground_water_depth=5.0, granulometric_10=None, granulometric_5=None,
-        granulometric_2=6.8, granulometric_1=39.2, granulometric_05=28.0, granulometric_025=9.2, granulometric_01=6.1,
-        granulometric_005=10.7, granulometric_001=None, granulometric_0002=None, granulometric_0000=None,
-        complete_flag=False, sample_number=0, type_ground=9, Rc=None), Cv=0.04, Ca=0.01765, m=0.66,
-        E50=9658.084722901245, c=0.001, fi=42.8, K0=0.8, dilatancy_angle=9.85, sigma_3=100, sigma_1=254.3, qf = 300,
-        poisons_ratio=0.34, OCR=1, build_press=5000.0, pit_depth=None, Eur=None)
+    param = { "ee": {'physical_properties': {'laboratory_number': '89-3', 'borehole': 89.0, 'depth': 6.0,
+                                     'soil_name': 'Суглинок полутвёрдый', 'ige': None, 'rs': 2.71, 'r': 2.16,
+                                     'rd': 1.89, 'n': 30.1, 'e': 0.43, 'W': 21.9, 'Sr': 0.88, 'Wl': 21.9, 'Wp': 12.8,
+                                     'Ip': 9.1, 'Il': 0.13, 'Ir': None, 'stratigraphic_index': None,
+                                     'ground_water_depth': None, 'granulometric_10': None, 'granulometric_5': None,
+                                     'granulometric_2': None, 'granulometric_1': None, 'granulometric_05': None,
+                                     'granulometric_025': None, 'granulometric_01': None, 'granulometric_005': None,
+                                     'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None,
+                                     'complete_flag': False, 'sample_number': 53, 'type_ground': 7, 'Rc': None},
+             'Cv': 0.128, 'Ca': 0.01126, 'm': 0.6, 'E50': 29600.0, 'c': 0.06, 'fi': 24.6, 'K0': 0.7,
+             'dilatancy_angle': 17.05, 'sigma_3': 100, 'qf': 329.5, 'sigma_1': 429.5, 'poisons_ratio': 0.34, 'OCR': 1,
+             'build_press': 150.0, 'pit_depth': 4.0, 'Eur': None}}
 
-    test = "soil_test1"
+    param = dictToData(param, MechanicalProperties)
+
+    test = "soil_test"
 
     if test == "soil_test":
         a = ModelTriaxialStaticLoadSoilTest()
-        a.set_test_params(param)
+        a.set_test_params(param["ee"])
         a.save_log_file("C:/Users/Пользователь/Desktop/Test.1.log")
         a.plotter()
     else:

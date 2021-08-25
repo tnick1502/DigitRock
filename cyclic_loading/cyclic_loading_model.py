@@ -425,6 +425,10 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.qf = params.qf
         self._test_params.sigma_3 = params.sigma_3
         self._test_params.physical = params.physical_properties
+
+        self._test_params.physical.e = self._test_params.physical.e if self._test_params.physical.e else np.random.uniform(
+            0.6, 0.7)
+
         self._test_params.c = params.c
         self._test_params.fi = params.fi
         self._test_params.E = params.E50
@@ -875,6 +879,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         #print("Нагрузка ", Msf)
         Msf *= sigmoida(mirrow_element(2*t/qf, 0.5), 0.5, 0.5, 0.5, 1.5)
         #print("циклы ", Msf)
+        e = e if e else np.random.uniform(0.6, 0.7)
         Msf *= sigmoida(mirrow_element(e, 0.5), 0.7, 0.5, 1, 1.5)
         #print("е ", Msf)
         if Il:
@@ -1122,14 +1127,14 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         if q >= 0.5 * qf:  # Модуль плавно деградирует к от Е50 к минимальному
             return define_E_q_after_05(E50, q, qf)
         else:
-            if Il == "-":
+            if not Il:
                 Il = np.random.uniform(-0.1, 0.05)
             return define_E_q_until_05(E50, q, qf, sigmoida(Il, 1.5, 0.5, 3.5, 1.2))
 
     @staticmethod
     def dependence_skempton_Il_frequency(Il, frequency):
         """Находит зависимость коэффициента скемптона от консистенции и частоты"""
-        if Il == "-":
+        if not Il:
             dependence_skempton_Il = np.random.uniform(0.27, 0.3)
         else:
             dependence_skempton_Il = sigmoida(Il, 0.1, 0.5, 0.2, 1.2)
@@ -1141,7 +1146,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
     @staticmethod
     def initial_PPR_phase_offset(Il, frequency):
         """Находит зависимость начального смещения фаз в зависимости от Il  частоты"""
-        if Il == "-":
+        if not Il:
             Il = np.random.uniform(-0.1, 0.05)
         a = np.pi / 2
 
@@ -1232,7 +1237,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             return (s)
 
         pore_pressure_after_consolidation = np.random.uniform(300, 500)
-        if Ip == "-":
+        if not Ip:
             time_initial = np.random.uniform(7200.000000, 18000.000000)  # Начальное время опыта
         else:
             time_initial = np.random.uniform(22000.000000, 55000.000000)  # Начальное время опыта

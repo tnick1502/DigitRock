@@ -206,7 +206,6 @@ class PhysicalProperties:
 
         self.type_ground = PhysicalProperties.define_type_ground(self._granulometric_to_dict(), self.Ip,
                                                                  self.Ir)
-        self._proccessing_properties()
 
     def getDict(self):
         return self.__dict__
@@ -214,10 +213,6 @@ class PhysicalProperties:
     def setDict(self, data):
         for attr in data:
             setattr(self, attr, data[attr])
-
-    def _proccessing_properties(self) -> None:
-        """Обработка незаполненых свойств"""
-        self.e = np.random.uniform(0.55, 0.7) if not self.e else np.round(self.e, 2)
 
     def _granulometric_to_dict(self) -> Dict:
         granulometric_dict = {}
@@ -264,7 +259,7 @@ class PhysicalProperties:
 @dataclass
 class MechanicalProperties:
     """Расширенный класс с дополнительными обработанными свойствами"""
-    def __init__(self):
+    def __init__(self, for_copy=None):
         self.physical_properties: PhysicalProperties = PhysicalProperties()
         self.Cv: float = None
         self.Ca: float = None
@@ -282,6 +277,10 @@ class MechanicalProperties:
         self.build_press: float = None
         self.pit_depth: float = None
         self.Eur: float = None
+
+        if for_copy:
+            for attr in for_copy.__dict__:
+                setattr(self, attr, for_copy.__dict__[attr])
 
     def __getattr__(self, name):
         """Метод позволяет обращаться к атрибудам физических параметров напрямую"""
@@ -398,9 +397,9 @@ class MechanicalProperties:
             m = griddata(default_e_Il, default_m, (e, Il), method='cubic').item()
 
             try:
-                return round(m, 2)
+                return np.round(m, 2)
             except:
-                round(np.random.uniform(0.5, 0.65), 2)
+                np.round(np.random.uniform(0.5, 0.65), 2)
 
     @staticmethod
     def define_kf(type_ground: int, e) -> float:
@@ -408,7 +407,7 @@ class MechanicalProperties:
             :param type_ground: тип грунта
             :param e: коэффициент пористости
             :return: kf в метрах/сутки"""
-
+        e = e if e else np.random.uniform(0.6, 0.7)
         # Функция сигмоиды для kf
         kf_sigmoida = lambda e, e_min, e_max, k_min, k_max: sigmoida(e, amplitude=(k_max - k_min) / 2,
                                                                      x_indent=e_min + (e_max - e_min) / 2,
@@ -606,6 +605,9 @@ class MechanicalProperties:
 
                 return ID
 
+            if not e:
+                e = np.random.uniform(0.6, 0.7)
+
             p = (sigma_1 + 2 * sigma_3) / 3
             if type_ground <= 5:
                 ID = define_ID(type_ground, rs, e)
@@ -654,7 +656,7 @@ class MechanicalProperties:
             # Параметры, определяющие распределения
             # Для песков:
 
-            if e0 == "-":
+            if not e0:
                 e0 = np.random.uniform(0.5, 0.7)
 
             sand_sigma3_min = 100  # размах напряжений (s3) для сигмоиды
@@ -992,7 +994,7 @@ def dictToData(dict, data_type):
 
 
 if __name__ == '__main__':
-    data = getRCExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", K0_mode="K0: По ГОСТ-65353")
+    data = getMechanicalExcelData("C:/Users/Пользователь/Desktop/Тест/511-21 ул. Красного Маяка, 26- мех-4 доп.xlsx", test_mode="Трёхосное сжатие (F, C, E)", K0_mode="K0: По ГОСТ-65353")
     #print(data)
     x = dataToDict(data)
     print(x)
