@@ -271,7 +271,7 @@ class PredictRCTestResults(QDialog):
         s = QFileDialog.getSaveFileName(self, 'Open file')[0]
         if s:
             s += ".json"
-            create_json_file(s, dataToDict(self._data))
+            create_json_file(s, dataToDict(self.get_data()))
 
     def _read_data_from_json(self):
         s = QFileDialog.getOpenFileName(self, 'Open file')[0]
@@ -304,7 +304,7 @@ class PredictRCTestResults(QDialog):
                 QMessageBox.critical(self, "Ошибка", "Закройте ведомость", QMessageBox.Ok)
 
     def get_data(self):
-        data = copy.deepcopy(self._data)
+        data = self._data
         for string_number, lab_number in enumerate(data):
             data[lab_number].G0 = float(self.table.item(string_number, 6).text())
             data[lab_number].threshold_shear_strain = float(self.table.item(string_number, 7).text())

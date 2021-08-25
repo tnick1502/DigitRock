@@ -617,22 +617,25 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
 
     def _fill_table(self):
         """Заполнение таблицы параметрами"""
-
         self.table.setRowCount(len(self._data))
 
         for string_number, lab_number in enumerate(self._data):
-            for i, val in enumerate([lab_number,
-                                    str(self._data[lab_number].physical_properties.depth),
-                                    self._data[lab_number].physical_properties.soil_name,
-                                     str(self._data[lab_number].physical_properties.Il),
-                                     str(self._data[lab_number].physical_properties.e),
-                                    str(self._data[lab_number].sigma_3),
-                                     str(self._data[lab_number].sigma_1),
-                                     str(self._data[lab_number].t),
-                                    str(self._data[lab_number].CSR),
-                                    str(self._data[lab_number].cycles_count),
-                                    str(self._data[lab_number].n_fail) if self._data[lab_number].n_fail else "-",
-                                     str(self._data[lab_number].Msf)]):
+            for i, val in enumerate(
+                    [
+                        lab_number,
+                        str(self._data[lab_number].physical_properties.depth),
+                        self._data[lab_number].physical_properties.soil_name,
+                        str(self._data[lab_number].physical_properties.Il) if self._data[lab_number].physical_properties.Il else "-",
+                        str(self._data[lab_number].physical_properties.e),
+                        str(self._data[lab_number].sigma_3),
+                        str(self._data[lab_number].sigma_1),
+                        str(self._data[lab_number].t),
+                        str(self._data[lab_number].CSR),
+                        str(self._data[lab_number].cycles_count),
+                        str(self._data[lab_number].n_fail) if self._data[lab_number].n_fail else "-",
+                        str(self._data[lab_number].Msf)
+                    ]):
+
                 self.table.setItem(string_number, i, QTableWidgetItem(val))
 
         self._table_is_full = True
@@ -691,14 +694,15 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         s = QFileDialog.getSaveFileName(self, 'Open file')[0]
         if s:
             s += ".json"
-            create_json_file(s, dataToDict(self._data))
+            d = dataToDict(self._data)
+            create_json_file(s, d)
 
     def _read_data_from_json(self):
         s = QFileDialog.getOpenFileName(self, 'Open file')[0]
         if s:
             data = read_json_file(s)
             if sorted(data) == sorted(self._data):
-                self._set_data(data)
+                self._set_data(dictToData(data, CyclicData))
             else:
                 QMessageBox.critical(self, "Ошибка", "Неверная структура данных", QMessageBox.Ok)
 
@@ -747,12 +751,15 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
                     lab_number,
                     str(data[lab_number].physical_properties.depth),
                     data[lab_number].physical_properties.soil_name,
+                    data[lab_number].physical_properties.Il,
+                    data[lab_number].physical_properties.e,
                     str(data[lab_number].CSR),
                     str(data[lab_number].cycles_count),
-                    str(data[lab_number].n_fail) if data[lab_number].n_fail else "-"])
+                    str(data[lab_number].n_fail) if data[lab_number].n_fail else "-",
+                    str(data[lab_number].Msf)])
 
-        titles = ["Лаб. номер", "Глубина, м", "Наименование грунта", "CSR, д.е.", "Общее число циклов",
-                   "Цикл разрушения"]
+        titles = ["Лаб. номер", "Глубина, м", "Наименование грунта", "Il", "e", "CSR, д.е.", "Общее число циклов",
+                   "Цикл разрушения", "Msf"]
 
         scale = [70, 70, "*", 70, 70, 70]
 

@@ -877,7 +877,10 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         #print("циклы ", Msf)
         Msf *= sigmoida(mirrow_element(e, 0.5), 0.7, 0.5, 1, 1.5)
         #print("е ", Msf)
-        Msf *= sigmoida(mirrow_element(Il, 0.5), 0.7, 0.5, 1, 1.5)
+        if Il:
+            Msf *= sigmoida(mirrow_element(Il, 0.5), 0.7, 0.5, 1, 1.5)
+        else:
+            Msf *= sigmoida(mirrow_element(np.random.uniform(-0.1, 0.3), 0.5), 0.7, 0.5, 1, 1.5)
         #print("Il ", Msf)
 
         if Msf <= 0.7:
@@ -1097,6 +1100,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                            E50 - молдуль 50% прочности
                            q - текущая нагрузка
                            qf - прочность"""
+        if not Il:
+            Il = np.random.uniform(0, 0.3)
 
         def define_E_q_after_05(E50, q, qf):
             """Функция считает модуль в петле"""

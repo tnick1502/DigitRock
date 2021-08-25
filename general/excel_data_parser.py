@@ -142,40 +142,41 @@ def createDataFrame(excel_path, read_xls=False) -> pd.DataFrame:
 @dataclass
 class PhysicalProperties:
     """Класс, хранящий свойсва грунтов, которые считываются без обработки"""
-    laboratory_number: str = None
-    borehole: str = None
-    depth: float = None
-    soil_name: str = None
-    ige: str = None
-    rs: float = None
-    r: float = None
-    rd: float = None
-    n: float = None
-    e: float = None
-    W: float = None
-    Sr: float = None
-    Wl: float = None
-    Wp: float = None
-    Ip: float = None
-    Il: float = None
-    Ir: float = None
-    stratigraphic_index: str = None
-    ground_water_depth: float = None
-    granulometric_10: float = None
-    granulometric_5: float = None
-    granulometric_2: float = None
-    granulometric_1: float = None
-    granulometric_05: float = None
-    granulometric_025: float = None
-    granulometric_01: float = None
-    granulometric_005: float = None
-    granulometric_001: float = None
-    granulometric_0002: float = None
-    granulometric_0000: float = None
-    complete_flag: bool = False
-    sample_number: int = None
-    type_ground: int = None
-    Rc: float = None
+    def __init__(self):
+        self.laboratory_number: str = None
+        self.borehole: str = None
+        self.depth: float = None
+        self.soil_name: str = None
+        self.ige: str = None
+        self.rs: float = None
+        self.r: float = None
+        self.rd: float = None
+        self.n: float = None
+        self.e: float = None
+        self.W: float = None
+        self.Sr: float = None
+        self.Wl: float = None
+        self.Wp: float = None
+        self.Ip: float = None
+        self.Il: float = None
+        self.Ir: float = None
+        self.stratigraphic_index: str = None
+        self.ground_water_depth: float = None
+        self.granulometric_10: float = None
+        self.granulometric_5: float = None
+        self.granulometric_2: float = None
+        self.granulometric_1: float = None
+        self.granulometric_05: float = None
+        self.granulometric_025: float = None
+        self.granulometric_01: float = None
+        self.granulometric_005: float = None
+        self.granulometric_001: float = None
+        self.granulometric_0002: float = None
+        self.granulometric_0000: float = None
+        self.complete_flag: bool = False
+        self.sample_number: int = None
+        self.type_ground: int = None
+        self.Rc: float = None
 
     def definePhysicalProperties(self, data_frame, string, identification_column=None) -> None:
         """Считывание строки свойств"""
@@ -217,14 +218,15 @@ class PhysicalProperties:
     def _proccessing_properties(self) -> None:
         """Обработка незаполненых свойств"""
         self.e = np.random.uniform(0.55, 0.7) if not self.e else np.round(self.e, 2)
-        if not self.Il:
-            self.Il = np.round(np.random.uniform(0.4, 0.6), 2) if not self.Ip else np.round(np.random.uniform(-0.1, 0.2), 2)
 
     def _granulometric_to_dict(self) -> Dict:
         granulometric_dict = {}
         for key in ['10', '5', '2', '1', '05', '025', '01', '005', '001', '0002', '0000']:
             granulometric_dict[key] = getattr(self, "granulometric_" + key)
         return granulometric_dict
+
+    def __str__(self):
+        return str(self.__dict__)
 
     @staticmethod
     def define_type_ground(data_gran, Ip, Ir):
@@ -262,23 +264,24 @@ class PhysicalProperties:
 @dataclass
 class MechanicalProperties:
     """Расширенный класс с дополнительными обработанными свойствами"""
-    physical_properties: PhysicalProperties = PhysicalProperties()
-    Cv: float = None
-    Ca: float = None
-    m: float = None
-    E50: float = None
-    c: float = None
-    fi: float = None
-    K0: float = None
-    dilatancy_angle: float = None
-    sigma_3: float = None
-    qf: float = None
-    sigma_1: float = None
-    poisons_ratio: float = None
-    OCR: float = None
-    build_press: float = None
-    pit_depth: float = None
-    Eur: float = None
+    def __init__(self):
+        self.physical_properties: PhysicalProperties = PhysicalProperties()
+        self.Cv: float = None
+        self.Ca: float = None
+        self.m: float = None
+        self.E50: float = None
+        self.c: float = None
+        self.fi: float = None
+        self.K0: float = None
+        self.dilatancy_angle: float = None
+        self.sigma_3: float = None
+        self.qf: float = None
+        self.sigma_1: float = None
+        self.poisons_ratio: float = None
+        self.OCR: float = None
+        self.build_press: float = None
+        self.pit_depth: float = None
+        self.Eur: float = None
 
     def __getattr__(self, name):
         """Метод позволяет обращаться к атрибудам физических параметров напрямую"""
@@ -289,6 +292,9 @@ class MechanicalProperties:
         else:
             raise AttributeError(f"Несуществующий атрибут {name}")
 
+    def __str__(self):
+        return str(self.getDict())
+
     def getDict(self):
         data = self.__dict__
         data["physical_properties"] = self.physical_properties.getDict()
@@ -297,7 +303,9 @@ class MechanicalProperties:
     def setDict(self, data):
         for attr in data:
             if attr == "physical_properties":
-                self.physical_properties.setDict(data[attr])
+                physical_properties = PhysicalProperties()
+                physical_properties.setDict(data[attr])
+                setattr(self, "physical_properties", physical_properties)
             else:
                 setattr(self, attr, data[attr])
 
@@ -670,7 +678,7 @@ class MechanicalProperties:
             clay_k_q_min = 0.6  # значения k_q соотв. минимальному ILприведенн
             clay_k_q_max = 0.95  # значения k_q соотв. максимальному ILприведенн
 
-            if il == 0 or il == '-':  # Пески
+            if not il:  # Пески
 
                 # Заивсимость k_e0 от sigma3
                 sand_s3_0 = (sand_sigma3_max + sand_sigma3_min) / 2  # x_0
@@ -740,13 +748,15 @@ class MechanicalProperties:
 @dataclass
 class RCData(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
-    reference_pressure: float = None
-    G0: float = None
-    threshold_shear_strain: float = None
+    def __init__(self):
+        self.reference_pressure: float = None
+        self.G0: float = None
+        self.threshold_shear_strain: float = None
 
     def defineProperties(self, data_frame, string, K0_mode) -> None:
         super().defineMechanicalProperties(data_frame, string, test_mode="Резонансная колонка", K0_mode=K0_mode,
                                    identification_column=IdentificationColumns["Резонансная колонка"])
+
         if self.c and self.fi and self.E50:
             self.reference_pressure = float_df(data_frame.iat[string,
                                                           DynamicsPropertyPosition["reference_pressure"][1]])
@@ -757,24 +767,22 @@ class RCData(MechanicalProperties):
 @dataclass
 class CyclicData(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
-    CSR: float = None
-    t: float = None
-    N: float = None
-    I: float = None
-    magnitude: float = None
-    intensity: float = None
-    cycles_count: int = None
-    rd: float = None
-    MSF: float = None
-    rw: float = None
-    Hw: float = None
-    frequency: float = None
-    Mcsr: float = None
-    Msf: float = None
-    n_fail: int = None
-    sigma_1: float = None
-    sigma_3: float = None
-
+    def __init__(self):
+        self.CSR: float = None
+        self.t: float = None
+        self.N: float = None
+        self.I: float = None
+        self.magnitude: float = None
+        self.intensity: float = None
+        self.cycles_count: int = None
+        self.rd: float = None
+        self.MSF: float = None
+        self.rw: float = None
+        self.Hw: float = None
+        self.frequency: float = None
+        self.Mcsr: float = None
+        self.Msf: float = None
+        self.n_fail: int = None
 
     def defineProperties(self, data_frame, string, test_mode, K0_mode) -> None:
         super().defineMechanicalProperties(data_frame, string, test_mode=test_mode, K0_mode=K0_mode,
@@ -894,12 +902,13 @@ class CyclicData(MechanicalProperties):
 @dataclass
 class VibrationCreepData(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
-    Kd: List = None
-    frequency: List = None
-    n_fail: int = None
-    Mcsr: float = np.random.uniform(300, 500)
-    t: float = None
-    cycles_count: int = None
+    def __init__(self):
+        self.Kd: List = None
+        self.frequency: List = None
+        self.n_fail: int = None
+        self.Mcsr: float = np.random.uniform(300, 500)
+        self.t: float = None
+        self.cycles_count: int = None
 
     def defineProperties(self, data_frame, string, K0_mode) -> None:
         super().defineMechanicalProperties(data_frame, string, test_mode="Виброползучесть", K0_mode=K0_mode,
@@ -977,18 +986,16 @@ def dictToData(dict, data_type):
     """Функция перегоняет словарь в структуру данных"""
     data = {}
     for key in dict:
-        data[key] = data_type
+        data[key] = data_type()
         data[key].setDict(dict[key])
     return data
 
 
 if __name__ == '__main__':
-    data = getVibrationCreepExcelData("C:/Users/Пользователь/Desktop/Тест/19-21 Хвостовое хозяйство - циклика — копия.xlsx", K0_mode="K0: K0 = 1")
+    data = getRCExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", K0_mode="K0: По ГОСТ-65353")
+    #print(data)
     x = dataToDict(data)
-    print(data)
     print(x)
-    data2 = dictToData(x, VibrationCreepData())
-    print(data2)
 
 
     #print(getCyclicExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", "Сейсморазжижение", "K0: K0 = 1"))
