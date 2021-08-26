@@ -882,7 +882,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         Il_dependence = sigmoida(mirrow_element(Il, 0.5), 0.7, 0.5, 1, 1.5)
         cycles_count_dependence = sigmoida(mirrow_element(cycles_count, 100), 0.3, 100, 1.1, 250)
 
-
+        Ms *= (CSR_dependence * e_dependence * Il_dependence * cycles_count_dependence)
 
         if Ms <= 0.7:
             Ms = np.random.uniform(0.6, 0.8)
