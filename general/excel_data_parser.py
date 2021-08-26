@@ -365,8 +365,7 @@ class MechanicalProperties:
             if not self.OCR:
                 self.OCR = 1
 
-            if test_mode == "Трёхосное сжатие с разгрузкой":
-                self.Eur = True
+            self.Eur = True if test_mode == "Трёхосное сжатие с разгрузкой" else None
 
     @staticmethod
     def define_m(e, Il):
@@ -810,9 +809,8 @@ class CyclicData(MechanicalProperties):
 
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
 
-                acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]])
+                acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]]) # В долях g
                 if acceleration:
-                    acceleration *= 9.81
                     self.intensity = CyclicData.define_intensity(acceleration)
                 else:
                     self.intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
@@ -834,11 +832,11 @@ class CyclicData(MechanicalProperties):
 
                 if self.n_fail:
                     if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
-                        self.Msf = np.round(np.random.uniform(100, 500), 2)
+                        self.Ms = np.round(np.random.uniform(100, 500), 2)
                     else:
-                        self.Msf = np.round(np.random.uniform(0.7, 0.9), 2)
+                        self.Ms = np.round(np.random.uniform(0.7, 0.9), 2)
                 else:
-                    self.Msf = ModelTriaxialCyclicLoadingSoilTest.define_Msf(
+                    self.Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
                         self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.physical_properties.e,
                         self.physical_properties.Il, self.qf, self.t)
 
@@ -866,13 +864,17 @@ class CyclicData(MechanicalProperties):
 
                 self.CSR = np.round(self.t / self.sigma_1, 2)
 
-                self.Msf = ModelTriaxialCyclicLoadingSoilTest.define_Msf(
-                    self.c, self.fi, self.Mcsr,
-                    (self.sigma_1 - self.sigma_3) + 2 * self.t,
-                    self.physical_properties.e, self.physical_properties.Il, self.qf, self.t)
+                if self.n_fail:
+                    if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
+                        self.Ms = np.round(np.random.uniform(100, 500), 2)
+                    else:
+                        self.Ms = np.round(np.random.uniform(0.7, 0.9), 2)
+                else:
+                    self.Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
+                        self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.physical_properties.e,
+                        self.physical_properties.Il, self.qf, self.t)
 
                 self.frequency = float_df(data_frame.iat[string, DynamicsPropertyPosition["frequency_storm"][1]])
-
 
     @staticmethod
     def define_acceleration(intensity):
@@ -904,31 +906,37 @@ class CyclicData(MechanicalProperties):
 @dataclass
 class VibrationCreepData(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
-    def __init__(self):
+    def __init__(self, for_copy=None):
         self.Kd: List = None
         self.frequency: List = None
         self.n_fail: int = None
         self.Mcsr: float = np.random.uniform(300, 500)
         self.t: float = None
+        self.Ms: float = np.random.uniform(300, 500)
         self.cycles_count: int = None
+
+        if for_copy:
+            for attr in for_copy.__dict__:
+                setattr(self, attr, for_copy.__dict__[attr])
 
     def defineProperties(self, data_frame, string, K0_mode) -> None:
         super().defineMechanicalProperties(data_frame, string, test_mode="Виброползучесть", K0_mode=K0_mode,
                                    identification_column=IdentificationColumns["Резонансная колонка"])
         if self.c and self.fi and self.E50:
+            frequency = data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]]
+            Kd = data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]]
 
-            self.frequency = list(map(lambda x: float(x.replace(",", ".").strip(" ")),
-                                 data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]].split(";")))
-
-            self.Kd = list(map(lambda x: float(x.replace(",", ".").strip(" ")),
-                               data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]].split(";")))
+            self.frequency = [float(frequency)] if str(frequency).isdigit() else list(map(
+                lambda frequency: float(frequency.replace(",", ".").strip(" ")), frequency.split(";")))
+            self.Kd = [float(Kd)] if str(Kd).isdigit() else list(map(lambda Kd: float(Kd.replace(",", ".").strip(" ")),
+                                                                     Kd.split(";")))
 
             self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2, 1)
 
             self.cycles_count = int(np.random.uniform(2000, 5000))
 
 
-def getMechanicalExcelData(excel, test_mode, K0_mode) -> Dict:
+def getMechanicalExcelData(excel, test_mode, K0_mode) -> dict:
     df = createDataFrame(excel)
 
     identification_column = None
@@ -943,7 +951,7 @@ def getMechanicalExcelData(excel, test_mode, K0_mode) -> Dict:
                 data[m_data.laboratory_number] = m_data
     return data
 
-def getRCExcelData(excel, K0_mode) -> Dict:
+def getRCExcelData(excel, K0_mode) -> dict:
     df = createDataFrame(excel)
     data = {}
     if df is not None:
@@ -954,7 +962,7 @@ def getRCExcelData(excel, K0_mode) -> Dict:
                 data[rc_data.laboratory_number] = rc_data
     return data
 
-def getCyclicExcelData(excel, test_mode, K0_mode) -> Dict:
+def getCyclicExcelData(excel, test_mode, K0_mode) -> dict:
     df = createDataFrame(excel)
     data = {}
     if df is not None:
@@ -965,7 +973,7 @@ def getCyclicExcelData(excel, test_mode, K0_mode) -> Dict:
                 data[cyclic_data.laboratory_number] = cyclic_data
     return data
 
-def getVibrationCreepExcelData(excel, K0_mode) -> Dict:
+def getVibrationCreepExcelData(excel, K0_mode) -> dict:
     df = createDataFrame(excel)
     data = {}
     if df is not None:
@@ -977,14 +985,14 @@ def getVibrationCreepExcelData(excel, K0_mode) -> Dict:
     return data
 
 
-def dataToDict(data) -> Dict:
+def dataToDict(data) -> dict:
     """Функция сохраняет структуру данных как словарь"""
     dict_data = {}
     for key in data:
         dict_data[key] = data[key].getDict()
     return dict_data
 
-def dictToData(dict, data_type):
+def dictToData(dict, data_type) -> object:
     """Функция перегоняет словарь в структуру данных"""
     data = {}
     for key in dict:
@@ -994,10 +1002,13 @@ def dictToData(dict, data_type):
 
 
 if __name__ == '__main__':
-    data = getMechanicalExcelData("C:/Users/Пользователь/Desktop/Тест/511-21 ул. Красного Маяка, 26- мех-4 доп.xlsx", test_mode="Трёхосное сжатие (F, C, E)", K0_mode="K0: По ГОСТ-65353")
+    data = getCyclicExcelData("C:/Users/Пользователь/Desktop/Тест/462-20-15 этап Краснодар А-289 - мех 2.xlsx", test_mode="Сейсморазжижение", K0_mode="K0: По ГОСТ-65353")
+
     #print(data)
     x = dataToDict(data)
     print(x)
+
+    d = dictToData(x, CyclicData)
 
 
     #print(getCyclicExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", "Сейсморазжижение", "K0: K0 = 1"))

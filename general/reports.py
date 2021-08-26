@@ -66,13 +66,17 @@ LeftStyle = styles['default2']
 DjStyle = styles['default']
 
 
-
-
+def strNone(x):
+    if x is not None:
+        return str(x)
+    else:
+        return "-"
 def str_for_excel(s):  # Проверяет строку из Exel и делает ее str. Если она пустая, то возвращает -
     if str(s) == "None":
         return '-'
     else:
         return str(s)
+
 def zap2(s, m=0):  # Количство знаков после запятой. s - число в str, m - число знаков
 
     if s != "-":
@@ -243,7 +247,7 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
                ["Протокол испытаний №", "", str_for_excel(Lab + "/" + Data_customer["object_number"] + lname), "", "", "", "", "", "", ""],
                ['Заказчик:', Paragraph(Data_customer["customer"], LeftStyle)],
                ['Объект:', Paragraph(Data_customer["object_name"], LeftStyle)], [""], [""], [""],
-               ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(str(Data_phiz.borehole) + "; " + str(Data_phiz.depth).replace(".",",") +" м", LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(str(Data_phiz.ige), LeftStyle)],
+               ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(strNone(Data_phiz.borehole) + "; " + strNone(Data_phiz.depth).replace(".",",") +" м", LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(strNone(Data_phiz.ige), LeftStyle)],
                ['Лабораторный номер №:', "", "", Lab],
                ['Наименование грунта:', "", Paragraph(Data_phiz.soil_name, LeftStyle)], [""]
                ], colWidths = 17.5 * mm, rowHeights = 4 * mm)

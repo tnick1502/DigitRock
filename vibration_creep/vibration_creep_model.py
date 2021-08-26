@@ -23,6 +23,7 @@ from static_loading.triaxial_static_loading_test_model import ModelTriaxialStati
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, ModelTriaxialCyclicLoadingSoilTest
 from general.general_functions import read_json_file
 from dataclasses import dataclass
+from general.excel_data_parser import VibrationCreepData
 
 try:
     plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
@@ -356,7 +357,7 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
         for frequency, Kd in zip(params.frequency, params.Kd):
             self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest())
             #print("length now = ", len(self._dynamic_tests))
-            params_for_current_test = copy.copy(params)
+            params_for_current_test = VibrationCreepData(for_copy=params)
             params_for_current_test.frequency = frequency
             params_for_current_test.E50 = params_for_current_test.E50*np.random.uniform(0.85, 1.1)
             params_for_current_test.Kd = Kd

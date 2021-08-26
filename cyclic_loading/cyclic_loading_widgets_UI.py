@@ -598,7 +598,7 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
         #self.table.horizontalHeader().resizeSection(1, 200)
         self.table.setHorizontalHeaderLabels(
             ["Лаб. ном.", "Глубина", "Наименование грунта", "Консистенция Il", "e", "𝜎3, кПа", "𝜎1, кПа", "t, кПа", "CSR", "Число циклов",
-             "Nfail", "Msf"])
+             "Nfail", "Ms"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setDefaultSectionSize(25)
         self.table.horizontalHeader().setMinimumSectionSize(100)
@@ -633,7 +633,7 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
                         str(self._data[lab_number].CSR),
                         str(self._data[lab_number].cycles_count),
                         str(self._data[lab_number].n_fail) if self._data[lab_number].n_fail else "-",
-                        str(self._data[lab_number].Msf)
+                        str(self._data[lab_number].Ms)
                     ]):
 
                 self.table.setItem(string_number, i, QTableWidgetItem(val))
@@ -653,14 +653,14 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
 
         for string_number, lab_number in enumerate(self._data):
             self._data[lab_number].n_fail = read_n_fail(self.table.item(string_number, 10).text())
-            self._data[lab_number].Msf = float(self.table.item(string_number, 11).text())
+            self._data[lab_number].Ms = float(self.table.item(string_number, 11).text())
 
             if self._data[lab_number].n_fail:
                 self._data[lab_number].Mcsr = None
                 if (self._data[lab_number].sigma_1 - self._data[lab_number].sigma_3) <= 1.5 * self._data[lab_number].t:
-                    self._data[lab_number].Msf = np.round(np.random.uniform(100, 500), 2)
+                    self._data[lab_number].Ms = np.round(np.random.uniform(100, 500), 2)
                 else:
-                    self._data[lab_number].Msf = np.round(np.random.uniform(0.7, 0.9), 2)
+                    self._data[lab_number].Ms = np.round(np.random.uniform(0.7, 0.9), 2)
             else:
                 self._data[lab_number].Mcsr = np.random.uniform(2, 3)
 
@@ -670,7 +670,7 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
             for string_number, lab_number in enumerate(self._data):
                 if self._data[lab_number].n_fail:
                     self._set_row_color(string_number, color=(255, 99, 71))
-                elif self._data[lab_number].Msf <= 1:
+                elif self._data[lab_number].Ms <= 1:
                     self._set_row_color(string_number, color=(255, 215, 0))
                 else:
                     self._set_row_color(string_number, color=(255, 255, 255))
@@ -756,10 +756,10 @@ class CyclicLoadingUI_PredictLiquefaction(QDialog):
                     str(data[lab_number].CSR),
                     str(data[lab_number].cycles_count),
                     str(data[lab_number].n_fail) if data[lab_number].n_fail else "-",
-                    str(data[lab_number].Msf)])
+                    str(data[lab_number].Ms)])
 
         titles = ["Лаб. номер", "Глубина, м", "Наименование грунта", "Il", "e", "CSR, д.е.", "Общее число циклов",
-                   "Цикл разрушения", "Msf"]
+                   "Цикл разрушения", "Ms"]
 
         scale = [70, 70, "*", 70, 70, 70]
 

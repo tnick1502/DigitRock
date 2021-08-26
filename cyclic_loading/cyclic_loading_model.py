@@ -39,6 +39,7 @@ import scipy.ndimage as ndimage
 from general.general_functions import define_qf, create_deviation_curve, current_exponent, step_sin, logarithm, sigmoida,\
     create_acute_sine_array, AttrDict, mirrow_element
 from configs.plot_params import plotter_params
+from general import excel_data_parser
 
 class ModelTriaxialCyclicLoading:
     """Модель обработки циклического нагружения
@@ -457,7 +458,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                 self._test_params.n_fail = self._test_params.cycles_count - 5
 
         self._define_draw_params(Mcsr)
-        self._test_modeling(params.Msf)
+        self._test_modeling(params.Ms)
         self._test_processing()
 
     def get_data_for_vibration_creep(self):
@@ -577,19 +578,6 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         # Погрешность девиатора и коэффициент сгрлаживания девиатора
         self._draw_params.deviator_deviation = 1
         self._draw_params.deviator_filter = 0.5
-
-        # Параметр, показывающий наличие реверсного нагружения
-        if self._test_params.reverse:
-            self._draw_params.strain_max = np.random.uniform(0, 0.005)
-        else:
-            self._draw_params.strain_max = np.random.uniform(0.02, 0.04)
-
-        # Наклон графика деформации
-        if self._test_params.cycles_count > 300:
-            self._draw_params.strain_slant = np.random.uniform(0.3, 0.5)*self._test_params.cycles_count
-        else:
-            self._draw_params.strain_slant = self._test_params.cycles_count * np.random.uniform(0.7, 0.8)
-
         # Значение начального модуля деформации. Амплитуда деформации рассчитывется как амплитуда девиатора деленая
         # на значение модуля
         self._draw_params.strain_E0 = ModelTriaxialCyclicLoadingSoilTest.define_E0(self._test_params.physical.Il,
@@ -631,12 +619,11 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             fail_cycle = self._test_params.n_fail
             self._draw_params.strain_slant = fail_cycle*np.random.uniform(0.6, 0.7)
         else:
-            fail_cycle = self._test_params.cycles_count
-
-            if fail_cycle > 300:
-                self._draw_params.strain_slant = np.random.uniform(0.5, 0.6)*self._test_params.cycles_count
+            # Наклон графика деформации
+            if self._test_params.cycles_count > 300:
+                self._draw_params.strain_slant = np.random.uniform(0.3, 0.5) * self._test_params.cycles_count
             else:
-                self._draw_params.strain_slant = fail_cycle*np.random.uniform(0.5, 0.6)
+                self._draw_params.strain_slant = self._test_params.cycles_count * np.random.uniform(0.6, 0.7)
 
     def _modeling_deviator(self):
         """Функция моделирования девиаторного нагружения"""
@@ -648,10 +635,11 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                                                 fail_cycle=self._test_params.n_fail,
                                                                                                 points=self._test_params.points_in_cycle,
                                                                                                 phase_shift=0.5*np.pi)
-
             self._test_data.setpoint = np.hstack((self._load_stage.deviator + self._test_params.deviator_start_value,
                                                 self._test_data.setpoint +
                                                 self._test_params.qf/2))
+
+
         else:
             self._test_data.setpoint = ModelTriaxialCyclicLoadingSoilTest.create_deviator_array(self._test_data.cycles,
                                                                                                 2 * self._test_params.t,
@@ -690,9 +678,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                 2 * self._test_params.t, E_module, self._draw_params.strain_max, self._draw_params.strain_slant,
                 phase_shift=np.random.uniform(0.501, 0.505)*np.pi, stabilization=self._draw_params.strain_stabilization)
             self._test_data.strain -= self._test_data.strain[0]
-
             self._test_data.strain = np.hstack((self._load_stage.strain,
-                                                self._test_data.strain + self._load_stage.strain[-1]))
+                                                self._test_data.strain + np.max(self._load_stage.strain)))
 
             self._test_data.strain += np.random.uniform(-self._draw_params.strain_deviation,
                                                         self._draw_params.strain_deviation,
@@ -775,7 +762,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         self._test_data.mean_effective_stress = (self._test_data.deviator + self._test_data.cell_pressure * (2 - 3*self._test_data.PPR))/3
 
-    def _test_modeling(self, Msf=None):
+    def _test_modeling(self, Ms=None):
         """Функция моделирования опыта"""
         self._test_data.cycles = np.linspace(0, self._test_params.cycles_count,
                                              self._test_params.points_in_cycle * self._test_params.cycles_count + 1)
@@ -793,7 +780,6 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
             #self._test_data.cycles = np.hstack((np.linspace(0, 0.25, len(self._load_stage.time)),
                                                 #self._test_data.cycles[int(self._test_params.points_in_cycle/4):]))
-
         self._test_data.time = self._test_data.cycles/self._test_params.frequency
 
 
@@ -811,8 +797,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._modeling_deviator()
         self._modeling_PPR()
 
-        if not Msf:
-            Msf = ModelTriaxialCyclicLoadingSoilTest.define_Msf(
+        if not Ms:
+            Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
                 self.c, self.fi, 1/self._test_data.PPR[-1], self.sigma_3, self.sigma_1, self.physical.e,
                 self.physical.Il, self.qf, self.t)
 
@@ -826,7 +812,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         #elif self._test_params.reverse:
             #self._draw_params.strain_max = np.random.uniform(0, 0.005)
         else:
-            self._draw_params.strain_max = np.random.uniform(0.05 / Msf, 0.06 / Msf)
+            self._draw_params.strain_max = np.random.uniform(0.05 / Ms, 0.06 / Ms)
 
         self._modeling_strain()
 
@@ -866,32 +852,28 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         return c + 0.5 * k * mean_effective_stress
 
     @staticmethod
-    def define_Msf(c, fi, Mcsr, sigma_3, sigma_1, e, Il, qf, t):
+    def define_Ms(c, fi, Mcsr, sigma_3, sigma_1, e, Il, qf, t) -> float:
+        """Функция находит зависимость параметра Msf от физических свойств и параметров нагрузки
+        Средняя линия отклонения деформации будет определена как 0.05 / Msf"""
         if (sigma_1 - sigma_3) <= 1.5*t:
             return np.round(np.random.uniform(100, 500), 2)
 
-        max_deviator = sigma_1 - sigma_3 + 2*t
-        if Mcsr:
-            critical = ModelTriaxialCyclicLoadingSoilTest.critical_line(c, fi, (1 - 1/Mcsr)*max_deviator)
-            Msf = critical/max_deviator
-        else:
-            Msf = 1
-        #print("Нагрузка ", Msf)
-        Msf *= sigmoida(mirrow_element(2*t/qf, 0.5), 0.5, 0.5, 0.5, 1.5)
-        #print("циклы ", Msf)
         e = e if e else np.random.uniform(0.6, 0.7)
-        Msf *= sigmoida(mirrow_element(e, 0.5), 0.7, 0.5, 1, 1.5)
-        #print("е ", Msf)
-        if Il:
-            Msf *= sigmoida(mirrow_element(Il, 0.5), 0.7, 0.5, 1, 1.5)
-        else:
-            Msf *= sigmoida(mirrow_element(np.random.uniform(-0.1, 0.3), 0.5), 0.7, 0.5, 1, 1.5)
-        #print("Il ", Msf)
+        Il = Il if Il else np.random.uniform(-0.1, 0.3)
 
-        if Msf <= 0.7:
-            Msf = np.random.uniform(0.6, 0.8)
+        max_deviator = sigma_1 - sigma_3 + 2*t
 
-        return np.round(Msf, 2)
+        Ms = ModelTriaxialCyclicLoadingSoilTest.critical_line(
+            c, fi, (1 - 1 / Mcsr) * max_deviator) / max_deviator if Mcsr else 1
+
+        Ms *= sigmoida(mirrow_element(2 * t / qf, 0.5), 0.5, 0.5, 0.5, 1.5)
+        Ms *= sigmoida(mirrow_element(e, 0.5), 0.7, 0.5, 1, 1.5)
+        Ms *= sigmoida(mirrow_element(Il, 0.5), 0.7, 0.5, 1, 1.5)
+
+        if Ms <= 0.7:
+            Ms = np.random.uniform(0.6, 0.8)
+
+        return np.round(Ms, 2)
 
     @staticmethod
     def influence_of_frequency_on_strain(frequency) -> float:
@@ -1199,6 +1181,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             end_time = q_end
 
         time = np.linspace(0, end_time, round(points_in_sec * q_end))
+        if len(time)<= 10:
+            time = np.linspace(0, end_time, 10)
         a = 2#np.random.randint(0, 2)
         #strain = np.linspace(0, hyp_strain(q_end, E50, qf), len(time)) if a == 1 else np.linspace(0,
                                                                                                   #exp_strain(q_end, E50,
@@ -1341,16 +1325,10 @@ if __name__ == '__main__':
     a.plotter()"""
 
     a = ModelTriaxialCyclicLoadingSoilTest()
-    params = {'E': 50000.0, 'c': 0.023, 'fi': 45,
-     'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8, 'Ip': 17.9,
-     'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N':10,
-     'MSF': '2.82', 'I': 2.0, 'sigma1': 100, 't': 10, 'sigma3': 100, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
-     'data_phiz': {'borehole': 'rete', 'depth': 9.8,
-                   'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'ige': '-',
-                   'rs': 2.73, 'r': 1.76, 'rd': 1.23, 'n': 55.0, 'e': 1.22, 'W': 43.4, 'Sr': 0.97, 'Wl': 47.1,
-                   'Wp': 29.2, 'Ip': 17.9, 'Il': 0.79, 'Ir': 6.8, 'str_index': 'l', 'gw_depth': 0.0, 'build_press': '-',
-                   'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 0.1,
-                   '005': 17.7, '001': 35.0, '0002': 18.8, '0000': 28.1, 'Nop': 20}, 'test_type': 'Сейсморазжижение',
-                               "frequency": 3, "n_fail": None, "Mcsr": 5}
-    a.set_test_params(params)
+    params = {'П 61.1-7': {'CSR': 0.02, 't': 2.0, 'N': None, 'I': None, 'magnitude': 6.0, 'intensity': 8.0, 'cycles_count': 6, 'rd': '0.92', 'MSF': 1.77, 'rw': None, 'Hw': None, 'frequency': 0.5, 'Mcsr': 25.88465477447163, 'Msf': None, 'n_fail': None, 'physical_properties': {'laboratory_number': 'П 61.1-7', 'borehole': 'П 61.1', 'depth': 9.5, 'soil_name': 'Песок пылеватый однородный', 'ige': None, 'rs': 2.67, 'r': 1.91, 'rd': 1.6, 'n': 40.2, 'e': 0.67, 'W': None, 'Sr': 0.78, 'Wl': None, 'Wp': None, 'Ip': None, 'Il': None, 'Ir': None, 'stratigraphic_index': None, 'ground_water_depth': 0.0, 'granulometric_10': None, 'granulometric_5': None, 'granulometric_2': None, 'granulometric_1': None, 'granulometric_05': 0.3, 'granulometric_025': 1.5, 'granulometric_01': 33.9, 'granulometric_005': 64.3, 'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None, 'complete_flag': True, 'sample_number': 0, 'type_ground': 5, 'Rc': None}, 'c': 0.003, 'fi': 28.0, 'E50': 10200.0, 'm': 0.61, 'Cv': 0.589, 'Ca': 0.02443, 'K0': 0.5, 'sigma_3': 46.0, 'qf': 187.0, 'sigma_1': 93, 'poisons_ratio': 0.34, 'dilatancy_angle': 13.65, 'build_press': None, 'pit_depth': None, 'OCR': 1, 'Ms': 0.6},
+              'И 32-3-1': {'CSR': 0.1, 't': 1, 'N': None, 'I': None, 'magnitude': 6.0, 'intensity': 8.0, 'cycles_count': 6, 'rd': '0.992', 'MSF': 1.77, 'rw': None, 'Hw': None, 'frequency': 0.5, 'Mcsr': 5.566592424617555, 'Msf': None, 'n_fail': None, 'physical_properties': {'laboratory_number': 'И 32-3-1', 'borehole': 'И 32-3', 'depth': 1.0, 'soil_name': 'Песок мелкий однородный', 'ige': None, 'rs': 2.66, 'r': 1.92, 'rd': 1.57, 'n': 41.1, 'e': 0.7, 'W': None, 'Sr': 0.86, 'Wl': None, 'Wp': None, 'Ip': None, 'Il': None, 'Ir': None, 'stratigraphic_index': None, 'ground_water_depth': 0.0, 'granulometric_10': None, 'granulometric_5': None, 'granulometric_2': 0.3, 'granulometric_1': 0.5, 'granulometric_05': 0.7, 'granulometric_025': 29.1, 'granulometric_01': 51.9, 'granulometric_005': 17.5, 'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None, 'complete_flag': True, 'sample_number': 1, 'type_ground': 4, 'Rc': None}, 'c': 0.002, 'fi': 31.7, 'E50': 15800.0, 'm': 0.6, 'Cv': 0.548, 'Ca': 0.02084, 'K0': 0.5, 'sigma_3': 5.0, 'qf': 228.6, 'sigma_1': 10, 'poisons_ratio': 0.31, 'dilatancy_angle': 10.1, 'build_press': None, 'pit_depth': None, 'OCR': 1, 'Ms': 0.77}, 'П 61.1-3': {'CSR': 0.04, 't': 2.0, 'N': None, 'I': None, 'magnitude': 6.0, 'intensity': 8.0, 'cycles_count': 6, 'rd': '0.962', 'MSF': 1.77, 'rw': None, 'Hw': None, 'frequency': 0.5, 'Mcsr': 13.638151440313013, 'Msf': None, 'n_fail': None, 'physical_properties': {'laboratory_number': 'П 61.1-3', 'borehole': 'П 61.1', 'depth': 5.0, 'soil_name': 'Песок мелкий однородный', 'ige': None, 'rs': 2.66, 'r': 1.92, 'rd': 1.63, 'n': 38.6, 'e': 0.63, 'W': None, 'Sr': 0.74, 'Wl': None, 'Wp': None, 'Ip': None, 'Il': None, 'Ir': None, 'stratigraphic_index': None, 'ground_water_depth': 0.0, 'granulometric_10': None, 'granulometric_5': None, 'granulometric_2': 0.4, 'granulometric_1': 0.9, 'granulometric_05': 1.1, 'granulometric_025': 30.5, 'granulometric_01': 50.4, 'granulometric_005': 16.7, 'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None, 'complete_flag': True, 'sample_number': 2, 'type_ground': 4, 'Rc': None}, 'c': 0.002, 'fi': 35.1, 'E50': 14300.0, 'm': 0.54, 'Cv': 0.554, 'Ca': 0.01848, 'K0': 0.5, 'sigma_3': 24.0, 'qf': 278.3, 'sigma_1': 49, 'poisons_ratio': 0.3, 'dilatancy_angle': 9.8, 'build_press': None, 'pit_depth': None, 'OCR': 1, 'Ms': 0.77}, 'И 30-36-3': {'CSR': 0.03, 't': 2.0, 'N': None, 'I': None, 'magnitude': 6.0, 'intensity': 8.0, 'cycles_count': 6, 'rd': '0.968', 'MSF': 1.77, 'rw': None, 'Hw': None, 'frequency': 0.5, 'Mcsr': 28.933860787320086, 'Msf': None, 'n_fail': None, 'physical_properties': {'laboratory_number': 'И 30-36-3', 'borehole': 'И 30-36', 'depth': 4.2, 'soil_name': 'Суглинок мягкопластичный', 'ige': None, 'rs': 2.72, 'r': 1.96, 'rd': 1.56, 'n': 42.8, 'e': 0.75, 'W': 32.6, 'Sr': 0.94, 'Wl': 32.6, 'Wp': 18.7, 'Ip': 13.9, 'Il': 0.52, 'Ir': None, 'stratigraphic_index': None, 'ground_water_depth': 3.4, 'granulometric_10': None, 'granulometric_5': None, 'granulometric_2': None, 'granulometric_1': None, 'granulometric_05': None, 'granulometric_025': None, 'granulometric_01': None, 'granulometric_005': None, 'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None, 'complete_flag': True, 'sample_number': 3, 'type_ground': 7, 'Rc': None}, 'c': 0.027, 'fi': 18.1, 'E50': 9400.0, 'm': 0.71, 'Cv': 0.561, 'Ca': 0.02524, 'K0': 1, 'sigma_3': 75, 'qf': 164.6, 'sigma_1': 75, 'poisons_ratio': 0.34, 'dilatancy_angle': 11.05, 'build_press': None, 'pit_depth': None, 'OCR': 1, 'Ms': 177.33}, 'И 10-14-10': {'CSR': 0.02, 't': 4.0, 'N': None, 'I': None, 'magnitude': 6.0, 'intensity': 8.0, 'cycles_count': 6, 'rd': '0.814', 'MSF': 1.77, 'rw': None, 'Hw': None, 'frequency': 0.5, 'Mcsr': 26.580478827548827, 'Msf': None, 'n_fail': None, 'physical_properties': {'laboratory_number': 'И 10-14-10', 'borehole': 'И 10-14', 'depth': 13.5, 'soil_name': 'Песок мелкий однородный', 'ige': None, 'rs': 2.66, 'r': 2.0, 'rd': 1.64, 'n': 38.4, 'e': 0.62, 'W': None, 'Sr': 0.94, 'Wl': None, 'Wp': None, 'Ip': None, 'Il': None, 'Ir': None, 'stratigraphic_index': None, 'ground_water_depth': 6.0, 'granulometric_10': None, 'granulometric_5': None, 'granulometric_2': 0.1, 'granulometric_1': 0.5, 'granulometric_05': 0.6, 'granulometric_025': 23.7, 'granulometric_01': 54.1, 'granulometric_005': 21.0, 'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None, 'complete_flag': True, 'sample_number': 4, 'type_ground': 4, 'Rc': None}, 'c': 0.003, 'fi': 30.5, 'E50': 22000.0, 'm': 0.51, 'Cv': 0.612, 'Ca': 0.01302, 'K0': 0.5, 'sigma_3': 96.0, 'qf': 283.4, 'sigma_1': 191, 'poisons_ratio': 0.32, 'dilatancy_angle': 13.7, 'build_press': None, 'pit_depth': None, 'OCR': 1, 'Ms': 0.61}, 'И 30-23-13': {'CSR': 0.02, 't': 4.0, 'N': None, 'I': None, 'magnitude': 6.0, 'intensity': 8.0, 'cycles_count': 6, 'rd': '0.587', 'MSF': 1.77, 'rw': None, 'Hw': None, 'frequency': 0.5, 'Mcsr': 30.059599092934803, 'Msf': None, 'n_fail': None, 'physical_properties': {'laboratory_number': 'И 30-23-13', 'borehole': 'И 30-23', 'depth': 22.0, 'soil_name': 'Песок мелкий неоднородный', 'ige': None, 'rs': 2.66, 'r': 1.98, 'rd': 1.58, 'n': 40.8, 'e': 0.69, 'W': None, 'Sr': 0.99, 'Wl': None, 'Wp': None, 'Ip': None, 'Il': None, 'Ir': None, 'stratigraphic_index': None, 'ground_water_depth': 0.0, 'granulometric_10': None, 'granulometric_5': None, 'granulometric_2': None, 'granulometric_1': None, 'granulometric_05': 0.1, 'granulometric_025': 47.1, 'granulometric_01': 37.0, 'granulometric_005': 15.8, 'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None, 'complete_flag': True, 'sample_number': 5, 'type_ground': 4, 'Rc': None}, 'c': 0.002, 'fi': 31.4, 'E50': 25400.0, 'm': 0.54, 'Cv': 0.597, 'Ca': 0.02845, 'K0': 0.5, 'sigma_3': 108.0, 'qf': 476.6, 'sigma_1': 216, 'poisons_ratio': 0.32, 'dilatancy_angle': 10.0, 'build_press': None, 'pit_depth': None, 'OCR': 1, 'Ms': 0.65}, 'И 10-14-8': {'CSR': 0.03, 't': 4.0, 'N': None, 'I': None, 'magnitude': 6.0, 'intensity': 8.0, 'cycles_count': 6, 'rd': '0.907', 'MSF': 1.77, 'rw': None, 'Hw': None, 'frequency': 0.5, 'Mcsr': 21.848875266623907, 'Msf': None, 'n_fail': None, 'physical_properties': {'laboratory_number': 'И 10-14-8', 'borehole': 'И 10-14', 'depth': 10.0, 'soil_name': 'Песок мелкий неоднородный', 'ige': None, 'rs': 2.65, 'r': 2.01, 'rd': 1.66, 'n': 37.3, 'e': 0.59, 'W': None, 'Sr': 0.93, 'Wl': None, 'Wp': None, 'Ip': None, 'Il': None, 'Ir': None, 'stratigraphic_index': None, 'ground_water_depth': 6.0, 'granulometric_10': None, 'granulometric_5': 0.9, 'granulometric_2': 0.5, 'granulometric_1': 0.4, 'granulometric_05': 0.9, 'granulometric_025': 46.8, 'granulometric_01': 31.3, 'granulometric_005': 19.2, 'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None, 'complete_flag': True, 'sample_number': 6, 'type_ground': 4, 'Rc': None}, 'c': 0.003, 'fi': 36.8, 'E50': 20300.0, 'm': 0.55, 'Cv': 0.724, 'Ca': 0.01552, 'K0': 0.5, 'sigma_3': 78.0, 'qf': 310.8, 'sigma_1': 157, 'poisons_ratio': 0.3, 'dilatancy_angle': 9.25, 'build_press': None, 'pit_depth': None, 'OCR': 1, 'Ms': 0.87}, 'П 61.1-2': {'CSR': 0.06, 't': 2.0, 'N': None, 'I': None, 'magnitude': 6.0, 'intensity': 8.0, 'cycles_count': 6, 'rd': '0.973', 'MSF': 1.77, 'rw': None, 'Hw': None, 'frequency': 0.5, 'Mcsr': 9.463207121849845, 'Msf': None, 'n_fail': None, 'physical_properties': {'laboratory_number': 'П 61.1-2', 'borehole': 'П 61.1', 'depth': 3.5, 'soil_name': 'Песок мелкий неоднородный', 'ige': None, 'rs': 2.66, 'r': 1.91, 'rd': 1.6, 'n': 39.9, 'e': 0.66, 'W': None, 'Sr': 0.78, 'Wl': None, 'Wp': None, 'Ip': None, 'Il': None, 'Ir': None, 'stratigraphic_index': None, 'ground_water_depth': 0.0, 'granulometric_10': None, 'granulometric_5': None, 'granulometric_2': 0.2, 'granulometric_1': 0.7, 'granulometric_05': 0.9, 'granulometric_025': 46.8, 'granulometric_01': 28.7, 'granulometric_005': 22.7, 'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None, 'complete_flag': True, 'sample_number': 7, 'type_ground': 4, 'Rc': None}, 'c': 0.002, 'fi': 33.6, 'E50': 16100.000000000002, 'm': 0.64, 'Cv': 0.755, 'Ca': 0.01915, 'K0': 0.5, 'sigma_3': 17.0, 'qf': 255.3, 'sigma_1': 34, 'poisons_ratio': 0.27, 'dilatancy_angle': 13.9, 'build_press': None, 'pit_depth': None, 'OCR': 1, 'Ms': 0.63}}
+
+    params = excel_data_parser.dictToData(params, excel_data_parser.CyclicData)
+
+    a.set_test_params(params['П 61.1-7'])
     a.plotter()

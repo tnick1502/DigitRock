@@ -350,7 +350,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
 
                 if not os.path.isdir(path):
                     os.mkdir(path)
-                file_name = os.path.join(path, "Тест.1.log")
+                file_name = os.path.join(path, "Test.1.log")
                 test.save_log_file(file_name)
 
     @staticmethod
