@@ -183,7 +183,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                                       **plotter_params["static_loading_main_line"])
 
                     self.deviator_ax2.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"],
-                                      **plotter_params["static_loading_red_dotted_line"])
+                                      **plotter_params["static_loading_black_dotted_line"])
                                       #label="$E$" + ", MПа = " + str(res["E"][0]) + "\n" + "$E$" + ", MПа = " + str(res["E"][0]))
                     plt.xticks(fontsize=8)
                     plt.yticks(fontsize=8)

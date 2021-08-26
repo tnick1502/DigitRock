@@ -281,25 +281,26 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
                                                    self.consolidation.get_delta_h_consolidation())
 
-        E50 = np.round(test_params.E50/1000, 1)
-
         self.deviator_loading.set_test_params(test_params)
+        """E50 = np.round(test_params.E50/1000, 1)
         params = self.deviator_loading.get_test_results()
         E50_test = params["E50"]
-
-        while np.round(E50_test, 1) != np.round(E50, 1):
-
+        count = 0
+        while abs(np.round(E50_test, 1) - np.round(E50, 1)) >= 0.02:
+            k = 1.0001
+            if count > 20:
+                k = 1.00001
             print("Поиск сходимости решения. ", E50_test-E50)
             if E50_test > E50:
-                test_params.E50 /= 1.0001
+                test_params.E50 /= k
             else:
-                test_params.E50 *= 1.0001
+                test_params.E50 *= k
 
-            test_params.E50 += 50*(E50 - E50_test)
+            #test_params.E50 += 50*(E50 - E50_test)
 
             self.deviator_loading.set_test_params(test_params)
             params = self.deviator_loading.get_test_results()
-            E50_test = params["E50"]
+            E50_test = params["E50"]"""
 
     def get_test_params(self):
         return self.test_params

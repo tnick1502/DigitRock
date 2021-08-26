@@ -547,6 +547,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         xc, residual_strength = ModelTriaxialDeviatorLoadingSoilTest.define_xc_value_residual_strength(
             test_params.physical_properties, test_params.sigma_3,
             test_params.qf, test_params.E50)
+        if xc >= 0.14:
+            xc *= np.random.uniform(0.8, 1.05)
+            residual_strength *= np.random.uniform(0.8, 1)
 
         self._draw_params.fail_strain = xc
         self._draw_params.residual_strength_param = \

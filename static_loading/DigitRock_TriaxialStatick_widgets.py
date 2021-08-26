@@ -233,6 +233,14 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                               "BE" + str(self.tab_1.get_physical_data().sample_number + 7),
                               test_result["E50"], sheet="Лист1", color="FF6961")
 
+                set_cell_data(self.tab_1.path,
+                              "BC" + str(self.tab_1.get_physical_data().sample_number + 7),
+                              test_result["c"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              "BD" + str(self.tab_1.get_physical_data().sample_number + 7),
+                              test_result["fi"], sheet="Лист1", color="FF6961")
+
             elif read_parameters["test_type"] == 'Трёхосное сжатие (F, C)':
                 assert self.tab_3._model._test_result.fi, "Не загружен файл опыта"
                 test_parameter["K0"] = self.tab_3._model._test_params['K0']
@@ -250,7 +258,16 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                           (*self.tab_3.save_canvas(),
                            *self.tab_3.save_canvas()), 1.1)
 
-            shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
+                shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
+
+                set_cell_data(self.tab_1.path,
+                              "BG" + str(self.tab_1.get_physical_data().sample_number + 7),
+                              test_result["fi"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              "BF" + str(self.tab_1.get_physical_data().sample_number + 7),
+                              test_result["c"], sheet="Лист1", color="FF6961")
+
             QMessageBox.about(self, "Сообщение", "Успешно сохранено")
 
             self.tab_1.table_physical_properties.set_row_color(
