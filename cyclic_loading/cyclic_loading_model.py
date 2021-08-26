@@ -39,7 +39,7 @@ import scipy.ndimage as ndimage
 from general.general_functions import define_qf, create_deviation_curve, current_exponent, step_sin, logarithm, sigmoida,\
     create_acute_sine_array, AttrDict, mirrow_element
 from configs.plot_params import plotter_params
-from general import excel_data_parser
+#from general import excel_data_parser
 
 class ModelTriaxialCyclicLoading:
     """Модель обработки циклического нагружения
@@ -799,8 +799,9 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         if not Ms:
             Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
-                self.c, self.fi, 1/self._test_data.PPR[-1], self.sigma_3, self.sigma_1, self.physical.e,
-                self.physical.Il, self.qf, self.t)
+                self._test_params.c, self._test_params.fi, 1 / self._test_data.PPR[-1], self._test_params.sigma_3,
+                self._test_params.sigma_1, self._test_params.t, self._test_params.cycles_count,
+                self._test_params.physical.e, self._test_params.physical.Il)
 
         if self._test_params.Kd:
             if self._test_params.Kd >= 0.9:
@@ -852,7 +853,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         return c + 0.5 * k * mean_effective_stress
 
     @staticmethod
-    def define_Ms(c, fi, Mcsr, sigma_3, sigma_1, e, Il, qf, t) -> float:
+    def define_Ms(c, fi, Mcsr, sigma_3, sigma_1, t, cycles_count, e, Il) -> float:
         """Функция находит зависимость параметра Msf от физических свойств и параметров нагрузки
         Средняя линия отклонения деформации будет определена как 0.05 / Msf"""
         if (sigma_1 - sigma_3) <= 1.5*t:
@@ -861,14 +862,27 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         e = e if e else np.random.uniform(0.6, 0.7)
         Il = Il if Il else np.random.uniform(-0.1, 0.3)
 
+        def define_qf(sigma_3, c, fi):
+            """Функция определяет qf через обжимающее давление и c fi"""
+            fi = fi * np.pi / 180
+            return np.round(
+                (2 * (c * 1000 + (np.tan(fi)) * sigma_3)) / (np.cos(fi) - np.tan(fi) + np.sin(fi) * np.tan(fi)), 1)
+
+        qf = define_qf(sigma_3*(1 - 1 / Mcsr), c, fi)
+
         max_deviator = sigma_1 - sigma_3 + 2*t
 
-        Ms = ModelTriaxialCyclicLoadingSoilTest.critical_line(
-            c, fi, (1 - 1 / Mcsr) * max_deviator) / max_deviator if Mcsr else 1
+        #Ms = ModelTriaxialCyclicLoadingSoilTest.critical_line(
+            #c, fi, (1 - 1 / Mcsr) * max_deviator) / max_deviator if Mcsr else 1
 
-        Ms *= sigmoida(mirrow_element(2 * t / qf, 0.5), 0.5, 0.5, 0.5, 1.5)
-        Ms *= sigmoida(mirrow_element(e, 0.5), 0.7, 0.5, 1, 1.5)
-        Ms *= sigmoida(mirrow_element(Il, 0.5), 0.7, 0.5, 1, 1.5)
+        Ms = 0.8 * qf / max_deviator if Mcsr else 1
+
+        CSR_dependence = sigmoida(mirrow_element(t/sigma_1, 0.5), 0.5, 0.5, 0.7, 1.5)
+        e_dependence = sigmoida(mirrow_element(e, 0.5), 0.7, 0.5, 0.9, 1.5)
+        Il_dependence = sigmoida(mirrow_element(Il, 0.5), 0.7, 0.5, 1, 1.5)
+        cycles_count_dependence = sigmoida(mirrow_element(cycles_count, 100), 0.3, 100, 1.1, 250)
+
+
 
         if Ms <= 0.7:
             Ms = np.random.uniform(0.6, 0.8)

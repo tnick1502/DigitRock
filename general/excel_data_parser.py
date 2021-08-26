@@ -12,6 +12,7 @@ from resonant_column.rezonant_column_function import define_G0_threshold_shear_s
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTest
 
 
+
 PhysicalPropertyPosition = {
     "laboratory_number": ["A", 0],
     "borehole": ['B', 1],
@@ -830,6 +831,8 @@ class CyclicData(MechanicalProperties):
                 self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t, self.physical_properties.Ip,
                                                  self.physical_properties.Il, self.physical_properties.e)
 
+                self.frequency = 0.5
+
                 if self.n_fail:
                     if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
                         self.Ms = np.round(np.random.uniform(100, 500), 2)
@@ -837,10 +840,8 @@ class CyclicData(MechanicalProperties):
                         self.Ms = np.round(np.random.uniform(0.7, 0.9), 2)
                 else:
                     self.Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
-                        self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.physical_properties.e,
-                        self.physical_properties.Il, self.qf, self.t)
-
-                self.frequency = 0.5
+                        self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.t, self.cycles_count,
+                        self.physical_properties.e, self.physical_properties.Il)
 
                 self.CSR = np.round(self.t / self.sigma_1, 2)
 
@@ -858,23 +859,19 @@ class CyclicData(MechanicalProperties):
 
                 self.cycles_count = float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]])
 
-                self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
-                                                           self.physical_properties.Ip, self.physical_properties.Il,
-                                                           self.physical_properties.e)
-
-                self.CSR = np.round(self.t / self.sigma_1, 2)
-
-                if self.n_fail:
-                    if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
-                        self.Ms = np.round(np.random.uniform(100, 500), 2)
-                    else:
-                        self.Ms = np.round(np.random.uniform(0.7, 0.9), 2)
-                else:
-                    self.Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
-                        self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.physical_properties.e,
-                        self.physical_properties.Il, self.qf, self.t)
-
                 self.frequency = float_df(data_frame.iat[string, DynamicsPropertyPosition["frequency_storm"][1]])
+
+            if self.n_fail:
+                if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
+                    self.Ms = np.round(np.random.uniform(100, 500), 2)
+                else:
+                    self.Ms = np.round(np.random.uniform(0.7, 0.9), 2)
+            else:
+                self.Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
+                    self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.t, self.cycles_count,
+                    self.physical_properties.e, self.physical_properties.Il)
+
+            self.CSR = np.round(self.t / self.sigma_1, 2)
 
     @staticmethod
     def define_acceleration(intensity):
@@ -926,10 +923,19 @@ class VibrationCreepData(MechanicalProperties):
             frequency = data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]]
             Kd = data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]]
 
-            self.frequency = [float(frequency)] if str(frequency).isdigit() else list(map(
+            try:
+                self.frequency = [float(frequency)]
+                self.Kd = [float(Kd)]
+            except TypeError:
+                self.frequency = list(map(
+                lambda frequency: float(frequency.replace(",", ".").strip(" ")), frequency.split(";")))
+                self.Kd = list(map(lambda Kd: float(Kd.replace(",", ".").strip(" ")),
+                                                                     Kd.split(";")))
+
+            """self.frequency = [float(frequency)] if str(frequency).isdigit() else list(map(
                 lambda frequency: float(frequency.replace(",", ".").strip(" ")), frequency.split(";")))
             self.Kd = [float(Kd)] if str(Kd).isdigit() else list(map(lambda Kd: float(Kd.replace(",", ".").strip(" ")),
-                                                                     Kd.split(";")))
+                                                                     Kd.split(";")))"""
 
             self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2, 1)
 

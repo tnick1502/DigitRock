@@ -1,6 +1,10 @@
 
-x = "1; 6"
+import numpy as np
+import matplotlib.pyplot as plt
+from general.general_functions import sigmoida, mirrow_element
 
-m = [float(x)] if str(x).isdigit() else list(map(lambda x: float(x.replace(",", ".").strip(" ")), x.split(";")))
 
-print(m)
+x = np.linspace(0, 200, 1000)
+
+plt.plot(x, sigmoida(mirrow_element(x, 100), 0.3, 100, 1.1, 250))
+plt.show()
