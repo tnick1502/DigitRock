@@ -330,6 +330,7 @@ class MohrWidgetSoilTest(MohrWidget):
         self.refresh_test_button = QPushButton("Обновить опыт")
         self.refresh_test_button.clicked.connect(self.refresh)
         self.layout_wiget.insertWidget(0, self.refresh_test_button)
+        self.mohr_test_manager.add_test_button.hide()
 
     def add_UI(self):
         """Дополнительный интерфейс"""

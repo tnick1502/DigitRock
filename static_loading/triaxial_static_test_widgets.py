@@ -94,8 +94,12 @@ class TriaxialStaticWidget(QWidget):
 
         self._connect_model_Ui()
 
-    def _open_file(self):
-        self.log_file_path = QFileDialog.getOpenFileName(self, 'Open file')[0]
+    def _open_file(self, path=None):
+        if not path:
+            self.log_file_path = QFileDialog.getOpenFileName(self, 'Open file')[0]
+        else:
+            self.log_file_path = path
+
         if self.log_file_path:
             try:
                 self._model.set_test_file_path(self.log_file_path)
@@ -105,8 +109,9 @@ class TriaxialStaticWidget(QWidget):
                 self._plot_deviator_loading()
 
                 self._connect_model_Ui()
+                if not path:
+                    self.open_log_file.set_path(self.log_file_path)
 
-                self.open_log_file.set_path(self.log_file_path)
             except (ValueError, IndexError):
                 pass
 
@@ -398,6 +403,7 @@ class TriaxialStaticWidgetSoilTest(TriaxialStaticWidget):
     def __init__(self, model=None):
         super().__init__()
 
+        self.open_log_file.setParent(None)
         self.layout_wiget.removeWidget(self.open_log_file)
         self.open_log_file.deleteLater()
         self.open_log_file = None
@@ -427,6 +433,7 @@ class TriaxialStaticWidgetSoilTest(TriaxialStaticWidget):
 
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.consolidation_sliders.signal[object].connect(self._consolidation_sliders_moove)
+
 
         self.refresh_test_button = QPushButton("Обновить опыт")
         self.refresh_test_button.clicked.connect(self.refresh)
@@ -517,6 +524,13 @@ class TriaxialStaticDialogSoilTest(QDialog):
         self.setWindowTitle("Обработка опыта")
         self.layout = QVBoxLayout(self)
         self.widget = TriaxialStaticWidgetSoilTest(test)
+
+
+        self.widget.item_identification.setParent(None)
+        self.widget.layout_wiget.removeWidget(self.widget.item_identification)
+        self.widget.layout_wiget.deleteLater()
+        self.widget.layout_wiget = None
+
         self.layout.addWidget(self.widget)
 
         self.buttonBox = QDialogButtonBox()

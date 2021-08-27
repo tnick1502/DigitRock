@@ -12,7 +12,7 @@ c_fi_E_PropertyPosition = {
     "Виброползучесть": [["BS", "BT", "BU"], [70, 71, 72]],
     "Резонансная колонка": [["BC", "BD", "BE"], [54, 55, 56]]}
 
-def reprocessing(path):
+def get_reprocessing(path):
     params = {}
 
     def folders_in_path(path):
@@ -37,4 +37,4 @@ def reprocessing(path):
     return params
 
 
-print(reprocessing(path))
+#print(get_reprocessing(path))

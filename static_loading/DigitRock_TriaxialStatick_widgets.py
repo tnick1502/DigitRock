@@ -1,6 +1,6 @@
 __version__ = "1.0.0"
 
-from PyQt5.QtWidgets import QVBoxLayout, QWidget, QTabWidget, QMessageBox
+from PyQt5.QtWidgets import QVBoxLayout, QWidget, QTabWidget, QMessageBox, QFileDialog
 from PyQt5.QtCore import pyqtSignal
 import os
 import sys
@@ -13,6 +13,7 @@ from general.general_widgets import TriaxialStaticStatment
 from general.reports import report_consolidation, report_FCE, report_FC
 from general.save_widget import Save_Dir
 from general.excel_functions import set_cell_data
+from general.test import get_reprocessing
 #from test import LoadingWindow
 
 
@@ -282,3 +283,11 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
 
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
+
+    def reprocessing(self):
+        dir = QFileDialog.getExistingDirectory(self, "Выберите папку с архивом")
+        if dir:
+              tests = get_reprocessing(dir)
+              print(tests)
+              self.tab_2._open_file(tests['10-2']["E"])
+
