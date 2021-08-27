@@ -250,7 +250,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
 
             elif read_parameters["test_type"] == 'Трёхосное сжатие (F, C)':
                 assert self.tab_3._model._test_result.fi, "Не загружен файл опыта"
-                test_parameter["K0"] = self.tab_3._model._test_params['K0']
+                #test_parameter["K0"] = self.tab_3._model._test_params['K0']
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = self.tab_3._model.get_sigma_3_1()
                 test_result["c"], test_result["fi"] = self.tab_3._model.get_test_results()["c"], self.tab_3._model.get_test_results()["fi"]
                 #Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
