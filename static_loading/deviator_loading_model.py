@@ -567,27 +567,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 initial_unloading_deviator=self.unloading_borders[0])
 
         self._draw_params.poisson = test_params.poisons_ratio
-                                                    #define_poissons_ratio("-", self._test_params.data_physical["Ip"],
-                                                                          #self._test_params.data_physical["Il"],
-                                                                          #self._test_params.data_physical["Ir"],
-                                                                          #self._test_params.data_physical["10"],
-                                                                            #self._test_params.data_physical["5"],
-                                                                          #self._test_params.data_physical["2"]))
-        #self._draw_params.dilatancy = test_params.get("dilatancy")#, round((
-                                                    #ModelTriaxialDeviatorLoadingSoilTest.define_dilatancy_from_xc_qres(
-                                                    #xc,residual_strength) + define_dilatancy(
-                                                    #self._test_params.data_physical,
-                                                    #self._test_params.data_physical["rs"],
-                                                    #self._test_params.data_physical["e"],
-                                                    #round(self._test_params.qf + self._test_params.sigma_3, 1),
-                                                    #self._test_params.sigma_3, self._test_params.fi,
-                                                    #ModelTriaxialDeviatorLoadingSoilTest.define_OCR_from_xc(xc),
-                                                                                 #self._test_params.data_physical["Ip"],
-                                                                                # self._test_params.data_physical[
-                                                                                     #"Ir"])) / 2, 2))
-        alpha = np.deg2rad(test_params.dilatancy_angle)
+        self._draw_params.dilatancy = test_params.dilatancy_angle
 
-        self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(alpha) / (1 - np.sin(alpha))))
+        #alpha = np.deg2rad(test_params.dilatancy_angle)
+        #self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(alpha) / (1 - np.sin(alpha))))
 
         self._test_modeling()
 
@@ -607,6 +590,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
+
         params = {"fail_strain": {"value": self._draw_params.fail_strain, "borders": [0.03, 0.15]},
                   "residual_strength_param": {"value": self._draw_params.residual_strength_param, "borders": [0.05, 0.6]},
                   "residual_strength": {"value": self._draw_params.residual_strength,
@@ -623,9 +607,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.residual_strength = params["residual_strength"]
         self._draw_params.qocr = params["qocr"]
         self._draw_params.poisson = params["poisson"]
-        #self._draw_params.dilatancy = params["dilatancy"]
-        self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(params["dilatancy"])) /
-                                                           (1 - np.sin(np.deg2rad(params["dilatancy"])))))
+        self._draw_params.dilatancy = params["dilatancy"]
+        """self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(params["dilatancy"])) /
+                                                           (1 - np.sin(np.deg2rad(params["dilatancy"])))))"""
 
         self._test_modeling()
 
@@ -638,6 +622,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         if max_time <= 500:
             max_time = 500
 
+        dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(self._draw_params.dilatancy)) /
+                             (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
+
         if self._test_params.qf >= 150:
             if self._test_params.Eur:
                 self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
@@ -647,7 +634,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                     qocr=self._draw_params.qocr,
                                                                     m_given=self._draw_params.poisson,
                                                                     amount_points=max_time*6,
-                                                                    angle_of_dilatacy=self._draw_params.dilatancy,
+                                                                    angle_of_dilatacy=dilatancy,
                                                                     Eur=self._test_params.Eur,
                                                                     y_rel_p=self.unloading_borders[0],
                                                                     point2_y=self.unloading_borders[1])
@@ -660,7 +647,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                     qocr=self._draw_params.qocr,
                     m_given=self._draw_params.poisson,
                     amount_points=max_time,
-                    angle_of_dilatacy=self._draw_params.dilatancy)
+                    angle_of_dilatacy=dilatancy)
 
             self._test_data.deviator = np.round(self._test_data.deviator, 3)
             self._test_data.strain = np.round(
@@ -686,7 +673,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                 qocr=self._draw_params.qocr,
                                                 m_given=self._draw_params.poisson,
                                                 amount_points=max_time*6,
-                                                angle_of_dilatacy=self._draw_params.dilatancy,
+                                                angle_of_dilatacy=dilatancy,
                                                 Eur=self._test_params.Eur*k,
                                                 y_rel_p=self.unloading_borders[0]*k,
                                                 point2_y=self.unloading_borders[1]*k)
@@ -701,7 +688,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                     qocr=self._draw_params.qocr,
                     m_given=self._draw_params.poisson,
                     amount_points=max_time,
-                    angle_of_dilatacy=self._draw_params.dilatancy)
+                    angle_of_dilatacy=dilatancy)
             self._test_data.deviator /= k
 
         i_end = ModelTriaxialDeviatorLoadingSoilTest.define_final_loading_point(self._test_data.deviator, 0.08)

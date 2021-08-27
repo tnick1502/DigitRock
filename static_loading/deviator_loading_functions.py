@@ -947,7 +947,7 @@ def volumetric_deformation(x, x_given, m_given, xc, v_d2, x_end, angle_of_dilata
         # линейный участок (x_end находится в начале линейного участка)
         x_line_end = np.linspace(x[index_x_line_end_start[0]], (x[-1]),
                                  int(abs(x[index_x_line_end_start[0]] - (x[-1])) / (x[-1] - x[-2]) + 1))
-        b_end = v_d2 - angle_end * x_end
+        b_end = (v_d2 - angle_end * x_end) * np.random.uniform(0.3, 0.8)
         v_d_line_end = angle_end * x_line_end + b_end
 
         # функция Безье для учатска до хc

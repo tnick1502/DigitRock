@@ -625,10 +625,9 @@ class MechanicalProperties:
 
         def define_dilatancy_from_xc_qres(xc, qres):
             """Определяет угол дилатансии"""
-            k_xc = sigmoida(mirrow_element(xc, 0.075), 5, 0.075, 5, 0.15)
-            k_qres = sigmoida(mirrow_element(qres, 0.75), 5, 0.75, 5, 0.5)
-            angle_of_dilatancy = k_xc + k_qres
-
+            k_xc = sigmoida(mirrow_element(xc, 0.075), 7, 0.075, 7, 0.15)
+            k_qres = sigmoida(mirrow_element(qres, 0.75), 5, 0.75, 8, 0.5)
+            angle_of_dilatancy = (k_xc + k_qres)/2
             return round(angle_of_dilatancy, 1)
 
         def define_xc_qf_E(qf, E50):

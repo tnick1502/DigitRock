@@ -188,6 +188,8 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                                  (*self.tab_2.consolidation.save_canvas(),
                                   *self.tab_2.deviator_loading.save_canvas()), 1.1)
 
+                shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
+
                 set_cell_data(self.tab_1.path,
                               "BK" + str(self.tab_1.get_physical_data().sample_number + 7),
                               test_result["E50"], sheet="Лист1", color="FF6961")
@@ -205,6 +207,8 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                                  test_parameter, test_result,
                                  (*self.tab_2.consolidation.save_canvas(),
                                   *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), 1.1)
+
+                shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
 
                 set_cell_data(self.tab_1.path,
                               'GI' + str(self.tab_1.get_physical_data().sample_number + 7),
@@ -229,6 +233,8 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
                             *self.tab_3.save_canvas()), 1.1)
+
+                shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
 
                 set_cell_data(self.tab_1.path,
                               "BE" + str(self.tab_1.get_physical_data().sample_number + 7),

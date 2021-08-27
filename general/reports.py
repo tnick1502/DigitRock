@@ -798,7 +798,7 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
         tableData.append(
             [Paragraph('''<p>Коэффициент поперечного расширения µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
         tableData.append(
-            [Paragraph('''<p>Разгрузочный модуль E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "",
+            [Paragraph('''<p>Модуль деформации повторного нагружения E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "",
              "", Res["Eur"], ""])
 
     else:
