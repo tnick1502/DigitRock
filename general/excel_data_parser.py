@@ -1007,13 +1007,15 @@ def dictToData(dict, data_type) -> object:
 
 
 if __name__ == '__main__':
-    data = getCyclicExcelData("C:/Users/Пользователь/Desktop/Тест/462-20-15 этап Краснодар А-289 - мех 2.xlsx", test_mode="Сейсморазжижение", K0_mode="K0: По ГОСТ-65353")
+    data = getMechanicalExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", test_mode="Трёхосное сжатие (E)", K0_mode="K0: По ГОСТ-65353")
+
+    print(data['7а-1'])
 
     #print(data)
-    x = dataToDict(data)
-    print(x)
+    #x = dataToDict(data)
+    #print(x)
 
-    d = dictToData(x, CyclicData)
+    #d = dictToData(x, CyclicData)
 
 
     #print(getCyclicExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", "Сейсморазжижение", "K0: K0 = 1"))

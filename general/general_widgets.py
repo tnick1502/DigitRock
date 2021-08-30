@@ -378,12 +378,20 @@ class InitialStatment(QWidget):
         return self._data[self._laboratory_number].physical_properties
 
     def get_data(self):
-        """Возвращает данные по физике"""
         return self._data[self._laboratory_number]
+
+    def get_lab_numbers(self):
+        if self._data:
+            return list(self._data.keys())
+        else:
+            return None
 
     def get_lab_number(self):
         """Возвращает данные по физике"""
         return self._laboratory_number
+
+    def set_lab_number(self, laboratory_number):
+        self._laboratory_number = laboratory_number
 
 class RezonantColumnStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""

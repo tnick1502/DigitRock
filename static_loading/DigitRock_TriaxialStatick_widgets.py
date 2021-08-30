@@ -1,6 +1,6 @@
 __version__ = "1.0.0"
 
-from PyQt5.QtWidgets import QVBoxLayout, QWidget, QTabWidget, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QVBoxLayout, QWidget, QTabWidget, QMessageBox, QFileDialog, QPushButton
 from PyQt5.QtCore import pyqtSignal
 import os
 import sys
@@ -128,8 +128,15 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
         self.tab_widget.addTab(self.tab_4, "Сохранение отчета")
         self.layout.addWidget(self.tab_widget)
 
+        self.reprocessing_button = QPushButton("Перевыгонка протоколов")
+        self.tab_4.savebox_layout_line_1.insertWidget(4, self.reprocessing_button)
+
+        self.reprocessing_button.clicked.connect(self.reprocessing)
+
         self.tab_1.signal[object].connect(self.set_test_parameters)
         self.tab_1.statment_directory[str].connect(self.tab_4.get_save_directory)
+
+
         #self.tab_4.save_button.clicked.connect(self.save_report)
         self.tab_4.save_button.clicked.connect(self.save_report)
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
@@ -157,11 +164,12 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
             assert self.tab_1.get_lab_number(), "Не выбран образец в ведомости"
             #assert self.tab_2.test_processing_widget.model._test_data.cycles, "Не выбран файл прибора"
             read_parameters = self.tab_1.open_line.get_data()
+            params = self.tab_1.get_data()
 
             test_parameter = {"equipment": read_parameters["equipment"],
                               "mode": "КД, девиаторное нагружение в кинематическом режиме",
                               "sigma_3": self.tab_2._model.deviator_loading._test_params.sigma_3,
-                              "K0": self.tab_2._model.consolidation._test_params.K0,
+                              "K0": params.K0,
                               "h": 76,
                               "d": 38}
 
@@ -180,6 +188,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 Name = self.tab_1.get_lab_number().replace("*", "") + " " +\
                        self.tab_1.get_customer_data()["object_number"] + " ТС Р" + ".pdf"
                 self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
+                d = self.tab_1.get_physical_data()
 
                 report_consolidation(save + "/" + Name, self.tab_1.get_customer_data(),
                                  self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
@@ -291,9 +300,36 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
 
     def reprocessing(self):
-        dir = QFileDialog.getExistingDirectory(self, "Выберите папку с архивом")
-        if dir:
-              tests = get_reprocessing(dir)
-              print(tests)
-              self.tab_2._open_file(tests['10-2']["E"])
+        origin_keys = self.tab_1.get_lab_numbers()
+
+        try:
+            assert origin_keys is not None, "Не загружена ведомость"
+            dir = QFileDialog.getExistingDirectory(self, "Выберите папку с архивом")
+            assert dir, "Не выбрана папка"
+
+            tests = get_reprocessing(dir)
+            current_test = {}
+            for test in tests:
+                for key in origin_keys:
+                    if key.replace("*", "") == test:
+                        current_test[key] = tests[test]
+
+            assert current_test, "Не найдено совпадений"
+            if len(current_test) != len(origin_keys):
+                QMessageBox.about(self, "Предупреждение", f'В ведомости: {len(origin_keys)}, В папке: {len(current_test)}')
+
+            print(current_test)
+            print(current_test['7а-1']["E"])
+            self.tab_2._open_file(current_test['7а-1']["E"])
+            #self.tab_1.set_lab_number('7а-1')
+            #self.save_report(False)
+            #for test in current_test:
+                #if current_test[test]["E"]:
+                    #self.tab_2._open_file(current_test[test]["E"])
+                    #self.tab_1.set_lab_number(test)
+                    #self.save_report(log=False)
+            QMessageBox.about(self, "Сообщение", "Успешно перевыгнано")
+        except AssertionError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
 

@@ -76,8 +76,9 @@ class ModelMohrCircles:
 
             for test in self._tests:
                 results = test.deviator_loading.get_test_results()
-                sigma_3.append(round((results["sigma_3"]), 3))
-                sigma_1.append(round(results["sigma_3"] + results["qf"], 3))
+                sigma_3.append(np.round((results["sigma_3"]), 3))
+                sigma_1.append(np.round(results["sigma_3"] + results["qf"], 3))
+
             return sigma_3, sigma_1
         return None, None
 
@@ -111,8 +112,8 @@ class ModelMohrCircles:
 
         if sigma_3 is not None:
             c, fi = ModelMohrCircles.mohr_cf_stab(sigma_3, sigma_1)
-            self._test_result.c = round(np.arctan(c), 3)
-            self._test_result.fi = round(np.rad2deg(np.arctan(fi)), 1)# round(np.rad2deg(np.arctan(fi)), 1)
+            self._test_result.c = np.round(np.arctan(c), 3)
+            self._test_result.fi = np.round(np.rad2deg(np.arctan(fi)), 1)# round(np.rad2deg(np.arctan(fi)), 1)
 
             if self._test_reference_params.p_ref and self._test_reference_params.Eref:
                 E50 = self.get_E50()
@@ -312,13 +313,16 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 mohr_params.append(MechanicalProperties(for_copy=self._test_params))
                 mohr_params[num].sigma_3 = sigma_3
                 mohr_params[num].qf = define_qf(sigma_3, self._test_params.c, self._test_params.fi)
-                mohr_params[num].sigma_1 = round(mohr_params[num].qf + mohr_params[num].sigma_3)
+                mohr_params[num].sigma_1 = np.round(mohr_params[num].qf + mohr_params[num].sigma_3, 3)
 
             c = 0
             fi = 0
 
+            current_c = np.round(self._test_params.c, 3)
+            current_fi = np.round(self._test_params.fi, 1)
+
             while True:
-                if (c == np.round(self._test_params.c, 3) and fi == np.round(self._test_params.fi, 1)):
+                if (c == current_c and fi == current_fi):
                     break
 
                 qf = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(
@@ -403,9 +407,15 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
     def define_reference_pressure_array(build_press, pit_depth, depth, e, Il, type_ground, K0) -> List:
         """Функция рассчета обжимающих давлений для кругов мора"""
         if build_press and pit_depth:
-            sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10 * K0
-            return [np.round(0.25 * sigma_max * K0), np.round(0.5 * sigma_max * K0), np.round(sigma_max * K0)] if (
-                    (0.25 * sigma_max * K0) >= 100) else [100, 200, 400]
+            sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10
+
+            sigma_max_1 = np.round(((sigma_max / 1000) * K0), 2) * 1000
+            sigma_max_2 = np.round((0.5 * (sigma_max / 1000) * K0), 2) * 1000
+            sigma_max_3 = np.round((0.25 * (sigma_max / 1000) * K0), 2) * 1000
+
+            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+            """return [np.round(0.25 * sigma_max * K0), np.round(0.5 * sigma_max * K0), np.round(sigma_max * K0)] if (
+                    (0.25 * sigma_max * K0) >= 100) else [100, 200, 400]"""
         else:
 
             e = e if e else 0.65

@@ -266,8 +266,8 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
     def set_test_params(self, test_params):
         """Получение массивов опытов и передача в соответствующий класс"""
-        test_params.physical_properties.e = test_params.physical_properties.e if test_params.physical_properties.e else np.random.uniform(
-            0.6, 0.7)
+        #test_params.physical_properties.e = test_params.physical_properties.e if test_params.physical_properties.e else np.random.uniform(
+            #0.6, 0.7)
         self.test_params = test_params
         self.reconsolidation.set_test_params(test_params.sigma_3)
 

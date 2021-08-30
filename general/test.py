@@ -37,4 +37,4 @@ def get_reprocessing(path):
     return params
 
 
-#print(get_reprocessing(path))
+print(get_reprocessing(path))

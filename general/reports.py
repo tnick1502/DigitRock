@@ -1154,9 +1154,9 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
                       Paragraph('''<p>σ<sub rise="0.5" size="5">1c</sub></p>''', CentralStyle),
                       Paragraph('''<p>σ<sub rise="0.5" size="5">1f</sub></p>''', CentralStyle), "", "", ""])
 
-    tableData.append([Res["sigma_3_mohr"][0], Res["sigma_3_mohr"][0], Res["sigma_1_mohr"][0], "", "", ""])
-    tableData.append([Res["sigma_3_mohr"][1], Res["sigma_3_mohr"][1], Res["sigma_1_mohr"][1], "", "", ""])
-    tableData.append([Res["sigma_3_mohr"][2], Res["sigma_3_mohr"][2], Res["sigma_1_mohr"][2], "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_1_mohr"][2], 3), "", "", ""])
 
     for i in range(r):
         tableData.append([""])
