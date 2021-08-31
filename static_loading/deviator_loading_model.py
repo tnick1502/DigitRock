@@ -337,10 +337,13 @@ class ModelTriaxialDeviatorLoading:
         return {
             "cut": {
                 "left": self._test_cut_position.left,
-                "right": self._test_cut_position.right}
+                "right": self._test_cut_position.right
+            },
+            "sigma_3": self._test_params.sigma_3
         }
 
     def set_processing_parameters(self, params):
+        self._test_params.sigma_3 = params["sigma_3"]
         self.change_borders(params["cut"]["left"], params["cut"]["right"])
 
     @staticmethod
@@ -547,13 +550,23 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         xc, residual_strength = ModelTriaxialDeviatorLoadingSoilTest.define_xc_value_residual_strength(
             test_params.physical_properties, test_params.sigma_3,
             test_params.qf, test_params.E50)
-        if xc >= 0.14:
+
+
+        if xc <= 0.14:
             xc *= np.random.uniform(0.8, 1.05)
             residual_strength *= np.random.uniform(0.8, 1)
+
+            xc_sigma_3 = lambda sigma_3: 1-0.0005 * sigma_3
+            xc *= xc_sigma_3(self._test_params.sigma_3)
+
+            residual_strength *= xc_sigma_3(self._test_params.sigma_3)
 
         self._draw_params.fail_strain = xc
         self._draw_params.residual_strength_param = \
             ModelTriaxialDeviatorLoadingSoilTest.residual_strength_param_from_xc(xc)
+
+        self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
+
         self._draw_params.residual_strength = test_params.qf*residual_strength
         self._draw_params.qocr = 0
 

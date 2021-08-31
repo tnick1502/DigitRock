@@ -333,7 +333,8 @@ class MechanicalProperties:
             self.K0 = MechanicalProperties.define_K0(data_frame, K0_mode, string, self.physical_properties.Il,
                                                          self.fi)
 
-            self.sigma_3 = MechanicalProperties.define_sigma_3(self.K0, self.physical_properties.depth)
+            self.sigma_3 = MechanicalProperties.round_sigma_3(
+                MechanicalProperties.define_sigma_3(self.K0, self.physical_properties.depth))
 
             if self.sigma_3 < 100:
                 self.sigma_3 = 100
@@ -367,6 +368,12 @@ class MechanicalProperties:
                 self.OCR = 1
 
             self.Eur = True if test_mode == "Трёхосное сжатие с разгрузкой" else None
+
+    @staticmethod
+    def round_sigma_3(sigma_3):
+        integer = sigma_3 // 5
+        remains = sigma_3 % 5
+        return integer * 5 if remains < 2.5 else integer * 5 + 5
 
     @staticmethod
     def define_m(e, Il):

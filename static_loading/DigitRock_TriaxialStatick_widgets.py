@@ -13,7 +13,7 @@ from general.general_widgets import TriaxialStaticStatment
 from general.reports import report_consolidation, report_FCE, report_FC
 from general.save_widget import Save_Dir
 from general.excel_functions import set_cell_data
-from general.test import get_reprocessing
+from general.reprocessing import get_reprocessing
 #from test import LoadingWindow
 
 
@@ -138,7 +138,8 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
 
 
         #self.tab_4.save_button.clicked.connect(self.save_report)
-        self.tab_4.save_button.clicked.connect(self.save_report)
+        f = lambda x: self.save_report(True)
+        self.tab_4.save_button.clicked.connect(f)
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
     def set_test_parameters(self, params):
@@ -158,8 +159,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
             self.tab_2.item_identification.set_data(params)
             self.tab_2.set_params(params)
 
-    def save_report(self):
-
+    def save_report(self, parameter=False):
         try:
             assert self.tab_1.get_lab_number(), "Не выбран образец в ведомости"
             #assert self.tab_2.test_processing_widget.model._test_data.cycles, "Не выбран файл прибора"
@@ -187,7 +187,8 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 # Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
                 Name = self.tab_1.get_lab_number().replace("*", "") + " " +\
                        self.tab_1.get_customer_data()["object_number"] + " ТС Р" + ".pdf"
-                self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
+                if parameter:
+                    self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
                 d = self.tab_1.get_physical_data()
 
                 report_consolidation(save + "/" + Name, self.tab_1.get_customer_data(),
@@ -208,7 +209,8 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 # Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-Р" + ".pdf"
                 Name = self.tab_1.get_lab_number().replace("*", "") + " " +\
                        self.tab_1.get_customer_data()["object_number"] + " ТС Р" + ".pdf"
-                self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
+                if parameter:
+                    self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
 
                 report_consolidation(save + "/" + Name, self.tab_1.get_customer_data(),
                                  self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
@@ -234,8 +236,9 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 #Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
                 Name = self.tab_1.get_lab_number().replace("*", "") +\
                        " " + self.tab_1.get_customer_data()["object_number"] + " ТД" + ".pdf"
-                self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
-                self.tab_3._model.save_log_files(save)
+                if parameter:
+                    self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
+                    self.tab_3._model.save_log_files(save)
 
                 report_FCE(save + "/" + Name, self.tab_1.get_customer_data(), self.tab_1.get_physical_data(),
                            self.tab_1.get_lab_number(), os.getcwd() + "/project_data/",
@@ -265,8 +268,9 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 #Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
                 Name = self.tab_1.get_lab_number().replace("*", "") + " " +\
                        self.tab_1.get_customer_data()["object_number"] + " ТД" + ".pdf"
-                # self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
-                self.tab_3._model.save_log_files(save)
+                if parameter:
+                    #self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
+                    self.tab_3._model.save_log_files(save)
 
                 report_FC(save + "/" + Name, self.tab_1.get_customer_data(), self.tab_1.get_physical_data(),
                            self.tab_1.get_lab_number(), os.getcwd() + "/project_data/",
@@ -283,8 +287,8 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 set_cell_data(self.tab_1.path,
                               "BF" + str(self.tab_1.get_physical_data().sample_number + 7),
                               test_result["c"], sheet="Лист1", color="FF6961")
-
-            QMessageBox.about(self, "Сообщение", "Успешно сохранено")
+            if parameter:
+                QMessageBox.about(self, "Сообщение", "Успешно сохранено")
 
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(self.tab_1.get_lab_number()))
@@ -301,7 +305,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
 
     def reprocessing(self):
         origin_keys = self.tab_1.get_lab_numbers()
-
+        test_parameters = self.tab_1.open_line.get_data()
         try:
             assert origin_keys is not None, "Не загружена ведомость"
             dir = QFileDialog.getExistingDirectory(self, "Выберите папку с архивом")
@@ -318,16 +322,25 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
             if len(current_test) != len(origin_keys):
                 QMessageBox.about(self, "Предупреждение", f'В ведомости: {len(origin_keys)}, В папке: {len(current_test)}')
 
-            print(current_test)
-            print(current_test['7а-1']["E"])
-            self.tab_2._open_file(current_test['7а-1']["E"])
-            #self.tab_1.set_lab_number('7а-1')
-            #self.save_report(False)
-            #for test in current_test:
-                #if current_test[test]["E"]:
-                    #self.tab_2._open_file(current_test[test]["E"])
-                    #self.tab_1.set_lab_number(test)
-                    #self.save_report(log=False)
+            for test in current_test:
+                self.tab_1.set_lab_number(test)
+                if test_parameters["test_type"] == "Трёхосное сжатие с разгрузкой" or test_parameters["test_type"] == "Трёхосное сжатие (E)":
+                    self.tab_2._open_file(current_test[test]["E"])
+                    self.save_report()
+                elif test_parameters["test_type"] == 'Трёхосное сжатие (F, C)':
+                    self.tab_3.clear()
+                    for i in current_test[test]["FC"]:
+                        self.tab_3.add_test(i)
+                    self.save_report()
+                    self.tab_3.clear()
+                elif test_parameters["test_type"] == 'Трёхосное сжатие (F, C, E)':
+                    self.tab_3.clear()
+                    for i in current_test[test]["FC"]:
+                        self.tab_3.add_test(i)
+                    self.tab_2._open_file(current_test[test]["E"])
+                    self.save_report()
+                    self.tab_3.clear()
+
             QMessageBox.about(self, "Сообщение", "Успешно перевыгнано")
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

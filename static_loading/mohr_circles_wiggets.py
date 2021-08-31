@@ -20,7 +20,7 @@ from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI
 from static_loading.triaxial_static_test_widgets import TriaxialStaticDialog, TriaxialStaticDialogSoilTest
 from general.initial_tables import Table
 from configs.plot_params import plotter_params
-from general.general_functions import read_json_file
+from general.general_functions import read_json_file, AttrDict
 
 plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
 plt.style.use('bmh')
@@ -357,6 +357,11 @@ class MohrWidgetSoilTest(MohrWidget):
         self.layout_wiget.addWidget(self.reference_pressure_array_box)
         self.reference_pressure_array_box_layout.addStretch(-1)
 
+    def add_test(self, path):
+        self._model.add_test(path)
+        self._create_test_tables()
+        self._plot()
+
     def get_reference_pressure_array(self):
         try:
             text = self.reference_pressure_array_box_line_user.text()
@@ -396,6 +401,13 @@ class MohrWidgetSoilTest(MohrWidget):
         params = self._model.get_test_params()
         if params:
             self.set_params(params)
+
+    def clear(self):
+
+        self._model._tests = []
+        self._model._test_data = AttrDict({"fi": None, "c": None})
+        self._model._test_result = AttrDict({"fi": None, "c": None, "m": None})
+        self._model._test_reference_params = AttrDict({"p_ref": None, "Eref": None})
 
     def _processing_test(self):
         """Вызов окна обработки опыта"""

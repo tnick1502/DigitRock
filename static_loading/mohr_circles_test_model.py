@@ -282,7 +282,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         self._test_params = None
         self._reference_pressure_array = None
 
-    def add_test(self, params):
+    def add_test_st(self, params):
         """Добавление опытов"""
         test = ModelTriaxialStaticLoadSoilTest()
         test.set_test_params(params)
@@ -343,7 +343,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 fi = round(np.rad2deg(np.arctan(fi)), 1)
 
             for param in mohr_params:
-                self.add_test(param)
+                self.add_test_st(param)
 
     def save_log_files(self, directory):
         """Метод генерирует файлы испытания для всех кругов"""
