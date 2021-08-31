@@ -264,7 +264,7 @@ class MohrWidget(QWidget):
     def _plot(self):
         self.deviator_ax.clear()
         self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-        self.deviator_ax.set_ylabel("Девиатор q, кПа")
+        self.deviator_ax.set_ylabel("Девиатор q, МПа")
 
         self.mohr_ax.clear()
         self.mohr_ax.set_xlabel("σ, МПа")

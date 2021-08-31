@@ -163,9 +163,9 @@ class ModelTriaxialDeviatorLoading:
         if self._test_result.E50:
             E50 = point_to_xy(Point(x=0, y=0), Point(
                     x=0.9 * self._test_result.qf * 1000/ (self._test_result.E50*1000),
-                    y=0.9 * self._test_result.qf * 1000))
+                    y=0.9 * self._test_result.qf))
             E = {"x": self._test_result.E[1],
-                 "y": np.array(self._test_result.E[2])}
+                 "y": np.array(self._test_result.E[2]) / 1000}
 
         else:
             E50 = None
@@ -180,9 +180,9 @@ class ModelTriaxialDeviatorLoading:
             _end, = np.where(line_ >= self._test_data.deviator_cut[self._test_data.reload_points_cut[2]])
 
             Eur = point_to_xy(Point(x=self._test_data.strain_cut[_begin[0]],
-                                    y=line_[_begin[0]]),
+                                    y=line_[_begin[0]] / 1000),
                               Point(x=self._test_data.strain_cut[_end[0]],
-                                    y=line_[_end[0]]))
+                                    y=line_[_end[0]] / 1000))
 
             _begin, = np.where(self._test_data.deviator_cut >=
                                self._test_data.deviator_cut[self._test_data.reload_points_cut[1] - 5])
@@ -204,11 +204,11 @@ class ModelTriaxialDeviatorLoading:
             dilatancy = None
 
         return {"strain": self._test_data.strain_cut,
-                "deviator": self._test_data.deviator_cut,
+                "deviator": self._test_data.deviator_cut / 1000,
                 "strain_cut": self._test_data.strain[0:self._test_cut_position.left] -
                               self._test_data.strain[self._test_cut_position.left],
-                "deviator_cut": self._test_data.deviator[0:self._test_cut_position.left] -
-                                self._test_data.deviator[self._test_cut_position.left],
+                "deviator_cut": (self._test_data.deviator[0:self._test_cut_position.left] -
+                                self._test_data.deviator[self._test_cut_position.left]) / 1000,
                 "volume_strain": self._test_data.volume_strain_cut,
                 "volume_strain_approximate": self._test_data.volume_strain_approximate,
                 "E50": E50,
@@ -216,7 +216,7 @@ class ModelTriaxialDeviatorLoading:
                 "Eur": Eur,
                 "strain_Eur": strain_Eur,
                 "deviator_Eur": deviator_Eur,
-                "sigma_3": self._test_params.sigma_3,
+                "sigma_3": self._test_params.sigma_3/1000,
                 "dilatancy": dilatancy}
 
     def check_none(self):

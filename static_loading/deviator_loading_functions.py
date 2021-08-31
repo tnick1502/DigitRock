@@ -928,64 +928,65 @@ def volumetric_deformation(x, x_given, m_given, xc, v_d2, x_end, angle_of_dilata
 
     v_d_given = -x_given * (1 - 2 * m_given)  # коэффициент Пуассона пересчитанный в обьемную деформацию
 
-    if angle_of_dilatancy >= 0:
-        index_x_start_dilatacy, = np.where(x >= (xc - len_x_dilatacy / 2))  # индекс начала линейного участка дилатансии
-        index_x_end_dilatacy, = np.where(x >= (xc + len_x_dilatacy / 2))  # индекс конца линейного участка дилатансии
-        # линейный участок (xc находится в середине линейного участка)
-        x_dilatancy = np.linspace(x[index_x_start_dilatacy[0]], x[index_x_end_dilatacy[0]],
-                                  int(abs(x[index_x_end_dilatacy[0]] - x[index_x_start_dilatacy[0]]) / (
-                                          x[-1] - x[-2]) + 1))
-        b_dilatancy = v_d_xc - angle_of_dilatancy * xc
-        v_d_dilatancy = angle_of_dilatancy * x_dilatancy + b_dilatancy
-        # сплайн участка от 0 до xc используется только для участка от 0 до x_given
-        spl_before_dilatancy = interpolate.make_interp_spline([0, x_given, x[index_x_start_dilatacy[0]]],
-                                                              [0, v_d_given, v_d_dilatancy[0]], k=3,
-                                                              bc_type=([(2, 0)], [(1, angle_of_dilatancy)]))
-        v_d_before_dilatacy = spl_before_dilatancy(x[:index_x_start_dilatacy[0]])
+    # if angle_of_dilatancy < 0:
+    #     xc=0.3
+    index_x_start_dilatacy, = np.where(x >= (xc - len_x_dilatacy / 2))  # индекс начала линейного участка дилатансии
+    index_x_end_dilatacy, = np.where(x >= (xc + len_x_dilatacy / 2))  # индекс конца линейного участка дилатансии
+    # линейный участок (xc находится в середине линейного участка)
+    x_dilatancy = np.linspace(x[index_x_start_dilatacy[0]], x[index_x_end_dilatacy[0]],
+                              int(abs(x[index_x_end_dilatacy[0]] - x[index_x_start_dilatacy[0]]) / (
+                                      x[-1] - x[-2]) + 1))
+    b_dilatancy = v_d_xc - angle_of_dilatancy * xc
+    v_d_dilatancy = angle_of_dilatancy * x_dilatancy + b_dilatancy
+    # сплайн участка от 0 до xc используется только для участка от 0 до x_given
+    spl_before_dilatancy = interpolate.make_interp_spline([0, x_given, x[index_x_start_dilatacy[0]]],
+                                                          [0, v_d_given, v_d_dilatancy[0]], k=3,
+                                                          bc_type=([(2, 0)], [(1, angle_of_dilatancy)]))
+    v_d_before_dilatacy = spl_before_dilatancy(x[:index_x_start_dilatacy[0]])
 
-        index_x_line_end_start, = np.where(x >= (x_end - len_line_end))  # индекс начала последнего линейного участка
-        # линейный участок (x_end находится в начале линейного участка)
-        x_line_end = np.linspace(x[index_x_line_end_start[0]], (x[-1]),
-                                 int(abs(x[index_x_line_end_start[0]] - (x[-1])) / (x[-1] - x[-2]) + 1))
-        b_end = (v_d2 - angle_end * x_end) * np.random.uniform(0.3, 0.8)
-        v_d_line_end = angle_end * x_line_end + b_end
+    index_x_line_end_start, = np.where(x >= (x_end - len_line_end))  # индекс начала последнего линейного участка
+    # линейный участок (x_end находится в начале линейного участка)
+    x_line_end = np.linspace(x[index_x_line_end_start[0]], (x[-1]),
+                             int(abs(x[index_x_line_end_start[0]] - (x[-1])) / (x[-1] - x[-2]) + 1))
+    b_end = (v_d2 - angle_end * x_end) * np.random.uniform(0.3, 0.8)
+    v_d_line_end = angle_end * x_line_end + b_end
 
-        # функция Безье для учатска до хc
-        xgi, = np.where(x > x_given)
-        y_Bezier_line = bezier_curve([0, 0], [x_given, v_d_given],  # Первая и Вторая точки первой прямой
-                                     [x_given, angle_of_dilatancy * x_given + b_dilatancy],
-                                     # Первая точка второй прямой
-                                     [x[index_x_start_dilatacy[0]], v_d_dilatancy[0]],  # Вторая точка второй прямой
-                                     [x_given, v_d_given],  # Первый узел (здесь фактически это 2 точка первой прямой)
-                                     [x[index_x_start_dilatacy[0]], v_d_dilatancy[0]],  # Второй узел
-                                     # (здесь фактически это 2 точка второй прямой)
-                                     x[xgi[0]:index_x_start_dilatacy[0]]
-                                     )
-        # функция Безье для учатска после хc
-        y_Bezier_line_1 = bezier_curve([x_dilatancy[0], v_d_dilatancy[0]],  # Первая точка второй прямой
-                                       [x_dilatancy[-1], v_d_dilatancy[-1]],  # Первая и Вторая точки первой прямой
-                                       [x_line_end[0], v_d_line_end[0]],  # Первая точка второй прямой
-                                       [x_line_end[-1], v_d_line_end[-1]],  # Вторая точка второй прямой
-                                       [x_dilatancy[-1], v_d_dilatancy[-1]],
-                                       # Первый узел (здесь фактически это 2 точка первой прямой)
-                                       [x_line_end[0], v_d_line_end[0]],  # Второй узел
-                                       # (здесь фактически это 2 точка второй прямой)
-                                       x[index_x_end_dilatacy[0] + 1:index_x_line_end_start[0]]
-                                       )
-        # замена сплайна на участке x_given, xc кривыми Безье
-        for i in range(len(y_Bezier_line)):
-            v_d_before_dilatacy[i + xgi[0]] = y_Bezier_line[i]
-        v_d = np.hstack((v_d_before_dilatacy, v_d_dilatancy, y_Bezier_line_1, v_d_line_end))
+    # функция Безье для учатска до хc
+    xgi, = np.where(x > x_given)
+    y_Bezier_line = bezier_curve([0, 0], [x_given, v_d_given],  # Первая и Вторая точки первой прямой
+                                 [x_given, angle_of_dilatancy * x_given + b_dilatancy],
+                                 # Первая точка второй прямой
+                                 [x[index_x_start_dilatacy[0]], v_d_dilatancy[0]],  # Вторая точка второй прямой
+                                 [x_given, v_d_given],  # Первый узел (здесь фактически это 2 точка первой прямой)
+                                 [x[index_x_start_dilatacy[0]], v_d_dilatancy[0]],  # Второй узел
+                                 # (здесь фактически это 2 точка второй прямой)
+                                 x[xgi[0]:index_x_start_dilatacy[0]]
+                                 )
+    # функция Безье для учатска после хc
+    y_Bezier_line_1 = bezier_curve([x_dilatancy[0], v_d_dilatancy[0]],  # Первая точка второй прямой
+                                   [x_dilatancy[-1], v_d_dilatancy[-1]],  # Первая и Вторая точки первой прямой
+                                   [x_line_end[0], v_d_line_end[0]],  # Первая точка второй прямой
+                                   [x_line_end[-1], v_d_line_end[-1]],  # Вторая точка второй прямой
+                                   [x_dilatancy[-1], v_d_dilatancy[-1]],
+                                   # Первый узел (здесь фактически это 2 точка первой прямой)
+                                   [x_line_end[0], v_d_line_end[0]],  # Второй узел
+                                   # (здесь фактически это 2 точка второй прямой)
+                                   x[index_x_end_dilatacy[0] + 1:index_x_line_end_start[0]]
+                                   )
+    # замена сплайна на участке x_given, xc кривыми Безье
+    for i in range(len(y_Bezier_line)):
+        v_d_before_dilatacy[i + xgi[0]] = y_Bezier_line[i]
+    v_d = np.hstack((v_d_before_dilatacy, v_d_dilatancy, y_Bezier_line_1, v_d_line_end))
     # в случае отрицательных углов дилатансии строится экпонента
-    else:
-        k1_e = np.random.uniform(10, 30)
-
-        def equations_e(a1_e):
-            # коэффициенты экспоненты
-            return a1_e * (np.exp(-k1_e * x_given) - 1) - v_d_given
-
-        a1_e = fsolve(equations_e, (-abs(v_d_given)))
-        v_d = a1_e * (np.exp(-k1_e * x) - 1)
+    # else:
+    #     k1_e = np.random.uniform(10, 30)
+    #
+    #     def equations_e(a1_e):
+    #         # коэффициенты экспоненты
+    #         return a1_e * (np.exp(-k1_e * x_given) - 1) - v_d_given
+    #
+    #     a1_e = fsolve(equations_e, (-abs(v_d_given)))
+    #     v_d = a1_e * (np.exp(-k1_e * x) - 1)
 
     if Eur:
         # если подается Eur то строится участок соответсвующий петле разгрузке на кривой девиаторного нагружения
@@ -1124,9 +1125,7 @@ def curve(qf, e50, **kwargs):
     if xc >= 0.15:
         xc = x_old[-1] - len_x_dilatacy - 5 * (x_old[-1] - x_old[-2]) - len_line_end  # x_old[index_xc[0] - 1]  # ???
 
-    if xc > x_end - len_x_dilatacy / 2 - 5 * (x_old[-1] - x_old[-2]):  # если xc>чем точка начала
-        # последнего линейного участка -5 шагов, то сдвигаем х_end за область 0.15
-        x_end = x_end + abs(x_end - len_x_dilatacy / 2 - 5 * (x_old[-1] - x_old[-2]) - xc)
+
 
     """
             Функция построения обьемной деформации соединением сплайна и двух кривых Безьею
@@ -1157,6 +1156,16 @@ def curve(qf, e50, **kwargs):
         kwargs["angle_of_dilatacy"] = np.tan(kwargs["angle_of_dilatacy"] * np.pi / 180)
     except KeyError:
         kwargs["angle_of_dilatacy"] = np.tan(30 * np.pi / 180)  # np.random.uniform(0.015, 0.03)
+
+    #для отрицательного угла дилатансии
+    if kwargs["angle_of_dilatacy"]<0:
+        xc=np.random.uniform(0.2, 0.3)
+        kwargs["angle_of_dilatacy"] = np.tan(30 * np.pi / 180)
+
+
+    if xc > x_end - len_x_dilatacy / 2 - 5 * (x_old[-1] - x_old[-2]):  # если xc>чем точка начала
+        # последнего линейного участка -5 шагов, то сдвигаем х_end за область 0.15
+        x_end = x_end + abs(x_end - len_x_dilatacy / 2 - 5 * (x_old[-1] - x_old[-2]) - xc)
 
     # Прямая из х_given в хс
     if kwargs["v_d_xc"] < (-x_given * (1 - 2 * kwargs["m_given"])) / x_given * (xc - len_x_dilatacy / 2) * 0.8:
@@ -1281,6 +1290,7 @@ def curve(qf, e50, **kwargs):
     # формирование начального участка функции девиаторного нагружения
     y_bias = np.random.uniform(0.005, 0.015)  # смещение y
     y1_bias = np.random.uniform(0.001, 0.002)
+
     y2, v_d_given2 = volumetric_deformation(x_old, x_given, m_given, xc, v_d2, x_end, angle_of_dilatacy,
                                             angle_of_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x, point2_x,
                                             point3_x)
@@ -1562,7 +1572,7 @@ if __name__ == '__main__':
     (596.48, 382.8)
 
     x, y, z, z1, loop, a = curve(794.7, 29710.0, xc=0.07, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                 amount_points=500, angle_of_dilatacy=6, Eur=30000, y_rel_p=596, point2_y=382)
+                                 amount_points=500, angle_of_dilatacy=-6, Eur=30000, y_rel_p=596, point2_y=382)
 
 
     i, = np.where(x >= max(x) - 0.15)
@@ -1577,7 +1587,7 @@ if __name__ == '__main__':
     #print(E)
     i = np.argmax(y)
     y -= y[0]
-    plt.plot(x, y)
+    plt.plot(x, z)
     #with open("C:/Users/Пользователь/Desktop/test_file.txt", "w") as file:
         #for i in range(len(y)):
             #file.write(str(np.round(-x[i], 4)).replace(".", ",") + "\t" + str(np.round(y[i], 4)).replace(".", ",")+ "\n")

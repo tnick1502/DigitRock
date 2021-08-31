@@ -137,7 +137,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         try:
             self.deviator_ax.clear()
             self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-            self.deviator_ax.set_ylabel("Девиатор q, кПа")
+            self.deviator_ax.set_ylabel("Девиатор q, МПа")
 
             self.volume_strain_ax.clear()
             self.volume_strain_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
@@ -162,7 +162,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                 if plots["Eur"]:
                     #self.deviator_ax.plot(*plots["Eur"], **plotter_params["static_loading_red_dotted_line"],
                                           #label="$E_{ur}$" + ", MПа = " + str(res["Eur"]))
-                    self.deviator_ax2.set_ylabel("Девиатор q, кПа", fontsize=8)
+                    self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
                     self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
                     self.deviator_ax2.plot(plots["strain_Eur"], plots["deviator_Eur"],
@@ -173,7 +173,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                     plt.yticks(fontsize=8)
 
                 else:
-                    self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', кПa", fontsize=8)
+                    self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', МПa", fontsize=8)
                     self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
                     #lim = self.deviator_ax.get_xlim()
