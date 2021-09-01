@@ -548,7 +548,7 @@ def test_mode_consolidation(canvas, Data):
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
-               [Paragraph('''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, кПа:</p>''', LeftStyle), "", "", zap(weirdo_round(Data["sigma_3"]), 1), "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
+               [Paragraph('''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, МПа:</p>''', LeftStyle), "", "", zap(Data["sigma_3"]/1000, 3) if Data["sigma_3"] != "-" else "-", "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
                ["Оборудование:", "", "", Data["equipment"]],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
@@ -791,26 +791,26 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
         renderPDF.draw(a, canvas, 36 * mm, 66 * mm)
         tableData.append(
             [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
-             Res["qf"], ""])
+             zap(Res["qf"], 3), ""])
         tableData.append(
             [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
-             Res["E50"], ""])
+             zap(Res["E50"], 1), ""])
         tableData.append(
-            [Paragraph('''<p>Коэффициент поперечного расширения µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+            [Paragraph('''<p>Коэффициент поперечного расширения µ, д.е.:</p>''', LeftStyle), "", "", "", zap(Res["poissons_ratio"], 2), ""])
         tableData.append(
             [Paragraph('''<p>Модуль деформации повторного нагружения E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "",
-             "", Res["Eur"], ""])
+             "", zap(Res["Eur"], 1), ""])
 
     else:
         tableData.append(
             [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
-             Res["qf"], ""])
+             zap(Res["qf"], 3), ""])
         tableData.append(
             [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
-             Res["E50"], ""])
-        tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", Res["E"][0], ""])
+             zap(Res["E50"], 1), ""])
+        tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", zap(Res["E"][0], 1), ""])
         tableData.append(
-            [Paragraph('''<p>Коэффициент поперечного расширения µ, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+            [Paragraph('''<p>Коэффициент поперечного расширения µ, д.е.:</p>''', LeftStyle), "", "", "", zap(Res["poissons_ratio"], 2), ""])
 
         try:
             a = svg2rlg(pick[0])
@@ -1163,10 +1163,10 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
 
     tableData.append(
         [Paragraph('''<p>Эффективное сцепление с', МПа:</p>''', LeftStyle), "", "", "",
-         Res["c"], ""])
+         zap(Res["c"], 3), ""])
     tableData.append(
         [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "", "",
-         Res["fi"], ""])
+         zap(Res["fi"], 1), ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),

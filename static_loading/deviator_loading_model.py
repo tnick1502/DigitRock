@@ -152,7 +152,7 @@ class ModelTriaxialDeviatorLoading:
     def get_test_results(self):
         """Получение результатов обработки опыта"""
         dict = self._test_result.get_dict()
-        dict["sigma_3"] = round(self._test_params.get_dict()["sigma_3"]/1000, 2)\
+        dict["sigma_3"] = np.round(self._test_params.get_dict()["sigma_3"]/1000, 3)\
             if self._test_params.get_dict()["sigma_3"] is not None else None
         dict["u"] = round(self._test_params.get_dict()["u"]/1000, 2)\
             if self._test_params.get_dict()["u"] is not None else None
@@ -190,7 +190,7 @@ class ModelTriaxialDeviatorLoading:
                                self._test_data.deviator_cut[self._test_data.reload_points_cut[2] + 5])
 
             strain_Eur = self._test_data.strain_cut[:_end[0]]
-            deviator_Eur = self._test_data.deviator_cut[:_end[0]]
+            deviator_Eur = self._test_data.deviator_cut[:_end[0]]/1000
 
         else:
             Eur = None

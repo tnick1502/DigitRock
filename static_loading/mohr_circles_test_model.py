@@ -109,7 +109,6 @@ class ModelMohrCircles:
     def _test_processing(self):
         """Обработка опытов"""
         sigma_3, sigma_1 = self.get_sigma_3_1()
-
         if sigma_3 is not None:
             c, fi = ModelMohrCircles.mohr_cf_stab(sigma_3, sigma_1)
             self._test_result.c = np.round(np.arctan(c), 3)
@@ -326,8 +325,8 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                     break
 
                 qf = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(
-                    np.array([param.sigma_3 for param in mohr_params]),
-                    np.array([param.sigma_1 for param in mohr_params]), self._test_params.fi,
+                    np.array([np.round(param.sigma_3) for param in mohr_params]),
+                    np.array([np.round(param.sigma_1) for param in mohr_params]), self._test_params.fi,
                     self._test_params.c * 1000)
 
                 for i in range(len(qf)):
@@ -336,9 +335,9 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                     mohr_params[i].E50 = define_E50(
                         self._test_params.E50, self._test_params.c * 1000, self._test_params.fi, mohr_params[i].sigma_3,
                         self._test_params.sigma_3, self._test_params.m) * np.random.uniform(0.9, 1.1)
-
-                c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab([x.sigma_3/1000 for x in mohr_params],
-                                                                   [x.sigma_1/1000 for x in mohr_params])
+                    
+                c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab([np.round(x.sigma_3/1000, 3) for x in mohr_params],
+                                                                   [np.round(x.sigma_1/1000, 3) for x in mohr_params])
                 c = round(c, 3)
                 fi = round(np.rad2deg(np.arctan(fi)), 1)
 
@@ -406,12 +405,22 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
     @staticmethod
     def define_reference_pressure_array(build_press, pit_depth, depth, e, Il, type_ground, K0) -> List:
         """Функция рассчета обжимающих давлений для кругов мора"""
+
+        def round_sigma_3(sigma_3, param=5):
+            integer = sigma_3 // param
+            remains = sigma_3 % param
+            return int(integer * param) if remains < (param / 2) else int(integer * param + param)
+
         if build_press and pit_depth:
             sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10
 
-            sigma_max_1 = np.round(((sigma_max / 1000) * K0), 2) * 1000
+            """sigma_max_1 = np.round(((sigma_max / 1000) * K0), 2) * 1000
             sigma_max_2 = np.round((0.5 * (sigma_max / 1000) * K0), 2) * 1000
-            sigma_max_3 = np.round((0.25 * (sigma_max / 1000) * K0), 2) * 1000
+            sigma_max_3 = np.round((0.25 * (sigma_max / 1000) * K0), 2) * 1000"""
+
+            sigma_max_1 = round_sigma_3(sigma_max * K0)
+            sigma_max_2 = round_sigma_3(sigma_max * K0 * 0.5)
+            sigma_max_3 = round_sigma_3(sigma_max * K0 * 0.25)
 
             return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
             """return [np.round(0.25 * sigma_max * K0), np.round(0.5 * sigma_max * K0), np.round(sigma_max * K0)] if (
