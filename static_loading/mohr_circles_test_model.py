@@ -335,7 +335,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                     mohr_params[i].E50 = define_E50(
                         self._test_params.E50, self._test_params.c * 1000, self._test_params.fi, mohr_params[i].sigma_3,
                         self._test_params.sigma_3, self._test_params.m) * np.random.uniform(0.9, 1.1)
-                    
+
                 c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab([np.round(x.sigma_3/1000, 3) for x in mohr_params],
                                                                    [np.round(x.sigma_1/1000, 3) for x in mohr_params])
                 c = round(c, 3)
