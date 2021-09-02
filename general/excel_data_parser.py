@@ -932,7 +932,7 @@ class VibrationCreepData(MechanicalProperties):
             try:
                 self.frequency = [float(frequency)]
                 self.Kd = [float(Kd)]
-            except TypeError:
+            except ValueError:
                 self.frequency = list(map(
                 lambda frequency: float(frequency.replace(",", ".").strip(" ")), frequency.split(";")))
                 self.Kd = list(map(lambda Kd: float(Kd.replace(",", ".").strip(" ")),

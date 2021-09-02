@@ -29,7 +29,7 @@ class DigitRock_TriaxialStatick(QWidget):
         self.tab_1 = TriaxialStaticStatment()
         self.tab_2 = TriaxialStaticWidget()
         self.tab_3 = MohrWidget()
-        self.tab_4 = Save_Dir("Девиаторное нагружение")
+        self.tab_4 = Save_Dir()
         #self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
@@ -40,10 +40,7 @@ class DigitRock_TriaxialStatick(QWidget):
 
         self.tab_1.signal[object].connect(self.tab_2.item_identification.set_data)
         self.tab_1.signal[object].connect(self.tab_3.item_identification.set_data)
-        #self.Tab_1.signal[object].connect(self.report_params)
-        #self.Tab_1.signal[object].connect(self.Tab_4.get_data)
-        #self.Tab_1.signal[object].connect(self.Tab_3.get_data)
-        self.tab_1.statment_directory[str].connect(self.tab_4.get_save_directory)
+        self.tab_1.statment_directory[str].connect(self.set_save_directory)
         self.tab_4.save_button.clicked.connect(self.save_report)
         #self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
@@ -62,7 +59,7 @@ class DigitRock_TriaxialStatick(QWidget):
 
             test_result = self.tab_2.get_test_results()
 
-            save = self.tab_4.arhive_directory + "/" + self.tab_1.get_lab_number()
+            save = self.tab_4.arhive_directory + "/" + self.tab_1.get_lab_number().replace("/", "-")
             save = save.replace("*", "")
             if os.path.isdir(save):
                 pass
@@ -81,6 +78,7 @@ class DigitRock_TriaxialStatick(QWidget):
                                  test_parameter, test_result,
                                  (*self.tab_2.consolidation.save_canvas(),
                                   *self.tab_2.deviator_loading.save_canvas()), 1.1)
+
             elif read_parameters["test_type"] == "Трёхосное сжатие (F, C, E)":
                 assert self.tab_3._model._test_result.fi, "Не загружен файл опыта"
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = self.tab_3._model.get_sigma_3_1()
@@ -107,6 +105,10 @@ class DigitRock_TriaxialStatick(QWidget):
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
 
+    def set_save_directory(self, signal):
+        read_parameters = self.tab_1.open_line.get_data()
+        self.tab_4.set_directory(signal, read_parameters["test_type"])
+
 class DigitRock_TriaxialStatickSoilTest(QWidget):
 
     def __init__(self):
@@ -119,7 +121,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
         self.tab_1 = TriaxialStaticStatment()
         self.tab_2 = TriaxialStaticWidgetSoilTest()
         self.tab_3 = MohrWidgetSoilTest()
-        self.tab_4 = Save_Dir("Девиаторное нагружение")
+        self.tab_4 = Save_Dir()
         # self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
@@ -134,13 +136,17 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
         self.reprocessing_button.clicked.connect(self.reprocessing)
 
         self.tab_1.signal[object].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(self.tab_4.get_save_directory)
+        self.tab_1.statment_directory[str].connect(self.set_save_directory)
 
 
         #self.tab_4.save_button.clicked.connect(self.save_report)
         f = lambda x: self.save_report(True)
         self.tab_4.save_button.clicked.connect(f)
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
+
+    def set_save_directory(self, signal):
+        read_parameters = self.tab_1.open_line.get_data()
+        self.tab_4.set_directory(signal, read_parameters["test_type"])
 
     def set_test_parameters(self, params):
         param = self.tab_1.open_line.get_data()
@@ -175,7 +181,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
 
             test_result = self.tab_2.get_test_results()
 
-            save = self.tab_4.arhive_directory + "/" + self.tab_1.get_lab_number()
+            save = self.tab_4.arhive_directory + "/" + self.tab_1.get_lab_number().replace("/", "-")
             save = save.replace("*", "")
             if os.path.isdir(save):
                 pass
@@ -315,7 +321,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
             current_test = {}
             for test in tests:
                 for key in origin_keys:
-                    if key.replace("*", "") == test:
+                    if key.replace("*", "").replace("/", "-") == test:
                         current_test[key] = tests[test]
 
             assert current_test, "Не найдено совпадений"

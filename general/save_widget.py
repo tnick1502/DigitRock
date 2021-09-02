@@ -12,21 +12,15 @@ class Save_Dir(QWidget):
      после чего в этой директории создаются соответствующие папки.
      Название папки отчета передается в класс через коструктор mode"""
 
-    def __init__(self, mode):
+    def __init__(self):
         super().__init__()
 
-        #self.setFrameShape(QFrame.StyledPanel)
-        self.save_directory = ""
-        self.report_directory = ""
-        self.mode = mode
+        self._save_directory = "C:/"
 
         self.create_UI()
 
-        self.save_directory = "C:/"
-        self.report_directory = "C:/"
-        self.arhive_directory = "C:/"
-        self.save_directory_text.setText(self.save_directory)
-        self.tree.setRootIndex(self.model.index(self.save_directory))
+        self.save_directory_text.setText(self._save_directory)
+        self.tree.setRootIndex(self.model.index(self._save_directory))
 
     def create_UI(self):
 
@@ -63,8 +57,8 @@ class Save_Dir(QWidget):
         self.tree = QTreeView()
         self.tree.setModel(self.model)
         self.tree.setColumnWidth(0, 500)
-        self.tree.setRootIndex(self.model.index(self.save_directory))
-        self.tree.doubleClicked.connect(self.doubleclick)
+        self.tree.setRootIndex(self.model.index(self._save_directory))
+        self.tree.doubleClicked.connect(self._doubleclick)
 
         self.tree.setAnimated(True)
         #self.tree.setIndentation(50)
@@ -78,36 +72,38 @@ class Save_Dir(QWidget):
         self.setLayout(self.savebox_layout)
         self.savebox_layout.setContentsMargins(5, 5, 5, 5)
 
-    def _create_save_directory(self, path):
+    @property
+    def report_directory(self):
+        return self._save_directory + "/Отчеты/"
+
+    @property
+    def arhive_directory(self):
+        return self._save_directory + "/Архив/"
+
+    def _create_save_directory(self, path, mode=""):
         """Создание папки и подпапок для сохранения отчета"""
-        self.save_directory = path + "/" + self.mode
+        self._save_directory = path + "/" + mode
 
-        create_path(self.save_directory)
-
-        self.report_directory = self.save_directory + "/Отчеты/"
-        self.arhive_directory = self.save_directory + "/Архив/"
+        create_path(self._save_directory)
 
         for path in [self.report_directory, self.arhive_directory]:
             create_path(path)
 
-        self.save_directory_text.setText(self.save_directory)
+        self.save_directory_text.setText(self._save_directory)
 
-        self.tree.setRootIndex(self.model.index(self.save_directory))
+        self.tree.setRootIndex(self.model.index(self._save_directory))
 
-    def get_save_directory(self, signal):
+    def set_directory(self, signal, mode):
         """Получение пути к файлу ведомости excel"""
-        self._create_save_directory(signal[0:-signal[::-1].index("/")])
+        self._create_save_directory(signal[0:-signal[::-1].index("/")], mode)
 
     def change_save_directory(self):
         """Самостоятельный выбор папки сохранения"""
         s = QFileDialog.getExistingDirectory(self, "Select Directory")
-
-        if s == "":
-            pass
-        else:
+        if s:
             self._create_save_directory(s)
 
-    def doubleclick(self, item):
+    def _doubleclick(self, item):
         "Обработчик события двойного клика в проводнике. Открывает файл"
         #print(str(item.data()))
         path = self.sender().model().filePath(item)
@@ -120,22 +116,11 @@ class Save_Dir(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    headlines = ["Лаб. ном.", "Модуль деформации E, кПа", "Сцепление с, МПа",
-                 "Угол внутреннего трения, град",
-                 "Обжимающее давление 𝜎3", "K0", "Косательное напряжение τ, кПа",
-                 "Число циклов N, ед.", "Бальность, балл", "Магнитуда", "Понижающий коэф. rd"]
 
-    fill_keys = ["lab_number", "E", "c", "fi", "sigma3", "K0", "t", "N", "I", "magnituda", "rd"]
 
-    data_test_parameters = {"equipment": ["Выберите прибор", "Прибор: Вилли", "Прибор: Геотек"],
-                            "test_type": ["Режим испытания", "Сейсморазжижение", "Штормовое разжижение"],
-                            "k0_condition": ["Тип определения K0",
-                                             "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
-                                             "K0: K0 из ведомости", "K0: Формула Джекки",
-                                             "K0: K0 = 1"]
-                            }
-
-    Dialog = Save_Dir(None)
+    Dialog = Save_Dir()
+    Dialog.set_directory("C:/Users/Пользователь/Desktop/smof.xls", "FC")
+    print(Dialog.report_directory)
     Dialog.show()
     app.setStyle('Fusion')
 

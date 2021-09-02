@@ -46,9 +46,12 @@ class DigitRock_RezonantColumn_Processing(QWidget):
         self.tab_widget.addTab(self.tab_2, "Обработка")
         self.layout.addWidget(self.tab_widget)
 
-        self.tab_1.statment_directory[str].connect(self.tab_2.save.get_save_directory)
+        self.tab_1.statment_directory[str].connect(self.tab_2._set_save_directory)
         self.tab_1.signal[object].connect(self.tab_2.test.identification_widget.set_params)
         self.tab_2.save.save_button.clicked.connect(self.save_report)
+
+    def _set_save_directory(self, signal):
+        self.tab_4.save.set_directory(signal, "Резонансная колонка")
 
     def save_report(self):
         try:
@@ -117,7 +120,7 @@ class RezonantColumn_SoilTest_Tab(QWidget):
         self.layout = QVBoxLayout(self)
 
         self.test = RezonantColumnSoilTestWidget()
-        self.save = Save_Dir("G0")
+        self.save = Save_Dir()
 
         self.layout.addWidget(self.test)
         self.layout.addWidget(self.save)
@@ -139,7 +142,7 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
         self.tab_widget.addTab(self.tab_2, "Обработка")
         self.layout.addWidget(self.tab_widget)
 
-        self.tab_1.statment_directory[str].connect(self.tab_2.save.get_save_directory)
+        self.tab_1.statment_directory[str].connect(self._set_save_directory)
         self.tab_1.signal[object].connect(self.tab_2.test.set_test_params)
         self.tab_1.signal[object].connect(self.tab_2.test.identification_widget.set_params)
         self.tab_2.save.save_button.clicked.connect(self.save_report)
@@ -149,6 +152,9 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
         self.button_predict.setFixedHeight(50)
         self.button_predict.clicked.connect(self._predict)
         self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
+
+    def _set_save_directory(self, signal):
+        self.tab_2.save.set_directory(signal, "Резонансная колонка")
 
     def _predict(self):
         if self.tab_1._data is not None:

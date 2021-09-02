@@ -610,7 +610,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                         "borders": [self._test_params.qf*0.5, self._test_params.qf]},
                   "qocr": {"value": self._draw_params.qocr, "borders": [0, self._test_params.qf]},
                   "poisson": {"value": self._draw_params.poisson, "borders": [0.25, 0.45]},
-                  "dilatancy": {"value": self._draw_params.dilatancy, "borders": [0, 40]}}
+                  "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]}}
         return params
 
     def set_draw_params(self, params):

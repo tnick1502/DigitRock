@@ -28,20 +28,24 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = VibrationCreepStatment()
         self.tab_2 = VibrationCreepSoilTestWidget()
-        self.tab_3 = Save_Dir("Виброползучесть")
+        self.tab_3 = Save_Dir()
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Обработка")
         self.tab_widget.addTab(self.tab_3, "Сохранение отчета")
         self.layout.addWidget(self.tab_widget)
 
-        self.tab_1.statment_directory[str].connect(self.tab_3.get_save_directory)
+        self.tab_1.statment_directory[str].connect(self._set_save_directory)
         self.tab_1.signal[object].connect(self.tab_2.identification.set_data)
         self.tab_1.signal[object].connect(self.tab_2.set_test_params)
         self.tab_3.save_button.clicked.connect(self.save_report)
 
     def identification_set_data(self, data):
         self.tab_2.widget.identification.set_data(data)
+
+    def _set_save_directory(self, signal):
+        read_parameters = self.tab_1.open_line.get_data()
+        self.tab_3.set_directory(signal, "Виброползучесть")
 
     def save_report(self):
         #try:
