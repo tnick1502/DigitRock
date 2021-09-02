@@ -1,8 +1,16 @@
 
-def round_sigma_3(sigma_3):
-    integer = sigma_3 // 5
-    remains = sigma_3 % 5
-    return integer * 5 if remains < 2.5 else integer * 5 + 5
 
 
-print(round_sigma_3(303))
+class A:
+    a = [1,2,3,4,5]
+
+    def __geta__(self, val):
+        return self.a[val]
+
+    def __setitem__(self, key, val):
+        self.a[key] = val
+
+p = A()
+
+for i in p:
+    print(i)
