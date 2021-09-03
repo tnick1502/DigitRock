@@ -929,23 +929,52 @@ class VibrationCreepData(MechanicalProperties):
             frequency = data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]]
             Kd = data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]]
 
-            try:
-                self.frequency = [float(frequency)]
-                self.Kd = [float(Kd)]
-            except ValueError:
-                self.frequency = list(map(
-                lambda frequency: float(frequency.replace(",", ".").strip(" ")), frequency.split(";")))
-                self.Kd = list(map(lambda Kd: float(Kd.replace(",", ".").strip(" ")),
-                                                                     Kd.split(";")))
+            self.t = np.round(
+                float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]]) / 2, 1)
+
+            self.frequency = VibrationCreepData.val_to_list(frequency)
+            if str(Kd) == "nan":
+                self.Kd = [VibrationCreepData.define_Kd(
+                    self.qf, self.t, self.physical_properties.e, self.physical_properties.Il, frequency) for frequency
+                    in self.frequency]
+            else:
+                self.Kd = VibrationCreepData.val_to_list(Kd)
 
             """self.frequency = [float(frequency)] if str(frequency).isdigit() else list(map(
                 lambda frequency: float(frequency.replace(",", ".").strip(" ")), frequency.split(";")))
             self.Kd = [float(Kd)] if str(Kd).isdigit() else list(map(lambda Kd: float(Kd.replace(",", ".").strip(" ")),
                                                                      Kd.split(";")))"""
 
-            self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2, 1)
-
             self.cycles_count = int(np.random.uniform(2000, 5000))
+
+    @staticmethod
+    def val_to_list(val):
+        if val is None:
+            return None
+        else:
+            try:
+                val = [float(val)]
+            except ValueError:
+                val = list(map(lambda val: float(val.replace(",", ".").strip(" ")), val.split(";")))
+            return val
+
+    @staticmethod
+    def define_Kd(qf, t, e, Il, frequency) -> float:
+        """Функция рассчета Kd"""
+        Kd = 1
+
+        e = e if e else np.random.uniform(0.5, 0.6)
+        Il = Il if Il else 0.5
+
+        load_dependence = sigmoida(mirrow_element((4*t)/qf, 0.5), 0.5, 0.5, 0.5, 1.2)
+        e_dependence = sigmoida(mirrow_element(e, 0.5), 0.2, 0, 0.8, 1.8)
+        Il_dependence = sigmoida(mirrow_element(Il, 0.5), 0.1, 0.3, 0.9, 1)
+        frequency_dependence = sigmoida(mirrow_element(frequency, 50), 0.1, 40, 0.9, 120)
+
+        Kd *= load_dependence * e_dependence * Il_dependence * frequency_dependence * np.random.uniform(0.98, 1.02)
+
+        return np.round(Kd, 2)
+
 
 
 def getMechanicalExcelData(excel, test_mode, K0_mode) -> dict:

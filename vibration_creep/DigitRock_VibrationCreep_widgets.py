@@ -14,7 +14,7 @@ import pyautogui
 import shutil
 
 from general.save_widget import Save_Dir
-from vibration_creep.vibration_creep_widgets import VibrationCreepSoilTestWidget
+from vibration_creep.vibration_creep_widgets import VibrationCreepSoilTestWidget, PredictVCTestResults
 from general.general_widgets import VibrationCreepStatment
 from general.reports import report_VibrationCreep
 
@@ -39,6 +39,11 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
         self.tab_1.signal[object].connect(self.tab_2.identification.set_data)
         self.tab_1.signal[object].connect(self.tab_2.set_test_params)
         self.tab_3.save_button.clicked.connect(self.save_report)
+
+        self.button_predict = QPushButton("Прогнозирование")
+        self.button_predict.setFixedHeight(50)
+        self.button_predict.clicked.connect(self._predict)
+        self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
 
     def identification_set_data(self, data):
         self.tab_2.widget.identification.set_data(data)
@@ -93,6 +98,14 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
 
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)"""
+
+    def _predict(self):
+        if self.tab_1._data is not None:
+            dialog = PredictVCTestResults(self.tab_1._data, self.tab_1.get_customer_data())
+            dialog.show()
+
+            if dialog.exec() == QDialog.Accepted:
+                self.tab_1._data = dialog.get_data()
 
 
 

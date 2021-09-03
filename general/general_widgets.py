@@ -678,9 +678,6 @@ class VibrationCreepStatment(InitialStatment):
                 assert column_fullness_test(wb, columns=["AO"],
                                             initial_columns=cfe_test_type_columns("Виброползучесть")), \
                     "Заполните амплитуду ('AO')"
-                assert column_fullness_test(wb, columns=["CB"],
-                                            initial_columns=cfe_test_type_columns("Виброползучесть")), \
-                    "Заполните амплитуду ('CB')"
 
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

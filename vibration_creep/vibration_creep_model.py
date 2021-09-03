@@ -21,7 +21,7 @@ from general.general_functions import point_to_xy, Point
 from configs.plot_params import plotter_params
 from static_loading.triaxial_static_loading_test_model import ModelTriaxialStaticLoad, ModelTriaxialStaticLoadSoilTest
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, ModelTriaxialCyclicLoadingSoilTest
-from general.general_functions import read_json_file
+from general.general_functions import read_json_file, sigmoida, mirrow_element
 from dataclasses import dataclass
 from general.excel_data_parser import VibrationCreepData
 
@@ -127,18 +127,18 @@ class ModelVibrationCreep:
             if test_result.E50d:
                 E50d.append(point_to_xy(Point(x=0, y=0), Point(
                     x=1.1 * np.max(dyn_test.deviator_dynamic) / (test_result.E50d * 1000),
-                    y=1.1 * np.max(dyn_test.deviator_dynamic))))
+                    y=1.1 * np.max(dyn_test.deviator_dynamic) / 1000)))
             else:
                 E50d.append(None)
 
             if test_result.E50:
                 E50.append(point_to_xy(Point(x=0, y=0), Point(
                     x=1.1 * np.max(dyn_test.deviator_dynamic) / (test_result.E50 * 1000),
-                    y=1.1 * np.max(dyn_test.deviator_dynamic))))
+                    y=1.1 * np.max(dyn_test.deviator_dynamic)/1000)))
             else:
                 E50.append(None)
         return {"strain_dynamic": [i.strain_dynamic for i in self._dynamic_tests],
-                "deviator_dynamic": [i.deviator_dynamic for i in self._dynamic_tests],
+                "deviator_dynamic": [i.deviator_dynamic/1000 for i in self._dynamic_tests],
                 "time": [i.time for i in self._dynamic_tests],
                 "creep_curve": [i.creep_curve for i in self._dynamic_tests],
                 "strain": static_plots["strain"],
@@ -386,6 +386,7 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
     def save_log(self, directory):
         for i in range(len(self._dynamic_tests_models)):
             self._dynamic_tests_models[i].generate_log_file(directory, post_name="f = " + str(self._test_params.frequency[i]))
+
 
 
 if __name__ == '__main__':

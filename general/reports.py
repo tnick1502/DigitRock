@@ -241,13 +241,14 @@ def main_frame(canvas, path, Data_customer, code, list):
 
 def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname = "ц"):  # Верхняя таблица данных
 
+    borehole = Data_phiz.borehole if Data_phiz.borehole else "-"
 
     t = Table([[name[0], "", "", "", "", "", "", "", "", ""],
                [name[1]],
                ["Протокол испытаний №", "", str_for_excel(Lab + "/" + Data_customer["object_number"] + lname), "", "", "", "", "", "", ""],
                ['Заказчик:', Paragraph(Data_customer["customer"], LeftStyle)],
                ['Объект:', Paragraph(Data_customer["object_name"], LeftStyle)], [""], [""], [""],
-               ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(strNone(Data_phiz.borehole) + "; " + strNone(Data_phiz.depth).replace(".",",") +" м", LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(strNone(Data_phiz.ige), LeftStyle)],
+               ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(borehole + "; " + strNone(Data_phiz.depth).replace(".",",") +" м", LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(strNone(Data_phiz.ige), LeftStyle)],
                ['Лабораторный номер №:', "", "", Lab],
                ['Наименование грунта:', "", Paragraph(Data_phiz.soil_name, LeftStyle)], [""]
                ], colWidths = 17.5 * mm, rowHeights = 4 * mm)
@@ -549,7 +550,7 @@ def test_mode_consolidation(canvas, Data):
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
                [Paragraph('''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, МПа:</p>''', LeftStyle), "", "", zap(Data["sigma_3"]/1000, 3) if Data["sigma_3"] != "-" else "-", "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
-               ["Оборудование:", "", "", Data["equipment"]],
+               ["Оборудование:", "", "", "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (2, 1)),

@@ -1,15 +1,11 @@
 
+import matplotlib.pyplot as plt
+from general.general_functions import read_json_file, sigmoida, mirrow_element
+import numpy as np
 
 
-def sis(e, x, y):
-    return e * x * y
+x = np.linspace(0, 100, 1000)
 
 
-
-e = 2
-
-dict_f = {1: sis(e, 4, 5),
-          2: sis(e, 6, 7)}
-
-
-print(dict_f[1])
+plt.plot(x, sigmoida(mirrow_element(x, 50), 0.1, 40, 0.9, 120))
+plt.show()
