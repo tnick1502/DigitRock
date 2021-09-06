@@ -54,7 +54,8 @@ MechanicalPropertyPosition = {
     "Cv": ["CC", 80],
     "Ca": ["CF", 83],
     "K0nc": ["GZ", 207],
-    "K0oc": ["GY", 206]
+    "K0oc": ["GY", 206],
+    "pressure_array": ["BO", 66]
 }
 
 c_fi_E_PropertyPosition = {
@@ -215,7 +216,7 @@ class PhysicalProperties:
         for attr in data:
             setattr(self, attr, data[attr])
 
-    def _granulometric_to_dict(self) -> Dict:
+    def _granulometric_to_dict(self) -> dict:
         granulometric_dict = {}
         for key in ['10', '5', '2', '1', '05', '025', '01', '005', '001', '0002', '0000']:
             granulometric_dict[key] = getattr(self, "granulometric_" + key)
@@ -225,7 +226,7 @@ class PhysicalProperties:
         return str(self.__dict__)
 
     @staticmethod
-    def define_type_ground(data_gran, Ip, Ir):
+    def define_type_ground(data_gran: dict, Ip: float, Ir: float) -> int:
         """Функция определения типа грунта через грансостав"""
         none_to_zero = lambda x: 0 if not x else x
         gran_struct = ['10', '5', '2', '1', '05', '025', '01', '005', '001', '0002', '0000']  # гран состав
@@ -252,8 +253,6 @@ class PhysicalProperties:
             type_ground = 7  # Суглинок
         else:  # data['Ip'] >= 17:
             type_ground = 8  # Глина
-        if none_to_zero(Ir) >= 10:
-            type_ground = 9
 
         return type_ground
 
@@ -278,6 +277,11 @@ class MechanicalProperties:
         self.build_press: float = None
         self.pit_depth: float = None
         self.Eur: float = None
+        self.pressure_array: dict = {
+            "set_by_user": None,
+            "calculated_by_pressure": None,
+            "state_standard": None,
+        }
 
         if for_copy:
             for attr in for_copy.__dict__:
@@ -295,12 +299,12 @@ class MechanicalProperties:
     def __str__(self):
         return str(self.getDict())
 
-    def getDict(self):
+    def getDict(self) -> dict:
         data = self.__dict__
         data["physical_properties"] = self.physical_properties.getDict()
         return data
 
-    def setDict(self, data):
+    def setDict(self, data: dict) -> None:
         for attr in data:
             if attr == "physical_properties":
                 physical_properties = PhysicalProperties()
@@ -309,7 +313,7 @@ class MechanicalProperties:
             else:
                 setattr(self, attr, data[attr])
 
-    def defineMechanicalProperties(self, data_frame, string, test_mode=None, K0_mode=None,
+    def defineMechanicalProperties(self, data_frame: pd.DataFrame, string: int, test_mode=None, K0_mode=None,
                                    identification_column=None) -> None:
         """Считывание строки свойств"""
         self.physical_properties = PhysicalProperties()
@@ -329,7 +333,6 @@ class MechanicalProperties:
                 MechanicalProperties.define_kf(self.physical_properties.type_ground, self.physical_properties.e)), 3)
             self.Ca = Ca if Ca else np.round(np.random.uniform(0.01, 0.03), 5)
 
-
             self.K0 = MechanicalProperties.define_K0(data_frame, K0_mode, string, self.physical_properties.Il,
                                                          self.fi)
 
@@ -342,20 +345,18 @@ class MechanicalProperties:
             self.qf = MechanicalProperties.define_qf(self.sigma_3, self.c, self.fi)
             self. sigma_1 = np.round(self.qf + self.sigma_3, 1)
 
-            self.poisons_ratio = MechanicalProperties.define_poissons_ratio(self.physical_properties.Rc,
-                                                                            self.physical_properties.Ip,
-                                                                            self.physical_properties.Il,
-                                                                            self.physical_properties.Ir,
-                                                                            self.physical_properties.granulometric_10,
-                                                                            self.physical_properties.granulometric_5,
-                                                                            self.physical_properties.granulometric_2)
+            self.poisons_ratio = MechanicalProperties.define_poissons_ratio(
+                self.physical_properties.Rc,
+                self.physical_properties.Ip,
+                self.physical_properties.Il,
+                self.physical_properties.Ir,
+                self.physical_properties.granulometric_10,
+                self.physical_properties.granulometric_5,
+                self.physical_properties.granulometric_2)
 
-            self.dilatancy_angle = MechanicalProperties.define_dilatancy(self.sigma_1, self.sigma_3,
-                                                                   self.fi, self.qf, self.E50,
-                                                                         self.physical_properties.type_ground,
-                                                                         self.physical_properties.rs,
-                                                                         self.physical_properties.e,
-                                                                         self.physical_properties.Il)
+            self.dilatancy_angle = MechanicalProperties.define_dilatancy(
+                self.sigma_1, self.sigma_3, self.fi, self.qf, self.E50, self.physical_properties.type_ground,
+                self.physical_properties.rs, self.physical_properties.e, self.physical_properties.Il)
 
             self.build_press = float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]])
             if self.build_press:
@@ -369,14 +370,25 @@ class MechanicalProperties:
 
             self.Eur = True if test_mode == "Трёхосное сжатие с разгрузкой" else None
 
-    @staticmethod
-    def round_sigma_3(sigma_3):
-        integer = sigma_3 // 5
-        remains = sigma_3 % 5
-        return integer * 5 if remains < 2.5 else integer * 5 + 5
+            self.pressure_array = {
+                "set_by_user": MechanicalProperties.define_reference_pressure_array_set_by_user(
+                    float_df(data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]])),
+
+                "calculated_by_pressure": MechanicalProperties.define_reference_pressure_array_calculated_by_pressure(
+                    self.build_press, self.pit_depth, self.physical_properties.depth, self.K0),
+
+                "state_standard": MechanicalProperties.define_reference_pressure_array_state_standard(
+                    self.physical_properties.e, self.physical_properties.Il, self.physical_properties.type_ground)
+            }
 
     @staticmethod
-    def define_m(e, Il):
+    def round_sigma_3(sigma_3, param=5):
+        integer = sigma_3 // param
+        remains = sigma_3 % param
+        return int(integer * param) if remains < (param / 2) else int(integer * param + param)
+
+    @staticmethod
+    def define_m(e: float, Il: float) -> float:
         """Функция расчета параметра m - показатель степени для зависимости жесткости от уровня напряжений
          Входные параметры:
             :param e: пористость
@@ -432,7 +444,8 @@ class MechanicalProperties:
             5: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-2), 0.864),
             6: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-4), 8.64 * 10 ** (-2)),
             7: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-5), 8.64 * 10 ** (-4)),
-            8: kf_sigmoida(e, *e_borders, 0.0000001, 8.64 * 10 ** (-5))
+            8: kf_sigmoida(e, *e_borders, 0.0000001, 8.64 * 10 ** (-5)),
+            9: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-4), 8.64 * 10 ** (-2)),
         }
 
         return dependence_kf_on_type_ground[type_ground]
@@ -459,10 +472,11 @@ class MechanicalProperties:
             return np.round(np.random.uniform(0.5, 0.8), 4)
         elif Cv <= 0.02:
             return np.round(np.random.uniform(0.01, 0.02), 4)
+
         return np.round(Cv, 4)
 
     @staticmethod
-    def define_K0(data_frame, K0_mode, string, Il, fi):
+    def define_K0(data_frame: pd.DataFrame, K0_mode: str, string: int, Il: float, fi: float) -> float:
         """Функция определения K0"""
         def define_K0_GOST(Il) -> float:
             if not Il:
@@ -493,23 +507,24 @@ class MechanicalProperties:
         return dict_K0[K0_mode]
 
     @staticmethod
-    def define_c_fi_E(data_frame, test_mode, string):
+    def define_c_fi_E(data_frame: pd.DataFrame, test_mode: str, string: int) -> float:
         """Функция определения K0"""
         return [float_df(data_frame.iat[string, column]) for column in c_fi_E_PropertyPosition[test_mode][1]]
 
     @staticmethod
-    def define_sigma_3(K0, depth):
+    def define_sigma_3(K0: float, depth: float) -> float:
         """Функция определяет обжимающее давление"""
         return round(K0 * (2 * 9.81 * depth), 1)
 
     @staticmethod
-    def define_qf(sigma_3, c, fi):
+    def define_qf(sigma_3: float, c: float, fi: float) -> float:
         """Функция определяет qf через обжимающее давление и c fi"""
         fi = fi * np.pi / 180
         return np.round((2 * (c * 1000 + (np.tan(fi)) * sigma_3)) / (np.cos(fi) - np.tan(fi) + np.sin(fi) * np.tan(fi)), 1)
 
     @staticmethod
-    def define_poissons_ratio(Rc, Ip, Il, Ir, size_10, size_5, size_2):
+    def define_poissons_ratio(Rc: float, Ip: float, Il: float, Ir: float, size_10: float, size_5: float,
+                              size_2: float) -> float:
 
         round_ratio = 2  # число знаков после запятой
 
@@ -569,7 +584,8 @@ class MechanicalProperties:
                 return np.round(np.random.uniform(0.25, 0.35), round_ratio)
 
     @staticmethod
-    def define_dilatancy(sigma_1, sigma_3, fi, qf, E50, type_ground, rs, e, Il):
+    def define_dilatancy(sigma_1: float, sigma_3: float, fi: float, qf: float, E50: float, type_ground: int, rs: float,
+                         e: float, Il: float) -> float:
 
         def define_dilatancy(sigma_1, sigma_3, fi, OCR, type_ground, rs, e):
             """Определяет угол дилатансии
@@ -753,6 +769,54 @@ class MechanicalProperties:
                                                                                                type_ground, rs, e)) / 2,
                         2)
 
+    @staticmethod
+    def define_reference_pressure_array_state_standard(e, Il, type_ground) -> List:
+        """Функция рассчета обжимающих давлений для кругов мора"""
+        e = e if e else 0.65
+        Il = Il if Il else 0.5
+
+        if (type_ground == 1) or (type_ground == 2) or (type_ground == 3 and e <= 0.55) or (
+                type_ground == 8 and Il <= 0.25):
+            return [100, 300, 500]
+
+        elif (type_ground == 3 and (0.7 >= e > 0.55)) or (type_ground == 4 and e <= 0.75) or (
+                (type_ground == 6 or type_ground == 7) and Il <= 0.5) or (
+                type_ground == 8 and (0.25 < Il <= 0.5)):
+            return [100, 200, 300]
+
+        elif (type_ground == 3 and e > 0.7) or (
+                type_ground == 4 and e > 0.75) or (type_ground == 5) or (
+                (type_ground == 6 or type_ground == 7 or type_ground == 8) and Il > 0.5):
+            return [100, 150, 200]
+
+        elif type_ground == 9:
+            return [50, 75, 100]
+
+    @staticmethod
+    def define_reference_pressure_array_calculated_by_pressure(build_press, pit_depth, depth, K0) -> List:
+        """Функция рассчета обжимающих давлений для кругов мора"""
+        if build_press and pit_depth:
+            sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10
+
+            sigma_max_1 = MechanicalProperties.round_sigma_3(sigma_max * K0)
+            sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.5)
+            sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.25)
+
+            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+        else:
+            return None
+
+    @staticmethod
+    def define_reference_pressure_array_set_by_user(val) -> list:
+        print(val)
+        if val is None:
+            return None
+        else:
+            val = list(map(lambda val: int(float(val.replace(",", ".").strip(" ")) * 1000), val.split("/")))
+            return val
+
+
+
 @dataclass
 class RCData(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
@@ -761,7 +825,7 @@ class RCData(MechanicalProperties):
         self.G0: float = None
         self.threshold_shear_strain: float = None
 
-    def defineProperties(self, data_frame, string, K0_mode) -> None:
+    def defineProperties(self, data_frame: pd.DataFrame, string: int, K0_mode: str) -> None:
         super().defineMechanicalProperties(data_frame, string, test_mode="Резонансная колонка", K0_mode=K0_mode,
                                    identification_column=IdentificationColumns["Резонансная колонка"])
 
@@ -880,21 +944,21 @@ class CyclicData(MechanicalProperties):
             self.CSR = np.round(self.t / self.sigma_1, 2)
 
     @staticmethod
-    def define_acceleration(intensity):
+    def define_acceleration(intensity: float) -> float:
         y1 = np.array([0, 0.1 * 9.81, 0.16 * 9.81, 0.24 * 9.81, 0.33 * 9.81, 0.82 * 9.81])
         x1 = np.array([0, 6, 7, 8, 9, 10])
         Ainter = interp1d(x1, y1, kind='cubic')
         return Ainter(intensity)
 
     @staticmethod
-    def define_intensity(a):
+    def define_intensity(a: float) -> float:
         amax = a * 9.81
         x1 = np.array([0, 0.1 * 9.81, 0.16 * 9.81, 0.24 * 9.81, 0.33 * 9.81, 0.82 * 9.81])
         y1 = np.array([0, 6, 7, 8, 9, 10])
         return np.round(np.interp(amax, x1, y1), 1)
 
     @staticmethod
-    def define_cycles_count(magnitude):
+    def define_cycles_count(magnitude: float) -> int:
         if 0 < magnitude <= 12:
             y2 = np.array([0, 3, 5, 10, 15, 26, 90])
             x2 = np.array([0, 5.25, 6, 6.75, 7.5, 8.5, 12])
@@ -922,7 +986,7 @@ class VibrationCreepData(MechanicalProperties):
             for attr in for_copy.__dict__:
                 setattr(self, attr, for_copy.__dict__[attr])
 
-    def defineProperties(self, data_frame, string, K0_mode) -> None:
+    def defineProperties(self, data_frame, string: int, K0_mode: str) -> None:
         super().defineMechanicalProperties(data_frame, string, test_mode="Виброползучесть", K0_mode=K0_mode,
                                    identification_column=IdentificationColumns["Резонансная колонка"])
         if self.c and self.fi and self.E50:
@@ -948,7 +1012,7 @@ class VibrationCreepData(MechanicalProperties):
             self.cycles_count = int(np.random.uniform(2000, 5000))
 
     @staticmethod
-    def val_to_list(val):
+    def val_to_list(val) -> list:
         if val is None:
             return None
         else:
@@ -959,7 +1023,7 @@ class VibrationCreepData(MechanicalProperties):
             return val
 
     @staticmethod
-    def define_Kd(qf, t, e, Il, frequency) -> float:
+    def define_Kd(qf: float, t: float, e: float, Il: float, frequency: float) -> float:
         """Функция рассчета Kd"""
         Kd = 1
 
@@ -977,7 +1041,7 @@ class VibrationCreepData(MechanicalProperties):
 
 
 
-def getMechanicalExcelData(excel, test_mode, K0_mode) -> dict:
+def getMechanicalExcelData(excel: str, test_mode: str, K0_mode: str) -> dict:
     df = createDataFrame(excel)
 
     identification_column = None
@@ -992,7 +1056,7 @@ def getMechanicalExcelData(excel, test_mode, K0_mode) -> dict:
                 data[m_data.laboratory_number] = m_data
     return data
 
-def getRCExcelData(excel, K0_mode) -> dict:
+def getRCExcelData(excel: str, K0_mode: str) -> dict:
     df = createDataFrame(excel)
     data = {}
     if df is not None:
@@ -1003,7 +1067,7 @@ def getRCExcelData(excel, K0_mode) -> dict:
                 data[rc_data.laboratory_number] = rc_data
     return data
 
-def getCyclicExcelData(excel, test_mode, K0_mode) -> dict:
+def getCyclicExcelData(excel: str, test_mode: str, K0_mode: str) -> dict:
     df = createDataFrame(excel)
     data = {}
     if df is not None:
@@ -1014,7 +1078,7 @@ def getCyclicExcelData(excel, test_mode, K0_mode) -> dict:
                 data[cyclic_data.laboratory_number] = cyclic_data
     return data
 
-def getVibrationCreepExcelData(excel, K0_mode) -> dict:
+def getVibrationCreepExcelData(excel: str, K0_mode: str) -> dict:
     df = createDataFrame(excel)
     data = {}
     if df is not None:
@@ -1026,14 +1090,14 @@ def getVibrationCreepExcelData(excel, K0_mode) -> dict:
     return data
 
 
-def dataToDict(data) -> dict:
+def dataToDict(data: dict) -> dict:
     """Функция сохраняет структуру данных как словарь"""
     dict_data = {}
     for key in data:
         dict_data[key] = data[key].getDict()
     return dict_data
 
-def dictToData(dict, data_type) -> object:
+def dictToData(dict: dict, data_type) -> object:
     """Функция перегоняет словарь в структуру данных"""
     data = {}
     for key in dict:

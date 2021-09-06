@@ -241,7 +241,7 @@ def main_frame(canvas, path, Data_customer, code, list):
 
 def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname = "ц"):  # Верхняя таблица данных
 
-    borehole = Data_phiz.borehole if Data_phiz.borehole else "-"
+    borehole = str(Data_phiz.borehole) if Data_phiz.borehole else "-"
 
     t = Table([[name[0], "", "", "", "", "", "", "", "", ""],
                [name[1]],

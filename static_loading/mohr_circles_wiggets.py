@@ -25,8 +25,6 @@ from general.general_functions import read_json_file, AttrDict
 plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
 plt.style.use('bmh')
 
-plt.style.use('bmh')
-
 class AlignDelegate(QStyledItemDelegate):
     def initStyleOption(self, option, index):
         super(AlignDelegate, self).initStyleOption(option, index)
@@ -420,6 +418,47 @@ class MohrWidgetSoilTest(MohrWidget):
             self._model._tests[test_id] = dialog.widget._model
             self._create_test_tables()
             self._plot()
+
+class PressureArray(QWidget):
+    def __init__(self):
+        super().__init__()
+
+    def add_UI(self):
+        """Дополнительный интерфейс"""
+        self.box = QGroupBox("Обжимающие давления")
+        self.layout = QGridLayout()
+        self.box.setLayout(self.layout)
+        self.box.setFixedWidth(600)
+        self.box.setFixedHeight(70)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+        self.radiobutton_state_standard = QRadioButton("ГОСТ 12248.3-2020")
+        #self.radiobutton1.setChecked(True)
+        self.line_state_standard = QLineEdit()
+        self.radiobutton_state_standard.value = "state_standard"
+        #radiobutton.toggled.connect(self.onClicked)
+        self.layout.addWidget(self.radiobutton_state_standard, 0, 0)
+        self.layout.addWidget(self.self.line_state_standard, 0, 1)
+
+        self.radiobutton_calculated_by_pressure = QRadioButton("Расчет через здание")
+        self.line_calculated_by_pressure = QLineEdit()
+        self.radiobutton_calculated_by_pressure.value = "calculated_by_pressure"
+        self.layout.addWidget(self.radiobutton_calculated_by_pressure, 1, 0)
+        self.layout.addWidget(self.line_calculated_by_pressure, 1, 1)
+
+        self.radiobutton_set_by_user = QRadioButton("Пользовательский")
+        self.line_set_by_user  = QLineEdit()
+        self.radiobutton_set_by_user.value = "set_by_user"
+        self.layout.addWidget(self.radiobutton_set_by_user, 2, 0)
+        self.layout.addWidget(self.line_set_by_user, 2, 1)
+
+        self.widget_layuot = QHBoxLayout()
+        self.widget_layuot.addWidget(self.box)
+        self.setLayout(self.widget_layuot)
+
+
+
+
 
 if __name__ == '__main__':
     import sys
