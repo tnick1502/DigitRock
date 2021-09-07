@@ -2,8 +2,6 @@
     TriaxialCyclicLoading_Processing - Обработка циклического нагружения
     TriaxialCyclicLoading_SoilTest - модуль моделирования циклического нагружения
     """
-__version__ = 1
-
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QFileDialog, QMessageBox, QTabWidget, \
     QDialog
 from PyQt5.QtCore import pyqtSignal
@@ -19,6 +17,8 @@ from general.general_widgets import TriaxialCyclicStatment
 from general.reports import report_triaxial_cyclic
 from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI_PredictLiquefaction
 from general.excel_functions import write_to_excel, write_cyclic_result_to_excel
+from version_control.configs import actual_version
+__version__ = actual_version
 
 class CyclicLoadingProcessing_Tab(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -306,7 +306,7 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
                                    self.tab_1.get_physical_data(),
                                    self.tab_1.get_lab_number(),
                                    os.getcwd() + "/project_data/", test_parameter, results,
-                                   self.tab_2.widget.test_widget.save_canvas(), __version__)
+                                   self.tab_2.widget.test_widget.save_canvas(), "{:.2f}".format(__version__))
 
             try:
                 if test_parameter['Oborudovanie'] == "Wille Geotechnik 13-HG/020:001":

@@ -205,6 +205,8 @@ class MohrWidget(QWidget):
     def resizeEvent(self, event):
         self.width = self.rect().width()
         self.height = self.rect().height()
+        if self.width >= 1300:
+            self.width = 1300
         w = self.width - 25
         self.box_graph.setFixedWidth(w)
         self.box_graph.setFixedHeight(int(w / 3))
@@ -332,7 +334,9 @@ class MohrWidgetSoilTest(MohrWidget):
 
     def add_UI(self):
         """Дополнительный интерфейс"""
-        self.reference_pressure_array_box = QGroupBox("Обжимающие давления")
+        self.reference_pressure_array_box = PressureArray()
+        self.layout_wiget.addWidget(self.reference_pressure_array_box)
+        """self.reference_pressure_array_box = QGroupBox("Обжимающие давления")
         self.reference_pressure_array_box_layout = QVBoxLayout()
         self.reference_pressure_array_box.setLayout(self.reference_pressure_array_box_layout)
         self.reference_pressure_array_box.setFixedWidth(600)
@@ -353,7 +357,7 @@ class MohrWidgetSoilTest(MohrWidget):
         self.reference_pressure_array_box_layout.addLayout(self.reference_pressure_array_box_line_1_layout)
 
         self.layout_wiget.addWidget(self.reference_pressure_array_box)
-        self.reference_pressure_array_box_layout.addStretch(-1)
+        self.reference_pressure_array_box_layout.addStretch(-1)"""
 
     def add_test(self, path):
         self._model.add_test(path)
@@ -378,8 +382,10 @@ class MohrWidgetSoilTest(MohrWidget):
     def set_reference_pressure_array(self, reference_pressure_array):
         self.reference_pressure_array_box_line.setText('; '.join([str(i) for i in reference_pressure_array]))
 
-    def set_params(self, params):
-        reference_pressure_array_user = self.get_reference_pressure_array()
+    def set_params(self, params, reset=True):
+        self.reference_pressure_array_box.set_data(params.pressure_array, reset)
+        reference_pressure_array = params.pressure_array[self.reference_pressure_array_box.get_checked()]
+        """reference_pressure_array_user = self.get_reference_pressure_array()
         reference_pressure_array = ModelMohrCirclesSoilTest.define_reference_pressure_array(
             params.build_press, params.pit_depth,
             params.physical_properties.depth, params.physical_properties.e, params.physical_properties.Il,
@@ -387,7 +393,8 @@ class MohrWidgetSoilTest(MohrWidget):
         self.set_reference_pressure_array(reference_pressure_array)
 
         if reference_pressure_array_user:
-            reference_pressure_array = reference_pressure_array_user
+            reference_pressure_array = reference_pressure_array_user"""
+
         if reference_pressure_array:
             self._model.set_reference_pressure_array(reference_pressure_array)
             self._model.set_test_params(params)
@@ -398,7 +405,7 @@ class MohrWidgetSoilTest(MohrWidget):
     def refresh(self):
         params = self._model.get_test_params()
         if params:
-            self.set_params(params)
+            self.set_params(params, reset=False)
 
     def clear(self):
 
@@ -419,42 +426,78 @@ class MohrWidgetSoilTest(MohrWidget):
             self._create_test_tables()
             self._plot()
 
-class PressureArray(QWidget):
+class PressureArray(QGroupBox):
     def __init__(self):
         super().__init__()
+        self.add_UI()
+        self._checked = None
 
     def add_UI(self):
         """Дополнительный интерфейс"""
-        self.box = QGroupBox("Обжимающие давления")
+        self.setTitle('Выбор масива обжимающих давлений')
         self.layout = QGridLayout()
-        self.box.setLayout(self.layout)
-        self.box.setFixedWidth(600)
-        self.box.setFixedHeight(70)
+        self.setLayout(self.layout)
+        self.setFixedWidth(250)
+        self.setFixedHeight(120)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
         self.radiobutton_state_standard = QRadioButton("ГОСТ 12248.3-2020")
-        #self.radiobutton1.setChecked(True)
         self.line_state_standard = QLineEdit()
+        self.line_state_standard.setDisabled(True)
         self.radiobutton_state_standard.value = "state_standard"
-        #radiobutton.toggled.connect(self.onClicked)
+        self.radiobutton_state_standard.toggled.connect(self._onClicked)
         self.layout.addWidget(self.radiobutton_state_standard, 0, 0)
-        self.layout.addWidget(self.self.line_state_standard, 0, 1)
+        self.layout.addWidget(self.line_state_standard, 0, 1)
 
         self.radiobutton_calculated_by_pressure = QRadioButton("Расчет через здание")
         self.line_calculated_by_pressure = QLineEdit()
+        self.line_calculated_by_pressure.setDisabled(True)
         self.radiobutton_calculated_by_pressure.value = "calculated_by_pressure"
+        self.radiobutton_calculated_by_pressure.toggled.connect(self._onClicked)
         self.layout.addWidget(self.radiobutton_calculated_by_pressure, 1, 0)
         self.layout.addWidget(self.line_calculated_by_pressure, 1, 1)
 
         self.radiobutton_set_by_user = QRadioButton("Пользовательский")
-        self.line_set_by_user  = QLineEdit()
+        self.line_set_by_user = QLineEdit()
+        self.line_set_by_user.setDisabled(True)
         self.radiobutton_set_by_user.value = "set_by_user"
+        self.radiobutton_set_by_user.toggled.connect(self._onClicked)
         self.layout.addWidget(self.radiobutton_set_by_user, 2, 0)
         self.layout.addWidget(self.line_set_by_user, 2, 1)
 
-        self.widget_layuot = QHBoxLayout()
-        self.widget_layuot.addWidget(self.box)
-        self.setLayout(self.widget_layuot)
+    def _onClicked(self):
+        radioButton = self.sender()
+        if radioButton.isChecked():
+            self._checked = radioButton.value
+
+    def set_data(self, data, reset=True):
+        def str_array(array):
+            if array is None:
+                return "-"
+            else:
+                s = ""
+                for i in array:
+                    s += f"{str(i)}; "
+                return s
+        for key in data:
+            line = getattr(self, f"line_{key}")
+            radiobutton = getattr(self, f"radiobutton_{key}")
+            line.setText(str_array(data[key]))
+            if data[key] is None:
+                radiobutton.setDisabled(True)
+            else:
+                radiobutton.setDisabled(False)
+
+        if reset:
+            if data["set_by_user"] is not None:
+                self.radiobutton_set_by_user.setChecked(True)
+            elif data["calculated_by_pressure"] is not None:
+                self.radiobutton_calculated_by_pressure.setChecked(True)
+            elif data["state_standard"] is not None:
+                self.radiobutton_state_standard.setChecked(True)
+
+    def get_checked(self):
+        return self._checked
 
 
 

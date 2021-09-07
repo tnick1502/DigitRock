@@ -1,4 +1,3 @@
-__version__ = "1.0.0"
 
 from PyQt5.QtWidgets import QVBoxLayout, QWidget, QTabWidget, QMessageBox, QFileDialog, QPushButton
 from PyQt5.QtCore import pyqtSignal
@@ -15,6 +14,8 @@ from general.save_widget import Save_Dir
 from general.excel_functions import set_cell_data
 from general.reprocessing import get_reprocessing
 #from test import LoadingWindow
+from version_control.configs import actual_version
+__version__ = actual_version
 
 
 class DigitRock_TriaxialStatick(QWidget):
@@ -77,7 +78,7 @@ class DigitRock_TriaxialStatick(QWidget):
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
                                  (*self.tab_2.consolidation.save_canvas(),
-                                  *self.tab_2.deviator_loading.save_canvas()), 1.1)
+                                  *self.tab_2.deviator_loading.save_canvas()), "{:.2f}".format(__version__))
 
             elif read_parameters["test_type"] == "Трёхосное сжатие (F, C, E)":
                 assert self.tab_3._model._test_result.fi, "Не загружен файл опыта"
@@ -91,7 +92,7 @@ class DigitRock_TriaxialStatick(QWidget):
                            self.tab_1.get_lab_number(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
-                            *self.tab_3.save_canvas()), 1.1)
+                            *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
 
             shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
             QMessageBox.about(self, "Сообщение", "Успешно сохранено")
@@ -202,7 +203,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
                                  (*self.tab_2.consolidation.save_canvas(),
-                                  *self.tab_2.deviator_loading.save_canvas()), 1.1)
+                                  *self.tab_2.deviator_loading.save_canvas()), "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
 
@@ -223,7 +224,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
                                  (*self.tab_2.consolidation.save_canvas(),
-                                  *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), 1.1)
+                                  *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
 
@@ -250,7 +251,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                            self.tab_1.get_lab_number(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
-                            *self.tab_3.save_canvas()), 1.1)
+                            *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
 
@@ -282,7 +283,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                            self.tab_1.get_lab_number(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                           (*self.tab_3.save_canvas(),
-                           *self.tab_3.save_canvas()), 1.1)
+                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
 

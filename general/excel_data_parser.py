@@ -770,7 +770,7 @@ class MechanicalProperties:
                         2)
 
     @staticmethod
-    def define_reference_pressure_array_state_standard(e, Il, type_ground) -> List:
+    def define_reference_pressure_array_state_standard(e: float, Il: float, type_ground: int) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
         e = e if e else 0.65
         Il = Il if Il else 0.5
@@ -793,10 +793,11 @@ class MechanicalProperties:
             return [50, 75, 100]
 
     @staticmethod
-    def define_reference_pressure_array_calculated_by_pressure(build_press, pit_depth, depth, K0) -> List:
+    def define_reference_pressure_array_calculated_by_pressure(build_press: float, pit_depth: float, depth: float,
+                                                               K0: float) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
         if build_press and pit_depth:
-            sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10
+            sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10 * depth
 
             sigma_max_1 = MechanicalProperties.round_sigma_3(sigma_max * K0)
             sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.5)
@@ -808,13 +809,11 @@ class MechanicalProperties:
 
     @staticmethod
     def define_reference_pressure_array_set_by_user(val) -> list:
-        print(val)
         if val is None:
             return None
         else:
             val = list(map(lambda val: int(float(val.replace(",", ".").strip(" ")) * 1000), val.split("/")))
             return val
-
 
 
 @dataclass
