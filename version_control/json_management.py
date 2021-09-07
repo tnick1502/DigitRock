@@ -32,4 +32,5 @@ def test_version(version: float) -> bool:
     return True if version == get_actual_version() else False
 
 if __name__ == "__main__":
-    print(get_actual_version())
+    pass
+    #write_json(path, {"2.00": "Создание версионности. Разработан виджет рассчета давлений для FC с возможностью выбора. Давления в ведомости FC пичутся через слеш. K0 в FC пишется только если расчет через давление от здания"})

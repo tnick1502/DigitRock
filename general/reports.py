@@ -546,10 +546,17 @@ def test_mode_vibration_creep(canvas, test_parameter):
 
 def test_mode_consolidation(canvas, Data):
 
+    if "/" in str(Data["sigma_3"]):
+        sigma_3 = str(Data["sigma_3"])
+    else:
+        try:
+            sigma_3 = zap(Data["sigma_3"] / 1000, 3)
+        except:
+            sigma_3 = "-"
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
-               [Paragraph('''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, МПа:</p>''', LeftStyle), "", "", zap(Data["sigma_3"]/1000, 3) if Data["sigma_3"] != "-" else "-", "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
+               [Paragraph('''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, МПа:</p>''', LeftStyle), "", "", sigma_3, "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
                ["Оборудование:", "", "", "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
@@ -1479,7 +1486,7 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     #result_table_consolidation(canvas, res, [picks[0], picks[1]])
 
     #canvas.showPage()
-
+    test_parameter["K0"] = test_parameter["K0"][0]
     main_frame(canvas, path, Data_customer, code, "1/1")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
@@ -1500,6 +1507,8 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
 
+    K0 = test_parameter["K0"]
+
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
@@ -1510,6 +1519,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
     parameter_table(canvas, Data_phiz, Lab)
+    test_parameter["K0"] = K0[0]
     test_mode_consolidation(canvas, test_parameter)
 
     result_table_deviator(canvas, res, [picks[0], picks[1]])
@@ -1522,7 +1532,8 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
     parameter_table(canvas, Data_phiz, Lab)
-    test_parameter["sigma_3"] = "-"
+    test_parameter["K0"] = K0[1]
+    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
 
     result_table_CF(canvas, res, [picks[2], picks[3]])
@@ -1534,7 +1545,7 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
-
+    test_parameter["K0"] = test_parameter["K0"][1]
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
@@ -1545,7 +1556,7 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
     parameter_table(canvas, Data_phiz, Lab)
-    test_parameter["sigma_3"] = "-"
+    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
 
     result_table_CF(canvas, res, [picks[0],picks[1]])

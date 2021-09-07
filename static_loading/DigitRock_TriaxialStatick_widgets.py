@@ -176,7 +176,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
             test_parameter = {"equipment": read_parameters["equipment"],
                               "mode": "КД, девиаторное нагружение в кинематическом режиме",
                               "sigma_3": self.tab_2._model.deviator_loading._test_params.sigma_3,
-                              "K0": params.K0,
+                              "K0": [params.K0, "-" if self.tab_3.reference_pressure_array_box.get_checked() == "set_by_user" or self.tab_3.reference_pressure_array_box.get_checked() == "state_standard" else params.K0],
                               "h": 76,
                               "d": 38}
 
@@ -294,6 +294,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 set_cell_data(self.tab_1.path,
                               "BF" + str(self.tab_1.get_physical_data().sample_number + 7),
                               test_result["c"], sheet="Лист1", color="FF6961")
+
             if parameter:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
 
