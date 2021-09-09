@@ -344,6 +344,8 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         нахождения коэффициента кемптона"""
 
         self.params.sigma_ref = sigma_ref
+        if self.params.sigma_ref < 100:
+            self.params.sigma_ref = 100
         # Получаешь self.params входные данные для моделирования входных данных эксперимента
         self._test_modeling()
         self._test_processing()

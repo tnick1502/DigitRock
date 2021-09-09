@@ -1049,7 +1049,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                                         deviation=0.003,
                                                         Ca=-self._test_params.Ca,
                                                         E=self._test_params.E,
-                                                        sigma_3=self._test_params.sigma_3,
+                                                        sigma_3=self._test_params.sigma_3 if self._test_params.sigma_3 >= 100 else 100,
                                                         max_time=self._draw_params.max_time,
                                                         approximate=False)
         elif random == 3:
@@ -1058,14 +1058,13 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                                         deviation=0.003,
                                                         Ca=-self._test_params.Ca,
                                                         E=self._test_params.E,
-                                                        sigma_3=self._test_params.sigma_3,
+                                                        sigma_3=self._test_params.sigma_3 if self._test_params.sigma_3 >= 100 else 100,
                                                         max_time=self._draw_params.max_time)
 
         self._test_data.cell_volume_strain = self._test_data.pore_volume_strain + \
                                              create_deviation_curve(self._test_data.time,
                             abs(self._test_data.pore_volume_strain[-1] - self._test_data.pore_volume_strain[0]) * 0.1,
                                                                     val = (1, 0.1), points = np.random.uniform(5, 20))
-
         self._test_data.time = np.round(self._test_data.time, 3)
         self._test_data.cell_volume_strain = np.round(
             self._test_data.cell_volume_strain * np.pi * (19 ** 2) / (76 - self._test_data.delta_h_reconsolidation) /

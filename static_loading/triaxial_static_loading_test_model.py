@@ -336,6 +336,13 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         create_json_file('/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json",
                          self.get_processing_parameters())
 
+        plaxis = self.deviator_loading.get_plaxis_dictionary()
+        with open('/'.join(os.path.split(file_path)[:-1]) + "/plaxis_log.txt", "w") as file:
+            file.write("strain\tdeviator\n")
+            for i in range(len(plaxis["strain"])):
+                file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
+
+
     @staticmethod
     def addition_of_dictionaries(data1, data2, initial=True, skip_keys=None):
         dictionary_1 = copy.deepcopy(data1)

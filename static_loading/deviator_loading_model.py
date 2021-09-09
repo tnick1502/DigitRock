@@ -286,6 +286,11 @@ class ModelTriaxialDeviatorLoading:
             except:
                 pass
 
+    def get_plaxis_dictionary(self) -> dict:
+        return ModelTriaxialDeviatorLoading.plaxis_dictionary(self._test_data.strain_cut,
+                                                              self._test_data.deviator_cut,
+                                                              self._test_data.reload_points if self._test_data.reload_points else [0, 0, 0])
+
     def _approximate_volume_strain(self):
         """Аппроксимация объемной деформации для удобства обработки"""
         while True:
@@ -503,6 +508,59 @@ class ModelTriaxialDeviatorLoading:
                 dilatancy = None
 
         return round(puasson, 2), dilatancy
+
+    @staticmethod
+    def plaxis_dictionary(strain: np.array, deviator: np.array, index_loop: list) -> dict:
+        """Функция осущетвляет обработку массивов напряжений и деформаций, прореживает их до заданного числа с
+        сохранением ключевых точек - qf, 05qf и, при наличии, всех точек index_loop"""
+
+        def list_generator(x: np.array, point_count: int, do_not_skip_index: list) -> np.array:
+            """Прореживает массив x до заданного числа точек point_count с сохранением индексов do_not_skip_indeх"""
+            k = int(len(x) / point_count)
+            return np.array([val for i, val in enumerate(x) if i % k == 0 or (i in do_not_skip_index)])
+
+        point_count = 100
+        index_qf = np.argmax(deviator)
+
+        index_05qf, = np.where(deviator > deviator[index_qf] / 2)
+        index_05qf = index_05qf[0]
+
+        if index_loop[-1] <= 0:
+
+            return {"strain": -list_generator(strain, point_count, [index_qf, index_05qf]),
+                    "deviator": list_generator(deviator, point_count, [index_qf, index_05qf])}
+
+        else:
+            index_loop[1] -= 1  # на деле точка сдвинута, её нужно скорректировать
+            before_loop_points_count = int(point_count * index_loop[0] / len(strain))
+            after_loop_points_count = point_count - before_loop_points_count
+
+            strain_before_loop = list_generator(strain[:index_loop[0]], before_loop_points_count - 2,
+                                                [index_qf, index_05qf])
+            deviator_before_loop = list_generator(deviator[:index_loop[0]], before_loop_points_count - 2,
+                                                  [index_qf, index_05qf])
+
+            strain_after_loop = list_generator(strain[index_loop[-1]:], after_loop_points_count - 2,
+                                               [index_qf - index_loop[-1], index_05qf - index_loop[-1]])
+            deviator_after_loop = list_generator(deviator[index_loop[-1]:], after_loop_points_count - 2,
+                                                 [index_qf - index_loop[-1], index_05qf - index_loop[-1]])
+
+            strain_loop_unloading = strain[index_loop[0]:index_loop[1]]
+            deviator_loop_unloading = deviator[index_loop[0]:index_loop[1]]
+            strain_loop_reloading = strain[index_loop[1]:index_loop[-1]]
+            deviator_loop_reloading = deviator[index_loop[1]:index_loop[-1]]
+
+            if index_loop[1] - index_loop[0] > 5:
+                strain_loop_unloading = list_generator(strain_loop_unloading, 5 - 1, [index_05qf - index_loop[0]])
+                deviator_loop_unloading = list_generator(deviator_loop_unloading, 5 - 1, [index_05qf - index_loop[0]])
+            if index_loop[-1] - index_loop[1] > 5:
+                strain_loop_reloading = list_generator(strain_loop_reloading, 5 - 1, [index_05qf - index_loop[1]])
+                deviator_loop_reloading = list_generator(deviator_loop_reloading, 5 - 1, [index_05qf - index_loop[1]])
+
+            return {"strain": -np.hstack(
+                (strain_before_loop, strain_loop_unloading, strain_loop_reloading, strain_after_loop)),
+                    "deviator": np.hstack(
+                        (deviator_before_loop, deviator_loop_unloading, deviator_loop_reloading, deviator_after_loop))}
 
 class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
     """Модель моделирования девиаторного нагружения
