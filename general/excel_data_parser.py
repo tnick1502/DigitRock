@@ -436,16 +436,28 @@ class MechanicalProperties:
         e_borders = [0.3, 1.2]
 
         # Зависимость коэффициента фильтрации от грансостава
+        """dependence_kf_on_type_ground = {
+            1: kf_sigmoida(e, *e_borders, 8.64, 86.4), # Песок гравелистый
+            2: kf_sigmoida(e, *e_borders, 8.64, 86.4), # Песок крупный
+            3: kf_sigmoida(e, *e_borders, 0.864, 86.4), # Песок средней крупности
+            4: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-2), 0.864), # Песок мелкий
+            5: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-2), 0.864), # Песок пылеватый
+            6: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-4), 8.64 * 10 ** (-2)), # Супесь
+            7: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-5), 8.64 * 10 ** (-4)), # Суглинок
+            8: kf_sigmoida(e, *e_borders, 0.0000001, 8.64 * 10 ** (-5)), # Глина
+            9: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-4), 8.64 * 10 ** (-2)), # Торф
+        }"""
+
         dependence_kf_on_type_ground = {
-            1: kf_sigmoida(e, *e_borders, 8.64, 86.4),
-            2: kf_sigmoida(e, *e_borders, 8.64, 86.4),
-            3: kf_sigmoida(e, *e_borders, 0.864, 86.4),
-            4: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-2), 0.864),
-            5: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-2), 0.864),
-            6: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-4), 8.64 * 10 ** (-2)),
-            7: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-5), 8.64 * 10 ** (-4)),
-            8: kf_sigmoida(e, *e_borders, 0.0000001, 8.64 * 10 ** (-5)),
-            9: kf_sigmoida(e, *e_borders, 8.64 * 10 ** (-4), 8.64 * 10 ** (-2)),
+            1: kf_sigmoida(e, *e_borders, 10, 50),                  # Песок гравелистый
+            2: kf_sigmoida(e, *e_borders, 5, 30),                   # Песок крупный
+            3: kf_sigmoida(e, *e_borders, 1, 20),                   # Песок средней крупности
+            4: kf_sigmoida(e, *e_borders, 0.5, 2),                  # Песок мелкий
+            5: kf_sigmoida(e, *e_borders, 10 ** (-2), 10 ** (-1)),  # Песок пылеватый
+            6: kf_sigmoida(e, *e_borders, 10 ** (-4), 10 ** (-2)),  # Супесь
+            7: kf_sigmoida(e, *e_borders, 10 ** (-5), 10 ** (-4)),  # Суглинок
+            8: kf_sigmoida(e, *e_borders, 10 ** (-8), 10 ** (-5)),  # Глина
+            9: kf_sigmoida(e, *e_borders, 10 ** (-3), 10 ** (-2)),  # Торф
         }
 
         return dependence_kf_on_type_ground[type_ground]

@@ -425,6 +425,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.qf = params.qf
         self._test_params.sigma_3 = params.sigma_3
         self._test_params.physical = params.physical_properties
+        self._test_params.Cv = params.Cv
 
         self._test_params.physical.e = self._test_params.physical.e if self._test_params.physical.e else np.random.uniform(
             0.6, 0.7)
@@ -564,7 +565,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                     self._test_params.points_in_cycle,
                                                                     self._test_data.setpoint,
                                                                     self._test_data.cell_pressure,
-                                                                    self._test_params.physical.Ip,
+                                                                    self._test_params.Cv,
                                                                     post_name)
 
     def _define_draw_params(self, Mcsr=None):
@@ -1208,7 +1209,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         return time, strain, deviator
 
     @staticmethod
-    def generate_willie_log_file(file_path, deviator, PPR, strain, frequency, N, points_in_cycle, setpoint, cell_pressure, Ip, post_name=None):
+    def generate_willie_log_file(file_path, deviator, PPR, strain, frequency, N, points_in_cycle, setpoint, cell_pressure, Cv, post_name=None):
         """Сохранение текстового файла формата Willie.
                     Передается папка, массивы"""
         if post_name:
@@ -1234,10 +1235,17 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             return (s)
 
         pore_pressure_after_consolidation = np.random.uniform(300, 500)
-        if not Ip:
+
+        time_initial = (((0.848 * 3.8 * 3.8) / (4 * Cv))) * np.random.uniform(5, 7) * 60 + np.random.uniform(2000, 3000)
+        print(Cv, (((0.848 * 3.8 * 3.8) / (4 * Cv))))
+        if time_initial > 55000:
+            time_initial = np.random.uniform(40000, 55000)
+
+
+        """if not Ip:
             time_initial = np.random.uniform(7200.000000, 18000.000000)  # Начальное время опыта
         else:
-            time_initial = np.random.uniform(22000.000000, 55000.000000)  # Начальное время опыта
+            time_initial = np.random.uniform(22000.000000, 55000.000000)  # Начальное время опыта"""
         force_initial = np.random.uniform(15, 40)
         piston_position_initial = np.random.uniform(5, 20)
         vertical_strain_initial = np.random.uniform(0, 0.001)
@@ -1311,7 +1319,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                 file.write(make_string(data, i))
         file.close()
 
-        return time[-1] + time_initial
+        #return time[-1] + time_initial
 
 
 if __name__ == '__main__':

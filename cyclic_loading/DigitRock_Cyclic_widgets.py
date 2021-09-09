@@ -308,11 +308,7 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
                                    os.getcwd() + "/project_data/", test_parameter, results,
                                    self.tab_2.widget.test_widget.save_canvas(), "{:.2f}".format(__version__))
 
-            try:
-                if test_parameter['Oborudovanie'] == "Wille Geotechnik 13-HG/020:001":
-                    self.tab_2.generate_log_file(save)
-            except AttributeError:
-                pass
+            self.tab_2.widget._model.generate_log_file(save)
 
             shutil.copy(file_name, self.tab_2.save_widget.report_directory + "/" + file_name[len(file_name) -
                                                                                  file_name[::-1].index("/"):])

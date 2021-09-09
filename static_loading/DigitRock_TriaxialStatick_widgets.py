@@ -12,7 +12,7 @@ from general.general_widgets import TriaxialStaticStatment
 from general.reports import report_consolidation, report_FCE, report_FC
 from general.save_widget import Save_Dir
 from general.excel_functions import set_cell_data
-from general.reprocessing import get_reprocessing
+from tests_log.path_processing import FCE_path_processing
 #from test import LoadingWindow
 from version_control.configs import actual_version
 __version__ = actual_version
@@ -319,7 +319,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
             dir = QFileDialog.getExistingDirectory(self, "Выберите папку с архивом")
             assert dir, "Не выбрана папка"
 
-            tests = get_reprocessing(dir)
+            tests = FCE_path_processing(dir)
             current_test = {}
             for test in tests:
                 for key in origin_keys:
