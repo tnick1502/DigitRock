@@ -1,11 +1,7 @@
+from datetime import datetime
 import numpy as np
 
-x = np.linspace(0, 100, 1001)
+a = datetime.now()
+b = datetime(2021, 9, 24)
 
-point_count = 200
-
-k = int(len(x)/point_count)
-
-current_x = [val for i, val in enumerate(x) if i%k == 0]
-
-print(current_x)
+print(max(a, b))

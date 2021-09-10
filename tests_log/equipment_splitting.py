@@ -198,6 +198,7 @@ def splitting_test_gradient_time_numpy(test_times, stab_number):
     return test_stab_dict
 
 
+
 if __name__ == '__main__':
 
     test_time = np.hstack((np.random.uniform(2, 3, 700), np.random.uniform(20, 30, 700)))              # массив длительностей опытов

@@ -3,6 +3,13 @@ from abc import abstractmethod
 import numpy as np
 from tests_log.path_processing import cyclic_path_processing
 
+def timedelta_to_dhms(duration):
+    # преобразование в дни, часы, минуты и секунды
+    days, seconds = duration.days, duration.seconds
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = (seconds % 60)
+    return f'{days} дней {hours} часов {minutes} минут'
 
 class DataTypeValidation:
     """Дескриптор для валидации данных"""
@@ -27,6 +34,19 @@ class AttrDisplay:
     """Миксин для отображения"""
     pass
 
+class CameraAssembly:
+    """Non-data дескриптор, моделирующий сборку-разборку камеры
+    Аргументы при инициализации:
+        min: минимальное время сборки-разборки камеры
+        max: максимальное время сборки-разборки камеры"""
+    def __init__(self, min: float, max: float):
+        assert max > min, "Минимальное время меньше максимального"
+        self.min = min
+        self.max = max
+
+    def __get__(self, instance, owner):
+        return timedelta(minutes=np.random.uniform(self.min, self.max))
+
 
 class Test:
     """Суперкласс опыта
@@ -35,6 +55,8 @@ class Test:
         start_datetime: Дата начала опыта
         duration: Продолжительность опыта
         additional_data: Дополнительные данные опыта
+        equipment - прибор, на котором проведен опыт
+
 
     Классы конкретных опытов наследуются от этого класса.
 
@@ -49,29 +71,22 @@ class Test:
     start_datetime: datetime = DataTypeValidation(datetime)
     duration: timedelta = DataTypeValidation(timedelta)
     additional_data = None
+    equipment: DataTypeValidation(str)
 
     def __init__(self, test_file: str, additional_data=None):
         self.duration = test_file if isinstance(test_file, timedelta) else self._get_duration(test_file)
         self.additional_data = additional_data
+        self.equipment = "Не назначен"
 
     def __str__(self):
-
-        def timedelta_to_dhms(duration):
-            # преобразование в дни, часы, минуты и секунды
-            days, seconds = duration.days, duration.seconds
-            hours = seconds // 3600
-            minutes = (seconds % 3600) // 60
-            seconds = (seconds % 60)
-            return f'{days} дней {hours} часов {minutes} минут'
-
         if self.start_datetime and self.end_datetime:
-            return f"Дата начала: {self.start_datetime:%H:%M %d.%m.%Y}, Дата окончания: {self.end_datetime:%H:%M %d.%m.%Y}, Продолжительность: {timedelta_to_dhms(self.duration)}"
+            return f"Дата начала: {self.start_datetime:%H:%M %d.%m.%Y}, Дата окончания: {self.end_datetime:%H:%M %d.%m.%Y}, Продолжительность: {timedelta_to_dhms(self.duration)}, Прибор: {self.equipment}"
         else:
             return f"Дата начала: Не установлена, Дата окончания: Не установлена, Продолжительность: {timedelta_to_dhms(self.duration)}"
 
     @property
     def end_datetime(self):
-        assert self.start_datetime, "Чтобы получить время окончания дату начала"
+        assert self.start_datetime, "Чтобы получить время окончания установите дату начала"
         assert self.duration, "Чтобы получить время окончания опыта задайте продолжительность"
         return self.start_datetime + self.duration
 
@@ -88,19 +103,21 @@ class TestsLog:
         equipment_count: Число приборов
         start_datetime: Дата и время начала проведения опытов
         duration: Продолжительность всех опытов
+        camera_assembly: моделированиесборки-разборки камеры
+        equipment_names: Массив имен приборов, если не задать, создается автоматически
 
     Классы журналов конкретных опытов наследуются от этого класса.
 
     !!! Необходимо перегрузить метод self.set_directory !!!
 
     Метод self.set_directory находит все файлы в папке и заполняет словарь self.tests"""
-
     tests: dict
     test_class: Test = None
     equipment_count: int = DataTypeValidation(int)
     start_datetime: datetime = DataTypeValidation(datetime)
     duration: timedelta = DataTypeValidation(timedelta)
-    equipment_splittig: dict = None
+    camera_assembly = CameraAssembly(20, 40)
+    equipment_names: list = None
 
     def __init__(self):
             self.tests = {}
@@ -122,28 +139,68 @@ class TestsLog:
             raise TypeError("value must has type Test")
 
     def __str__(self):
-        return "\n".join(map(lambda key: f"'{key}': {str(self.tests[key])}", list(self.tests.keys())))
+        if self.start_datetime and self.end_datetime:
+            main_data = f"Дата начала опытов: {self.start_datetime:%H:%M %d.%m.%Y}, Дата окончания опытов: {self.end_datetime:%H:%M %d.%m.%Y}, Продолжительность: {timedelta_to_dhms(self.duration)}, Приборы {self.equipment_names if self.equipment_names else self.equipment_count}"
+        else:
+            main_data =  f"Дата начала: Не установлена, Дата окончания: Не установлена, Продолжительность: Не определена"
+
+        return main_data + "\n\n" + "Список опытов:\n" + "\n".join(map(lambda key: f"'{key}': {str(self.tests[key])}", list(self.tests.keys())))
 
     def processing(self):
         assert self.start_datetime, "Не выбрано время начала серии опытов"
         assert len(self.tests), "Не загружено ни одного опыта"
         assert self.equipment_count, "Не задано число стабилометров"
 
-        equipment_splittig = {
-            "equipment": {
-                f"device_{i}": list() for i in range(1, self.equipment_count + 1)
-            }
-        }
+        def vacant_devise(tests_object, equipment_names) -> tuple:
+            """Функция определяет освободившийся прибор"""
+            device_time = {devise: None for devise in equipment_names}
+            for device in equipment_names:
+                for test in tests_object:
+                    if tests_object[test].equipment == device:
+                        device_time[device] = max(device_time[device], tests_object[test].end_datetime) if device_time[device] else tests_object[test].end_datetime
+
+            key_min = min(device_time, key=device_time.get)
+
+            return (key_min, device_time[key_min])
+
+
+        equipment_names = self.equipment_names if self.equipment_names else [f"device_{i}" for i in range(len(self.equipment_count))]
 
         keys = list(self.tests.keys())
-
         # заполняем первую партию
-        for i in range(1, self.equipment_count + 1):
+        for device in equipment_names:
+            # берем случайный образец
             random_key = np.random.choice(keys)
-            random_test = object[random_key]  # берем лучайный образец
-            equipment_splittig["stab_{}".format(i)].append([random_key, random_test.duration])  # закидываем на стабилометр
-            keys = np.delete(keys, random_key)
+            self[random_key].start_datetime = self.start_datetime + timedelta(minutes=np.random.uniform(0, 15))
+            # закидываем на стабилометр
+            self[random_key].equipment = device
+            keys.remove(random_key)
+            if not keys:
+                break
 
+        # распределяем оставшиеся опыты
+        while len(keys):
+            device, time = vacant_devise(self.tests, equipment_names)
+            random_key = np.random.choice(keys)
+            self.tests[random_key].start_datetime = time + self.camera_assembly
+            # закидываем на стабилометр
+            self.tests[random_key].equipment = device
+            keys.remove(random_key)
+
+
+        min_time = None
+        max_time = None
+        for test in self.tests:
+            min_time = min(min_time, self.tests[test].start_datetime) if min_time else self.tests[test].start_datetime
+            max_time = max(max_time, self.tests[test].end_datetime) if max_time else self.tests[test].end_datetime
+        self.start_datetime = min_time
+        self.duration = max_time - min_time
+
+    @property
+    def end_datetime(self):
+        assert self.start_datetime, "Чтобы получить время окончания установите дату начала"
+        assert self.duration, "Чтобы получить время окончания опыта задайте продолжительность"
+        return self.start_datetime + self.duration
 
     @abstractmethod
     def set_directory(self) -> None:
@@ -160,10 +217,12 @@ class CyclicTest(Test):
 
         index = (lines[0].split("\t").index("Time"))
         time = np.array(list(map(lambda x: float(x.split("\t")[index]), lines[2:])))
+
         return timedelta(seconds=np.max(time))
 
 class TestsLogCyclic(TestsLog):
     test_class = CyclicTest
+    equipment_names = ["Wille", "Geotech"]
     def set_directory(self, directory):
         data = cyclic_path_processing(directory)
         for key in data:
@@ -171,15 +230,17 @@ class TestsLogCyclic(TestsLog):
 
 
 if __name__ == "__main__":
-    '''test_1 = CyclicTest("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив/Темплет В (V7) доп.1-9/Косинусное значение напряжения.txt")
-    test_1.start_datetime = datetime.now()
+    """test_1 = CyclicTest("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив/Темплет В (V7) доп.1-9/Косинусное значение напряжения.txt")
+    test_1.start_datetime = 67
     
     test_2 = CyclicTest("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив/Темплет В (V7) доп.1-9/Косинусное значение напряжения.txt")
     test_2.duration = timedelta(minutes=500)
     test_2.start_datetime = test_1.end_datetime + timedelta(minutes=20)
     print(test_1)
-    print(test_2)'''
+    print(test_2)"""
 
     log = TestsLogCyclic()
     log.set_directory("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив")
+    log.start_datetime = datetime.now()
+    log.processing()
     print(log)
