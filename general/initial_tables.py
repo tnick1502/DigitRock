@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QHeaderView, QTableWidgetItem
     QLineEdit, QGroupBox, QPushButton, QComboBox
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5 import QtGui
+from datetime import datetime
 
 class Table(QTableWidget):
     """Расширенный класс таблиц"""
@@ -223,7 +224,10 @@ class Table_Castomer(QWidget):
         self._clear_table()
 
         for i, key in enumerate(["customer", "object_name", "data", "accreditation"]):
-            self.table.setItem(0, i, QTableWidgetItem(str(self._data[key])))
+            if key == "data":
+                self.table.setItem(0, i, QTableWidgetItem(str(self._data[key].strftime("%d.%m.%Y"))))
+            else:
+                self.table.setItem(0, i, QTableWidgetItem(str(self._data[key])))
 
     def set_data(self, data):
         """Получение данных"""

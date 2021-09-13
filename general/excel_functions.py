@@ -678,7 +678,6 @@ def read_customer(wb):
     if not isinstance(data["data"], datetime):
         return True, "date"
 
-    data["data"] = str(data["data"])[:-8]
     return False, data
 
 # Тесты еа заполненность

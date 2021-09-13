@@ -437,7 +437,7 @@ class PressureArray(QGroupBox):
         self.setTitle('Выбор масива обжимающих давлений')
         self.layout = QGridLayout()
         self.setLayout(self.layout)
-        self.setFixedWidth(250)
+        self.setFixedWidth(300)
         self.setFixedHeight(120)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
@@ -449,7 +449,7 @@ class PressureArray(QGroupBox):
         self.layout.addWidget(self.radiobutton_state_standard, 0, 0)
         self.layout.addWidget(self.line_state_standard, 0, 1)
 
-        self.radiobutton_calculated_by_pressure = QRadioButton("Расчет через здание")
+        self.radiobutton_calculated_by_pressure = QRadioButton("Расчетное давление")
         self.line_calculated_by_pressure = QLineEdit()
         self.line_calculated_by_pressure.setDisabled(True)
         self.radiobutton_calculated_by_pressure.value = "calculated_by_pressure"
@@ -457,7 +457,7 @@ class PressureArray(QGroupBox):
         self.layout.addWidget(self.radiobutton_calculated_by_pressure, 1, 0)
         self.layout.addWidget(self.line_calculated_by_pressure, 1, 1)
 
-        self.radiobutton_set_by_user = QRadioButton("Пользовательский")
+        self.radiobutton_set_by_user = QRadioButton("Ручные ступени давления")
         self.line_set_by_user = QLineEdit()
         self.line_set_by_user.setDisabled(True)
         self.radiobutton_set_by_user.value = "set_by_user"

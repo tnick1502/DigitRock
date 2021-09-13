@@ -357,7 +357,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 test.save_log_file(file_name)
 
     @staticmethod
-    def new_noise_for_mohrs_circles(sigma3, sigma1, fi, c):
+    def   noise_for_mohrs_circles(sigma3, sigma1, fi, c):
         '''fi - в градусах, так что
         tan(np.deg2rad(fi)) - тангенс угла наклона касательной
         '''
@@ -403,50 +403,59 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         return np.round(qf_with_noise, 1)
 
     @staticmethod
-    def define_reference_pressure_array(build_press, pit_depth, depth, e, Il, type_ground, K0) -> List:
-        """Функция рассчета обжимающих давлений для кругов мора"""
+    def new_noise_for_mohrs_circles(sigma3: list, sigma1: list, fi: float, c: float) -> list:
+        """ Генерация шума для кругов мора
+        Аргументы:
+            :param sigma3: массив sigma3 для количества кругов > 2
+            :param sigma1: массив sigma1 для количества кругов > 2
+            :param fi: угол внутреннего трения
+            :param с: сцепление
+            :return: значение девиатора с шумом"""
 
-        def round_sigma_3(sigma_3, param=5):
-            integer = sigma_3 // param
-            remains = sigma_3 % param
-            return int(integer * param) if remains < (param / 2) else int(integer * param + param)
+        '''fi - в градусах, так что
+        tan(np.deg2rad(fi)) - тангенс угла наклона касательной'''
+        fi = np.tan(np.deg2rad(fi))
 
-        if build_press and pit_depth:
-            sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10
+        fixed_circle_index = 1  # circles_pos[np.random.randint(0, 1)]  # np.random.randint(0, len(sigma1) - 1)
 
-            """sigma_max_1 = np.round(((sigma_max / 1000) * K0), 2) * 1000
-            sigma_max_2 = np.round((0.5 * (sigma_max / 1000) * K0), 2) * 1000
-            sigma_max_3 = np.round((0.25 * (sigma_max / 1000) * K0), 2) * 1000"""
+        # генерируем случайной значение
+        a = np.random.uniform(np.min(sigma1 - sigma3) / 5, np.min(sigma1 - sigma3) / 4) / 2
 
-            sigma_max_1 = round_sigma_3(sigma_max * K0)
-            sigma_max_2 = round_sigma_3(sigma_max * K0 * 0.5)
-            sigma_max_3 = round_sigma_3(sigma_max * K0 * 0.25)
+        # создаем копию массива для зашумленных значений
+        sigma1_with_noise = copy.deepcopy(sigma1)
 
-            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
-            """return [np.round(0.25 * sigma_max * K0), np.round(0.5 * sigma_max * K0), np.round(sigma_max * K0)] if (
-                    (0.25 * sigma_max * K0) >= 100) else [100, 200, 400]"""
+        # добавляем шум к зафиксированной окружности
+        if np.random.randint(0, 2) == 0:
+            sigma1_with_noise[fixed_circle_index] -= a
+
         else:
+            sigma1_with_noise[fixed_circle_index] += a
 
-            e = e if e else 0.65
-            Il = Il if Il else 0.5
+        def func(x):
+            """x - массив sigma_1 без зафиксированной окружности"""
+            # возвращаем зафиксированную огружность для подачи в фукнцию mohr_cf_stab
+            x = np.insert(x, fixed_circle_index, sigma1_with_noise[fixed_circle_index])
+            # определяем новые фи и с для измененной окружности
+            c_new, fi_new = ModelMohrCirclesSoilTest.mohr_cf_stab(sigma3, x)
+            # критерий минимизации - ошибка между fi и c для несмещенных кругов
+            return abs(abs((c_new - c)) + abs(100 * (fi_new - fi)))
 
-            if (type_ground == 1) or (type_ground == 2) or (type_ground == 3 and e <= 0.55) or (
-                    type_ground == 8 and Il <= 0.25):
-                return [100, 300, 500]
+        initial = np.delete(sigma1_with_noise, fixed_circle_index)
+        from scipy.optimize import Bounds, minimize
+        bnds = Bounds(np.zeros_like(initial), np.ones_like(initial) * np.inf)
+        cons = {'type': 'ineq',
+                'fun': lambda x: np.hstack((np.array([x[i + 1] - x[i] for i in range(len(x) - 1)]),
+                                            np.array([x[-1] - x[0]])))
+                }
+        res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, options={'ftol': 1e-9})
+        res = res.x
+        sigma1_with_noise = np.insert(res, fixed_circle_index, sigma1_with_noise[fixed_circle_index])
+        qf_with_noise = sigma1_with_noise - sigma3
 
-            elif (type_ground == 3 and (0.7 >= e > 0.55)) or (type_ground == 4 and e <= 0.75) or (
-                    (type_ground == 6 or type_ground == 7) and Il <= 0.5) or (
-                    type_ground == 8 and (0.25 < Il <= 0.5)):
-                return [100, 200, 300]
+        assert sum([abs(sigma1[i] - sigma1_with_noise[i]) < 10 ** (-1) for i in range(len(sigma1))]) < 2, \
+            "Два круга не зашумлены!"
 
-            elif (type_ground == 3 and e > 0.7) or (
-                    type_ground == 4 and e > 0.75) or (type_ground == 5) or (
-                    (type_ground == 6 or type_ground == 7 or type_ground == 8) and Il > 0.5):
-                return [100, 150, 200]
-
-            elif type_ground == 9:
-                return [50, 75, 100]
-
+        return np.round(qf_with_noise, 1)
 
 if __name__ == '__main__':
 

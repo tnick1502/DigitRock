@@ -542,18 +542,22 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._draw_params.PPR_phase_offset = PPR_params["PPR_phase_offset"]
 
         self._modeling_PPR()
-        i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator / 2, self.critical_line)
-        if Msf:
+        Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
+                self._test_params.c, self._test_params.fi, 1 / self._test_data.PPR[-1], self._test_params.sigma_3,
+                self._test_params.sigma_1, self._test_params.t, self._test_params.cycles_count,
+                self._test_params.physical.e, self._test_params.physical.Il)
+
+        if self._test_params.n_fail:
             if self._test_params.reverse:
                 self._draw_params.strain_max = np.random.uniform(0, 0.005)
             else:
-                self._draw_params.strain_max = np.random.uniform(0.05 / Msf, 0.06 / Msf)
+                self._draw_params.strain_max = np.random.uniform(0.05, 0.06)
             self._modeling_strain()
         else:
             if self._test_params.reverse:
                 self._draw_params.strain_max = np.random.uniform(0, 0.005)
             else:
-                self._draw_params.strain_max = np.random.uniform(0.05, 0.06)
+                self._draw_params.strain_max = np.random.uniform(0.05 / Ms, 0.06 / Ms)
             self._modeling_strain()
         self._test_processing()
 

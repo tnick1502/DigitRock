@@ -223,7 +223,7 @@ def main_frame(canvas, path, Data_customer, code, list):
 
 
     # Нижняя таблица
-    t = Table([["Номер документа №:", "", "", "", code, "", "", "", "", "", "", "Дата:", "", str(data[8] + data[9] + "." + data[5] + data[6] + "." + data[2] + data[3]), "", "", "Лист:", "", list, ""]], colWidths = 9.25 * mm, rowHeights = 5 * mm)
+    t = Table([["Номер документа №:", "", "", "", code, "", "", "", "", "", "", "Дата:", "", str(data.strftime("%d.%m.%Y")), "", "", "Лист:", "", list, ""]], colWidths = 9.25 * mm, rowHeights = 5 * mm)
     t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'TimesK'),
                 ("FONTSIZE", (0, 0), (-1, -1), 8),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -1418,8 +1418,6 @@ def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
 
 def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
-    print(test_parameter)
-    print(res)
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))

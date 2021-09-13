@@ -146,7 +146,7 @@ class TestsLog:
 
         return main_data + "\n\n" + "Список опытов:\n" + "\n".join(map(lambda key: f"'{key}': {str(self.tests[key])}", list(self.tests.keys())))
 
-    def processing(self):
+    def processing(self, night_mode=False):
         assert self.start_datetime, "Не выбрано время начала серии опытов"
         assert len(self.tests), "Не загружено ни одного опыта"
         assert self.equipment_count, "Не задано число стабилометров"
@@ -182,7 +182,17 @@ class TestsLog:
         while len(keys):
             device, time = vacant_devise(self.tests, equipment_names)
             random_key = np.random.choice(keys)
-            self.tests[random_key].start_datetime = time + self.camera_assembly
+            if night_mode:
+                if 20 <= time.hour < 24:
+                    time_to_next_day = timedelta(hours=8 + (24 - time.hour)) + self.camera_assembly
+                elif 0 <= time.hour < 8:
+                    time_to_next_day = timedelta(hours=8 - time.hour) + self.camera_assembly
+                else:
+                    time_to_next_day = self.camera_assembly
+                self.tests[random_key].start_datetime = time + time_to_next_day
+            else:
+                self.tests[random_key].start_datetime = time + self.camera_assembly
+
             # закидываем на стабилометр
             self.tests[random_key].equipment = device
             keys.remove(random_key)
@@ -241,6 +251,6 @@ if __name__ == "__main__":
 
     log = TestsLogCyclic()
     log.set_directory("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив")
-    log.start_datetime = datetime.now()
-    log.processing()
+    log.start_datetime = datetime.now() + timedelta(hours=6)
+    log.processing(night_mode=True)
     print(log)

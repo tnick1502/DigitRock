@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import os
 from typing import Dict, List
+from datetime import datetime
 from scipy.interpolate import interp1d, griddata
 import pyexcel as p
 from general.general_functions import sigmoida, mirrow_element
@@ -44,7 +45,8 @@ PhysicalPropertyPosition = {
     "granulometric_001": ['M', 12],
     "granulometric_0002": ['N', 13],
     "granulometric_0000": ['O', 14],
-    "Rc": ['ER', 147]
+    "Rc": ['ER', 147],
+    "date": ['IF', 239]
 }
 
 MechanicalPropertyPosition = {
@@ -91,10 +93,12 @@ IdentificationColumns = {
 
 
 def float_df(x):
-    if str(x) != "nan":
+    if str(x) != "nan" and str(x) != "NaT":
         try:
             return float(x)
         except ValueError:
+            return x
+        except TypeError:
             return x
     else:
         return None
@@ -179,6 +183,8 @@ class PhysicalProperties:
         self.sample_number: int = None
         self.type_ground: int = None
         self.Rc: float = None
+        self.date: datetime = None
+        self.sample_size: tuple = None
 
     def definePhysicalProperties(self, data_frame, string, identification_column=None) -> None:
         """Считывание строки свойств"""
@@ -208,6 +214,8 @@ class PhysicalProperties:
 
         self.type_ground = PhysicalProperties.define_type_ground(self._granulometric_to_dict(), self.Ip,
                                                                  self.Ir)
+
+        self.sample_size = PhysicalProperties.define_sample_size(self.granulometric_10, self.granulometric_5)
 
     def getDict(self):
         return self.__dict__
@@ -255,6 +263,19 @@ class PhysicalProperties:
             type_ground = 8  # Глина
 
         return type_ground
+
+    @staticmethod
+    def define_sample_size(granulometric_10: float, granulometric_5: float) -> tuple:
+        """Функция возвращает размеры образца в зависимости от грансостава"""
+        granulometric_10 = granulometric_10 if granulometric_10 else 0
+        granulometric_5 = granulometric_5 if granulometric_5 else 0
+
+        if granulometric_10 >= 3:
+            return 100, 200
+        elif granulometric_10 + granulometric_5 >= 3:
+            return 50, 100
+        else:
+            return 38, 76
 
 @dataclass
 class MechanicalProperties:
@@ -856,6 +877,7 @@ class CyclicData(MechanicalProperties):
         self.N: float = None
         self.I: float = None
         self.magnitude: float = None
+        self.acceleration: float = None
         self.intensity: float = None
         self.cycles_count: int = None
         self.rd: float = None
@@ -891,16 +913,17 @@ class CyclicData(MechanicalProperties):
 
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
 
-                acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]]) # В долях g
-                if acceleration:
-                    self.intensity = CyclicData.define_intensity(acceleration)
+                self.acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]]) # В долях g
+                if self.acceleration:
+                    self.acceleration = np.round(self.acceleration, 3)
+                    self.intensity = CyclicData.define_intensity(self.acceleration)
                 else:
                     self.intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
-                    acceleration = CyclicData.define_acceleration(self.intensity)
+                    self.acceleration = CyclicData.define_acceleration(self.intensity)
 
                 self.magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
 
-                self.t = np.round(0.65 * acceleration * (self.sigma_1 / 9.81) * float(self.rd))
+                self.t = np.round(0.65 * self.acceleration * self.sigma_1 * float(self.rd))
                 self.MSF = np.round((10 ** (2.24) / ((self.magnitude) ** (2.56))), 2)
                 self.t *= self.MSF
                 if self.t < 1:
@@ -956,7 +979,7 @@ class CyclicData(MechanicalProperties):
 
     @staticmethod
     def define_acceleration(intensity: float) -> float:
-        y1 = np.array([0, 0.1 * 9.81, 0.16 * 9.81, 0.24 * 9.81, 0.33 * 9.81, 0.82 * 9.81])
+        y1 = np.array([0, 0.1, 0.16, 0.24, 0.33, 0.82])
         x1 = np.array([0, 6, 7, 8, 9, 10])
         Ainter = interp1d(x1, y1, kind='cubic')
         return Ainter(intensity)
@@ -1120,7 +1143,7 @@ def dictToData(dict: dict, data_type) -> object:
 if __name__ == '__main__':
     data = getMechanicalExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", test_mode="Трёхосное сжатие (E)", K0_mode="K0: По ГОСТ-65353")
 
-    print(data['7а-1'])
+    print(data['7а-1'].sample_size)
 
     #print(data)
     #x = dataToDict(data)

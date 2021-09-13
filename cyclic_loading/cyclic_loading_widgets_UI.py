@@ -24,7 +24,10 @@ from configs.styles import style
 from general.report_general_statment import save_report
 from general.excel_data_parser import dataToDict, dictToData, CyclicData
 
-plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
+try:
+    plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
+except FileNotFoundError:
+    plt.rcParams.update(read_json_file("C:/Users/Пользователь/PycharmProjects/DigitRock/configs/rcParams.json"))
 plt.style.use('bmh')
 
 class CyclicLoadingUI(QWidget):

@@ -299,10 +299,17 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
             results = {'PPRmax': test_result['max_PPR'], 'EPSmax': test_result['max_strain'],
                        'res': test_result['conclusion'], 'nc': check_none(test_result['fail_cycle'])}
 
+            data_customer = self.tab_1.get_customer_data()
+
+            date = self.tab_1.get_physical_data().date
+
+            if date:
+                data_customer["data"] = date
+
             if test_result["fail_cycle"] is None:
                 test_result["fail_cycle"] = "-"
 
-            report_triaxial_cyclic(file_name, self.tab_1.get_customer_data(),
+            report_triaxial_cyclic(file_name, data_customer,
                                    self.tab_1.get_physical_data(),
                                    self.tab_1.get_lab_number(),
                                    os.getcwd() + "/project_data/", test_parameter, results,
@@ -336,7 +343,6 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
 
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

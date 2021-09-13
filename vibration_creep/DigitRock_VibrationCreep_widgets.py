@@ -78,7 +78,12 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
         self.tab_2.save_log(save)
         self.tab_2.static_widget._model.save_log_file(save + "/" + "Test.1.log")
 
-        report_VibrationCreep(save + "/" + Name, self.tab_1.get_customer_data(),
+        data_customer = self.tab_1.get_customer_data()
+        date = self.tab_1.get_physical_data().date
+        if date:
+            data_customer["data"] = date
+
+        report_VibrationCreep(save + "/" + Name, data_customer,
                              self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
                              os.getcwd() + "/project_data/",
                              test_parameter, self.tab_2.static_widget.get_test_results(), self.tab_2.get_test_results(),

@@ -13,11 +13,10 @@ def write_json(path: str, data: dict) -> None:
         json.dump(data, file, ensure_ascii=False)
 
 def add_data(version: str, text: str):
-    file_path = path
-    file_data = open_json(file_path)
-    if file_data.get(version, None) is not None:
+    file_data = open_json(path)
+    if file_data.get(version, None) is None:
         file_data[version] = text
-        write_json(file_path, file_data)
+        write_json(path, file_data)
         print("Сhanges saved successfully")
     else:
         print("This version already exists")
@@ -32,4 +31,6 @@ def test_version(version: float) -> bool:
     return True if version == get_actual_version() else False
 
 if __name__ == "__main__":
-    write_json(path, {"2.00": "Создание версионности. Разработан виджет расчета давлений для FC с возможностью выбора. Давления в ведомости FC пишутся через слеш. K0 в FC пишется только если расчет через давление от здания"})
+    #write_json(path, {"2.10": "Добавлена возможность обработки 4х кругов мора из ведомости. Теперь в отчет идет дата из 239 столбца, если она заполнена"})
+
+    add_data("2.10", "Добавлена возможность обработки 4х кругов мора из ведомости. Размер теперь автоопределяется из грансостава, также можно в ручном режиме задать 150х300. Теперь в отчет идет дата из 239 столбца, если она заполнена, если не заполнена - дата берется как обычно")

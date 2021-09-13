@@ -67,13 +67,17 @@ class DigitRock_TriaxialStatick(QWidget):
             else:
                 os.mkdir(save)
 
+            data_customer = self.tab_1.get_customer_data()
+            if params.date:
+                data_customer.data = params.date
+
             if read_parameters["test_type"] == "Трёхосное сжатие (E)":
                 assert self.tab_2._model.deviator_loading._test_params.sigma_3, "Не загружен файл опыта"
                 #Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
                 Name = self.tab_1.get_lab_number().replace("*", "") + " " +\
-                       self.tab_1.get_customer_data()["object_number"] + " ТС Р" + ".pdf"
+                       data_customer["object_number"] + " ТС Р" + ".pdf"
 
-                report_consolidation(save + "/" + Name, self.tab_1.get_customer_data(),
+                report_consolidation(save + "/" + Name, data_customer,
                                  self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
@@ -86,9 +90,9 @@ class DigitRock_TriaxialStatick(QWidget):
                 test_result["c"], test_result["fi"] = self.tab_3._model.get_test_results()["c"], self.tab_3._model.get_test_results()["fi"]
                 # Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
                 Name = self.tab_1.get_lab_number().replace("*", "") +\
-                       " " + self.tab_1.get_customer_data()["object_number"] + " ТД" + ".pdf"
+                       " " + data_customer["object_number"] + " ТД" + ".pdf"
 
-                report_FCE(save + "/" + Name, self.tab_1.get_customer_data(), self.tab_1.get_physical_data(),
+                report_FCE(save + "/" + Name, data_customer, self.tab_1.get_physical_data(),
                            self.tab_1.get_lab_number(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
@@ -173,14 +177,26 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
             read_parameters = self.tab_1.open_line.get_data()
             params = self.tab_1.get_data()
 
+            if read_parameters["equipment"] == "АСИС ГТ.2.0.5 (150х300)":
+                h, d = 300, 150
+            else:
+                d, h = params.sample_size
+
             test_parameter = {"equipment": read_parameters["equipment"],
                               "mode": "КД, девиаторное нагружение в кинематическом режиме",
                               "sigma_3": self.tab_2._model.deviator_loading._test_params.sigma_3,
                               "K0": [params.K0, "-" if self.tab_3.reference_pressure_array_box.get_checked() == "set_by_user" or self.tab_3.reference_pressure_array_box.get_checked() == "state_standard" else params.K0],
-                              "h": 76,
-                              "d": 38}
+                              "h": h,
+                              "d": d}
 
             test_result = self.tab_2.get_test_results()
+
+            data_customer = self.tab_1.get_customer_data()
+
+            date = self.tab_1.get_physical_data().date
+
+            if date:
+                data_customer["data"] = date
 
             save = self.tab_4.arhive_directory + "/" + self.tab_1.get_lab_number().replace("/", "-")
             save = save.replace("*", "")
@@ -193,12 +209,12 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 assert self.tab_2._model.deviator_loading._test_params.sigma_3, "Не загружен файл опыта"
                 # Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
                 Name = self.tab_1.get_lab_number().replace("*", "") + " " +\
-                       self.tab_1.get_customer_data()["object_number"] + " ТС Р" + ".pdf"
+                       data_customer["object_number"] + " ТС Р" + ".pdf"
                 if parameter:
                     self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
                 d = self.tab_1.get_physical_data()
 
-                report_consolidation(save + "/" + Name, self.tab_1.get_customer_data(),
+                report_consolidation(save + "/" + Name, data_customer,
                                  self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
@@ -215,11 +231,11 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 assert self.tab_2._model.deviator_loading._test_params.sigma_3, "Не загружен файл опыта"
                 # Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-Р" + ".pdf"
                 Name = self.tab_1.get_lab_number().replace("*", "") + " " +\
-                       self.tab_1.get_customer_data()["object_number"] + " ТС Р" + ".pdf"
+                       data_customer["object_number"] + " ТС Р" + ".pdf"
                 if parameter:
                     self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
 
-                report_consolidation(save + "/" + Name, self.tab_1.get_customer_data(),
+                report_consolidation(save + "/" + Name, data_customer,
                                  self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
@@ -242,12 +258,12 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 test_result["c"], test_result["fi"] = self.tab_3._model.get_test_results()["c"], self.tab_3._model.get_test_results()["fi"]
                 #Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
                 Name = self.tab_1.get_lab_number().replace("*", "") +\
-                       " " + self.tab_1.get_customer_data()["object_number"] + " ТД" + ".pdf"
+                       " " + data_customer["object_number"] + " ТД" + ".pdf"
                 if parameter:
                     self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
                     self.tab_3._model.save_log_files(save)
 
-                report_FCE(save + "/" + Name, self.tab_1.get_customer_data(), self.tab_1.get_physical_data(),
+                report_FCE(save + "/" + Name, data_customer, self.tab_1.get_physical_data(),
                            self.tab_1.get_lab_number(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
@@ -274,12 +290,12 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                 test_result["c"], test_result["fi"] = self.tab_3._model.get_test_results()["c"], self.tab_3._model.get_test_results()["fi"]
                 #Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
                 Name = self.tab_1.get_lab_number().replace("*", "") + " " +\
-                       self.tab_1.get_customer_data()["object_number"] + " ТД" + ".pdf"
+                       data_customer["object_number"] + " ТД" + ".pdf"
                 if parameter:
                     #self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
                     self.tab_3._model.save_log_files(save)
 
-                report_FC(save + "/" + Name, self.tab_1.get_customer_data(), self.tab_1.get_physical_data(),
+                report_FC(save + "/" + Name, data_customer, self.tab_1.get_physical_data(),
                            self.tab_1.get_lab_number(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                           (*self.tab_3.save_canvas(),

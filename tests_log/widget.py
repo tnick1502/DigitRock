@@ -17,21 +17,47 @@ from general.general_functions import read_json_file, create_json_file
 from configs.styles import style
 from general.report_general_statment import save_report
 from general.excel_data_parser import dataToDict, dictToData, CyclicData
+from general.initial_tables import Table_Castomer
 
 
 
 class TestsLogWidget(QWidget):
     """Класс отрисовывает таблицу физических свойств"""
-    def __init__(self, data, data_customer):
+    def __init__(self):
         super().__init__()
         self.createIU()
 
     def createIU(self):
         self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(10)
+        self.layout.setSpacing(5)
 
         self.box_statment = QGroupBox("Ведомость")
+        self.box_statment.setFixedHeight(150)
         self.box_statment_layout = QGridLayout()
+        self.box_statment.setLayout(self.box_statment_layout)
+        self.box_statment_open_button = QPushButton("Выбрать ведомость")
+        self.box_statment_path_line = QLineEdit()
+        self.box_statment_path_line.setDisabled(True)
+        self.box_statment_widget = Table_Castomer()
+        self.box_statment_layout.addWidget(self.box_statment_open_button, 0, 0, 1, 1)
+        self.box_statment_layout.addWidget(self.box_statment_path_line , 0, 1, 1, 5)
+        self.box_statment_layout.addWidget(self.box_statment_widget, 1, 0, 2, 6)
+
+        self.box_test_path = QGroupBox("Папка с опытами")
+        self.box_test_path.setFixedHeight(70)
+        self.box_test_path_layout = QGridLayout()
+        self.box_test_path.setLayout(self.box_test_path_layout)
+        self.box_test_path_open_button = QPushButton("Выбрать папку с опытами")
+        self.box_test_path_path_line = QLineEdit()
+        self.box_test_path_path_line.setDisabled(True)
+        self.box_statment_widget = Table_Castomer()
+        self.box_test_path_layout.addWidget(self.box_test_path_open_button, 0, 0, 1, 1)
+        self.box_test_path_layout.addWidget(self.box_test_path_path_line, 0, 1, 1, 5)
+
+
+        self.layout.addWidget(self.box_statment)
+        self.layout.addWidget(self.box_test_path)
+
 
 
 
@@ -40,6 +66,6 @@ if __name__ == '__main__':
 
     # Now use a palette to switch to dark colors:
     app.setStyle('Fusion')
-    ex = CyclicLoadingUISoilTest()
+    ex = TestsLogWidget()
     ex.show()
     sys.exit(app.exec_())
