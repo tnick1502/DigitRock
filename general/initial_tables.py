@@ -403,6 +403,58 @@ class TableVertical(QTableWidget):
         for i, key in enumerate(self._fill_keys):
             self.setItem(i, 1, QTableWidgetItem(replaceNone(str(getattr(data, key)))))
 
+class TableCastomer(QWidget):
+    """Класс отрисовывает таблицу с данными заказчика"""
+    def __init__(self):
+        super().__init__()
+        self._data = None
+        self._createIU()
+
+    def _createIU(self):
+        self.layout = QVBoxLayout()
+        self.layout.setSpacing(0)
+        self.table = QTableWidget()
+        self._clearTable()
+        self.layout.addWidget(self.table)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+        self.setLayout(self.layout)
+        self.setFixedHeight(132)
+
+    def _clearTable(self):
+        while (self.table.rowCount() > 0):
+            self.table.removeRow(0)
+
+        self.table.verticalHeader().hide()
+        self.table.horizontalHeader().hide()
+        self.table.setRowCount(4)
+        self.table.setColumnCount(2)
+
+        for i, val in enumerate(["Заказчик", "Объект", "Дата выдачи", "Аккредитация"]):
+            self.table.setItem(i, 0, QTableWidgetItem(val))
+
+
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.verticalHeader().setDefaultSectionSize(30)
+        self.table.horizontalHeader().setMinimumSectionSize(100)
+
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
+
+    def _fillTable(self):
+        """Заполнение таблицы параметрами"""
+        self._clearTable()
+
+        for i, key in enumerate(["customer", "object_name", "data", "accreditation"]):
+            if key == "data":
+                self.table.setItem(i, 1, QTableWidgetItem(str(self._data[key].strftime("%d.%m.%Y"))))
+            else:
+                self.table.setItem(i, 1, QTableWidgetItem(str(self._data[key])))
+
+
+    def setData(self, data):
+        """Получение данных"""
+        self._data = data
+        self._fillTable()
+
 
 if __name__ == "__main__":
     import sys
@@ -415,8 +467,8 @@ if __name__ == "__main__":
 
     fill_keys = ["laboratory_number", "E50", "c", "fi",]
 
-    Dialog = TablePhysicalProperties()
-    Dialog.set_data(data)
+    Dialog = TableCastomer()
+    #Dialog.set_data(data)
     Dialog.show()
     app.setStyle('Fusion')
 

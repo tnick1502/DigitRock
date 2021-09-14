@@ -963,7 +963,7 @@ def save_report(titles1, data1, scales1, data_report1, customer_data_info1, cust
     global scales
     scales = scales1
     # Дата отчёта
-    data_report = data_report1
+    data_report = data_report1.strftime("%d.%m.%Y")
     # Код отчёта
 
     # print(heading_title1)

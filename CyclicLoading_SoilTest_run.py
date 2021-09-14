@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from cyclic_loading.DigitRock_Cyclic_widgets import DigitRock_CyclicLoadingSoilTest, __version__
 
 from version_control.json_management import test_version, get_actual_version
+from version_control.configs import actual_version
 
 class App(QMainWindow):  # Окно и виджеты на нем
 
@@ -17,7 +18,10 @@ class App(QMainWindow):  # Окно и виджеты на нем
         #self.setWindowIcon(QIcon(icons + "ST.png"))
         self.setGeometry(self.left, self.top, 1200, 900)
         #self.showFullScreen()
-        if test_version(__version__):
+        self.table_widget = DigitRock_CyclicLoadingSoilTest()
+        self.setCentralWidget(self.table_widget)
+        self.show()
+        if test_version(actual_version):
             self.table_widget = DigitRock_CyclicLoadingSoilTest()
             self.setCentralWidget(self.table_widget)
             self.show()

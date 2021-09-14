@@ -3,13 +3,13 @@ from abc import abstractmethod
 import numpy as np
 from tests_log.path_processing import cyclic_path_processing
 
-def timedelta_to_dhms(duration):
+def timedelta_to_dhms(duration, config=["дней", "часов", "минут"]):
     # преобразование в дни, часы, минуты и секунды
     days, seconds = duration.days, duration.seconds
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
     seconds = (seconds % 60)
-    return f'{days} дней {hours} часов {minutes} минут'
+    return f'{days} {config[0]}, {hours} {config[1]}, {minutes} {config[2]}'
 
 class DataTypeValidation:
     """Дескриптор для валидации данных"""
@@ -146,7 +146,10 @@ class TestsLog:
 
         return main_data + "\n\n" + "Список опытов:\n" + "\n".join(map(lambda key: f"'{key}': {str(self.tests[key])}", list(self.tests.keys())))
 
-    def processing(self, night_mode=False):
+    def __len__(self):
+        return len(self.tests)
+
+    def processing(self, work_at_night=False):
         assert self.start_datetime, "Не выбрано время начала серии опытов"
         assert len(self.tests), "Не загружено ни одного опыта"
         assert self.equipment_count, "Не задано число стабилометров"
@@ -182,7 +185,7 @@ class TestsLog:
         while len(keys):
             device, time = vacant_devise(self.tests, equipment_names)
             random_key = np.random.choice(keys)
-            if night_mode:
+            if not work_at_night:
                 if 20 <= time.hour < 24:
                     time_to_next_day = timedelta(hours=8 + (24 - time.hour)) + self.camera_assembly
                 elif 0 <= time.hour < 8:
@@ -233,10 +236,13 @@ class CyclicTest(Test):
 class TestsLogCyclic(TestsLog):
     test_class = CyclicTest
     equipment_names = ["Wille", "Geotech"]
-    def set_directory(self, directory):
+    def set_directory(self, directory) -> int:
         data = cyclic_path_processing(directory)
-        for key in data:
-            self.tests[key] = CyclicTest(data[key])
+        if len(data):
+            for key in data:
+                self.tests[key] = CyclicTest(data[key])
+            return len(data)
+        return 0
 
 
 if __name__ == "__main__":
@@ -251,6 +257,9 @@ if __name__ == "__main__":
 
     log = TestsLogCyclic()
     log.set_directory("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив")
-    log.start_datetime = datetime.now() + timedelta(hours=6)
-    log.processing(night_mode=True)
+    log.start_datetime = datetime.now()
+    log.processing(work_at_night=True)
+    log.processing(work_at_night=True)
+    log.processing(work_at_night=True)
+    log.processing(work_at_night=True)
     print(log)
