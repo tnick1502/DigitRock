@@ -75,7 +75,7 @@ def define_fail_cycle(cycles_count, sigma_1, t, Ip, Il, e)->tuple:
         fail_cycle = define_cycle(sample_CSR, alpha, betta)
 
         if fail_cycle >= 500:
-            return (None, 0.9)
+            return (None, np.random.uniform(1.2, 1.6))
         else:
             return (int(fail_cycle), None)
 

@@ -558,13 +558,13 @@ class TriaxialStaticStatment(InitialStatment):
 class TriaxialCyclicStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
     def __init__(self):
-        data_test_parameters = {"equipment": ["Выберите прибор", "Прибор: Вилли", "Прибор: Геотек"],
-                                "test_type": ["Режим испытания", "Сейсморазжижение", "Штормовое разжижение"],
-                                "k0_condition": ["Тип определения K0",
+        data_test_parameters = {
+            "test_type": ["Режим испытания", "Сейсморазжижение", "Штормовое разжижение"],
+            "k0_condition": ["Тип определения K0",
                                                  "K0: По ГОСТ-65353", "K0: K0nc из ведомости",
                                                  "K0: K0 из ведомости", "K0: Формула Джекки",
                                                  "K0: K0 = 1"]
-                                }
+        }
 
         fill_keys = {
             "laboratory_number": "Лаб. ном.",

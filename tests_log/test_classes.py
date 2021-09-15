@@ -20,7 +20,9 @@ class DataTypeValidation:
         self.attr = name
 
     def __set__(self, instance, value):
-        if isinstance(value, self.data_type):
+        if value is None:
+            instance.__dict__[self.attr] = value
+        elif isinstance(value, self.data_type):
             instance.__dict__[self.attr] = value
         else:
             raise ValueError(f"{instance} must be a {self.data_type}")
@@ -113,7 +115,6 @@ class TestsLog:
     Метод self.set_directory находит все файлы в папке и заполняет словарь self.tests"""
     tests: dict
     test_class: Test = None
-    equipment_count: int = DataTypeValidation(int)
     start_datetime: datetime = DataTypeValidation(datetime)
     duration: timedelta = DataTypeValidation(timedelta)
     camera_assembly = CameraAssembly(20, 40)
@@ -122,14 +123,14 @@ class TestsLog:
     def __init__(self):
             self.tests = {}
             self.duration = timedelta()
-            self.equipment_count = 1
 
     def __iter__(self):
         for key in self.tests:
             yield key
 
     def __getitem__(self, key):
-        assert key in list(self.tests.keys()), f"No test with key {key}"
+        if not key in list(self.tests.keys()):
+            return KeyError(f"No test with key {key}")
         return self.tests[key]
 
     def __setitem__(self, key, value):
@@ -152,7 +153,11 @@ class TestsLog:
     def processing(self, work_at_night=False):
         assert self.start_datetime, "Не выбрано время начала серии опытов"
         assert len(self.tests), "Не загружено ни одного опыта"
-        assert self.equipment_count, "Не задано число стабилометров"
+        assert len(self.equipment_names), "Не задано число стабилометров"
+
+        for test in self.tests:
+            self.tests[test].start_datetime = None
+            self.tests[test].equipment = ""
 
         def vacant_devise(tests_object, equipment_names) -> tuple:
             """Функция определяет освободившийся прибор"""
@@ -167,7 +172,7 @@ class TestsLog:
             return (key_min, device_time[key_min])
 
 
-        equipment_names = self.equipment_names if self.equipment_names else [f"device_{i}" for i in range(len(self.equipment_count))]
+        equipment_names = self.equipment_names
 
         keys = list(self.tests.keys())
         # заполняем первую партию
@@ -206,8 +211,7 @@ class TestsLog:
         for test in self.tests:
             min_time = min(min_time, self.tests[test].start_datetime) if min_time else self.tests[test].start_datetime
             max_time = max(max_time, self.tests[test].end_datetime) if max_time else self.tests[test].end_datetime
-        self.start_datetime = min_time
-        self.duration = max_time - min_time
+        self.duration = max_time - self.start_datetime
 
     @property
     def end_datetime(self):
@@ -244,7 +248,6 @@ class TestsLogCyclic(TestsLog):
             return len(data)
         return 0
 
-
 if __name__ == "__main__":
     """test_1 = CyclicTest("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив/Темплет В (V7) доп.1-9/Косинусное значение напряжения.txt")
     test_1.start_datetime = 67
@@ -258,8 +261,5 @@ if __name__ == "__main__":
     log = TestsLogCyclic()
     log.set_directory("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив")
     log.start_datetime = datetime.now()
-    log.processing(work_at_night=True)
-    log.processing(work_at_night=True)
-    log.processing(work_at_night=True)
-    log.processing(work_at_night=True)
+    log.processing(work_at_night=False)
     print(log)

@@ -81,24 +81,6 @@ class ModelVibrationCreep:
             ModelVibrationCreep.define_start_dynamic(self._dynamic_tests[-1].deviator_dynamic)
         self._test_results.append(TestResultModelVibrationCreep())
 
-        """self._dynamic_tests.append(DataModelVibrationCreep())
-        self._dynamic_tests[-1].strain_dynamic = test_data["strain"]*1.2
-        self._dynamic_tests[-1].deviator_dynamic = test_data["deviator"]*1.03
-        self._dynamic_tests[-1].time = test_data["time"]*1.1
-        self._dynamic_tests[-1].frequency= test_data["frequency"]*0.9
-        self._dynamic_tests[-1].start_dynamic = \
-            ModelVibrationCreep.define_start_dynamic(self._dynamic_tests[-1].deviator_dynamic)
-        self._test_results.append(TestResultModelVibrationCreep())
-
-        self._dynamic_tests.append(DataModelVibrationCreep())
-        self._dynamic_tests[-1].strain_dynamic = test_data["strain"] * 1.4
-        self._dynamic_tests[-1].deviator_dynamic = test_data["deviator"] * 1.05
-        self._dynamic_tests[-1].time = test_data["time"] * 1.1
-        self._dynamic_tests[-1].frequency = test_data["frequency"]*0.7
-        self._dynamic_tests[-1].start_dynamic = \
-            ModelVibrationCreep.define_start_dynamic(self._dynamic_tests[-1].deviator_dynamic)
-        self._test_results.append(TestResultModelVibrationCreep())"""
-
         self._test_processing()
 
     def set_static_test_path(self, path):
@@ -361,7 +343,7 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
             params_for_current_test.frequency = frequency
             params_for_current_test.E50 = params_for_current_test.E50*np.random.uniform(0.85, 1.1)
             params_for_current_test.Kd = Kd
-            self._dynamic_tests_models[-1].set_test_params(params_for_current_test)
+            self._dynamic_tests_models[-1].set_test_params(params_for_current_test, True)
 
         for test in self._dynamic_tests_models:
             self._dynamic_tests.append(DataModelVibrationCreep())

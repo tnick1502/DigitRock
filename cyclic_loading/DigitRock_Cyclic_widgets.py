@@ -18,6 +18,8 @@ from general.reports import report_triaxial_cyclic
 from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI_PredictLiquefaction
 from general.excel_functions import write_to_excel, write_cyclic_result_to_excel
 from version_control.configs import actual_version
+from tests_log.widget import TestsLogWidget
+from tests_log.test_classes import TestsLogCyclic
 __version__ = actual_version
 
 class CyclicLoadingProcessing_Tab(QWidget):
@@ -212,6 +214,10 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
         self.tab_1.signal[object].connect(self.tab_2.widget.identification.set_data)
         self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
 
+        self.jornal_button = QPushButton("Журнал опытов")
+        self.tab_2.save_widget.savebox_layout_line_1.addWidget(self.jornal_button)
+        self.jornal_button.clicked.connect(self.jornal)
+
         self.button_predict_liquefaction = QPushButton("Прогнозирование разжижаемости")
         self.button_predict_liquefaction.setFixedHeight(50)
         self.button_predict_liquefaction.clicked.connect(self._predict_liquefaction)
@@ -268,15 +274,6 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
                 test_time = willie_text_file(save, self.Powerf, self.Arrays["PPR"], self.Arrays["Strain"], self.Data["frequency"], self.Data["N"], self.Data["Points"],
                                  self.Setpoint, self.Arrays["cell_press"], self.file.Data_phiz[self.file.Lab]["Ip"])"""
 
-            if test_parameter['equipment'] == 'Прибор: Вилли':
-                equipment = "Wille Geotechnik 13-HG/020:001"
-                h = 76
-                d = 38
-            else:
-                equipment = "Динамический стабилометр Геотек"
-                h = 100
-                d = 50
-
             params = self.tab_2.widget._model.get_test_params()
 
             data = self.tab_1.get_data()
@@ -292,7 +289,8 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
                               'rd': data.rd,
                               'type': test_parameter["test_type"],
                               'Rezhim': 'Анизотропная реконсолидация, девиаторное циклическое нагружение',
-                              'Oborudovanie': equipment, 'h': h, 'd': d}
+                              'Oborudovanie': "Камера трехосного сжатия динамическая ГТ 2.3.20, Wille Geotechnik 13-HG/020:001",
+                              'h': 100, 'd': 50}
 
             test_result = self.tab_2.widget._model.get_test_results()
 
@@ -343,6 +341,11 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
 
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
+
+    def jornal(self):
+        self.dialog = TestsLogWidget({"Wille": 1, "Geotech": 1}, TestsLogCyclic, self.tab_1.path)
+        self.dialog.show()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

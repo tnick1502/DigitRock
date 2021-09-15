@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QGridLayout, QLabel, QHBoxLayout, QFileDialog, QVBoxLayout, QGroupBox, \
     QWidget, QLineEdit, QPushButton, QTableWidget, QHeaderView, QDateEdit, QTextEdit, QDial, QMessageBox, \
-    QTableWidgetItem, QCheckBox
+    QTableWidgetItem, QCheckBox, QDialog
 import sys
 from collections import Counter
 
@@ -10,14 +10,17 @@ from general.excel_functions import read_customer, resave_xls_to_xlsx
 from openpyxl import load_workbook
 from tests_log.test_classes import TestsLogCyclic, timedelta_to_dhms
 
-
+from general.general_functions import unique_number
+from general.report_general_statment import save_report
 
 class TestsLogWidget(QWidget):
     """Класс отрисовывает таблицу физических свойств"""
-    def __init__(self, equipment, model):
+    def __init__(self, equipment, model, excel=None):
         super().__init__()
 
-        self.setFixedHeight(800)
+        self.setWindowTitle('Журнал опытов')
+
+        self.setFixedHeight(900)
         self.setFixedWidth(700)
 
         self._equipment = []
@@ -26,8 +29,14 @@ class TestsLogWidget(QWidget):
 
         self._model = model()
 
+        self._statment_path: str = None
+        self._data_customer: dict = None
+
         self._createIU()
         self._retranslateUI()
+
+        if excel:
+            self._openStatment(excel)
 
     def _createIU(self):
         self.layout = QVBoxLayout(self)
@@ -94,11 +103,22 @@ class TestsLogWidget(QWidget):
         self.table = QTableWidget()
         self._clearTable()
 
+        self.box_save = QGroupBox("Сохранение")
+        self.box_save.setFixedHeight(70)
+        self.box_save_layout = QHBoxLayout()
+        self.box_save.setLayout(self.box_save_layout)
+        self.box_save_excel_button = QPushButton("Сохранить в ведомость")
+        self.box_save_pdf_button = QPushButton("Сохранить в файл PDF")
+        self.box_save_layout.addStretch(-1)
+        self.box_save_layout.addWidget(self.box_save_pdf_button)
+        self.box_save_layout.addWidget(self.box_save_excel_button)
+
         self.layout.addWidget(self.box_statment)
         self.layout.addWidget(self.box_test_path)
         self.layout.addWidget(self.box_test_date)
         self.layout.addWidget(self.box_test_equipment)
         self.layout.addWidget(self.table)
+        self.layout.addWidget(self.box_save)
 
     def _retranslateUI(self):
         self.box_test_equipment_spin.valueChanged.connect(self._spinMoved)
@@ -109,6 +129,8 @@ class TestsLogWidget(QWidget):
         self.box_statment_open_button.clicked.connect(self._openStatment)
         self.box_test_path_open_button.clicked.connect(self._openDirectory)
         self.box_test_date_processing.clicked.connect(self._processing)
+        self.box_save_excel_button.clicked.connect(self._writeExcel)
+        self.box_save_pdf_button.clicked.connect(self._writePDF)
 
     def _spinMoved(self):
         self.box_test_equipment_spin_lable.setText("Value: %i" % (self.box_test_equipment_spin.value()))
@@ -144,12 +166,16 @@ class TestsLogWidget(QWidget):
             self.table.setItem(i, 3, QTableWidgetItem(timedelta_to_dhms(self._model[key].duration, ["д", "ч", "мин"])))
             self.table.setItem(i, 4, QTableWidgetItem(self._model[key].equipment))
 
-    def _openStatment(self):
-        file = QFileDialog.getOpenFileName(self, 'Open file')[0]
-        if file != "":
-            self.path = resave_xls_to_xlsx(file)
+    def _openStatment(self, path=None):
+        if not path:
+            file = QFileDialog.getOpenFileName(self, 'Open file')[0]
+            if file != "":
+                self._statment_path = resave_xls_to_xlsx(file)
+        else:
+            self._statment_path = resave_xls_to_xlsx(path)
 
-            wb = load_workbook(self.path, data_only=True)
+        if self._statment_path:
+            wb = load_workbook(self._statment_path, data_only=True)
 
             marker, customer = read_customer(wb)
 
@@ -162,6 +188,7 @@ class TestsLogWidget(QWidget):
                 self.box_statment_widget.setData(self._data_customer)
                 self.box_test_date_start_date.setDate(self._data_customer["data"])
                 self.box_test_date_end_date.setDate(self._data_customer["data"])
+                self.box_statment_path_line.setText(self._statment_path)
 
     def _openDirectory(self):
         dir = QFileDialog.getExistingDirectory(self, 'Выберите папку с архивом')
@@ -180,8 +207,84 @@ class TestsLogWidget(QWidget):
             self._fillTable()
             self.box_test_date_end_date.setDate(self._model.end_datetime)
 
+    def _writeExcel(self):
+        try:
+            assert self._statment_path, "Выберите ведомость"
+            assert len(self._model), "Не обработано ни одного опыта"
+            TestsLogWidget.writeExcel(self._statment_path, self._model)
+            QMessageBox.about(self, "Сообщение", "Данные успешно записаны в ведомость")
+        except AssertionError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
+    def _writePDF(self):
+        try:
+            assert self._statment_path, "Выберите ведомость"
+            assert len(self._model), "Не обработано ни одного опыта"
+
+            save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
+
+            save_file_name = f'Журнал опытов {self._data_customer["object_name"]}.pdf'
+
+            statement_title = "Журнал опытов"
 
 
+            titles = ["Лаб. ном.", "Дата начала", "Дата окончания", "Продолжительность", "Прибор"]
+            data = []
+            for test in self._model:
+                line = [
+                    test,
+                    self._model[test].start_datetime.strftime("%H:%M %d.%m.%Y"),
+                    self._model[test].end_datetime.strftime("%H:%M %d.%m.%Y"),
+                    timedelta_to_dhms(self._model[test].duration, ["д", "ч", "мин"]),
+                    self._model[test].equipment
+                ]
+                data.append(line)
+
+            data.append([f"Дата начала опытов: {self._model.start_datetime.strftime('%d.%m.%Y')}"])
+            data.append([f"Дата окончания опытов: {self._model.end_datetime.strftime('%d.%m.%Y')}"])
+
+            scales = ["*", "*", "*", "*", "*"]
+
+            data_report = self._data_customer["data"]
+            customer_data_info = ['Заказчик:', 'Объект:']
+            # Сами данные (подробнее см. Report.py)
+            customer_data = [self._data_customer[i] for i in ["customer", "object_name"]]
+
+            try:
+                if save_file_pass:
+                    save_report(titles, data, scales, data_report, customer_data_info, customer_data,
+                                statement_title, save_file_pass, unique_number(length=7, postfix="-ОВ"),
+                                save_file_name)
+                    QMessageBox.about(self, "Сообщение", "Успешно сохранено")
+            except PermissionError:
+                QMessageBox.critical(self, "Ошибка", "Закройте файл для записи", QMessageBox.Ok)
+            except:
+                pass
+
+        except AssertionError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
+    @staticmethod
+    def writeExcel(path: str, tests: object):
+        wb = load_workbook(path)
+        for i in range(7, len(wb['Лист1']['A']) + 5):
+            if str(wb["Лист1"]['A' + str(i)].value) != "None":
+                if str(wb["Лист1"]['IG' + str(i)].value) != "None":
+                    key = str(wb["Лист1"]['IG' + str(i)].value)
+                else:
+                    key = str(wb["Лист1"]['A' + str(i)].value)
+                try:
+                    t = tests[key.replace("*", "").replace("/", "-")]
+                    if isinstance(t, KeyError):
+                        date = None
+                    else:
+                        date = t.end_datetime
+                except KeyError:
+                    date = None
+                if date:
+                    wb["Лист1"]['IF' + str(i)] = date
+
+        wb.save(path)
 
 
 

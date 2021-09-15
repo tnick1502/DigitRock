@@ -368,7 +368,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         super().__init__()
 
         # Переменная отвечает за то, чтобы первая четверть периода синусоиды была догрузка
-        self._cosine = True
+        self._cosine = False
 
         self._draw_params = AttrDict({"deviator_deviation": None,
                                       "deviator_filter": None,
@@ -409,9 +409,12 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                       "deviator_start_value": None,
                                       "reverse": None})
 
-    def set_test_params(self, params):
+    def set_test_params(self, params, cosine=False):
         """Функция принимает параметры опыта для дальнейших построений.
         n_fail моделируется из кривой CSR. Если нет разжижения - n_fail = None"""
+
+        self._cosine = cosine
+
         self._test_params.cycles_count = params.cycles_count
         if self._test_params.cycles_count < 5:
             self._test_params.cycles_count = 5
@@ -488,7 +491,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         PPR_params = {
             "PPR_n_fail": self._test_params.n_fail,
-            "PPR_max": {"value": self._draw_params.PPR_max, "borders": [0.1, 1.1]},
+            "PPR_max": {"value": self._draw_params.PPR_max, "borders": [0.1, 0.8]},
             "PPR_slant": {"value": self._draw_params.PPR_slant,
                           "borders": [self._draw_params.PPR_slant/5, self._draw_params.PPR_slant*5]},
             "PPR_skempton": {"value": self._draw_params.PPR_skempton,
@@ -780,24 +783,17 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             #self._load_stage.deviator += self._test_params.deviator_start_value
             self._test_data.cycles = np.hstack((np.array(self._load_stage.time)*self._test_params.frequency,
                                                 self._test_data.cycles + self._load_stage.time[-1]*self._test_params.frequency))
-            #self._test_data.time = np.hstack((self._load_stage.time, self._test_data.time + self._load_stage.time[-1]))
 
-            #self._test_data.cycles = np.hstack((np.linspace(0, 0.25, len(self._load_stage.time)),
-                                                #self._test_data.cycles[int(self._test_params.points_in_cycle/4):]))
         self._test_data.time = self._test_data.cycles/self._test_params.frequency
 
-
-        """self._test_data.cycles = np.hstack((self._load_stage.time * self._test_params.frequency,
-                                            np.arange(self._load_stage.time[-1] * self._test_params.frequency,
-                                                      self._test_params.cycles_count + 1 / self._test_params.cycles_count +
-                                                      self._load_stage.time[-1] * self._test_params.frequency,
-                                                      1 / self._test_params.points_in_cycle)))"""
 
         self._test_params.len_cycles = len(self._test_data.cycles)
 
 
-        self._test_data.cell_pressure = ModelTriaxialCyclicLoadingSoilTest.create_cell_press_willie_array(self._test_params.sigma_3, self._test_data.cycles,
-                                                                self._test_params.frequency)
+        #self._test_data.cell_pressure = ModelTriaxialCyclicLoadingSoilTest.create_cell_press_willie_array(self._test_params.sigma_3, self._test_data.cycles,
+                                                                #self._test_params.frequency)
+
+        self._test_data.cell_pressure = np.full(len(self._test_data.cycles), self._test_params.sigma_3)
         self._modeling_deviator()
         self._modeling_PPR()
 
@@ -813,9 +809,6 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             else:
                 k = 1 + (1 - self._test_params.Kd) * 1.2
             self._draw_params.strain_max = self._load_stage.strain[-1] * (1 - self._test_params.Kd) * k
-
-        #elif self._test_params.reverse:
-            #self._draw_params.strain_max = np.random.uniform(0, 0.005)
         else:
             self._draw_params.strain_max = np.random.uniform(0.05 / Ms, 0.06 / Ms)
 

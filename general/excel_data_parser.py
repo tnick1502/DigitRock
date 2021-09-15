@@ -932,22 +932,7 @@ class CyclicData(MechanicalProperties):
 
                 self.cycles_count = CyclicData.define_cycles_count(self.magnitude)
 
-                self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t, self.physical_properties.Ip,
-                                                 self.physical_properties.Il, self.physical_properties.e)
-
                 self.frequency = 0.5
-
-                if self.n_fail:
-                    if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
-                        self.Ms = np.round(np.random.uniform(100, 500), 2)
-                    else:
-                        self.Ms = np.round(np.random.uniform(0.7, 0.9), 2)
-                else:
-                    self.Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
-                        self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.t, self.cycles_count,
-                        self.physical_properties.e, self.physical_properties.Il)
-
-                self.CSR = np.round(self.t / self.sigma_1, 2)
 
             if test_mode == "Штормовое разжижение":
                 self.rw = float_df(data_frame.iat[string, DynamicsPropertyPosition["rw"][1]])
@@ -961,10 +946,14 @@ class CyclicData(MechanicalProperties):
 
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
 
-                self.cycles_count = float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]])
+                self.cycles_count = int(float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]]))
 
                 self.frequency = float_df(data_frame.iat[string, DynamicsPropertyPosition["frequency_storm"][1]])
 
+
+            self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
+                                                       self.physical_properties.Ip,
+                                                       self.physical_properties.Il, self.physical_properties.e)
             if self.n_fail:
                 if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
                     self.Ms = np.round(np.random.uniform(100, 500), 2)
@@ -1141,9 +1130,9 @@ def dictToData(dict: dict, data_type) -> object:
 
 
 if __name__ == '__main__':
-    data = getMechanicalExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", test_mode="Трёхосное сжатие (E)", K0_mode="K0: По ГОСТ-65353")
+    data = getCyclicExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", test_mode="Штормовое разжижение", K0_mode="K0: По ГОСТ-65353")
 
-    print(data['7а-1'].sample_size)
+    print(data['7а-1'].Ms, data['7а-1'].Mcsr)
 
     #print(data)
     #x = dataToDict(data)
