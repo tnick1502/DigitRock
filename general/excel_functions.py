@@ -667,7 +667,8 @@ def read_customer(wb):
 
     data = {"customer" : str(wb["Лист1"]["A1"].value),
             "object_name" : str(wb["Лист1"]["A2"].value),
-            "data" : wb["Лист1"]["Q1"].value,
+            "data": wb["Лист1"]["Q1"].value,
+            "start_date": wb["Лист1"]["U1"].value,
             "accreditation" : str(wb["Лист1"]["I2"].value),
             "object_number" : str(wb["Лист1"]["AI1"].value)}
 
@@ -676,7 +677,10 @@ def read_customer(wb):
             return True, i
 
     if not isinstance(data["data"], datetime):
-        return True, "date"
+        return True, "Дата окончания опытов"
+
+    if not isinstance(data["start_date"], datetime):
+        return True, "Дата начала опытов"
 
     return False, data
 

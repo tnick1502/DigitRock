@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from abc import abstractmethod
 import numpy as np
 from tests_log.path_processing import cyclic_path_processing
+from general.general_functions import create_json_file
 
 def timedelta_to_dhms(duration, config=["дней", "часов", "минут"]):
     # преобразование в дни, часы, минуты и секунды
@@ -86,6 +87,9 @@ class Test:
         else:
             return f"Дата начала: Не установлена, Дата окончания: Не установлена, Продолжительность: {timedelta_to_dhms(self.duration)}"
 
+    def get_dict(self):
+        return self.__dict__
+
     @property
     def end_datetime(self):
         assert self.start_datetime, "Чтобы получить время окончания установите дату начала"
@@ -150,6 +154,16 @@ class TestsLog:
     def __len__(self):
         return len(self.tests)
 
+    def __bool__(self):
+        if not len(self.tests):
+            return False
+        for test in self.tests:
+            try:
+                self.tests[test].end_datetime
+            except AssertionError:
+                return False
+        return True
+
     def processing(self, work_at_night=False):
         assert self.start_datetime, "Не выбрано время начала серии опытов"
         assert len(self.tests), "Не загружено ни одного опыта"
@@ -213,6 +227,14 @@ class TestsLog:
             max_time = max(max_time, self.tests[test].end_datetime) if max_time else self.tests[test].end_datetime
         self.duration = max_time - self.start_datetime
 
+    def dump(self, path):
+        with open(path, 'wb') as f:
+            pickle.dump(self.tests, f)
+
+    def load(self, path):
+        with open(path, 'rb') as f:
+            self.tests = pickle.load(f)
+
     @property
     def end_datetime(self):
         assert self.start_datetime, "Чтобы получить время окончания установите дату начала"
@@ -259,7 +281,13 @@ if __name__ == "__main__":
     print(test_2)"""
 
     log = TestsLogCyclic()
-    log.set_directory("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив")
-    log.start_datetime = datetime.now()
-    log.processing(work_at_night=False)
+    #log.set_directory("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив")
+    #log.start_datetime = datetime.now()
+    #log.processing(work_at_night=False)
+    #log.dump('C:/Users/Пользователь/Desktop/data.pickle')
+
+    #with open('C:/Users/Пользователь/Desktop/data.pickle', 'wb') as f:
+        #pickle.dump(log, f)
+
+    #log.load('C:/Users/Пользователь/Desktop/data.pickle')
     print(log)

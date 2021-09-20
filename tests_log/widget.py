@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication, QGridLayout, QLabel, QHBoxLayout, QFil
     QTableWidgetItem, QCheckBox, QDialog
 import sys
 from collections import Counter
+import pickle
 
 from general.initial_tables import TableCastomer
 from datetime import datetime, timedelta
@@ -12,6 +13,7 @@ from tests_log.test_classes import TestsLogCyclic, timedelta_to_dhms
 
 from general.general_functions import unique_number
 from general.report_general_statment import save_report
+
 
 class TestsLogWidget(QWidget):
     """Класс отрисовывает таблицу физических свойств"""
@@ -109,7 +111,11 @@ class TestsLogWidget(QWidget):
         self.box_save.setLayout(self.box_save_layout)
         self.box_save_excel_button = QPushButton("Сохранить в ведомость")
         self.box_save_pdf_button = QPushButton("Сохранить в файл PDF")
+        self.box_dump_pickle_button = QPushButton("Сохранить данные")
+        self.box_load_pickle_button = QPushButton("Загрузить данные")
         self.box_save_layout.addStretch(-1)
+        self.box_save_layout.addWidget(self.box_dump_pickle_button)
+        self.box_save_layout.addWidget(self.box_load_pickle_button)
         self.box_save_layout.addWidget(self.box_save_pdf_button)
         self.box_save_layout.addWidget(self.box_save_excel_button)
 
@@ -131,6 +137,8 @@ class TestsLogWidget(QWidget):
         self.box_test_date_processing.clicked.connect(self._processing)
         self.box_save_excel_button.clicked.connect(self._writeExcel)
         self.box_save_pdf_button.clicked.connect(self._writePDF)
+        self.box_dump_pickle_button.clicked.connect(self._dumpPICKLE)
+        self.box_load_pickle_button.clicked.connect(self._loadPICKLE)
 
     def _spinMoved(self):
         self.box_test_equipment_spin_lable.setText("Value: %i" % (self.box_test_equipment_spin.value()))
@@ -186,8 +194,8 @@ class TestsLogWidget(QWidget):
             else:
                 self._data_customer = customer
                 self.box_statment_widget.setData(self._data_customer)
-                self.box_test_date_start_date.setDate(self._data_customer["data"])
-                self.box_test_date_end_date.setDate(self._data_customer["data"])
+                self.box_test_date_start_date.setDate(self._data_customer["start_date"])
+                self.box_test_date_end_date.setDate(self._data_customer["start_date"])
                 self.box_statment_path_line.setText(self._statment_path)
 
     def _openDirectory(self):
@@ -202,7 +210,7 @@ class TestsLogWidget(QWidget):
     def _processing(self):
         date = self.box_test_date_start_date.dateTime().toPyDateTime()
         self._model.start_datetime = date + timedelta(hours=8)
-        if self.box_test_path_path_line.text():
+        if len(self._model):
             self._model.processing(work_at_night=self.box_test_date_night_check_box.checkState())
             self._fillTable()
             self.box_test_date_end_date.setDate(self._model.end_datetime)
@@ -210,7 +218,7 @@ class TestsLogWidget(QWidget):
     def _writeExcel(self):
         try:
             assert self._statment_path, "Выберите ведомость"
-            assert len(self._model), "Не обработано ни одного опыта"
+            assert self._model, "Не обработано ни одного опыта"
             TestsLogWidget.writeExcel(self._statment_path, self._model)
             QMessageBox.about(self, "Сообщение", "Данные успешно записаны в ведомость")
         except AssertionError as error:
@@ -219,7 +227,7 @@ class TestsLogWidget(QWidget):
     def _writePDF(self):
         try:
             assert self._statment_path, "Выберите ведомость"
-            assert len(self._model), "Не обработано ни одного опыта"
+            assert self._model, "Не обработано ни одного опыта"
 
             save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
@@ -264,6 +272,37 @@ class TestsLogWidget(QWidget):
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
+    def _dumpPICKLE(self):
+        try:
+            assert self._statment_path, "Выберите ведомость"
+            assert self._model, "Не обработано ни одного опыта"
+
+            save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
+
+            save_file_name = f'Журнал опытов {self._data_customer["object_name"]}.pickle'
+
+            with open(save_file_pass + "/" + save_file_name, 'wb') as f:
+                pickle.dump(self._model, f)
+
+            QMessageBox.about(self, "Сообщение", "Успешно сохранено")
+
+        except AssertionError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
+    def _loadPICKLE(self):
+        try:
+            file = QFileDialog.getOpenFileName(self, 'Open file')[0]
+            if file:
+                with open(file, 'rb') as f:
+                    self._model = pickle.load(f)
+
+                self.box_test_date_start_date.setDate(self._model.start_datetime)
+                self.box_test_date_end_date.setDate(self._model.end_datetime)
+
+                self._fillTable()
+        except AssertionError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
     @staticmethod
     def writeExcel(path: str, tests: object):
         wb = load_workbook(path)
@@ -285,7 +324,6 @@ class TestsLogWidget(QWidget):
                     wb["Лист1"]['IF' + str(i)] = date
 
         wb.save(path)
-
 
 
 if __name__ == '__main__':

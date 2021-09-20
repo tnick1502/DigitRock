@@ -429,7 +429,7 @@ class TableCastomer(QWidget):
         self.table.setRowCount(4)
         self.table.setColumnCount(2)
 
-        for i, val in enumerate(["Заказчик", "Объект", "Дата выдачи", "Аккредитация"]):
+        for i, val in enumerate(["Заказчик:", "Объект:", "Дата выдачи:", "Аккредитация:"]):
             self.table.setItem(i, 0, QTableWidgetItem(val))
 
 
@@ -448,7 +448,6 @@ class TableCastomer(QWidget):
                 self.table.setItem(i, 1, QTableWidgetItem(str(self._data[key].strftime("%d.%m.%Y"))))
             else:
                 self.table.setItem(i, 1, QTableWidgetItem(str(self._data[key])))
-
 
     def setData(self, data):
         """Получение данных"""

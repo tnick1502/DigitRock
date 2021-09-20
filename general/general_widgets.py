@@ -11,7 +11,7 @@ from openpyxl import load_workbook
 
 from general.excel_functions import read_customer, read_dynemic, read_mech, resave_xls_to_xlsx, cfe_test_type_columns, \
     k0_test_type_column, column_fullness_test, read_phiz, read_dynemic_rc, read_vibration_creep
-from general.initial_tables import Table_Castomer, Table_Physical_Properties, Table_Vertical, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties
+from general.initial_tables import TableCastomer, Table_Physical_Properties, Table_Vertical, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties
 
 from general.excel_data_parser import getRCExcelData, getMechanicalExcelData, getCyclicExcelData, getVibrationCreepExcelData
 
@@ -307,7 +307,7 @@ class InitialStatment(QWidget):
         self.open_line = ComboBox_Initial_Parameters(self.test_parameters)
         self.open_line.setFixedHeight(80)
 
-        self.customer_line = Table_Castomer()
+        self.customer_line = TableCastomer()
         #self.customer_line.setFixedHeight(80)
 
         self.layout_tables = QHBoxLayout()
@@ -449,7 +449,7 @@ class RezonantColumnStatment(InitialStatment):
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
-                    self.customer_line.set_data(self._data_customer)
+                    self.customer_line.setData(self._data_customer)
                     self.table_physical_properties.set_data(self._data)
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
@@ -539,7 +539,7 @@ class TriaxialStaticStatment(InitialStatment):
                         QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта",
                                              QMessageBox.Ok)
                     else:
-                        self.customer_line.set_data(self._data_customer)
+                        self.customer_line.setData(self._data_customer)
                         self.table_physical_properties.set_data(self._data)
                         self.statment_directory.emit(self.path)
                         self.open_line.text_file_path.setText(self.path)
@@ -626,7 +626,7 @@ class TriaxialCyclicStatment(InitialStatment):
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
-                    self.customer_line.set_data(self._data_customer)
+                    self.customer_line.setData(self._data_customer)
                     self.table_physical_properties.set_data(self._data)
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
@@ -703,7 +703,7 @@ class VibrationCreepStatment(InitialStatment):
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
                                         + str(columns_marker_cfe), QMessageBox.Ok)
                 else:
-                    self.customer_line.set_data(self._data_customer)
+                    self.customer_line.setData(self._data_customer)
                     self.table_physical_properties.set_data(self._data)
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
