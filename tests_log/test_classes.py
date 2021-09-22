@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from abc import abstractmethod
 import numpy as np
-from tests_log.path_processing import cyclic_path_processing
-from general.general_functions import create_json_file
+import random
+from tests_log.path_processing import cyclic_path_processing, FCE_path_processing
 
 def timedelta_to_dhms(duration, config=["дней", "часов", "минут"]):
     # преобразование в дни, часы, минуты и секунды
@@ -169,41 +169,58 @@ class TestsLog:
         assert len(self.tests), "Не загружено ни одного опыта"
         assert len(self.equipment_names), "Не задано число стабилометров"
 
-        for test in self.tests:
-            self.tests[test].start_datetime = None
-            self.tests[test].equipment = ""
-
         def vacant_devise(tests_object, equipment_names) -> tuple:
             """Функция определяет освободившийся прибор"""
             device_time = {devise: None for devise in equipment_names}
             for device in equipment_names:
                 for test in tests_object:
                     if tests_object[test].equipment == device:
-                        device_time[device] = max(device_time[device], tests_object[test].end_datetime) if device_time[device] else tests_object[test].end_datetime
+                        device_time[device] = max(device_time[device], tests_object[test].end_datetime) if device_time[
+                            device] else tests_object[test].end_datetime
 
             key_min = min(device_time, key=device_time.get)
 
             return (key_min, device_time[key_min])
 
+        def find_same_keys(keys, key):
+            if key:
+                find_base = lambda x: x[:x.find("№") - 1] if x.find("№") != -1 else x
+                match_keys = []
+                for element in keys:
+                    if find_base(element) == find_base(key) and key != element:
+                        match_keys.append(element)
+                return match_keys
+            else:
+                return []
+
+        for test in self.tests:
+            self.tests[test].start_datetime = None
+            self.tests[test].equipment = ""
+
 
         equipment_names = self.equipment_names
-
         keys = list(self.tests.keys())
         # заполняем первую партию
+        last_key = None
         for device in equipment_names:
             # берем случайный образец
-            random_key = np.random.choice(keys)
-            self[random_key].start_datetime = self.start_datetime + timedelta(minutes=np.random.uniform(0, 15))
+            random_key = last_key if last_key and len(find_same_keys(keys, last_key)) else np.random.choice(keys)
+            match_keys = find_same_keys(keys, random_key)
+            key = np.random.choice(match_keys) if len(match_keys) else random_key
+            self[key].start_datetime = self.start_datetime + timedelta(minutes=np.random.uniform(0, 15))
             # закидываем на стабилометр
-            self[random_key].equipment = device
-            keys.remove(random_key)
+            self[key].equipment = device
+            keys.remove(key)
+            last_key = key
             if not keys:
                 break
 
         # распределяем оставшиеся опыты
         while len(keys):
             device, time = vacant_devise(self.tests, equipment_names)
-            random_key = np.random.choice(keys)
+            random_key = last_key if last_key and len(find_same_keys(keys, last_key)) else np.random.choice(keys)
+            match_keys = find_same_keys(keys, random_key)
+            key = np.random.choice(match_keys) if len(match_keys) else random_key
             if not work_at_night:
                 if 20 <= time.hour < 24:
                     time_to_next_day = timedelta(hours=8 + (24 - time.hour)) + self.camera_assembly
@@ -211,14 +228,14 @@ class TestsLog:
                     time_to_next_day = timedelta(hours=8 - time.hour) + self.camera_assembly
                 else:
                     time_to_next_day = self.camera_assembly
-                self.tests[random_key].start_datetime = time + time_to_next_day
+                self.tests[key].start_datetime = time + time_to_next_day
             else:
-                self.tests[random_key].start_datetime = time + self.camera_assembly
+                self.tests[key].start_datetime = time + self.camera_assembly
 
             # закидываем на стабилометр
-            self.tests[random_key].equipment = device
-            keys.remove(random_key)
-
+            self.tests[key].equipment = device
+            last_key = key
+            keys.remove(key)
 
         min_time = None
         max_time = None
@@ -226,14 +243,6 @@ class TestsLog:
             min_time = min(min_time, self.tests[test].start_datetime) if min_time else self.tests[test].start_datetime
             max_time = max(max_time, self.tests[test].end_datetime) if max_time else self.tests[test].end_datetime
         self.duration = max_time - self.start_datetime
-
-    def dump(self, path):
-        with open(path, 'wb') as f:
-            pickle.dump(self.tests, f)
-
-    def load(self, path):
-        with open(path, 'rb') as f:
-            self.tests = pickle.load(f)
 
     @property
     def end_datetime(self):
@@ -262,12 +271,45 @@ class CyclicTest(Test):
 class TestsLogCyclic(TestsLog):
     test_class = CyclicTest
     equipment_names = ["Wille", "Geotech"]
+    camera_assembly = CameraAssembly(30, 40)
     def set_directory(self, directory) -> int:
+        self.tests = {}
         data = cyclic_path_processing(directory)
-        if len(data):
-            for key in data:
+        keys = [key for key in data if data[key] is not None]
+        if len(data) and len(keys):
+            for key in keys:
                 self.tests[key] = CyclicTest(data[key])
-            return len(data)
+            return len(self.tests)
+        return 0
+
+
+class TriaxialStaticTest(Test):
+    """Опыт циклики"""
+    def _get_duration(self, path):
+        f = open(path)
+        lines = f.readlines()
+        f.close()
+
+        index = (lines[0].split("\t").index("Time"))
+        time = np.array(list(map(lambda x: float(x.split("\t")[index]), lines[1:])))
+
+        return timedelta(minutes=np.max(time))
+
+class TestsLogTriaxialStatic(TestsLog):
+    test_class = CyclicTest
+    equipment_names = ["Geotech", 'лига']
+    def set_directory(self, directory) -> int:
+        self.tests = {}
+        data = FCE_path_processing(directory)
+        keys = [key for key in data if data[key]["FC"] is not None or data[key]["E"] is not None]
+        if len(data) and len(keys):
+            for key in keys:
+                if data[key]["E"] is not None:
+                    self.tests[key] = TriaxialStaticTest(data[key]["E"])
+                if data[key]["FC"] is not None:
+                    for i, path in enumerate(data[key]["FC"]):
+                        self.tests[f"{key} № {i + 1}"] = TriaxialStaticTest(path)
+            return len(self.tests)
         return 0
 
 if __name__ == "__main__":
@@ -280,7 +322,7 @@ if __name__ == "__main__":
     print(test_1)
     print(test_2)"""
 
-    log = TestsLogCyclic()
+    #log = TestsLogCyclic()
     #log.set_directory("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив")
     #log.start_datetime = datetime.now()
     #log.processing(work_at_night=False)
@@ -290,4 +332,9 @@ if __name__ == "__main__":
         #pickle.dump(log, f)
 
     #log.load('C:/Users/Пользователь/Desktop/data.pickle')
+    #print(log)
+    log = TestsLogTriaxialStatic()
+    log.set_directory("C:/Users/Пользователь/Desktop/Тест/Трёхосное сжатие (F, C, E)/Архив — копия")
+    log.start_datetime = datetime.now()
+    log.processing(work_at_night=False)
     print(log)

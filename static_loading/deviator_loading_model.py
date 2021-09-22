@@ -458,7 +458,6 @@ class ModelTriaxialDeviatorLoading:
 
         # Найдкм коэффициент пуассона
         strain50 = (np.interp(qf / 2, deviator, strain))
-        index_02qf, = np.where(deviator >= 0.25 * qf)
 
         puasson = (1 + (np.interp(strain50, strain, volume_strain) / strain50))/2
 

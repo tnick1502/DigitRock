@@ -15,6 +15,7 @@ from general.excel_functions import set_cell_data
 from tests_log.path_processing import FCE_path_processing
 #from test import LoadingWindow
 from version_control.configs import actual_version
+from tests_log.widget import TestsLogWidget, TestsLogTriaxialStatic
 __version__ = actual_version
 
 
@@ -142,6 +143,10 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
 
         self.tab_1.signal[object].connect(self.set_test_parameters)
         self.tab_1.statment_directory[str].connect(self.set_save_directory)
+
+        self.jornal_button = QPushButton("Журнал опытов")
+        self.tab_4.savebox_layout_line_1.addWidget(self.jornal_button)
+        self.jornal_button.clicked.connect(self.jornal)
 
 
         #self.tab_4.save_button.clicked.connect(self.save_report)
@@ -368,5 +373,9 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
             QMessageBox.about(self, "Сообщение", "Успешно перевыгнано")
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
+    def jornal(self):
+        self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 20, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic, self.tab_1.path)
+        self.dialog.show()
 
 

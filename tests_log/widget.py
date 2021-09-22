@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QApplication, QGridLayout, QLabel, QHBoxLayout, QFileDialog, QVBoxLayout, QGroupBox, \
     QWidget, QLineEdit, QPushButton, QTableWidget, QHeaderView, QDateEdit, QTextEdit, QDial, QMessageBox, \
     QTableWidgetItem, QCheckBox, QDialog
+from PyQt5 import QtCore, QtGui
 import sys
 from collections import Counter
 import pickle
@@ -9,11 +10,135 @@ from general.initial_tables import TableCastomer
 from datetime import datetime, timedelta
 from general.excel_functions import read_customer, resave_xls_to_xlsx
 from openpyxl import load_workbook
-from tests_log.test_classes import TestsLogCyclic, timedelta_to_dhms
+from tests_log.test_classes import TestsLogCyclic, timedelta_to_dhms, TestsLogTriaxialStatic
 
 from general.general_functions import unique_number
 from general.report_general_statment import save_report
 
+class ValueDial(QWidget):
+    _dialProperties = ('minimum', 'maximum', 'value', 'singleStep', 'pageStep',
+        'notchesVisible', 'tracking', 'wrapping',
+        'invertedAppearance', 'invertedControls', 'orientation')
+    _inPadding = 3
+    _outPadding = 2
+    valueChanged = QtCore.pyqtSignal(int)
+
+    def __init__(self, *args, **kwargs):
+        # remove properties used as keyword arguments for the dial
+        dialArgs = {k:v for k, v in kwargs.items() if k in self._dialProperties}
+        for k in dialArgs.keys():
+            kwargs.pop(k)
+        super().__init__(*args, **kwargs)
+        layout = QVBoxLayout(self)
+        self.dial = QDial(self, **dialArgs)
+        layout.addWidget(self.dial)
+        self.dial.valueChanged.connect(self.valueChanged)
+        self.dial.setNotchesVisible(True)
+        # make the dial the focus proxy (so that it captures focus *and* key events)
+        self.setFocusProxy(self.dial)
+
+        # simple "monkey patching" to access dial functions
+        self.value = self.dial.value
+        self.setValue = self.dial.setValue
+        self.minimum = self.dial.minimum
+        self.maximum = self.dial.maximum
+        self.wrapping = self.dial.wrapping
+        self.notchesVisible = self.dial.notchesVisible
+        self.setNotchesVisible = self.dial.setNotchesVisible
+        self.setNotchTarget = self.dial.setNotchTarget
+        self.notchSize = self.dial.notchSize
+        self.invertedAppearance = self.dial.invertedAppearance
+        self.setInvertedAppearance = self.dial.setInvertedAppearance
+
+        self.updateSize()
+
+    def inPadding(self):
+        return self._inPadding
+
+    def setInPadding(self, padding):
+        self._inPadding = max(0, padding)
+        self.updateSize()
+
+    def outPadding(self):
+        return self._outPadding
+
+    def setOutPadding(self, padding):
+        self._outPadding = max(0, padding)
+        self.updateSize()
+
+    # the following functions are required to correctly update the layout
+    def setMinimum(self, minimum):
+        self.dial.setMinimum(minimum)
+        self.updateSize()
+
+    def setMaximum(self, maximum):
+        self.dial.setMaximum(maximum)
+        self.updateSize()
+
+    def setWrapping(self, wrapping):
+        self.dial.setWrapping(wrapping)
+        self.updateSize()
+
+    def updateSize(self):
+        # a function that sets the margins to ensure that the value strings always
+        # have enough space
+        fm = self.fontMetrics()
+        minWidth = max(fm.width(str(v)) for v in range(self.minimum(), self.maximum() + 1))
+        self.offset = max(minWidth, fm.height()) / 2
+        margin = int(self.offset + self._inPadding + self._outPadding)
+        self.layout().setContentsMargins(margin, margin, margin, margin)
+
+    def translateMouseEvent(self, event):
+        # a helper function to translate mouse events to the dial
+        return QtGui.QMouseEvent(event.type(),
+            self.dial.mapFrom(self, event.pos()),
+            event.button(), event.buttons(), event.modifiers())
+
+    def changeEvent(self, event):
+        if event.type() == QtCore.QEvent.FontChange:
+            self.updateSize()
+
+    def mousePressEvent(self, event):
+        self.dial.mousePressEvent(self.translateMouseEvent(event))
+
+    def mouseMoveEvent(self, event):
+        self.dial.mouseMoveEvent(self.translateMouseEvent(event))
+
+    def mouseReleaseEvent(self, event):
+        self.dial.mouseReleaseEvent(self.translateMouseEvent(event))
+
+    def paintEvent(self, event):
+        radius = min(self.width(), self.height()) / 2
+        radius -= (self.offset / 2 + self._outPadding)
+        invert = -1 if self.invertedAppearance() else 1
+        if self.wrapping():
+            angleRange = 360
+            startAngle = 270
+            rangeOffset = 0
+        else:
+            angleRange = 300
+            startAngle = 240 if invert > 0 else 300
+            rangeOffset = 1
+        fm = self.fontMetrics()
+
+        # a reference line used for the target of the text rectangle
+        reference = QtCore.QLineF.fromPolar(radius, 0).translated(self.rect().center())
+        fullRange = self.maximum() - self.minimum()
+        textRect = QtCore.QRect()
+
+        qp = QtGui.QPainter(self)
+        qp.setRenderHints(qp.Antialiasing)
+        for p in [0, fullRange]:#range(0, fullRange + rangeOffset, self.notchSize()*2):
+            value = self.minimum() + p
+            if invert < 0:
+                value -= 1
+                if value < self.minimum():
+                    continue
+            angle = p / fullRange * angleRange * invert
+            reference.setAngle(startAngle - angle)
+            textRect.setSize(fm.size(QtCore.Qt.TextSingleLine, str(value)))
+            textRect.moveCenter(reference.p2().toPoint())
+            qp.drawText(textRect, QtCore.Qt.AlignCenter, str(value))
 
 class TestsLogWidget(QWidget):
     """Класс отрисовывает таблицу физических свойств"""
@@ -90,12 +215,14 @@ class TestsLogWidget(QWidget):
         self.box_test_date_layout.addStretch(-1)
 
         self.box_test_equipment = QGroupBox("Приборы")
-        self.box_test_equipment.setFixedHeight(100)
+        self.box_test_equipment.setFixedHeight(150)
         self.box_test_equipment_layout = QHBoxLayout()
         self.box_test_equipment.setLayout(self.box_test_equipment_layout)
         self.box_test_equipment_text = QTextEdit()
-        self.box_test_equipment_spin = QDial()
+        self.box_test_equipment_spin = ValueDial()
+        #self.box_test_equipment_spin.setNotchesVisible(True)
         self.box_test_equipment_spin_lable = QLabel()
+        self.box_test_equipment_spin_lable.setFixedWidth(50)
         self.box_test_equipment_spin_layout = QHBoxLayout()
         self.box_test_equipment_spin_layout.addWidget(self.box_test_equipment_spin)
         self.box_test_equipment_spin_layout.addWidget(self.box_test_equipment_spin_lable)
@@ -143,7 +270,7 @@ class TestsLogWidget(QWidget):
     def _spinMoved(self):
         self.box_test_equipment_spin_lable.setText("Value: %i" % (self.box_test_equipment_spin.value()))
         c = Counter(self._equipment[:int(self.box_test_equipment_spin.value())])
-        text = "; ".join(f"{key}: {c[key]}" for key in c)
+        text = "\n\n".join(f"{key}: {c[key]}" for key in c)
         self.box_test_equipment_text.setText(text)
         self._model.equipment_names = self._equipment[:int(self.box_test_equipment_spin.value())]
 
@@ -236,7 +363,7 @@ class TestsLogWidget(QWidget):
             statement_title = "Журнал опытов"
 
 
-            titles = ["Лаб. ном.", "Дата начала", "Дата окончания", "Продолжительность", "Прибор"]
+            titles = ["Лабораторный номер", "Дата начала опыта", "Дата окончания опыта", "Продолжительность опыта", "Прибор"]
             data = []
             for test in self._model:
                 line = [
@@ -331,6 +458,11 @@ if __name__ == '__main__':
 
     # Now use a palette to switch to dark colors:
     app.setStyle('Fusion')
-    ex = TestsLogWidget({"Wille": 1, "Geotech": 3}, TestsLogCyclic)
+    #ex = TestsLogWidget({"ЛИГА КЛ-1С": 20, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic)
+    ex = TestsLogWidget(
+        {
+            "Wille Geotechnik 13-HG/020:001": 1,
+            "Камера трехосного сжатия динамическая ГТ 2.3.20": 1
+        }, TestsLogTriaxialStatic)
     ex.show()
     sys.exit(app.exec_())

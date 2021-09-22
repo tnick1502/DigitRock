@@ -1,6 +1,6 @@
 from datetime import datetime
 import numpy as np
 
-b = datetime(2021, 9, 24)
+s = "bth65  1"
 
-print(b.hour )
+print(s.find("№"))

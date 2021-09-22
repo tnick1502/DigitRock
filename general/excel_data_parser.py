@@ -191,6 +191,10 @@ class PhysicalProperties:
         for attr_name in PhysicalPropertyPosition:
             setattr(self, attr_name, float_df(data_frame.iat[string, PhysicalPropertyPosition[attr_name][1]]))
 
+        if isinstance(self.borehole, int) or isinstance(self.borehole, float):
+            self.borehole = str(int(self.borehole))
+
+
         if identification_column:
             if float_df(data_frame.iat[string, identification_column]):
                 self.complete_flag = True
@@ -801,6 +805,50 @@ class MechanicalProperties:
                                                                                                                   E50)),
                                                                                                type_ground, rs, e)) / 2,
                         2)
+
+    @staticmethod
+    def define_dilatancy_1(type_ground: int, e: float, Il: float, Ip: float) -> float:
+
+        def type_1():
+            return np.random.uniform(15, 25)
+
+        def type_2():
+            return np.random.uniform(10, 20)
+
+        def type_3():
+            return np.random.uniform(5, 10)
+
+        def type_4():
+            return np.random.uniform(3, 7)
+
+        def type_5():
+            return np.random.uniform(0, 20)
+
+        def type_6():
+            return np.random.uniform(0, 20)
+
+        def type_7():
+            return np.random.uniform(0, 20)
+
+        def type_8():
+            return np.random.uniform(0, 20)
+
+        def type_9():
+            return np.random.uniform(0, 20)
+
+        dict_dilatancy = {
+            1: type_1(),
+            2: type_2(),
+            3: type_3(),
+            4: type_4(),
+            5: type_5(),
+            6: type_6(),
+            7: type_7(),
+            8: type_8(),
+            9: type_9(),
+        }
+
+        return dict_dilatancy(type_ground)
 
     @staticmethod
     def define_reference_pressure_array_state_standard(e: float, Il: float, type_ground: int) -> list:

@@ -343,7 +343,7 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
 
     def jornal(self):
-        self.dialog = TestsLogWidget({"Wille": 1, "Geotech": 1}, TestsLogCyclic, self.tab_1.path)
+        self.dialog = TestsLogWidget({"Wille Geotechnik 13-HG/020:001": 1, "Камера трехосного сжатия динамическая ГТ 2.3.20": 1}, TestsLogCyclic, self.tab_1.path)
         self.dialog.show()
 
 
