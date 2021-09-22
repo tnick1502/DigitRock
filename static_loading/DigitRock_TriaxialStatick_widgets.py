@@ -217,6 +217,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                        data_customer["object_number"] + " ТС Р" + ".pdf"
                 if parameter:
                     self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
+                    self.tab_2._open_file(save + "/" + "Test.1.log")
                 d = self.tab_1.get_physical_data()
 
                 report_consolidation(save + "/" + Name, data_customer,
