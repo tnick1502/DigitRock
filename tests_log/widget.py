@@ -358,10 +358,9 @@ class TestsLogWidget(QWidget):
 
             save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
-            save_file_name = f'Журнал опытов {self._data_customer["object_name"]}.pdf'
-
+           # save_file_name = f'Журнал опытов {self._data_customer["object_name"]}.pdf'
+            save_file_name = f'Журнал опытов.pdf'
             statement_title = "Журнал опытов"
-
 
             titles = ["Лабораторный номер", "Дата начала опыта", "Дата окончания опыта", "Продолжительность опыта", "Прибор"]
             data = []
@@ -406,7 +405,7 @@ class TestsLogWidget(QWidget):
 
             save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
-            save_file_name = f'Журнал опытов {self._data_customer["object_name"]}.pickle'
+            save_file_name = f'Журнал опытов.pickle'
 
             with open(save_file_pass + "/" + save_file_name, 'wb') as f:
                 pickle.dump(self._model, f)

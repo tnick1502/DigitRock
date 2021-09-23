@@ -240,6 +240,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                        data_customer["object_number"] + " ТС Р" + ".pdf"
                 if parameter:
                     self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
+                    self.tab_2._open_file(save + "/" + "Test.1.log")
 
                 report_consolidation(save + "/" + Name, data_customer,
                                  self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
@@ -267,6 +268,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
                        " " + data_customer["object_number"] + " ТД" + ".pdf"
                 if parameter:
                     self.tab_2._model.save_log_file(save + "/" + "Test.1.log")
+                    self.tab_2._open_file(save + "/" + "Test.1.log")
                     self.tab_3._model.save_log_files(save)
 
                 report_FCE(save + "/" + Name, data_customer, self.tab_1.get_physical_data(),
@@ -376,7 +378,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
     def jornal(self):
-        self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 20, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic, self.tab_1.path)
+        self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic, self.tab_1.path)
         self.dialog.show()
 
 
