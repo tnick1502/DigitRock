@@ -20,6 +20,7 @@ from general.excel_functions import write_to_excel, write_cyclic_result_to_excel
 from version_control.configs import actual_version
 from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogCyclic
+from tests_log.path_processing import cyclic_path_processing
 __version__ = actual_version
 
 class CyclicLoadingProcessing_Tab(QWidget):
@@ -212,11 +213,18 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
         self.tab_1.statment_directory[str].connect(self._set_save_directory)
         self.tab_1.signal[object].connect(self.tab_2.widget.set_params)
         self.tab_1.signal[object].connect(self.tab_2.widget.identification.set_data)
-        self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
+
+        f = lambda x: self.save_report(True)
+        self.tab_2.save_widget.save_button.clicked.connect(f)
 
         self.jornal_button = QPushButton("Журнал опытов")
         self.tab_2.save_widget.savebox_layout_line_1.addWidget(self.jornal_button)
         self.jornal_button.clicked.connect(self.jornal)
+
+        self.reprocessing_button = QPushButton("Перевыгонка протоколов")
+        self.tab_2.save_widget.savebox_layout_line_1.insertWidget(4, self.reprocessing_button)
+
+        self.reprocessing_button.clicked.connect(self.reprocessing)
 
         self.button_predict_liquefaction = QPushButton("Прогнозирование разжижаемости")
         self.button_predict_liquefaction.setFixedHeight(50)
@@ -238,7 +246,7 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
     def identification_set_data(self, data):
         self.tab_2.widget.identification.set_data(data)
 
-    def save_report(self):
+    def save_report(self, parameter=False):
 
         def check_none(s):
             if s:
@@ -313,7 +321,8 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
                                    os.getcwd() + "/project_data/", test_parameter, results,
                                    self.tab_2.widget.test_widget.save_canvas(), "{:.2f}".format(__version__))
 
-            self.tab_2.widget._model.generate_log_file(save)
+            if parameter:
+                self.tab_2.widget._model.generate_log_file(save)
 
             shutil.copy(file_name, self.tab_2.save_widget.report_directory + "/" + file_name[len(file_name) -
                                                                                  file_name[::-1].index("/"):])
@@ -328,19 +337,46 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
                             params["frequency"],
                             test_result["fail_cycle"]))
 
-
-            QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
+            if parameter:
+                QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(self.tab_1.get_lab_number()))
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
-        except TypeError as error:
-            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+        #except TypeError as error:
+            #QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
+
+    def reprocessing(self):
+        origin_keys = self.tab_1.get_lab_numbers()
+        try:
+            assert origin_keys is not None, "Не загружена ведомость"
+            dir = QFileDialog.getExistingDirectory(self, "Выберите папку с архивом")
+            assert dir, "Не выбрана папка"
+
+            tests = cyclic_path_processing(dir)
+            current_test = {}
+            for test in tests:
+                for key in origin_keys:
+                    if key.replace("*", "").replace("/", "-") == test:
+                        current_test[key] = tests[test]
+
+            assert current_test, "Не найдено совпадений"
+            if len(current_test) != len(origin_keys):
+                QMessageBox.about(self, "Предупреждение", f'В ведомости: {len(origin_keys)}, В папке: {len(current_test)}')
+
+            for test in current_test:
+                self.tab_1.set_lab_number(test)
+                self.tab_2.widget.open_log(current_test[test])
+                self.save_report()
+
+            QMessageBox.about(self, "Сообщение", "Успешно перевыгнано")
+        except AssertionError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
     def jornal(self):
         self.dialog = TestsLogWidget({"Wille Geotechnik 13-HG/020:001": 1, "Камера трехосного сжатия динамическая ГТ 2.3.20": 1}, TestsLogCyclic, self.tab_1.path)

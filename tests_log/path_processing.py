@@ -50,4 +50,4 @@ def cyclic_path_processing(path):
 
 
 if __name__ == "__main__":
-    print(FCE_path_processing("C:/Users/Пользователь/Desktop/Тест/Трёхосное сжатие (F, C, E)/Архив/"))
+    print(cyclic_path_processing("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив/"))

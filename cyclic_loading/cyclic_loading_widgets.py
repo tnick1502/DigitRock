@@ -144,6 +144,13 @@ class CyclicLoadingSoilTestWidget(QWidget):
         self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params)
         self._plot()
 
+    def open_log(self, path):
+        """Открытие файла опыта"""
+        test_data = ModelTriaxialCyclicLoading.open_wille_log(path)
+        self._model.set_test_data(test_data)
+        self._model.set_processing_parameters(test_data)
+        self._plot()
+
     def _plot(self):
         """Построение графиков опыта"""
         plots = self._model.get_plot_data()

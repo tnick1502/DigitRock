@@ -39,6 +39,7 @@ import scipy.ndimage as ndimage
 from general.general_functions import define_qf, create_deviation_curve, current_exponent, step_sin, logarithm, sigmoida,\
     create_acute_sine_array, AttrDict, mirrow_element
 from configs.plot_params import plotter_params
+from general.general_functions import create_json_file, read_json_file
 
 class ModelTriaxialCyclicLoading:
     """Модель обработки циклического нагружения
@@ -267,14 +268,22 @@ class ModelTriaxialCyclicLoading:
                               (read_data['Piston position'][0] / read_data['Sample height'][0])
         test_data["mean_effective_stress"] = ((test_data["cell_pressure"] * (1 - test_data["PPR"])) * 3 +
                                               test_data["deviator"])/3
-
-        if define_frequency:
-            test_data["frequency"], test_data["points"] = ModelTriaxialCyclicLoading.find_frequency(test_data["time"],
-                                                                                                    test_data["deviator"])
+        test_data["mean_effective_stress"] = (test_data["deviator"] + test_data["cell_pressure"] * (2 - 3 * test_data["PPR"])) / 3
+        try:
+            processing_parameters = read_json_file("/".join(os.path.split(file_path)[:-1]) + "/processing_parameters.json")
+            test_data["frequency"], test_data["points"] = processing_parameters["frequency"], processing_parameters["points_in_cycle"]
             test_data["cycles"] = test_data["time"] * test_data["frequency"]
-        else:
-            pass
-
+            test_data["sigma_3"] = processing_parameters["sigma_3"]
+            test_data["sigma_1"] = processing_parameters["sigma_1"]
+            test_data["t"] = processing_parameters["t"]
+            test_data["K0"] = processing_parameters["K0"]
+        except FileNotFoundError:
+            if define_frequency:
+                test_data["frequency"], test_data["points"] = ModelTriaxialCyclicLoading.find_frequency(test_data["time"],
+                                                                                                        test_data["deviator"])
+                test_data["cycles"] = test_data["time"] * test_data["frequency"]
+            else:
+                pass
         return test_data
 
     @staticmethod
@@ -430,9 +439,6 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.physical = params.physical_properties
         self._test_params.Cv = params.Cv
 
-        self._test_params.physical.e = self._test_params.physical.e if self._test_params.physical.e else np.random.uniform(
-            0.6, 0.7)
-
         self._test_params.c = params.c
         self._test_params.fi = params.fi
         self._test_params.E = params.E50
@@ -564,6 +570,22 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             self._modeling_strain()
         self._test_processing()
 
+    def get_processing_parameters(self):
+        return {
+            "sigma_1": float(self._test_params.sigma_1),
+            "sigma_3": float(self._test_params.sigma_3),
+            "frequency": float(self._test_params.frequency),
+            "t": float(self._test_params.frequency),
+            "points_in_cycle": float(self._test_params.points_in_cycle),
+            "K0": float(self._test_params.K0),
+        }
+
+    def set_processing_parameters(self, params):
+        self._test_params.sigma_1 = params["sigma_1"]
+        self._test_params.sigma_3 = params["sigma_3"]
+        self._test_params.t = params["t"]
+        self._test_params.K0 = params["K0"]
+
     def generate_log_file(self, file_path, post_name=None):
         ModelTriaxialCyclicLoadingSoilTest.generate_willie_log_file(file_path, self._test_data.deviator,
                                                                     self._test_data.PPR, self._test_data.strain,
@@ -574,6 +596,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                     self._test_data.cell_pressure,
                                                                     self._test_params.Cv,
                                                                     post_name)
+        print(self.get_processing_parameters())
+        create_json_file(f"{file_path}/processing_parameters.json", self.get_processing_parameters())
 
     def _define_draw_params(self, Mcsr=None):
         """Определение параметров отрисовки графиков.

@@ -1,6 +1,6 @@
 from datetime import datetime
 import numpy as np
 
-s = "bth65  1"
-
-print(s.find("№"))
+s = "C:/Users/Пользователь/PycharmProjects"
+import os
+print("/".join(os.path.split(s)[:-1]))
