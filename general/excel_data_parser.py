@@ -982,7 +982,7 @@ class CyclicData(MechanicalProperties):
 
                 self.frequency = 0.5
 
-            if test_mode == "Штормовое разжижение":
+            elif test_mode == "Штормовое разжижение":
                 self.rw = float_df(data_frame.iat[string, DynamicsPropertyPosition["rw"][1]])
                 self.Hw = float_df(data_frame.iat[string, DynamicsPropertyPosition["Hw"][1]])
 
