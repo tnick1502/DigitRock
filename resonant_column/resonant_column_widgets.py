@@ -14,6 +14,7 @@ from general.excel_functions import create_json_file, read_json_file
 from general.report_general_statment import save_report
 from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
 from general.excel_data_parser import dataToDict, dictToData, RCData
+from loggers.logger import app_logger
 
 class RezonantColumnProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -105,9 +106,17 @@ class RezonantColumnSoilTestWidget(QWidget):
         self.test_widget.cut_slider.setHigh(len)
 
     def set_test_params(self, params):
-        self._model.set_test_params(params)
-        self._cut_slider_set_len(len(self._model._test_data.G_array))
-        self._plot()
+        app_logger.info(f"Моделирование опыта: {params.physical_properties.laboratory_number}")
+        try:
+            self._model.set_test_params(params)
+            self._cut_slider_set_len(len(self._model._test_data.G_array))
+            self._plot()
+            app_logger.info(f"Моделирование успешно")
+        except:
+            app_logger.info(f"Параметры моделируемого опыта: {params}")
+            app_logger.info("ОШИБКА")
+            app_logger.info(" ")
+            pass
 
     def _refresh(self):
         params = self._model.get_test_params()

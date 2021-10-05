@@ -5,7 +5,7 @@
 __version__ = 1
 
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QFileDialog, QMessageBox, QTabWidget, \
-    QDialog
+    QDialog, QTextEdit, QHBoxLayout
 from PyQt5.QtCore import pyqtSignal
 import os
 import time
@@ -18,12 +18,22 @@ from vibration_creep.vibration_creep_widgets import VibrationCreepSoilTestWidget
 from general.general_widgets import VibrationCreepStatment
 from general.reports import report_VibrationCreep
 
+from loggers.logger import app_logger
+import logging
+import copy
+
+handler = logging.Handler()
+handler.setLevel(logging.INFO)
+app_logger.addHandler(handler)
+f = logging.Formatter(fmt='%(message)s')
+handler.setFormatter(f)
+
 class DigitRock_VibrationCreepSoilTest(QWidget):
     def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__()
         # Создаем вкладки
-        self.layout = QVBoxLayout(self)
+        self.layout = QHBoxLayout(self)
 
         self.tab_widget = QTabWidget()
         self.tab_1 = VibrationCreepStatment()
@@ -34,6 +44,12 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
         self.tab_widget.addTab(self.tab_2, "Обработка")
         self.tab_widget.addTab(self.tab_3, "Сохранение отчета")
         self.layout.addWidget(self.tab_widget)
+
+        self.log_widget = QTextEdit()
+        self.log_widget.setFixedWidth(300)
+        self.layout.addWidget(self.log_widget)
+
+        handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(self._set_save_directory)
         self.tab_1.signal[object].connect(self.tab_2.identification.set_data)
@@ -94,6 +110,8 @@ class DigitRock_VibrationCreepSoilTest(QWidget):
 
         self.tab_1.table_physical_properties.set_row_color(
             self.tab_1.table_physical_properties.get_row_by_lab_naumber(self.tab_1.get_lab_number()))
+
+        app_logger.info(f"Проба {self.tab_1.get_physical_data().laboratory_number} успешно сохранена в папке {save}")
 
         """except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

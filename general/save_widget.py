@@ -5,6 +5,7 @@ import os
 
 from general.general_functions import create_path
 from general.general_statement import StatementGenerator
+from loggers.logger import app_logger
 
 class Save_Dir(QWidget):
     """Класс создает интерфейс для сохранения отчетов.
@@ -92,6 +93,9 @@ class Save_Dir(QWidget):
         self.save_directory_text.setText(self._save_directory)
 
         self.tree.setRootIndex(self.model.index(self._save_directory))
+
+        app_logger.info(f"Папка сохранения опытов {self._save_directory}")
+        app_logger.info(f"")
 
     def set_directory(self, signal, mode):
         """Получение пути к файлу ведомости excel"""

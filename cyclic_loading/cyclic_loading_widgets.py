@@ -6,6 +6,7 @@ import sys
 from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI, CyclicLoadingOpenTestUI, CyclicLoadingUISoilTest
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, ModelTriaxialCyclicLoadingSoilTest
 from general.initial_tables import TableVertical
+from loggers.logger import app_logger
 
 class CyclicLoadingProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -139,10 +140,18 @@ class CyclicLoadingSoilTestWidget(QWidget):
 
     def set_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
-        self._model.set_test_params(params)
-        strain_params, ppr_params, cycles_count_params = self._model.get_draw_params()
-        self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params)
-        self._plot()
+        app_logger.info(f"Моделирование опыта: {params.physical_properties.laboratory_number}")
+        try:
+            self._model.set_test_params(params)
+            strain_params, ppr_params, cycles_count_params = self._model.get_draw_params()
+            self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params)
+            self._plot()
+            app_logger.info(f"Моделирование прошло успешно")
+        except:
+            app_logger.info(f"Параметры моделируемого опыта: {params}")
+            app_logger.info("ОШИБКА")
+            app_logger.info(" ")
+            pass
 
     def open_log(self, path):
         """Открытие файла опыта"""

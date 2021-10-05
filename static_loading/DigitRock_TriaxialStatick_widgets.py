@@ -1,5 +1,5 @@
 
-from PyQt5.QtWidgets import QVBoxLayout, QWidget, QTabWidget, QMessageBox, QFileDialog, QPushButton
+from PyQt5.QtWidgets import QVBoxLayout, QWidget, QTabWidget, QMessageBox, QFileDialog, QPushButton, QTextEdit, QHBoxLayout
 from PyQt5.QtCore import pyqtSignal
 import os
 import sys
@@ -18,6 +18,15 @@ from version_control.configs import actual_version
 from tests_log.widget import TestsLogWidget, TestsLogTriaxialStatic
 __version__ = actual_version
 
+from loggers.logger import app_logger
+import logging
+import copy
+
+handler = logging.Handler()
+handler.setLevel(logging.INFO)
+app_logger.addHandler(handler)
+f = logging.Formatter(fmt='%(message)s')
+handler.setFormatter(f)
 
 class DigitRock_TriaxialStatick(QWidget):
 
@@ -121,7 +130,7 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
         super(QWidget, self).__init__()
 
         # Создаем вкладки
-        self.layout = QVBoxLayout(self)
+        self.layout = QHBoxLayout(self)
 
         self.tab_widget = QTabWidget()
         self.tab_1 = TriaxialStaticStatment()
@@ -135,6 +144,11 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
         self.tab_widget.addTab(self.tab_3, "Опыт FC")
         self.tab_widget.addTab(self.tab_4, "Сохранение отчета")
         self.layout.addWidget(self.tab_widget)
+        self.log_widget = QTextEdit()
+        self.log_widget.setFixedWidth(300)
+        self.layout.addWidget(self.log_widget)
+
+        handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.reprocessing_button = QPushButton("Перевыгонка протоколов")
         self.tab_4.savebox_layout_line_1.insertWidget(4, self.reprocessing_button)
@@ -160,20 +174,29 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
 
     def set_test_parameters(self, params):
         param = self.tab_1.open_line.get_data()
-        if param["test_type"] == 'Трёхосное сжатие (F, C, E)':
-            self.tab_2.item_identification.set_data(params)
-            self.tab_3.item_identification.set_data(params)
-            self.tab_2.set_params(params)
-            self.tab_3.set_params(params)
-        elif param["test_type"] == 'Трёхосное сжатие (F, C)':
-            self.tab_3.item_identification.set_data(params)
-            self.tab_3.set_params(params)
-        elif param["test_type"] == 'Трёхосное сжатие (E)':
-            self.tab_2.item_identification.set_data(params)
-            self.tab_2.set_params(params)
-        elif param["test_type"] == "Трёхосное сжатие с разгрузкой":
-            self.tab_2.item_identification.set_data(params)
-            self.tab_2.set_params(params)
+        app_logger.info(f"Моделирование опыта: {params.physical_properties.laboratory_number}")
+        try:
+            if param["test_type"] == 'Трёхосное сжатие (F, C, E)':
+                self.tab_2.item_identification.set_data(params)
+                self.tab_3.item_identification.set_data(params)
+                self.tab_2.set_params(params)
+                self.tab_3.set_params(params)
+            elif param["test_type"] == 'Трёхосное сжатие (F, C)':
+                self.tab_3.item_identification.set_data(params)
+                self.tab_3.set_params(params)
+            elif param["test_type"] == 'Трёхосное сжатие (E)':
+                self.tab_2.item_identification.set_data(params)
+                self.tab_2.set_params(params)
+            elif param["test_type"] == "Трёхосное сжатие с разгрузкой":
+                self.tab_2.item_identification.set_data(params)
+                self.tab_2.set_params(params)
+            app_logger.info("Моделирование успешно")
+            app_logger.info(" ")
+        except:
+            app_logger.info(f"Параметры моделируемого опыта: {params}")
+            app_logger.info("ОШИБКА")
+            app_logger.info(" ")
+            pass
 
     def save_report(self, parameter=False):
         try:
@@ -324,6 +347,8 @@ class DigitRock_TriaxialStatickSoilTest(QWidget):
 
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(self.tab_1.get_lab_number()))
+
+            app_logger.info(f"Проба {self.tab_1.get_physical_data().laboratory_number} успешно сохранена в папке {save}")
 
 
         except AssertionError as error:

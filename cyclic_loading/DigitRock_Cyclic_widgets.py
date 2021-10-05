@@ -22,6 +22,7 @@ from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogCyclic
 from tests_log.path_processing import cyclic_path_processing
 __version__ = actual_version
+from loggers.logger import app_logger
 
 class CyclicLoadingProcessing_Tab(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -341,6 +342,9 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
                 QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(self.tab_1.get_lab_number()))
+
+            app_logger.info(
+                f"Проба {self.tab_1.get_physical_data().laboratory_number} успешно сохранена в папке {save}")
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

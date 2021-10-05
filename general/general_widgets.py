@@ -15,6 +15,8 @@ from general.initial_tables import TableCastomer, Table_Physical_Properties, Tab
 
 from general.excel_data_parser import getRCExcelData, getMechanicalExcelData, getCyclicExcelData, getVibrationCreepExcelData
 
+from loggers.logger import app_logger
+
 class Float_Slider(QSlider):  # получает на входе размер окна. Если передать 0 то размер автоматический
     def __init__(self, m):
         super().__init__(m)
@@ -454,6 +456,10 @@ class RezonantColumnStatment(InitialStatment):
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
 
+                    app_logger.info(f"Загружена ведомость: {self.path}")
+                    app_logger.info(f"Объект: {self._data_customer['object_name']}")
+                    app_logger.info("")
+
     def table_physical_properties_click(self, laboratory_number):
         data = self._data[laboratory_number]
         self._laboratory_number = laboratory_number
@@ -544,6 +550,11 @@ class TriaxialStaticStatment(InitialStatment):
                         self.statment_directory.emit(self.path)
                         self.open_line.text_file_path.setText(self.path)
 
+                        app_logger.info(f"Загружена ведомость: {self.path}")
+                        app_logger.info(f"Объект: {self._data_customer['object_name']}")
+                        app_logger.info(f"Тип опыта: {combo_params['test_type']}")
+                        app_logger.info("")
+
             except TypeError as err:
                 print(str(err))
 
@@ -631,6 +642,11 @@ class TriaxialCyclicStatment(InitialStatment):
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
 
+                    app_logger.info(f"Загружена ведомость: {self.path}")
+                    app_logger.info(f"Объект: {self._data_customer['object_name']}")
+                    app_logger.info(f"Тип опыта: {combo_params['test_type']}")
+                    app_logger.info("")
+
     def table_physical_properties_click(self, laboratory_number):
         data = self._data[laboratory_number]
         self._laboratory_number = laboratory_number
@@ -707,6 +723,10 @@ class VibrationCreepStatment(InitialStatment):
                     self.table_physical_properties.set_data(self._data)
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
+
+                    app_logger.info(f"Загружена ведомость: {self.path}")
+                    app_logger.info(f"Объект: {self._data_customer['object_name']}")
+                    app_logger.info("")
 
     def table_physical_properties_click(self, laboratory_number):
         data = self._data[laboratory_number]

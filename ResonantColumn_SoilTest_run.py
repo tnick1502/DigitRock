@@ -15,7 +15,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.height = 1100
         self.setWindowTitle(self.title)
         #self.setWindowIcon(QIcon(icons + "ST.png"))
-        self.setGeometry(self.left, self.top, 1200, 1000)
+        self.setGeometry(self.left, self.top, 1500, 1000)
         #self.showFullScreen()
 
         self.table_widget = DigitRock_RezonantColumn_SoilTest()#

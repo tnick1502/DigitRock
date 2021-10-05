@@ -24,6 +24,7 @@ from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, Mode
 from general.general_functions import read_json_file, sigmoida, mirrow_element
 from dataclasses import dataclass
 from general.excel_data_parser import VibrationCreepData
+from loggers.logger import model_logger
 
 try:
     plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
@@ -201,35 +202,39 @@ class ModelVibrationCreep:
 
     def _test_processing(self):
         """Обработка результатов опыта"""
-        if self._static_test_data.get_test_results()["qf"] is not None:
-            for dyn_test, test_result in zip(self._dynamic_tests, self._test_results):
-                if dyn_test.strain_dynamic is not None:
-                    #qf = self._static_test_data.get_test_results()["qf"]
+        try:
+            if self._static_test_data.get_test_results()["qf"] is not None:
+                for dyn_test, test_result in zip(self._dynamic_tests, self._test_results):
+                    if dyn_test.strain_dynamic is not None:
+                        #qf = self._static_test_data.get_test_results()["qf"]
 
-                    test_result.E50, test_result.E50d = \
-                        ModelVibrationCreep.find_E50d(dyn_test.strain_dynamic, dyn_test.deviator_dynamic,
-                                                      start_dynamic=dyn_test.start_dynamic)
-                    test_result.Kd = np.round((test_result.E50d / test_result.E50), 2)
-                    #print("data from test processing", len(dyn_test.time), len(dyn_test.deviator_dynamic))
-                    dyn_test.time, dyn_test.creep_curve = \
-                        ModelVibrationCreep.plastic_creep(dyn_test.strain_dynamic, dyn_test.deviator_dynamic,
-                                                          dyn_test.time, start_dynamic=dyn_test.start_dynamic)
-
-                    """test_result.E50 = ModelVibrationCreep.find_E50_dynamic(dyn_test.strain_dynamic,
-                                                                         dyn_test.deviator_dynamic, qf*1000)
-                    if test_result.E50:
-                        test_result.E50d = ModelVibrationCreep.find_E50d(dyn_test.strain_dynamic,
-                                                                               dyn_test.deviator_dynamic)
+                        test_result.E50, test_result.E50d = \
+                            ModelVibrationCreep.find_E50d(dyn_test.strain_dynamic, dyn_test.deviator_dynamic,
+                                                          start_dynamic=dyn_test.start_dynamic)
                         test_result.Kd = np.round((test_result.E50d / test_result.E50), 2)
+                        #print("data from test processing", len(dyn_test.time), len(dyn_test.deviator_dynamic))
+                        dyn_test.time, dyn_test.creep_curve = \
+                            ModelVibrationCreep.plastic_creep(dyn_test.strain_dynamic, dyn_test.deviator_dynamic,
+                                                              dyn_test.time, start_dynamic=dyn_test.start_dynamic)
 
-                        dyn_test.time, dyn_test.creep_curve = ModelVibrationCreep.plastic_creep(dyn_test.strain_dynamic,
-                                                                                       dyn_test.deviator_dynamic,
-                                                                                                dyn_test.time)"""
+                        """test_result.E50 = ModelVibrationCreep.find_E50_dynamic(dyn_test.strain_dynamic,
+                                                                             dyn_test.deviator_dynamic, qf*1000)
+                        if test_result.E50:
+                            test_result.E50d = ModelVibrationCreep.find_E50d(dyn_test.strain_dynamic,
+                                                                                   dyn_test.deviator_dynamic)
+                            test_result.Kd = np.round((test_result.E50d / test_result.E50), 2)
+    
+                            dyn_test.time, dyn_test.creep_curve = ModelVibrationCreep.plastic_creep(dyn_test.strain_dynamic,
+                                                                                           dyn_test.deviator_dynamic,
+                                                                                                    dyn_test.time)"""
 
-                else:
-                    test_result.E50d = None
-                    test_result.Kd = None
-        else:
+                    else:
+                        test_result.E50d = None
+                        test_result.Kd = None
+            else:
+                pass
+        except:
+            model_logger.exception(f"Ошибка обработки данных")
             pass
 
     @staticmethod
@@ -326,36 +331,41 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
         self._test_params = None
 
     def set_test_params(self, params):
-        self._dynamic_tests = []
-        self._dynamic_tests_models = []
-        self._test_results = []
+        try:
 
-        self._test_params = params
+            self._dynamic_tests = []
+            self._dynamic_tests_models = []
+            self._test_results = []
 
-        self._static_test_data.set_test_params(params)
+            self._test_params = params
 
-        #print("length before = ", len(self._dynamic_tests))
+            self._static_test_data.set_test_params(params)
 
-        for frequency, Kd in zip(params.frequency, params.Kd):
-            self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest())
-            #print("length now = ", len(self._dynamic_tests))
-            params_for_current_test = VibrationCreepData(for_copy=params)
-            params_for_current_test.frequency = frequency
-            params_for_current_test.E50 = params_for_current_test.E50*np.random.uniform(0.85, 1.1)
-            params_for_current_test.Kd = Kd
-            self._dynamic_tests_models[-1].set_test_params(params_for_current_test, True)
+            #print("length before = ", len(self._dynamic_tests))
 
-        for test in self._dynamic_tests_models:
-            self._dynamic_tests.append(DataModelVibrationCreep())
-            test_data = test.get_data_for_vibration_creep()
-            self._dynamic_tests[-1].strain_dynamic = test_data["strain"]
-            self._dynamic_tests[-1].deviator_dynamic = test_data["deviator"]
-            self._dynamic_tests[-1].time = test_data["time"]
-            self._dynamic_tests[-1].frequency = test_data["frequency"]
-            self._dynamic_tests[-1].start_dynamic = test_data["start_dynamic"]
-            self._test_results.append(TestResultModelVibrationCreep())
+            for frequency, Kd in zip(params.frequency, params.Kd):
+                self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest())
+                #print("length now = ", len(self._dynamic_tests))
+                params_for_current_test = VibrationCreepData(for_copy=params)
+                params_for_current_test.frequency = frequency
+                params_for_current_test.E50 = params_for_current_test.E50*np.random.uniform(0.85, 1.1)
+                params_for_current_test.Kd = Kd
+                self._dynamic_tests_models[-1].set_test_params(params_for_current_test, True)
 
-        #print("length after = ", len(self._dynamic_tests))
+            for test in self._dynamic_tests_models:
+                self._dynamic_tests.append(DataModelVibrationCreep())
+                test_data = test.get_data_for_vibration_creep()
+                self._dynamic_tests[-1].strain_dynamic = test_data["strain"]
+                self._dynamic_tests[-1].deviator_dynamic = test_data["deviator"]
+                self._dynamic_tests[-1].time = test_data["time"]
+                self._dynamic_tests[-1].frequency = test_data["frequency"]
+                self._dynamic_tests[-1].start_dynamic = test_data["start_dynamic"]
+                self._test_results.append(TestResultModelVibrationCreep())
+
+            #print("length after = ", len(self._dynamic_tests))
+        except:
+            model_logger.exception(f"Ошибка моделирования опыта {params.physical_properties.laboratory_number}")
+            pass
 
         self._test_processing()
 

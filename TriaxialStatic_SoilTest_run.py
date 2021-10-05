@@ -13,10 +13,9 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.title = "Triaxial Static Soil Test " + "{:.2f}".format(__version__)
         self.left = 100
         self.top = 30
-        self.width = 1800
-        self.height = 1000
+
         self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, 1200, 900)
+        self.setGeometry(self.left, self.top, 1500, 900)
         if test_version(__version__):
             self.table_widget = DigitRock_TriaxialStatickSoilTest()#
             self.setCentralWidget(self.table_widget)

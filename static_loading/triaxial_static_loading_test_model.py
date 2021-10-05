@@ -28,6 +28,7 @@ from static_loading.consolidation_model import ModelTriaxialConsolidation, Model
 from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading, ModelTriaxialDeviatorLoadingSoilTest
 from general.general_functions import read_json_file, create_json_file
 from general.excel_data_parser import MechanicalProperties, PhysicalProperties, dictToData
+from loggers.logger import model_logger
 
 class ModelTriaxialStaticLoad:
     """Класс моделирования опыта трехосного сжатия
@@ -40,9 +41,13 @@ class ModelTriaxialStaticLoad:
 
     def set_test_data(self, test_data):
         """Получение массивов опытов и передача в соответствующий класс"""
-        self.reconsolidation.set_test_data(test_data["reconsolidation"])
-        self.consolidation.set_test_data(test_data["consolidation"])
-        self.deviator_loading.set_test_data(test_data["deviator_loading"])
+        try:
+            self.reconsolidation.set_test_data(test_data["reconsolidation"])
+            self.consolidation.set_test_data(test_data["consolidation"])
+            self.deviator_loading.set_test_data(test_data["deviator_loading"])
+        except:
+            model_logger.exception("Ошибка обработки данных")
+            pass
 
     def get_processing_parameters(self):
         return {
@@ -268,20 +273,24 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         """Получение массивов опытов и передача в соответствующий класс"""
         #test_params.physical_properties.e = test_params.physical_properties.e if test_params.physical_properties.e else np.random.uniform(
             #0.6, 0.7)
-        self.test_params = test_params
-        self.reconsolidation.set_test_params(test_params.sigma_3)
+        try:
+            self.test_params = test_params
+            self.reconsolidation.set_test_params(test_params.sigma_3)
 
-        velocity = None
+            velocity = None
 
-        while velocity is None:
-            self.consolidation.set_delta_h_reconsolidation(self.reconsolidation.get_test_results()["delta_h_reconsolidation"])
-            self.consolidation.set_test_params(test_params)
-            velocity = self.consolidation.get_test_results()["velocity"]
+            while velocity is None:
+                self.consolidation.set_delta_h_reconsolidation(self.reconsolidation.get_test_results()["delta_h_reconsolidation"])
+                self.consolidation.set_test_params(test_params)
+                velocity = self.consolidation.get_test_results()["velocity"]
 
-        self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
-                                                   self.consolidation.get_delta_h_consolidation())
+            self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
+                                                       self.consolidation.get_delta_h_consolidation())
 
-        self.deviator_loading.set_test_params(test_params)
+            self.deviator_loading.set_test_params(test_params)
+        except:
+            model_logger.exception(f"Ошибка моделирования опыта {test_params.physical_properties.laboratory_number}")
+            pass
         """E50 = np.round(test_params.E50/1000, 1)
         params = self.deviator_loading.get_test_results()
         E50_test = params["E50"]

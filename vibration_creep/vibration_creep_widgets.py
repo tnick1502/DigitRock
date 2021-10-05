@@ -13,6 +13,7 @@ from general.initial_tables import Table_Castomer
 from general.excel_functions import create_json_file, read_json_file
 from general.report_general_statment import save_report
 from general.excel_data_parser import dataToDict, dictToData, VibrationCreepData
+from loggers.logger import app_logger
 
 
 class VibrationCreepSoilTestWidget(QWidget):
@@ -76,10 +77,18 @@ class VibrationCreepSoilTestWidget(QWidget):
 
     def set_test_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
-        self._model.set_test_params(params)
-        self.static_widget.set_model(self._model._static_test_data)
-        self.static_widget.item_identification.set_data(params)
-        self._plot()
+        app_logger.info(f"Моделирование опыта: {params.physical_properties.laboratory_number}")
+        try:
+            self._model.set_test_params(params)
+            self.static_widget.set_model(self._model._static_test_data)
+            self.static_widget.item_identification.set_data(params)
+            self._plot()
+            app_logger.info(f"Моделирование успешно")
+        except:
+            app_logger.info(f"Параметры моделируемого опыта: {params}")
+            app_logger.info("ОШИБКА")
+            app_logger.info(" ")
+            pass
 
     def get_test_params(self):
         return self._model.get_test_params()

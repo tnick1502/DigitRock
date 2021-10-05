@@ -11,7 +11,7 @@ from general.general_functions import sigmoida, mirrow_element
 from cyclic_loading.cyclic_stress_ratio_function import define_fail_cycle
 from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTest
-
+from loggers.logger import excel_logger
 
 
 PhysicalPropertyPosition = {
@@ -405,6 +405,7 @@ class MechanicalProperties:
                 "state_standard": MechanicalProperties.define_reference_pressure_array_state_standard(
                     self.physical_properties.e, self.physical_properties.Il, self.physical_properties.type_ground)
             }
+
 
     @staticmethod
     def round_sigma_3(sigma_3, param=5):
@@ -908,7 +909,6 @@ class RCData(MechanicalProperties):
     def defineProperties(self, data_frame: pd.DataFrame, string: int, K0_mode: str) -> None:
         super().defineMechanicalProperties(data_frame, string, test_mode="Резонансная колонка", K0_mode=K0_mode,
                                    identification_column=IdentificationColumns["Резонансная колонка"])
-
         if self.c and self.fi and self.E50:
             self.reference_pressure = float_df(data_frame.iat[string,
                                                           DynamicsPropertyPosition["reference_pressure"][1]])
@@ -1116,15 +1116,18 @@ def getMechanicalExcelData(excel: str, test_mode: str, K0_mode: str) -> dict:
     df = createDataFrame(excel)
 
     identification_column = None
-
     data = {}
     if df is not None:
         for i in range(len(df["Лаб. № пробы"])):
-            m_data = MechanicalProperties()
-            m_data.defineMechanicalProperties(data_frame=df, string=i, test_mode=test_mode, K0_mode=K0_mode,
-                                              identification_column=identification_column)
-            if m_data.E50:
-                data[m_data.laboratory_number] = m_data
+            try:
+                m_data = MechanicalProperties()
+                m_data.defineMechanicalProperties(data_frame=df, string=i, test_mode=test_mode, K0_mode=K0_mode,
+                                                  identification_column=identification_column)
+                if m_data.E50:
+                    data[m_data.laboratory_number] = m_data
+            except:
+                excel_logger.exception(f"Ошибка пробы {m_data.laboratory_number}")
+                break
     return data
 
 def getRCExcelData(excel: str, K0_mode: str) -> dict:
@@ -1143,10 +1146,14 @@ def getCyclicExcelData(excel: str, test_mode: str, K0_mode: str) -> dict:
     data = {}
     if df is not None:
         for i in range(len(df["Лаб. № пробы"])):
-            cyclic_data = CyclicData()
-            cyclic_data.defineProperties(df, i, test_mode, K0_mode)
-            if cyclic_data.E50:
-                data[cyclic_data.laboratory_number] = cyclic_data
+            try:
+                cyclic_data = CyclicData()
+                cyclic_data.defineProperties(df, i, test_mode, K0_mode)
+                if cyclic_data.E50:
+                    data[cyclic_data.laboratory_number] = cyclic_data
+            except:
+                excel_logger.exception(f"Ошибка пробы {cyclic_data.laboratory_number}")
+                break
     return data
 
 def getVibrationCreepExcelData(excel: str, K0_mode: str) -> dict:
@@ -1154,10 +1161,14 @@ def getVibrationCreepExcelData(excel: str, K0_mode: str) -> dict:
     data = {}
     if df is not None:
         for i in range(len(df["Лаб. № пробы"])):
-            vb_data = VibrationCreepData()
-            vb_data.defineProperties(df, i, K0_mode=K0_mode)
-            if vb_data.E50:
-                data[vb_data.laboratory_number] = vb_data
+            try:
+                vb_data = VibrationCreepData()
+                vb_data.defineProperties(df, i, K0_mode=K0_mode)
+                if vb_data.E50:
+                    data[vb_data.laboratory_number] = vb_data
+            except:
+                excel_logger.exception(f"Ошибка пробы {vb_data.laboratory_number}")
+                break
     return data
 
 

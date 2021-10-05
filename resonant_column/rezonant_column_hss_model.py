@@ -29,6 +29,7 @@ from scipy.optimize import differential_evolution
 from general.general_functions import AttrDict
 from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
 from general.general_functions import read_json_file
+from loggers.logger import model_logger
 
 try:
     plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
@@ -162,9 +163,14 @@ class ModelRezonantColumn:
 
     def _test_processing(self):
         """Обработка опыта"""
-        self._test_result.G0, self._test_result.threshold_shear_strain = \
-            ModelRezonantColumn.approximate_Hardin_Drnevick(self._test_data.shear_strain[self._test_cut_position.left : self._test_cut_position.right],
-                                                            self._test_data.G_array[self._test_cut_position.left : self._test_cut_position.right])
+        try:
+            self._test_result.G0, self._test_result.threshold_shear_strain = \
+                ModelRezonantColumn.approximate_Hardin_Drnevick(self._test_data.shear_strain[self._test_cut_position.left : self._test_cut_position.right],
+                                                                self._test_data.G_array[self._test_cut_position.left : self._test_cut_position.right])
+        except:
+            model_logger.exception("Ошибка обработки данных РК")
+            pass
+
 
     @staticmethod
     def open_G0_log(file_path):
@@ -292,18 +298,25 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
 
     def set_test_params(self, params):
         """Функция принимает параметры опыта для дальнейших построений"""
-        self._getted_params = params
+        try:
+            self._getted_params = params
 
-        self._test_params.p_ref = params.reference_pressure
-        self._test_params.c = params.c
-        self._test_params.fi = params.fi
-        self._test_params.E = params.E50
-        self._test_params.K0 = params.K0
-        self._test_params.physical = params.physical_properties
-        self._test_params.G0 = params.G0
-        self._test_params.threshold_shear_strain = params.threshold_shear_strain
-
-        self._test_modeling()
+            self._test_params.p_ref = params.reference_pressure
+            self._test_params.c = params.c
+            self._test_params.fi = params.fi
+            self._test_params.E = params.E50
+            self._test_params.K0 = params.K0
+            self._test_params.physical = params.physical_properties
+            self._test_params.G0 = params.G0
+            self._test_params.threshold_shear_strain = params.threshold_shear_strain
+        except:
+            model_logger.exception("Ошибка обработки входных параметров модели ")
+            pass
+        try:
+            self._test_modeling()
+        except:
+            model_logger.exception(f"Ошибка моделирования опыта {self._test_params.physical.laboratory_number}")
+            pass
 
     def get_test_params(self):
         return self._getted_params

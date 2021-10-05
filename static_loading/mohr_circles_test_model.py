@@ -27,7 +27,7 @@ from general.general_functions import sigmoida, make_increas, line_approximate, 
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, define_qf, define_E50
 from configs.plot_params import plotter_params
 from general.excel_data_parser import MechanicalProperties, dictToData, dataToDict
-
+from loggers.logger import model_logger
 
 class ModelMohrCircles:
     """Класс моделирования опыта FCE"""
@@ -108,17 +108,22 @@ class ModelMohrCircles:
 
     def _test_processing(self):
         """Обработка опытов"""
-        sigma_3, sigma_1 = self.get_sigma_3_1()
-        if sigma_3 is not None:
-            c, fi = ModelMohrCircles.mohr_cf_stab(sigma_3, sigma_1)
-            self._test_result.c = np.round(np.arctan(c), 3)
-            self._test_result.fi = np.round(np.rad2deg(np.arctan(fi)), 1)# round(np.rad2deg(np.arctan(fi)), 1)
+        try:
+            sigma_3, sigma_1 = self.get_sigma_3_1()
+            if sigma_3 is not None:
+                c, fi = ModelMohrCircles.mohr_cf_stab(sigma_3, sigma_1)
+                self._test_result.c = np.round(np.arctan(c), 3)
+                self._test_result.fi = np.round(np.rad2deg(np.arctan(fi)), 1)# round(np.rad2deg(np.arctan(fi)), 1)
 
-            if self._test_reference_params.p_ref and self._test_reference_params.Eref:
-                E50 = self.get_E50()
-                self._test_result.m = ModelMohrCircles.calculate_m(sigma_3, E50, self._test_reference_params.Eref/1000,
-                                                                    self._test_reference_params.p_ref/1000,
-                                                                    self._test_params.c, self._test_params.fi)
+                if self._test_reference_params.p_ref and self._test_reference_params.Eref:
+                    E50 = self.get_E50()
+                    self._test_result.m = ModelMohrCircles.calculate_m(sigma_3, E50, self._test_reference_params.Eref/1000,
+                                                                        self._test_reference_params.p_ref/1000,
+                                                                        self._test_params.c, self._test_params.fi)
+        except:
+            model_logger.exception("Ошибка обработки кругов мора")
+            pass
+
 
     def get_test_results(self):
         return self._test_result.get_dict()
@@ -300,49 +305,53 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         self._reference_pressure_array = reference_pressure_array
 
     def _test_modeling(self):
-        if self._test_params is not None and self._reference_pressure_array is not None:
+        try:
+            if self._test_params is not None and self._reference_pressure_array is not None:
 
-            self._tests = []
+                self._tests = []
 
-            mohr_params = []
+                mohr_params = []
 
-            self.set_reference_params(self._test_params.sigma_3, self._test_params.E50)
+                self.set_reference_params(self._test_params.sigma_3, self._test_params.E50)
 
-            for num, sigma_3 in enumerate(self._reference_pressure_array):
-                mohr_params.append(MechanicalProperties(for_copy=self._test_params))
-                mohr_params[num].sigma_3 = sigma_3
-                mohr_params[num].qf = define_qf(sigma_3, self._test_params.c, self._test_params.fi)
-                mohr_params[num].sigma_1 = np.round(mohr_params[num].qf + mohr_params[num].sigma_3, 3)
+                for num, sigma_3 in enumerate(self._reference_pressure_array):
+                    mohr_params.append(MechanicalProperties(for_copy=self._test_params))
+                    mohr_params[num].sigma_3 = sigma_3
+                    mohr_params[num].qf = define_qf(sigma_3, self._test_params.c, self._test_params.fi)
+                    mohr_params[num].sigma_1 = np.round(mohr_params[num].qf + mohr_params[num].sigma_3, 3)
 
-            c = 0
-            fi = 0
+                c = 0
+                fi = 0
 
-            current_c = np.round(self._test_params.c, 3)
-            current_fi = np.round(self._test_params.fi, 1)
+                current_c = np.round(self._test_params.c, 3)
+                current_fi = np.round(self._test_params.fi, 1)
 
-            while True:
-                if (c == current_c and fi == current_fi):
-                    break
+                while True:
+                    if (c == current_c and fi == current_fi):
+                        break
 
-                qf = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(
-                    np.array([np.round(param.sigma_3) for param in mohr_params]),
-                    np.array([np.round(param.sigma_1) for param in mohr_params]), self._test_params.fi,
-                    self._test_params.c * 1000)
+                    qf = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(
+                        np.array([np.round(param.sigma_3) for param in mohr_params]),
+                        np.array([np.round(param.sigma_1) for param in mohr_params]), self._test_params.fi,
+                        self._test_params.c * 1000)
 
-                for i in range(len(qf)):
-                    mohr_params[i].qf = round(qf[i], 3)
-                    mohr_params[i].sigma_1 = round(mohr_params[i].qf + mohr_params[i].sigma_3, 3)
-                    mohr_params[i].E50 = define_E50(
-                        self._test_params.E50, self._test_params.c * 1000, self._test_params.fi, mohr_params[i].sigma_3,
-                        self._test_params.sigma_3, self._test_params.m) * np.random.uniform(0.9, 1.1)
+                    for i in range(len(qf)):
+                        mohr_params[i].qf = round(qf[i], 3)
+                        mohr_params[i].sigma_1 = round(mohr_params[i].qf + mohr_params[i].sigma_3, 3)
+                        mohr_params[i].E50 = define_E50(
+                            self._test_params.E50, self._test_params.c * 1000, self._test_params.fi, mohr_params[i].sigma_3,
+                            self._test_params.sigma_3, self._test_params.m) * np.random.uniform(0.9, 1.1)
 
-                c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab([np.round(x.sigma_3/1000, 3) for x in mohr_params],
-                                                                   [np.round(x.sigma_1/1000, 3) for x in mohr_params])
-                c = round(c, 3)
-                fi = round(np.rad2deg(np.arctan(fi)), 1)
+                    c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab([np.round(x.sigma_3/1000, 3) for x in mohr_params],
+                                                                       [np.round(x.sigma_1/1000, 3) for x in mohr_params])
+                    c = round(c, 3)
+                    fi = round(np.rad2deg(np.arctan(fi)), 1)
 
-            for param in mohr_params:
-                self.add_test_st(param)
+                for param in mohr_params:
+                    self.add_test_st(param)
+        except:
+            model_logger.exception("Ошибка моделирования кругов мора")
+            pass
 
     def save_log_files(self, directory):
         """Метод генерирует файлы испытания для всех кругов"""

@@ -4,7 +4,7 @@
     """
 __version__ = 1
 
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QFileDialog, QMessageBox, QTabWidget, QDialog
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QFileDialog, QMessageBox, QTabWidget, QDialog, QTextEdit, QHBoxLayout
 from PyQt5.QtCore import pyqtSignal
 import os
 import sys
@@ -16,6 +16,14 @@ from general.general_widgets import RezonantColumnStatment
 from general.reports import report_rc
 from general.excel_functions import set_cell_data
 from resonant_column.resonant_column_widgets import PredictRCTestResults
+from loggers.logger import app_logger
+import logging
+
+handler = logging.Handler()
+handler.setLevel(logging.INFO)
+app_logger.addHandler(handler)
+f = logging.Formatter(fmt='%(message)s')
+handler.setFormatter(f)
 
 class RezonantColumn_Processing_Tab(QWidget):
     def __init__(self):
@@ -132,7 +140,7 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
         """Определяем основную структуру данных"""
         super().__init__()
         # Создаем вкладки
-        self.layout = QVBoxLayout(self)
+        self.layout = QHBoxLayout(self)
 
         self.tab_widget = QTabWidget()
         self.tab_1 = RezonantColumnStatment()
@@ -141,6 +149,11 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Обработка")
         self.layout.addWidget(self.tab_widget)
+        self.log_widget = QTextEdit()
+        self.log_widget.setFixedWidth(300)
+        self.layout.addWidget(self.log_widget)
+
+        handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(self._set_save_directory)
         self.tab_1.signal[object].connect(self.tab_2.test.set_test_params)
@@ -211,6 +224,9 @@ class DigitRock_RezonantColumn_SoilTest(QWidget):
                                                                                       file_name[::-1].index("/"):])
             self.tab_2.test._model.save_log_file(save)
             QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
+
+            app_logger.info(
+                f"Проба {self.tab_1.get_physical_data().laboratory_number} успешно сохранена в папке {save}")
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(self.tab_1.get_lab_number()))
 
