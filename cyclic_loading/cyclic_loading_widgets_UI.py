@@ -304,7 +304,8 @@ class ModelTriaxialCyclicLoading_Sliders(QWidget):
                               "strain_slant": "Наклон",
                               "strain_E0": "E0 (Обратн. ампл.)",
                               "strain_rise_after_fail": "Рост после разрушения",
-                              "strain_stabilization": "Стабилизация"
+                              "strain_stabilization": "Стабилизация",
+                              "strain_phase_offset": "Смещение по фазе",
                               # "strain_deviation": "None",
                               # "strain_filter": "None",
                               }

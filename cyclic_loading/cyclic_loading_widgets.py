@@ -125,12 +125,24 @@ class CyclicLoadingSoilTestWidget(QWidget):
         self.layout.setContentsMargins(5, 5, 5, 5)
 
     def _sliders_strain(self, param):
-        self._model.set_strain_params(param)
-        self._plot()
+        try:
+            self._model.set_strain_params(param)
+            self._plot()
+        except:
+            app_logger.info("ОШИБКА")
+            app_logger.info(f"Параметры слайдеров опыта: {param}")
+            app_logger.info(" ")
+            pass
 
     def _sliders_PPR(self, param):
-        self._model.set_PPR_params(param)
-        self._plot()
+        try:
+            self._model.set_PPR_params(param)
+            self._plot()
+        except:
+            app_logger.info("ОШИБКА")
+            app_logger.info(f"Параметры слайдеров опыта: {param}")
+            app_logger.info(" ")
+            pass
 
     def _sliders_cycles_count(self, param):
         self._model.set_cycles_count(param["cycles_count"])
