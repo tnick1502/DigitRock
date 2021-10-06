@@ -1,7 +1,9 @@
 from version_control.configs import actual_version
 import datetime
-time = str(datetime.datetime.now())
 import logging
+
+time = datetime.datetime.now()
+file = f'{time:%d-%m-%Y %H.%M.%S}.log'
 
 class CustomFilter(logging.Filter):
 
@@ -40,7 +42,7 @@ logger_config = {
             'class': 'logging.FileHandler',
             'level': 'INFO',
             'formatter': 'std_format',
-            'filename': f'log.log'
+            'filename': file
         }
     },
     'loggers': {

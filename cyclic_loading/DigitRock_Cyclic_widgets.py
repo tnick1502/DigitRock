@@ -3,7 +3,7 @@
     TriaxialCyclicLoading_SoilTest - модуль моделирования циклического нагружения
     """
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QPushButton, QFileDialog, QMessageBox, QTabWidget, \
-    QDialog
+    QDialog, QGroupBox, QHBoxLayout, QTextEdit
 from PyQt5.QtCore import pyqtSignal
 import os
 import time
@@ -23,6 +23,13 @@ from tests_log.test_classes import TestsLogCyclic
 from tests_log.path_processing import cyclic_path_processing
 __version__ = actual_version
 from loggers.logger import app_logger
+
+import logging
+handler = logging.Handler()
+handler.setLevel(logging.INFO)
+app_logger.addHandler(handler)
+f = logging.Formatter(fmt='%(message)s')
+handler.setFormatter(f)
 
 class CyclicLoadingProcessing_Tab(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -59,10 +66,17 @@ class CyclicLoadingSoilTest_Tab(QWidget):
 
     def _create_UI(self):
         self.layout = QVBoxLayout(self)
-        self.save_widget = Save_Dir()
+
+        self.save_widget = QGroupBox("Сохранение")
+        self.save_widget_layout = QHBoxLayout()
+        self.save_widget.setLayout(self.save_widget_layout)
+        self.save_widget_layout.addStretch(-1)
+
         self.screen_button = QPushButton("Скрин")
-        self.save_widget.savebox_layout_line_1.addWidget(self.screen_button)
-        self.save_widget.setFixedHeight(240)
+        self.save_widget_layout.addWidget(self.screen_button)
+        self.save_button = QPushButton("Сохранить отчет")
+        self.save_widget_layout.addWidget(self.save_button)
+
         self.widget.layout.addWidget(self.save_widget)
         self.layout.addWidget(self.widget)
         self.layout.setContentsMargins(5, 5, 5, 5)
@@ -206,26 +220,29 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = TriaxialCyclicStatment()
         self.tab_2 = CyclicLoadingSoilTest_Tab()
+        self.tab_3 = Save_Dir()
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Обработка")
+        self.tab_widget.addTab(self.tab_3, "Отчеты")
         self.layout.addWidget(self.tab_widget)
+
+        self.log_widget = QTextEdit()
+        self.log_widget.setFixedHeight(180)
+        self.layout.addWidget(self.log_widget)
+
+        handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(self._set_save_directory)
         self.tab_1.signal[object].connect(self.tab_2.widget.set_params)
         self.tab_1.signal[object].connect(self.tab_2.widget.identification.set_data)
 
         f = lambda x: self.save_report(True)
-        self.tab_2.save_widget.save_button.clicked.connect(f)
+        self.tab_3.save_button.clicked.connect(f)
+        self.tab_2.save_button.clicked.connect(f)
 
-        self.jornal_button = QPushButton("Журнал опытов")
-        self.tab_2.save_widget.savebox_layout_line_1.addWidget(self.jornal_button)
-        self.jornal_button.clicked.connect(self.jornal)
-
-        self.reprocessing_button = QPushButton("Перевыгонка протоколов")
-        self.tab_2.save_widget.savebox_layout_line_1.insertWidget(4, self.reprocessing_button)
-
-        self.reprocessing_button.clicked.connect(self.reprocessing)
+        self.tab_3.jornal_button.clicked.connect(self.jornal)
+        self.tab_3.reprocessing_button.clicked.connect(self.reprocessing)
 
         self.button_predict_liquefaction = QPushButton("Прогнозирование разжижаемости")
         self.button_predict_liquefaction.setFixedHeight(50)
@@ -234,7 +251,7 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
 
     def _set_save_directory(self, signal):
         read_parameters = self.tab_1.open_line.get_data()
-        self.tab_2.save_widget.set_directory(signal, read_parameters["test_type"])
+        self.tab_3.set_directory(signal, read_parameters["test_type"])
 
     def _predict_liquefaction(self):
         if self.tab_1._data is not None:
@@ -263,7 +280,7 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
             # assert self.tab_2.test_processing_widget.model._test_data.cycles, "Не выбран файл прибора"
             file_path_name = self.tab_1.get_lab_number().replace("/", "-").replace("*", "")
 
-            save = self.tab_2.save_widget.arhive_directory + "/" + file_path_name
+            save = self.tab_3.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
 
             if os.path.isdir(save):
@@ -325,7 +342,7 @@ class DigitRock_CyclicLoadingSoilTest(QWidget):
             if parameter:
                 self.tab_2.widget._model.generate_log_file(save)
 
-            shutil.copy(file_name, self.tab_2.save_widget.report_directory + "/" + file_name[len(file_name) -
+            shutil.copy(file_name, self.tab_3.report_directory + "/" + file_name[len(file_name) -
                                                                                  file_name[::-1].index("/"):])
 
             write_to_excel(self.tab_1.path, self.tab_1.get_lab_number(),

@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from static_loading.DigitRock_TriaxialStatick_widgets import DigitRock_TriaxialStatickSoilTest, __version__
 
 from version_control.json_management import test_version, get_actual_version
+from loggers.logger import app_logger
 
 class App(QMainWindow):  # Окно и виджеты на нем
 
@@ -17,9 +18,12 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, 1500, 900)
         if test_version(__version__):
-            self.table_widget = DigitRock_TriaxialStatickSoilTest()#
-            self.setCentralWidget(self.table_widget)
-            self.show()
+            try:
+                self.table_widget = DigitRock_TriaxialStatickSoilTest()#
+                self.setCentralWidget(self.table_widget)
+                self.show()
+            except:
+                app_logger.exception("Ошибка приложения")
         else:
             QMessageBox.critical(self, "Ошибка",
                                  f"Скачайте актуальную версию приложения {get_actual_version()}",

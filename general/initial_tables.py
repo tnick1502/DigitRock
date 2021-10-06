@@ -344,8 +344,7 @@ class TablePhysicalProperties(QTableWidget):
             for g, key in enumerate([str(data[lab].physical_properties.__dict__[m]) for m in
                                      data[lab].physical_properties.__dict__]):
                 if key == "True":
-                    pass
-                    #self.set_row_color(i)
+                    self.set_row_color(i)
                 elif key == "False":
                     pass
                 else:

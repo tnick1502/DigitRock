@@ -1189,9 +1189,9 @@ def dictToData(dict: dict, data_type) -> object:
 
 
 if __name__ == '__main__':
-    data = getCyclicExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", test_mode="Штормовое разжижение", K0_mode="K0: По ГОСТ-65353")
+    data = getRCExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", K0_mode="K0: По ГОСТ-65353")
 
-    print(data['7а-1'].Ms, data['7а-1'].Mcsr)
+    print(data['7а-1'])
 
     #print(data)
     #x = dataToDict(data)

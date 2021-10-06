@@ -4,6 +4,7 @@ from cyclic_loading.DigitRock_Cyclic_widgets import DigitRock_CyclicLoadingSoilT
 
 from version_control.json_management import test_version, get_actual_version
 from version_control.configs import actual_version
+from loggers.logger import app_logger
 
 class App(QMainWindow):  # Окно и виджеты на нем
 
@@ -16,15 +17,18 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.height = 1000
         self.setWindowTitle(self.title)
         #self.setWindowIcon(QIcon(icons + "ST.png"))
-        self.setGeometry(self.left, self.top, 1200, 900)
+        self.setGeometry(self.left, self.top, 1500, 1000)
         #self.showFullScreen()
         self.table_widget = DigitRock_CyclicLoadingSoilTest()
         self.setCentralWidget(self.table_widget)
         self.show()
         if test_version(actual_version):
-            self.table_widget = DigitRock_CyclicLoadingSoilTest()
-            self.setCentralWidget(self.table_widget)
-            self.show()
+            try:
+                self.table_widget = DigitRock_CyclicLoadingSoilTest()
+                self.setCentralWidget(self.table_widget)
+                self.show()
+            except:
+                app_logger.exception("Ошибка приложения")
         else:
             QMessageBox.critical(self, "Ошибка",
                                  f"Скачайте актуальную версию приложения {get_actual_version()}",
