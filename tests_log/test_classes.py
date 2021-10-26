@@ -288,7 +288,6 @@ class TestsLogCyclic(TestsLog):
         for key in models:
             self.tests[key] = CyclicTest(models[key].test_duration)
 
-
 class TriaxialStaticTest(Test):
     """Опыт циклики"""
     def _get_duration(self, path):

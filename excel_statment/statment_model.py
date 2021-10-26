@@ -21,6 +21,7 @@ class StatmentData:
     start_date = DataTypeValidation(datetime)
     end_date = DataTypeValidation(datetime)
     accreditation = DataTypeValidation(str)
+    accreditation_key = DataTypeValidation(str)
     object_number = DataTypeValidation(str)
 
     def __init__(self, statment_path):
@@ -28,6 +29,8 @@ class StatmentData:
         object_name = str(wb["Лист1"]["A2"].value)
         customer = str(wb["Лист1"]["A1"].value)
         accreditation = str(wb["Лист1"]["I2"].value)
+        if accreditation == "ОАО":
+            accreditation == "АО"
         object_number = str(wb["Лист1"]["AI1"].value)
         start_date = wb["Лист1"]["U1"].value
         end_date = wb["Лист1"]["Q1"].value
@@ -39,6 +42,8 @@ class StatmentData:
         assert customer, "Не указан заказчик"
         assert customer, "Не указан заказчик"
         assert accreditation, "Не указана аккредитация"
+
+        #self.accreditation.ke
 
         self.object_name = object_name
         self.customer = customer
@@ -162,31 +167,6 @@ class Statment:
         elif hasattr(self.tests[self.original_keys[0]].mechanical_properties, key):
             self.tests = dict(sorted(self.tests.items(), key=lambda x: getattr(self.tests[x[0]].mechanical_properties, key)))
 
-    #def save(self, directory):
-        #directory += "/statment.json"
-        #general_data = {
-            #"tests": {key: self.tests[key].get_json() for key in self.tests},
-            #"general_data": self.general_data.get_json(),
-            #"general_parameters": self.general_parameters.get_json(),
-            #"test_class": str(self.test_class).split('.')[2][:-2],
-            #"original_keys": self.original_keys
-        #}
-        #create_json_file(directory, general_data)
-
-    #def load(self, file):
-        #self.tests = {}
-        #data = read_json_file(file)
-        #self.test_class = PropertiesDict[data["test_class"]]
-
-        #for test in data["tests"]:
-            #self.tests[test] = Test(
-                #test_class=self.test_class,
-               #physical_properties_dict=data["tests"][test]["physical_properties"],
-                #mechanical_properties_dict=data["tests"][test]["mechanical_properties"]
-            #)
-        #self.original_keys = data["original_keys"]
-        #self.general_parameters = GeneralParameters(data["general_parameters"])
-
     def dump(self, directory, name="statment.pickle"):
         general_data = {
             "tests": self.tests,
@@ -206,7 +186,6 @@ class Statment:
             self.general_parameters = data["general_parameters"]
             self.test_class = data["test_class"]
             self.original_keys = data["original_keys"]
-
 
     @staticmethod
     def createDataFrame(excel_path, read_xls=False) -> pd.DataFrame:

@@ -14,7 +14,7 @@ from general.reports import report_triaxial_cyclic
 import threading
 
 
-from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI, CyclicLoadingOpenTestUI, CyclicLoadingUISoilTest
+from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI, CyclicLoadingOpenTestUI, CyclicLoadingUISoilTest, CyclicDampingUI
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, ModelTriaxialCyclicLoadingSoilTest
 from general.save_widget import Save_Dir
 from general.report_general_statment import save_report
@@ -152,9 +152,14 @@ class CyclicSoilTestWidget(QWidget):
             "rw": "Плотность воды, кН/м3"
         }
         self.identification = TableVertical(fill_keys)
-        self.identification.setFixedWidth(300)
+        self.identification.setFixedWidth(400)
+        self.damping = CyclicDampingUI()
+        self.damping.setFixedHeight(300)
+        self.layout_2 = QVBoxLayout()
         self.layout_1.addWidget(self.test_widget)
-        self.layout_1.addWidget(self.identification)
+        self.layout_2.addWidget(self.identification)
+        self.layout_2.addWidget(self.damping)
+        self.layout_1.addLayout(self.layout_2)
         self.layout.addLayout(self.layout_1)
 
         self.save_widget = QGroupBox("Сохранение")
@@ -216,6 +221,7 @@ class CyclicSoilTestWidget(QWidget):
         plots = models[statment.current_test].get_plot_data()
         res = models[statment.current_test].get_test_results()
         self.test_widget.plot(plots, res)
+        self.damping.plot(plots, res)
 
     def _screenshot(self):
         """Сохранение скриншота"""

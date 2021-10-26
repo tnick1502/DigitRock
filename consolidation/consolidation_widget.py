@@ -20,7 +20,7 @@ from configs.styles import style
 from singletons import models, statment
 from loggers.logger import app_logger, log_this, handler
 from tests_log.widget import TestsLogWidget
-from tests_log.test_classes import TestsLogTriaxialStatic
+from tests_log.test_classes import TestsLogTriaxialStatic, TestsLogCyclic
 import os
 from version_control.configs import actual_version
 __version__ = actual_version
@@ -305,6 +305,8 @@ class ConsolidationSoilTestApp(QWidget):
 
             statment.dump(''.join(os.path.split(self.tab_2.save_wigdet.directory)[:-1]), "consolidation.pickle")
 
+            models[statment.current_test].save_log(save, "file")
+
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
                 app_logger.info(
@@ -349,7 +351,7 @@ class ConsolidationSoilTestApp(QWidget):
         t.start()
 
     def jornal(self):
-        self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic, self.tab_1.path)
+        self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogCyclic, self.tab_1.path)
         self.dialog.show()
 
 

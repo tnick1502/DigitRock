@@ -40,6 +40,9 @@ from general.general_functions import define_qf, create_deviation_curve, current
     create_acute_sine_array, AttrDict, mirrow_element, create_json_file, read_json_file
 from configs.plot_params import plotter_params
 from datetime import timedelta
+from typing import Optional, Tuple
+from scipy.interpolate import interp1d
+from scipy.signal import savgol_filter
 
 from loggers.logger import app_logger
 from singletons import statment
@@ -80,7 +83,8 @@ class ModelTriaxialCyclicLoading:
                                       "fail_cycle_criterion_strain": None,  # номер цикла или False
                                       "fail_cycle_criterion_stress": None,  # номер цикла или False
                                       "fail_cycle_criterion_PPR": None,  # номер цикла или False
-                                      "conclusion": None})  # заключение о разжижаемости
+                                      "conclusion": None, # заключение о разжижаемости
+                                      "damping_ratio": None})  # коэффициент демпфирования
 
     def set_test_data(self, test_data):
         """Получение и обработка массивов данных, считанных с файла прибора"""
@@ -139,7 +143,9 @@ class ModelTriaxialCyclicLoading:
                     "PPR": self._test_data.PPR,
                     "mean_effective_stress": self._test_data.mean_effective_stress,
                     "strain_lim": strain_lim,
-                    "PPR_lim": PPR_lim}
+                    "PPR_lim": PPR_lim,
+                    "damping_deviator": self._damping_deviator,
+                    "damping_strain": self._damping_strain}
 
     def plotter(self, save_path=None):
         """Построение графиков опыта. Если передать параметр save_path, то графики сохраняться туда"""
@@ -204,31 +210,39 @@ class ModelTriaxialCyclicLoading:
 
     def _test_processing(self):
         """Обработка опыта"""
-        try:
-            self._test_result.max_PPR = round(np.max(self._test_data.PPR), 3)
-            self._test_result.max_strain = round(np.max(self._test_data.strain), 3)
+        self._test_result.max_PPR = round(np.max(self._test_data.PPR), 3)
+        self._test_result.max_strain = round(np.max(self._test_data.strain), 3)
 
-            self._test_result.fail_cycle_criterion_strain = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                              (self._test_data.strain >= 0.05))
-            self._test_result.fail_cycle_criterion_stress = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                              (self._test_data.mean_effective_stress <= 0))
-            self._test_result.fail_cycle_criterion_PPR = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                           (self._test_data.PPR >= 1))
+        self._test_result.fail_cycle_criterion_strain = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
+                                                                          (self._test_data.strain >= 0.05))
+        self._test_result.fail_cycle_criterion_stress = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
+                                                                          (self._test_data.mean_effective_stress <= 0))
+        self._test_result.fail_cycle_criterion_PPR = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
+                                                                       (self._test_data.PPR >= 1))
 
-            self._test_result.fail_cycle = min([i for i in [self._test_result.fail_cycle_criterion_strain,
-                                                            self._test_result.fail_cycle_criterion_stress,
-                                                            self._test_result.fail_cycle_criterion_PPR] if i], default=None)
+        self._test_result.fail_cycle = min([i for i in [self._test_result.fail_cycle_criterion_strain,
+                                                        self._test_result.fail_cycle_criterion_stress,
+                                                        self._test_result.fail_cycle_criterion_PPR] if i], default=None)
 
-            if self._test_result.fail_cycle_criterion_stress or self._test_result.fail_cycle_criterion_PPR:
-                self._test_result.conclusion = "Грунт склонен к разжижению"
-            elif self._test_result.fail_cycle_criterion_strain:
-                self._test_result.conclusion = "Грунт динамически неустойчив"
-                self._test_result.fail_cycle = None
-            else:
-                self._test_result.conclusion = "Грунт не склонен к разжижению"
-        except:
-            app_logger.exception("Ошибка обработки данных")
-            pass
+        self._damping_strain, self._damping_deviator = None, None
+
+        self._test_result.damping_ratio, self._damping_strain, self._damping_deviator = \
+            ModelTriaxialCyclicLoading.define_damping_ratio(
+            self._test_data.strain, self._test_data.deviator, remove_plastic_strains=False)
+
+        self._test_result.damping_ratio = np.round(self._test_result.damping_ratio, 2)
+
+        #plt.plot(self._test_data.strain, self._test_data.deviator)
+        #plt.fill(strain, deviator, color="tomato", alpha=0.5, zorder=5)
+        #plt.show()
+
+        if self._test_result.fail_cycle_criterion_stress or self._test_result.fail_cycle_criterion_PPR:
+            self._test_result.conclusion = "Грунт склонен к разжижению"
+        elif self._test_result.fail_cycle_criterion_strain:
+            self._test_result.conclusion = "Грунт динамически неустойчив"
+            self._test_result.fail_cycle = None
+        else:
+            self._test_result.conclusion = "Грунт не склонен к разжижению"
 
     @staticmethod
     def define_fail_cycle(cycles, condisions):
@@ -284,7 +298,7 @@ class ModelTriaxialCyclicLoading:
             test_data["sigma_1"] = processing_parameters["sigma_1"]
             test_data["t"] = processing_parameters["t"]
             test_data["K0"] = processing_parameters["K0"]
-        except FileNotFoundError:
+        except (FileNotFoundError, KeyError):
             if define_frequency:
                 test_data["frequency"], test_data["points"] = ModelTriaxialCyclicLoading.find_frequency(test_data["time"],
                                                                                                         test_data["deviator"])
@@ -365,6 +379,318 @@ class ModelTriaxialCyclicLoading:
 
         return h, points
 
+    @staticmethod
+    def define_damping_ratio(strain: np.ndarray, deviator: np.ndarray,
+                             evaluate_on_first_cycles: Optional[int] = 0,
+                             remove_plastic_strains: Optional[bool] = True,
+                             plot: Optional[bool] = False) -> Tuple[float, np.ndarray, np.ndarray]:
+        """
+        Определяет коэффициент демпфирования по файлу опыта с динамического стабилометра.
+
+        Определение коэффициента происходит путем построения осредненной петли гистерезиса и
+        оценки поглощенной энергии и энергии деформации согласно [1]_
+
+        По умолчанию расчет проводится с исключением пластических деформаций. Для проведения расчета
+        с пластическими деформациями установить `remove_plastic_strains` = False.
+
+        Для построения следующих графиков установить `plot` = True:
+            1. деформации/девиатор + осредненная петля гистерезиса
+            2. время/деформации + время/деформации без пластических
+
+        Возвращает коэффициент демпфирования (damping_ratio), деформации (filer_strain) и
+        девиатор (filer_deviator) осредненной петли.
+
+        .. [1] Geotechnical earthquake engineering / Steven L. Kramer, стр. 568
+
+        http://www.mkamalian.ir/Uploads/Books/GEE%20(K).pdf
+
+        Parameters
+        ----------
+        strain : np.ndarray
+            Массив деформаций
+        deviator : np.ndarray
+            Массив девиатора
+        evaluate_on_first_cycles : int, optional
+            Число первых циклов, на которых происходит вычисление. При =0 учитываются все циклы.
+        remove_plastic_strains : bool, optional
+            Флаг расчета без пластических деформаций: True - без, False - с
+        plot : bool, optional
+            Флаг построения графиков
+
+        """
+
+        assert len(deviator) > 1, "deviator should have more than 1 point"
+        assert len(deviator) == len(strain), "strain and deviator is different in size"
+
+        loops_indexes = ModelTriaxialCyclicLoading.separate_deviator_loops(deviator)
+
+        if evaluate_on_first_cycles:
+            loops_indexes = loops_indexes[:2 + evaluate_on_first_cycles]
+            strain = strain[:loops_indexes[-1] + 1]
+            deviator = deviator[:loops_indexes[-1] + 1]
+
+        if remove_plastic_strains:
+            try:
+                strain = ModelTriaxialCyclicLoading.plastic_strains_remover(strain, deviator,
+                                                                            loops_indexes=loops_indexes, plot=plot)
+            except:
+                pass
+
+        mean_strain, mean_deviator = ModelTriaxialCyclicLoading.define_mean_loop(strain, deviator,
+                                                                                 loops_indexes=loops_indexes)
+
+        FILTER_RATIO = 10
+        filer_deviator = ModelTriaxialCyclicLoading.array_smoother(mean_deviator, ratio=FILTER_RATIO)
+        filer_strain = ModelTriaxialCyclicLoading.array_smoother(mean_strain, ratio=FILTER_RATIO)
+
+        dissipated_energy = ModelTriaxialCyclicLoading.area(filer_strain, filer_deviator)
+        strain_energy = abs(max(filer_strain)) ** 2 * (abs(max(filer_deviator)) / abs(max(filer_strain))) / 2
+        damping_ratio = dissipated_energy / (4 * np.pi) / strain_energy * 100
+
+        if plot:
+            plt.figure()
+            plt.plot(strain, deviator, label="Файл прибора")
+            plt.plot(filer_strain, filer_deviator, label="Осредненные данные")
+            plt.legend()
+            plt.show()
+
+        return damping_ratio, filer_strain, filer_deviator
+
+    @staticmethod
+    def plastic_strains_remover(strain: np.ndarray, deviator: np.ndarray, loops_indexes: np.ndarray = None,
+                                plot: Optional[bool] = False) -> np.ndarray:
+        """
+        Удаляет из дефораций (`strain`) пластические деформации путем выделения тренда
+        методом скользящего среднего.
+        Девиатор (`deviator`) необходим для корректного определения петель (цикличности).
+        Половина первого пропускаемого цикла (петля) заполняется нулями в массиве тренда --
+        эта часть в исходных дефорациях останется на месте
+        (см. алгорим декомпозиции временного ряда методом скользящего среднего).
+
+        Для построения графиков время/деформации + время/деформации без пластических указать `plot`=True
+
+        Возвращает деформации без тренда (длины `strain`)
+        """
+        if loops_indexes is None:
+            loops_indexes = ModelTriaxialCyclicLoading.separate_deviator_loops(deviator)
+
+        season = min([loops_indexes[i + 1] - loops_indexes[i] + 1 for i in range(len(loops_indexes) - 1)])
+        season -= 1
+        trend = ModelTriaxialCyclicLoading.trend_decomposition(strain, season)
+
+        # Для того, чтобы корректно вычесть из деформаций их пластическую часть, массив с трендом необходимо дополнить
+        # нулями с начала. Добавляемая длина будет соответствовать половине длины первого цикла
+        removed_len = int(season / 2) if season % 2 == 0 else int((season - 1) / 2)
+        strain_to_remove = np.hstack((np.zeros(removed_len), trend))
+
+        if plot:
+            plt.figure()
+            _time = ModelTriaxialCyclicLoading.time_series(strain)
+            plt.plot(_time, strain, '-.b', label='Деформации')
+            plt.plot(_time, strain - strain_to_remove, 'r', label='Без пластических деформаций')
+            plt.legend()
+            plt.show()
+
+        return strain - strain_to_remove
+
+    @staticmethod
+    def separate_deviator_loops(deviator: np.ndarray) -> np.ndarray:
+        """Определяет петли в девиаторе и возвращает индексы в массиве, соответствующие началу каждой петли"""
+        assert len(deviator) > 1, "deviator should have more than 1 point"
+        smooth_array = ModelTriaxialCyclicLoading.array_filter(deviator)
+        count, indexes = ModelTriaxialCyclicLoading.find_to_positive_zero_crossings(smooth_array)
+        return np.array(indexes)
+
+    @staticmethod
+    def array_filter(x: np.ndarray) -> np.ndarray:
+        """
+        Применяет фильтр `Savitzky–Golay` к массиву данных с адаптируемым под длину массива окном
+
+        https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter
+        """
+        assert len(x) > 1, "x should have more than 1 point"
+        frame = int(2 * int(len(x) ** 0.5 / 2) + 1)
+        #
+        # С адаптицией выходит накладка - под файлы с прибора окно адаптируется плохо, вернее сказать, не правильно
+        # Опыт показал, что окно должно быть длиной 21 или меньше, зависит от данных.
+        #
+        return savgol_filter(x, frame if frame < 21 else 21, 2)
+
+    @staticmethod
+    def find_to_positive_zero_crossings(x: np.ndarray) -> Tuple[int, list]:
+        """
+        Определяет сколько раз значения в массиве переходят со стороны
+        `value` < `x[0]` в сторону `value` > `x[0]`.
+
+        Возвращает число переходов и индексы точек До перехода
+        """
+        assert len(x) > 1, "x should have more than 1 point"
+
+        zero_crossings_indexes = []
+
+        for i in range(1, len(x) - 1):
+            if ModelTriaxialCyclicLoading.to_positive_zero_cross(x[i], x[i + 1], value=x[0]):
+                zero_crossings_indexes.append(i + 1)
+
+        # skip first stabilization loop
+        # zero_crossings_indexes = zero_crossings_indexes[1:]
+
+        # add last loop if no crossing
+        if x[-1] < 0:
+            zero_crossings_indexes.append(len(x) - 1)
+
+        return len(zero_crossings_indexes), zero_crossings_indexes
+
+    @staticmethod
+    def to_positive_zero_cross(first_point: float, second_point: float, value: Optional[float] = 0) -> bool:
+        """
+        Определяет расположение значений `first_point` и `second_point`
+        относительно прямой y = `value`.
+
+        Если при движении от `first_point` к `second_point` прямая y = `value`
+        пересекается снизу вверх, возвращает True
+        """
+        return (first_point <= value) and (second_point > value)
+
+    @staticmethod
+    def trend_decomposition(x: np.ndarray, season: int, smooth_ending: Optional[bool] = True) -> np.ndarray:
+        """
+        Выделяет тренд из временного ряда `x` на основе цикличности (сезонности -- `season`)
+        методом скользящего среднего (moving averages).
+        Это обозначается season-MA (2-MA, 3-MA, 4-MA, etc.).
+        Цикличность следует определять отдельно и подавать сюда. Качество выделения тренда напрямую зависит
+        от этого параметра.
+
+        Для четной цикличности применятся season-MA к которому применяется 2-MA
+        для обеспечения симметричности результата.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            временной ряд
+        season : int
+            при четном (even) season применяется 2xseason-MA, при нечетном (odd) season-MA.
+        smooth_ending: bool
+            при True обеспечиват дополнение результирующего массива еще одним циклом для гладкости
+            перехода к временному ряду.
+
+        Returns
+        -------
+        np.ndarray
+            массив длины (len(x) - (season - 1)) для неченого порядка и (len(x) - season) для четного,
+            при smooth_ending=True массив расширается с конца на season
+
+        """
+
+        assert len(x) > season, "lenght of x can't be smaller than season"
+
+        x = np.asarray(x)
+
+        # even_moving_average и odd_moving_average наверняка можно объединить
+        def even_moving_average(_x, _season):
+            """Скользящее среденее четного порядка. 2-MA, 4-MA, etc."""
+            periods = int(_season / 2)
+            return [np.mean([_x[t + j] for j in range(-periods, periods)]) for t in
+                    range(periods, len(_x) - periods + 1)]
+
+        def odd_moving_average(_x, _season):
+            """Скользящее среденее нечетного порядка. 3-MA, 5-MA, etc."""
+            periods = int((_season - 1) / 2)
+            return [np.mean([_x[t + j] for j in range(-periods, periods + 1)]) for t in
+                    range(periods, len(_x) - periods)]
+
+        if season % 2 == 0:
+            # Скользящее среднее четного порядка за которым следует скользящее среднее порядка 2 согласно алгоритму
+            _series = even_moving_average(x, season)
+            _series = even_moving_average(_series, 2)
+            left_values = x[-int(season):]
+        else:
+            _series = odd_moving_average(x, season)
+            left_values = x[-int(season) + 1:]
+
+        if smooth_ending:
+            while len(left_values) > season / 2:
+                _series.append(np.mean(left_values))
+                left_values = np.delete(left_values, 0)
+
+        return np.array(_series)
+
+    @staticmethod
+    def define_mean_loop(strain: np.ndarray, deviator: np.ndarray,
+                         loops_indexes: np.ndarray = None) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Строит осредненную петлю гистерезиса по заданным массивам деформаций (`strain`)
+        и девиатора (`deviator`).
+        Возвращает одну осредненную петлю гистерезиса
+        """
+        assert len(deviator) > 1, "deviator should have more than 1 point"
+        assert len(deviator) == len(strain), "strain and deviator is different in size"
+
+        if loops_indexes is None:
+            loops_indexes = ModelTriaxialCyclicLoading.separate_deviator_loops(deviator)
+
+        loops_count = len(loops_indexes) - 1
+        '''loops count starts from 0'''
+
+        # print('Human loops count = ', loops_count + 1)
+
+        if loops_count == 0:
+            return np.array(strain[loops_indexes[0]:]), np.array(strain[loops_indexes[0]:])
+
+        deviator_loops = [deviator[loops_indexes[i]:loops_indexes[i + 1] + 1] for i in range(loops_count)]
+        strain_loops = [strain[loops_indexes[i]:loops_indexes[i + 1] + 1] for i in range(loops_count)]
+
+        min_loop_length = min([loops_indexes[i + 1] - loops_indexes[i] + 1 for i in range(loops_count)])
+
+        mean_deviator_loop = [np.mean([deviator_loops[i][j] for i in range(loops_count)]) for j in
+                              range(min_loop_length)]
+        mean_strain_loop = [np.mean([strain_loops[i][j] for i in range(loops_count)]) for j in range(min_loop_length)]
+
+        return np.array(mean_strain_loop), np.array(mean_deviator_loop)
+
+    @staticmethod
+    def area(x: np.ndarray, y: np.ndarray) -> float:
+        """Вычисляет площадь области внутри кривой"""
+        result_area = ModelTriaxialCyclicLoading.square_under_line(x, y)
+        if result_area < 0:
+            result_area = ModelTriaxialCyclicLoading.square_under_line(x[::-1], y[::-1])
+        assert result_area > 0, "area is negative"
+        return result_area
+
+    @staticmethod
+    def square_under_line(x, y):
+        """
+        Функция определяет площадь под графиком методом трапеций. На вход подаются массивы точек по осям
+
+        Обход фукнции должен быть по часовой стрелке, иначе получается отрицательный результат
+        """
+        square = 0
+        for i in range(len(x) - 1):
+            a = (x[i + 1] - x[i])
+            low_side = min([y[i + 1], y[i]])
+            delta = abs(y[i + 1] - y[i])
+            square += a * (low_side + 0.5 * delta)
+        return square
+
+    @staticmethod
+    def array_smoother(x: np.ndarray, ratio: Optional[int] = 4) -> np.ndarray:
+        """
+        Сглаживает массив, расширяя его в `ratio` раз путем интерполирования данных массива.
+        Интерполяция квадратичная.
+        """
+        _time = ModelTriaxialCyclicLoading.time_series(x)
+        func = interp1d(_time, x, "quadratic")
+        x = np.linspace(_time[0], _time[-1], len(x) * ratio)
+        return func(x)
+
+    @staticmethod
+    def time_series(x: np.ndarray) -> np.ndarray:
+        """
+        Возвращает массив целых чисел по размеру `x`: [0,1,2,...,len(`x`)-1]:
+        """
+        time = np.linspace(0, len(x) - 1, len(x))
+        return time
+
 class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
     """Модель моделирования циклического нагружения
     Наследует обработчик и структуру данных из ModelTriaxialCyclicLoading
@@ -440,6 +766,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         self._test_params.sigma_1 = statment[statment.current_test].mechanical_properties.sigma_1
         self._test_params.t = statment[statment.current_test].mechanical_properties.t
+        self._test_params.t = 50
         self._test_params.K0 = statment[statment.current_test].mechanical_properties.K0
         self._test_params.qf = statment[statment.current_test].mechanical_properties.qf
         self._test_params.sigma_3 = statment[statment.current_test].mechanical_properties.sigma_3
@@ -1399,12 +1726,13 @@ if __name__ == '__main__':
 
     #a.plotter()
 
-    a = ModelTriaxialCyclicLoading()
+    a = ModelTriaxialCyclicLoadingSoilTest()
     #file = "C:/Users/Пользователь/Desktop/Опыты/264-21 П-57 11.7 Обжимающее давление = 120.txt"
     #file = "C:/Users/Пользователь/Desktop/Опыты/718-20 PL20-Skv139 0.2  Обжимающее давление = 25.txt"
-    a.set_test_data(ModelTriaxialCyclicLoading.open_wille_log("C:/Users/Пользователь/Desktop/Косинусное значения напряжения.txt"))
-    a.plotter()
-
+    statment.load("C:/Users/Пользователь/Desktop/test/Сейсморазжижение.pickle")
+    statment.current_test = "12-3"
+    a.set_test_params()
+    #a.plotter()
     #a.plotter()
 
 

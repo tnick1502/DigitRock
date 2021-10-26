@@ -834,7 +834,7 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
     tableData.append(
         [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", "",
          zap(Res["Ca_log"], 5), ""])
-    tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", "", zap(10, 1), ""])
+    tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", "", zap(Res["Kf_log"], 5), ""])
 
 
     try:
