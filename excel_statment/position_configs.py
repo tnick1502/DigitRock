@@ -41,7 +41,9 @@ MechanicalPropertyPosition = {
     "Ca": ["CF", 83],
     "K0nc": ["GZ", 207],
     "K0oc": ["GY", 206],
-    "pressure_array": ["BO", 66]
+    "pressure_array": ["BO", 66],
+    "Eoed": ["CE", 82],
+    "p_max": ["CV", 99]
 }
 
 c_fi_E_PropertyPosition = {

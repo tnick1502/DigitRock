@@ -133,12 +133,12 @@ def SaveCode(version):  # Создает защитный код и записы
 
 def main_frame(canvas, path, Data_customer, code, list):
 
-    if Data_customer["accreditation"] == "ООО":
+    if Data_customer.accreditation == "ООО":
         accreditation = "ON"
-    elif Data_customer["accreditation"] == "ОАО" or Data_customer["accreditation"] == "АО":
+    elif Data_customer.accreditation == "ОАО" or Data_customer.accreditation == "АО":
         accreditation = "AN"
 
-    data = Data_customer["data"]
+    data = Data_customer.end_date
 
 
     canvas.setLineWidth(0.3 * mm)
@@ -245,9 +245,9 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
 
     t = Table([[name[0], "", "", "", "", "", "", "", "", ""],
                [name[1]],
-               ["Протокол испытаний №", "", str_for_excel(Lab + "/" + Data_customer["object_number"] + lname), "", "", "", "", "", "", ""],
-               ['Заказчик:', Paragraph(Data_customer["customer"], LeftStyle)],
-               ['Объект:', Paragraph(Data_customer["object_name"], LeftStyle)], [""], [""], [""],
+               ["Протокол испытаний №", "", str_for_excel(Lab + "/" + Data_customer.object_number + lname), "", "", "", "", "", "", ""],
+               ['Заказчик:', Paragraph(Data_customer.customer, LeftStyle)],
+               ['Объект:', Paragraph(Data_customer.object_name, LeftStyle)], [""], [""], [""],
                ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(borehole + "; " + strNone(Data_phiz.depth).replace(".",",") +" м", LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(strNone(Data_phiz.ige), LeftStyle)],
                ['Лабораторный номер №:', "", "", Lab],
                ['Наименование грунта:', "", Paragraph(Data_phiz.soil_name, LeftStyle)], [""]
@@ -391,11 +391,10 @@ def test_mode_rc(canvas, ro, Data):
     DataSignature = ["Режим Испытания", "Изотропная консолидация, циклическое нагружение крутящим моментом"]
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
-               ["Режим испытания:", "", Data["Rezhim"], "", "", "", "", "", ""],
-               [Paragraph('''<p>Опорное давление p<sup rise="2.5" size="5">ref</sup>, МПа:</p>''', LeftStyle), "", zap(Data["reference_pressure"], 2)],
-               ["Оборудование:", "", Data["Oborudovanie"]],
-               ["Параметры образца:", "", "Высота, мм:", zap(Data
-                                                             ["h"], 2), "Диаметр, мм:", zap(Data["d"], 2), Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(ro, 2)]], colWidths=19.444444* mm, rowHeights=4 * mm)
+               ["Режим испытания:", "", Data.Rezhim, "", "", "", "", "", ""],
+               [Paragraph('''<p>Опорное давление p<sup rise="2.5" size="5">ref</sup>, МПа:</p>''', LeftStyle), "", zap(Data.reference_pressure, 2)],
+               ["Оборудование:", "", Data.Oborudovanie],
+               ["Параметры образца:", "", "Высота, мм:", zap(Data.h, 2), "Диаметр, мм:", zap(Data.d, 2), Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(ro, 2)]], colWidths=19.444444* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (1, 1)),
                 ('SPAN', (2, 1), (-1, 1)),
@@ -578,6 +577,42 @@ def test_mode_consolidation(canvas, Data):
                 ("BACKGROUND", (0, 1), (2, 1), HexColor(0xebebeb)),
                 ("BACKGROUND", (0, 2), (2, 2), HexColor(0xebebeb)),
                 ("BACKGROUND", (5, 2), (7, 2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, 3), (2, 3), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, 4), (4, 4), HexColor(0xebebeb)),
+                ("BACKGROUND", (6, 4), (7, 4), HexColor(0xebebeb)),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, 185 * mm)
+
+def test_mode_consolidation_1(canvas, Data):
+
+
+    t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
+               ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
+               [Paragraph('''<p>Максималтное давление p<sub rise="2.5" size="6">max</sub>, МПа:</p>''', LeftStyle), "", "", Data["p_max"], "", "", "", "", "", ""],
+               ["Оборудование:", "", "", "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"],
+               ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
+    t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                ('SPAN', (0, 1), (2, 1)),
+                ('SPAN', (3, 1), (-1, 1)),
+                ('SPAN', (0, 2), (2, 2)),
+                ('SPAN', (3, 2), (9, 2)),
+                ('SPAN', (0, 3), (2, 3)),
+                ('SPAN', (3, 3), (-1, 3)),
+                ('SPAN', (0, 4), (2, 4)),
+                ('SPAN', (3, 4), (4, 4)),
+                ('SPAN', (6, 4), (7, 4)),
+                ('SPAN', (8, 4), (9, 4)),
+                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("BACKGROUND", (0, 1), (2, 1), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, 2), (2, 2), HexColor(0xebebeb)),
                 ("BACKGROUND", (0, 3), (2, 3), HexColor(0xebebeb)),
                 ("BACKGROUND", (0, 4), (4, 4), HexColor(0xebebeb)),
                 ("BACKGROUND", (6, 4), (7, 4), HexColor(0xebebeb)),
@@ -793,47 +828,29 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
     for i in range(r):
         tableData.append([""])
 
-    if Res["Eur"]:
+    tableData.append(
+        [Paragraph('''<p>Коэффициент фильтрационной консолидации C<sub rise="0.5" size="6">v</sub>, см<sup rise="2" size="6">2</sup>/мин:</p>''', LeftStyle), "", "", "",
+         zap(Res["Cv_log"], 3), ""])
+    tableData.append(
+        [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", "",
+         zap(Res["Ca_log"], 5), ""])
+    tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", "", zap(10, 1), ""])
+
+
+    try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 66 * mm)
-        tableData.append(
-            [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
-             zap(Res["qf"], 3), ""])
-        tableData.append(
-            [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
-             zap(Res["E50"], 1), ""])
-        tableData.append(
-            [Paragraph('''<p>Коэффициент поперечного расширения µ, д.е.:</p>''', LeftStyle), "", "", "", zap(Res["poissons_ratio"], 2), ""])
-        tableData.append(
-            [Paragraph('''<p>Модуль деформации повторного нагружения E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "",
-             "", zap(Res["Eur"], 1), ""])
-
-    else:
-        tableData.append(
-            [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
-             zap(Res["qf"], 3), ""])
-        tableData.append(
-            [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
-             zap(Res["E50"], 1), ""])
-        tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", zap(Res["E"][0], 1), ""])
-        tableData.append(
-            [Paragraph('''<p>Коэффициент поперечного расширения µ, д.е.:</p>''', LeftStyle), "", "", "", zap(Res["poissons_ratio"], 2), ""])
-
-        try:
-            a = svg2rlg(pick[0])
-            a.scale(scale, scale)
-            renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
-            b = svg2rlg(pick[1])
-            b.scale(scale, scale)
-            renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
-        except AttributeError:
-            a = ImageReader(pick[1])
-            canvas.drawImage(a, 32 * mm, 60 * mm,
-                             width=160 * mm, height=54 * mm)
-            b = ImageReader(pick[0])
-            canvas.drawImage(b, 32 * mm, 114 * mm,
-                             width=160 * mm, height=54 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, 116 * mm)
+        b = svg2rlg(pick[1])
+        b.scale(scale, scale)
+        renderPDF.draw(b, canvas, 36 * mm, 62 * mm)
+    except AttributeError:
+        a = ImageReader(pick[1])
+        canvas.drawImage(a, 32 * mm, 60 * mm,
+                         width=160 * mm, height=54 * mm)
+        b = ImageReader(pick[0])
+        canvas.drawImage(b, 32 * mm, 114 * mm,
+                         width=160 * mm, height=54 * mm)
 
     style = [('SPAN', (0, 0), (-1, 0)),
              ('SPAN', (0, 1), (-1, r)),
@@ -849,15 +866,10 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
              ('SPAN', (0, -3), (3, -3)),
              ('SPAN', (-2, -3), (-1, -3)),
 
-             ('SPAN', (0, -4), (3, -4)),
-             ('SPAN', (-2, -4), (-1, -4)),
-             # ('SPAN', (2, -3), (3, -3)),
-             #  ('SPAN', (4, -3), (5, -3)),
 
              ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
              ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
              ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
-             ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
 
              ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
              ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -1395,10 +1407,10 @@ def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     canvas = Canvas(Name, pagesize=A4)
 
 
-    test_parameter["h"] = 100
-    test_parameter["d"] = 50
-    test_parameter["Rezhim"] = "Статическое нагружение"
-    test_parameter["Oborudovanie"] = "АСИС ГТ.2.0.5"
+    test_parameter.h = 100
+    test_parameter.d = 50
+    test_parameter.Rezhim = "Статическое нагружение"
+    test_parameter.Oborudovanie = "АСИС ГТ.2.0.5"
 
     code = SaveCode(version)
 
@@ -1484,16 +1496,15 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     #result_table_consolidation(canvas, res, [picks[0], picks[1]])
 
     #canvas.showPage()
-    test_parameter["K0"] = test_parameter["K0"][0]
     main_frame(canvas, path, Data_customer, code, "1/1")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТС/Р")
+                            ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КОНСОЛИДАЦИИ ГРУНТОВ МЕТОДОМ",
+                             "КОМПРЕССИОННОГО СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТС/Р")
 
     parameter_table(canvas, Data_phiz, Lab)
-    test_mode_consolidation(canvas, test_parameter)
+    test_mode_consolidation_1(canvas, test_parameter)
 
-    result_table_deviator(canvas, res, [picks[2], picks[3]])
+    result_table_deviator(canvas, res, [picks[0], picks[1]])
 
     canvas.showPage()
 

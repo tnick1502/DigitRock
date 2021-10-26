@@ -15,14 +15,19 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from io import BytesIO
 
+
 from static_loading.mohr_circles_test_model import ModelMohrCircles, ModelMohrCirclesSoilTest
 from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI
-from static_loading.triaxial_static_test_widgets import TriaxialStaticDialog, TriaxialStaticDialogSoilTest
+from configs.styles import style
 from general.initial_tables import Table
+from general.general_widgets import Float_Slider
 from configs.plot_params import plotter_params
 from general.general_functions import read_json_file, AttrDict
+from singletons import FC_models, E_models, statment
+from loggers.logger import app_logger, log_this
+from static_loading.triaxial_static_widgets_UI import ModelTriaxialDeviatorLoadingUI
 
-plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
+#plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
 plt.style.use('bmh')
 
 class AlignDelegate(QStyledItemDelegate):
@@ -215,7 +220,7 @@ class MohrWidget(QWidget):
         path = QFileDialog.getOpenFileName(self, 'Open file')[0]
         if path:
             try:
-                self._model.add_test(path)
+                FC_models[statment.current_test].add_test(path)
                 self._create_test_tables()
                 self._plot()
             except:
@@ -225,7 +230,7 @@ class MohrWidget(QWidget):
         """Удаление опыта"""
         parent = self.sender().parent()
         test_id = int(parent.title()[-1])
-        self._model.dell_test(test_id)
+        FC_models[statment.current_test].dell_test(test_id)
         self._create_test_tables()
         self._plot()
 
@@ -234,7 +239,7 @@ class MohrWidget(QWidget):
         for Table in self.mohr_test_manager.findChildren(MohrTable):
             Table.deleteLater()
 
-        for num, test in enumerate(self._model.get_tests()):
+        for num, test in enumerate(FC_models[statment.current_test].get_tests()):
             res = test.deviator_loading.get_test_results()
             res["sigma_1"] = res["sigma_3"] + res["qf"]
 
@@ -254,12 +259,12 @@ class MohrWidget(QWidget):
         parent = self.sender().parent()
         test_id = int(parent.title()[-1])
 
-        dialog = TriaxialStaticDialog(self._model._tests[test_id], self)
+        #dialog = TriaxialStaticDialog(self._model._tests[test_id], self)
         # показывает диалог и после нажатия Ok передаёт виджету модель из диалога
-        if dialog.exec() == QDialog.Accepted:
-            self._model._tests[test_id] = dialog.widget._model
-            self._create_test_tables()
-            self._plot()
+        #if dialog.exec() == QDialog.Accepted:
+            #self._model._tests[test_id] = dialog.widget._model
+            #self._create_test_tables()
+            #self._plot()
 
     def _plot(self):
         self.deviator_ax.clear()
@@ -270,8 +275,8 @@ class MohrWidget(QWidget):
         self.mohr_ax.set_xlabel("σ, МПа")
         self.mohr_ax.set_ylabel("τ, МПа")
 
-        plots = self._model.get_plot_data()
-        res = self._model.get_test_results()
+        plots = FC_models[statment.current_test].get_plot_data()
+        res = FC_models[statment.current_test].get_test_results()
 
         if plots is not None:
             for i in range(len(plots["strain"])):
@@ -326,7 +331,6 @@ class MohrWidgetSoilTest(MohrWidget):
     def __init__(self):
         super().__init__()
         self.add_UI()
-        self._model = ModelMohrCirclesSoilTest()
         self.refresh_test_button = QPushButton("Обновить опыт")
         self.refresh_test_button.clicked.connect(self.refresh)
         self.layout_wiget.insertWidget(0, self.refresh_test_button)
@@ -334,11 +338,40 @@ class MohrWidgetSoilTest(MohrWidget):
 
     def add_UI(self):
         """Дополнительный интерфейс"""
+        self.add_parameters_layout = QHBoxLayout()
         self.reference_pressure_array_box = PressureArray()
+        self.add_parameters_layout.addWidget(self.reference_pressure_array_box)
+        self.reconsolidation = ReconsolidationRadio()
+        self.add_parameters_layout.addWidget(self.reconsolidation)
+        self.add_parameters_layout.addStretch(-1)
+        self.layout_wiget.addLayout(self.add_parameters_layout)
+
+
+        """self.reference_pressure_array_box = QGroupBox("Обжимающие давления")
+        self.reference_pressure_array_box_layout = QVBoxLayout()
+        self.reference_pressure_array_box.setLayout(self.reference_pressure_array_box_layout)
+        self.reference_pressure_array_box.setFixedWidth(600)
+        self.reference_pressure_array_box.setFixedHeight(70)
+        self.reference_pressure_array_box_layout.setContentsMargins(5, 5, 5, 5)
+
+        self.reference_pressure_array_box_line_1_layout = QHBoxLayout()
+        self.reference_pressure_array_box_line_user = QLineEdit()
+        self.reference_pressure_array_box_line = QLineEdit()
+        self.reference_pressure_array_box_line.setDisabled(True)
+
+        self.reference_pressure_array_box_line_1_label = QLabel("Рассчитанные давления")
+        self.reference_pressure_array_box_line_1_label_user = QLabel("Пользовательский массив")
+        self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line_1_label)
+        self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line)
+        self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line_1_label_user)
+        self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line_user)
+        self.reference_pressure_array_box_layout.addLayout(self.reference_pressure_array_box_line_1_layout)
+
         self.layout_wiget.addWidget(self.reference_pressure_array_box)
+        self.reference_pressure_array_box_layout.addStretch(-1)"""
 
     def add_test(self, path):
-        self._model.add_test(path)
+        FC_models[statment.current_test].add_test(path)
         self._create_test_tables()
         self._plot()
 
@@ -360,47 +393,35 @@ class MohrWidgetSoilTest(MohrWidget):
     def set_reference_pressure_array(self, reference_pressure_array):
         self.reference_pressure_array_box_line.setText('; '.join([str(i) for i in reference_pressure_array]))
 
-    def set_params(self, params, reset=True):
-        self.reference_pressure_array_box.set_data(params.pressure_array, reset)
-        reference_pressure_array = params.pressure_array[self.reference_pressure_array_box.get_checked()]
-        """reference_pressure_array_user = self.get_reference_pressure_array()
-        reference_pressure_array = ModelMohrCirclesSoilTest.define_reference_pressure_array(
-            params.build_press, params.pit_depth,
-            params.physical_properties.depth, params.physical_properties.e, params.physical_properties.Il,
-            params.physical_properties.type_ground, params.K0)
-        self.set_reference_pressure_array(reference_pressure_array)
+    def set_params(self):
+        self.reference_pressure_array_box.set_data()
+        self.reconsolidation.set_data()
+        self._create_test_tables()
+        self._plot()
 
-        if reference_pressure_array_user:
-            reference_pressure_array = reference_pressure_array_user"""
-
-        if reference_pressure_array:
-            self._model.set_reference_pressure_array(reference_pressure_array)
-            self._model.set_test_params(params)
-            self._model._test_modeling()
-            self._create_test_tables()
-            self._plot()
-
+    #@log_this(app_logger, "debug")
     def refresh(self):
-        params = self._model.get_test_params()
-        if params:
-            self.set_params(params, reset=False)
+        try:
+            FC_models[statment.current_test].set_test_params()
+            self.set_params()
+        except KeyError:
+            pass
 
     def clear(self):
-
-        self._model._tests = []
-        self._model._test_data = AttrDict({"fi": None, "c": None})
-        self._model._test_result = AttrDict({"fi": None, "c": None, "m": None})
-        self._model._test_reference_params = AttrDict({"p_ref": None, "Eref": None})
+        FC_models[statment.current_test]._tests = []
+        FC_models[statment.current_test]._test_data = AttrDict({"fi": None, "c": None})
+        FC_models[statment.current_test]._test_result = AttrDict({"fi": None, "c": None, "m": None})
+        FC_models[statment.current_test]._test_reference_params = AttrDict({"p_ref": None, "Eref": None})
 
     def _processing_test(self):
         """Вызов окна обработки опыта"""
         parent = self.sender().parent()
         test_id = int(parent.title()[-1])
 
-        dialog = TriaxialStaticDialogSoilTest(self._model._tests[test_id], self)
+        dialog = StaticSoilTestDialog(FC_models[statment.current_test]._tests[test_id], self)
         # показывает диалог и после нажатия Ok передаёт виджету модель из диалога
         if dialog.exec() == QDialog.Accepted:
-            self._model._tests[test_id] = dialog.widget._model
+            FC_models[statment.current_test]._tests[test_id] = dialog._model
             self._create_test_tables()
             self._plot()
 
@@ -447,8 +468,11 @@ class PressureArray(QGroupBox):
         radioButton = self.sender()
         if radioButton.isChecked():
             self._checked = radioButton.value
+            statment[statment.current_test].mechanical_properties.pressure_array["current"] = \
+                statment[statment.current_test].mechanical_properties.pressure_array[self._checked]
 
-    def set_data(self, data, reset=True):
+    def set_data(self):
+        data = statment[statment.current_test].mechanical_properties.pressure_array
         def str_array(array):
             if array is None:
                 return "-"
@@ -458,26 +482,286 @@ class PressureArray(QGroupBox):
                     s += f"{str(i)}; "
                 return s
         for key in data:
-            line = getattr(self, f"line_{key}")
-            radiobutton = getattr(self, f"radiobutton_{key}")
-            line.setText(str_array(data[key]))
-            if data[key] is None:
-                radiobutton.setDisabled(True)
-            else:
-                radiobutton.setDisabled(False)
+            if key != "current":
+                line = getattr(self, f"line_{key}")
+                radiobutton = getattr(self, f"radiobutton_{key}")
+                line.setText(str_array(data[key]))
+                if data[key] is None:
+                    radiobutton.setDisabled(True)
+                else:
+                    radiobutton.setDisabled(False)
+                if data[key] == data["current"]:
+                    radiobutton.setChecked(True)
 
-        if reset:
-            if data["set_by_user"] is not None:
-                self.radiobutton_set_by_user.setChecked(True)
-            elif data["calculated_by_pressure"] is not None:
-                self.radiobutton_calculated_by_pressure.setChecked(True)
-            elif data["state_standard"] is not None:
-                self.radiobutton_state_standard.setChecked(True)
+    def get_checked(self):
+        return self._checked
+
+class ReconsolidationRadio(QGroupBox):
+    def __init__(self):
+        super().__init__()
+        self.add_UI()
+        self._checked = None
+
+    def add_UI(self):
+        """Дополнительный интерфейс"""
+        self.setTitle('Этап реконсолидации')
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+        self.setFixedWidth(140)
+        self.setFixedHeight(120)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+        self.layout_rb = QHBoxLayout()
+        self.radiobutton_true = QRadioButton("Да")
+        self.radiobutton_true.value = True
+        self.radiobutton_true.toggled.connect(self._onClicked)
+        self.radiobutton_false = QRadioButton("Нет")
+        self.radiobutton_false.value = False
+        self.radiobutton_false.toggled.connect(self._onClicked)
+        self.layout_rb.addWidget(self.radiobutton_true)
+        self.layout_rb.addWidget(self.radiobutton_false)
+
+        self.layout.addLayout(self.layout_rb)
+
+        self.button = QPushButton("Перемоделировать все")
+        self.button.clicked.connect(self._btnClicked)
+
+        self.layout.addWidget(self.button)
+        self.layout.addStretch(-1)
+
+
+    def _onClicked(self):
+        radioButton = self.sender()
+        if radioButton.isChecked():
+            self._checked = radioButton.value
+            statment.general_parameters.reconsolidation = radioButton.value
+
+    def _btnClicked(self):
+        if len(statment):
+            FC_models.generateTests()
+
+    def set_data(self):
+        if statment.general_parameters.reconsolidation:
+            self.radiobutton_true.setChecked(True)
+        else:
+            self.radiobutton_false.setChecked(True)
 
     def get_checked(self):
         return self._checked
 
 
+class TriaxialStaticLoading_Sliders(QWidget):
+    """Виджет с ползунками для регулирования значений переменных.
+    При перемещении ползунков отправляет 2 сигнала."""
+    signal = pyqtSignal(object)
+    def __init__(self, params):
+        """Определяем основную структуру данных"""
+        super().__init__()
+        self._params = params
+
+        self._activate = False
+
+        self._createUI("Настройки отрисовки", params)
+
+    def _createUI(self, name, params):
+        self.layout = QVBoxLayout(self)
+        setattr(self, "{}_box".format(name), QGroupBox(name))
+        box = getattr(self, "{}_box".format(name))
+        setattr(self, "{}_box_layout".format(name), QVBoxLayout())
+        box_layout = getattr(self, "{}_box_layout".format(name))
+
+        for var in params:
+            if params[var]:
+                # Создадим подпись слайдера
+                label = QLabel(params[var])  # Создааем подпись
+                label.setFixedWidth(150)  # Фиксируем размер подписи
+
+                # Создадим слайдер
+                setattr(self, "{name_var}_slider".format(name_var=var),
+                        Float_Slider(Qt.Horizontal))
+                slider = getattr(self, "{name_var}_slider".format(name_var=var))
+
+                # Создадим строку со значнием
+                setattr(self, "{name_var}_label".format(name_var=var), QLabel())
+                slider_label = getattr(self, "{name_var}_label".format(name_var=var))
+                slider_label.setFixedWidth(40)
+                # slider_label.setStyleSheet(style)
+
+                # Создадтм строку для размещения
+                setattr(self, "{name_widget}_{name_var}_line".format(name_widget=name, name_var=var), QHBoxLayout())
+                line = getattr(self, "{name_widget}_{name_var}_line".format(name_widget=name, name_var=var))
+
+                # СРазместим слайдер и подпись на строке
+                line.addWidget(label)
+                line.addWidget(slider)
+                line.addWidget(slider_label)
+                box_layout.addLayout(line)
+                func = getattr(self, "_sliders_moove".format(name_widget=name, name_var=var))
+                slider.sliderMoved.connect(func)
+                release = getattr(self, "_sliders_released".format(name_widget=name, name_var=var))
+                slider.sliderReleased.connect(release)
+                slider.setStyleSheet(style)
+            else:
+                label = QLabel(params[var])  # Создааем подпись
+                label.setFixedWidth(150)  # Фиксируем размер подписи
+                setattr(self, "{name_widget}_{name_var}_empty".format(name_widget=name,
+                                                                      name_var=var), QHBoxLayout())
+                line = getattr(self, "{name_widget}_{name_var}_empty".format(name_widget=name,
+                                                                             name_var=var))
+                line.addWidget(label)
+                box_layout.addLayout(line)
+
+        box.setLayout(box_layout)
+
+        self.layout.addWidget(box)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+    def _get_slider_params(self, params):
+        """Получение по ключам значения со всех слайдеров"""
+        return_params = {}
+        for key in params:
+            slider = getattr(self, "{}_slider".format(key))
+            return_params[key] = slider.current_value()
+        return return_params
+
+    def _set_slider_labels_params(self, params):
+        """Установка по ключам текстовых полей значений слайдеров"""
+        for key in params:
+            label = getattr(self, "{}_label".format(key))
+            label.setText(str(params[key]))
+
+    def _sliders_moove(self):
+        """Обработка перемещения слайдеров деформации"""
+        if self._activate:
+            params = self._get_slider_params(self._params)
+            self._set_slider_labels_params(params)
+
+    def _sliders_released(self):
+        """Обработка окончания перемещения слайдеров деформации"""
+        if self._activate:
+            params = self._get_slider_params(self._params)
+            self._set_slider_labels_params(params)
+            self.signal.emit(params)
+
+    def set_sliders_params(self, params):
+        """становка заданых значений на слайдеры"""
+        for var in params:
+            current_slider = getattr(self, "{name_var}_slider".format(name_var=var))
+            current_slider.set_borders(*params[var]["borders"])
+            current_slider.set_value(params[var]["value"])
+
+        self._activate = True
+
+        self._sliders_moove()
+
+class StaticSoilTestDialog(QDialog):
+    def __init__(self, test, parent=None):
+        super(StaticSoilTestDialog, self).__init__(parent)
+        self.resize(1200, 700)
+        self.setWindowTitle("Обработка опыта")
+        self._model = test
+
+        self.layout = QVBoxLayout()
+        self.deviator_loading = ModelTriaxialDeviatorLoadingUI()
+        self.layout.addWidget(self.deviator_loading)
+
+        self.buttonBox = QDialogButtonBox()
+        self.buttonBox.setOrientation(Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName("buttonBox")
+        self.layout.addWidget(self.buttonBox)
+
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        self.deviator_loading.chose_volumometer_button_group.buttonClicked.connect(self._deviator_volumeter)
+        self.deviator_loading.slider_cut.sliderMoved.connect(self._cut_slider_deviator_moove)
+
+        self.deviator_loading_sliders = TriaxialStaticLoading_Sliders({"fail_strain": "Деформация разрушения",
+                                                                       "residual_strength": "Остаточная прочность",
+                                                                       "residual_strength_param": "Изгиб остаточной прочности",
+                                                                       "qocr": "Значение дивиатора OCR",
+                                                                       "poisson": "Коэффициент Пуассона",
+                                                                       "dilatancy": "Угол дилатансии",
+                                                                       "volumetric_strain_xc": "Объемн. деформ. в пике"})
+        self.deviator_loading_sliders.setFixedHeight(180)
+        self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
+        self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)
+
+
+        self._connect_model_Ui()
+        self._plot_deviator_loading()
+
+        self.deviator_loading_sliders.set_sliders_params(self._model.get_deviator_loading_draw_params())
+
+        self.setLayout(self.layout)
+
+    def _connect_model_Ui(self):
+        """Связь слайдеров с моделью"""
+        self._cut_slider_deviator_set_len(len(self._model.deviator_loading._test_data.strain))
+        self._cut_slider_deviator_set_val(self._model.deviator_loading.get_borders())
+
+        self._deviator_volumeter_current_vol(self._model.deviator_loading.get_current_volume_strain())
+
+    def _plot_deviator_loading(self):
+        try:
+            plot_data = self._model.deviator_loading.get_plot_data()
+            res = self._model.deviator_loading.get_test_results()
+            self.deviator_loading.plot(plot_data, res)
+        except KeyError:
+            pass
+
+    def _deviator_volumeter(self, button):
+        """Передача значения выбранного волюмометра в модель"""
+        if self._model.deviator_loading.check_none():
+            self._model.deviator_loading.choise_volume_strain(button.text())
+            self._cut_slider_deviator_set_val(self._model.deviator_loading.get_borders())
+            self._plot_deviator_loading()
+
+    def _deviator_volumeter_current_vol(self, current_volume_strain):
+        """Чтение с модели, какие волюмометры рабочие и заполнение в интерфейсе"""
+        if current_volume_strain["current"] == "pore_volume":
+            self.deviator_loading.chose_volumometer_radio_button_1.setChecked(True)
+        else:
+            self.deviator_loading.chose_volumometer_radio_button_2.setChecked(True)
+
+        if current_volume_strain["pore_volume"]:
+            self.deviator_loading.chose_volumometer_radio_button_1.setDisabled(False)
+        else:
+            self.deviator_loading.chose_volumometer_radio_button_1.setDisabled(True)
+
+        if current_volume_strain["cell_volume"]:
+            self.deviator_loading.chose_volumometer_radio_button_2.setDisabled(False)
+        else:
+            self.deviator_loading.chose_volumometer_radio_button_2.setDisabled(True)
+
+    def _cut_slider_deviator_set_len(self, len):
+        """Определение размера слайдера. Через длину массива"""
+        self.deviator_loading.slider_cut.setMinimum(0)
+        self.deviator_loading.slider_cut.setMaximum(len)
+
+    def _cut_slider_deviator_set_val(self, vals):
+        """Установка значений слайдера обрезки"""
+        self.deviator_loading.slider_cut.setLow(vals["left"])
+        self.deviator_loading.slider_cut.setHigh(vals["right"])
+
+    def _cut_slider_deviator_moove(self):
+        """Обработчик перемещения слайдера обрезки"""
+        if E_models[statment.current_test].deviator_loading.check_none():
+            if (int(self.deviator_loading.slider_cut.high()) - int(self.deviator_loading.slider_cut.low())) >= 50:
+                self._model.deviator_loading.change_borders(
+                    int(self.deviator_loading.slider_cut.low()),
+                    int(self.deviator_loading.slider_cut.high()))
+            self._plot_deviator_loading()
+
+    def _deviator_loading_sliders_moove(self, params):
+        """Обработчик движения слайдера"""
+        try:
+            self._model.set_deviator_loading_draw_params(params)
+            self._plot_deviator_loading()
+            self._connect_model_Ui()
+        except KeyError:
+            pass
 
 
 

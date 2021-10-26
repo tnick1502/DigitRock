@@ -104,7 +104,7 @@ def verify_programm_version(program_name, program_version):
 def create_json_file(path, data):
     """Создает файл и записывает в него словарь питон"""
     with open(path, 'w', encoding='utf-8') as file:
-        json.dump(data, file, ensure_ascii=False)
+        json.dump(data, file, ensure_ascii=False, default=str)
 
 def read_json_file(path):
     """Читает JSON в словарь питон"""

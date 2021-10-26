@@ -16,6 +16,7 @@ from general.general_widgets import Float_Slider, RangeSlider
 from general.general_functions import read_json_file
 from configs.styles import style
 from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
+from singletons import statment
 
 try:
     plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
@@ -224,14 +225,14 @@ class RezonantColumnIdentificationUI(QWidget):
         self.setLayout(self.layout)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
-    def set_params(self, params):
-        self.lab_number_text.setText(str(params.physical_properties.laboratory_number))
-        self.borehole_text.setText(str(params.physical_properties.borehole))
-        self.depth_text.setText(str(params.physical_properties.depth))
-        self.name_text.setText(str(params.physical_properties.soil_name))
-        self.p_ref_text.setText(str(params.reference_pressure))
-        self.e_text.setText(str(params.e))
-        self.E_text.setText(str(params.E50))
+    def set_params(self):
+        self.lab_number_text.setText(str(statment[statment.current_test].physical_properties.laboratory_number))
+        self.borehole_text.setText(str(statment[statment.current_test].physical_properties.borehole))
+        self.depth_text.setText(str(statment[statment.current_test].physical_properties.depth))
+        self.name_text.setText(str(statment[statment.current_test].physical_properties.soil_name))
+        self.p_ref_text.setText(str(statment[statment.current_test].mechanical_properties.reference_pressure))
+        self.e_text.setText(str(statment[statment.current_test].physical_properties.e))
+        self.E_text.setText(str(statment[statment.current_test].mechanical_properties.E50))
 
 class RezonantColumnOpenTestUI(QWidget):
     """Виджет для открытия файла прибора и определения параметров опыта"""

@@ -1156,7 +1156,7 @@ def curve(qf, e50, **kwargs):
 
     is_no_peak = xc >= 0.15
     if is_no_peak:
-        print(is_no_peak)
+        #print(is_no_peak)
         xc = np.random.uniform(0.2, 0.3)
         # old: xc =  x_old[-1] - len_x_dilatacy - 5 * (x_old[-1] - x_old[-2]) - len_line_end
     #для отрицательного угла дилатансии
@@ -1296,8 +1296,11 @@ def curve(qf, e50, **kwargs):
                                             point3_x)
     y2 = y2[:index_x2[0]]
     if not Eur:
-        y1 += deviation_volume_strain(x, x_given, x[np.argmax(y)], 0.008, 0.001)
-        y2 += deviation_volume_strain(x, x_given, 0.15, 0.005, 0.002)
+        try:
+            y1 += deviation_volume_strain(x, x_given, x[np.argmax(y)], 0.008, 0.001)
+            y2 += deviation_volume_strain(x, x_given, 0.15, 0.005, 0.002)
+        except:
+            pass
 
 
     random_param = np.random.uniform(-0.00125 / 4., 0.00125 / 4., len(y1))

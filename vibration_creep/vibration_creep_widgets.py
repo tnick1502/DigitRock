@@ -1,20 +1,27 @@
+
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMessageBox, QHBoxLayout, QTabWidget, \
-    QDialog, QTableWidget, QGroupBox, QPushButton, QComboBox, QDialogButtonBox, QTableWidgetItem, QHeaderView
+    QDialog, QTableWidget, QGroupBox, QPushButton, QComboBox, QDialogButtonBox, QTableWidgetItem, QHeaderView, \
+    QTextEdit, QProgressDialog
 from PyQt5.QtCore import Qt
 import numpy as np
 import sys
+import shutil
+import os
+import threading
 
-
+from excel_statment.initial_statment_widgets import VibrationCreepStatment
+from general.reports import report_VibrationCreep
+from general.save_widget import Save_Dir
 from vibration_creep.vibration_creep_widgets_UI import VibrationCreepUI
-from vibration_creep.vibration_creep_model import ModelVibrationCreepSoilTest
 from general.initial_tables import TableVertical
-from static_loading.triaxial_static_test_widgets import TriaxialStaticWidgetSoilTest
-from general.initial_tables import Table_Castomer
+from static_loading.triaxial_static_test_widgets import StaticSoilTestWidget
+from general.initial_tables import TableCastomer
 from general.excel_functions import create_json_file, read_json_file
 from general.report_general_statment import save_report
-from general.excel_data_parser import dataToDict, dictToData, VibrationCreepData
-from loggers.logger import app_logger
-
+from singletons import E_models, VC_models, statment
+from loggers.logger import app_logger, handler
+from version_control.configs import actual_version
+__version__ = actual_version
 
 class VibrationCreepSoilTestWidget(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -22,21 +29,14 @@ class VibrationCreepSoilTestWidget(QWidget):
     def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__()
-        self._model = ModelVibrationCreepSoilTest()
         self._create_Ui()
-
-        self.static_widget.deviator_loading_sliders.signal[object].connect(self._static_model_change)
-        self.static_widget.consolidation_sliders.signal[object].connect(self._static_model_change)
-        self.static_widget.deviator_loading.slider_cut.sliderMoved.connect(self._static_model_change)
 
     def _create_Ui(self):
 
         self.layout = QHBoxLayout(self)
-        self.widget = QWidget()
-        self.layout_dynamic_widget = QHBoxLayout()
-        self.widget.setLayout(self.layout_dynamic_widget)
         self.dynamic_widget = VibrationCreepUI()
-        self.layout_1 = QVBoxLayout()
+        self.layout_2 = QVBoxLayout()
+
         fill_keys = {
             "laboratory_number": "Лаб. ном.",
             "E50": "Модуль деформации E50, кПа",
@@ -58,55 +58,36 @@ class VibrationCreepSoilTestWidget(QWidget):
         self.identification = TableVertical(fill_keys)
         self.identification.setFixedWidth(350)
         self.identification.setFixedHeight(700)
-        self.layout_dynamic_widget.addWidget(self.dynamic_widget)
-        self.layout_1.addWidget(self.identification)
-        self.layout_1.addStretch(-1)
-        self.layout_1.addLayout(self.layout_1)
-        self.layout_dynamic_widget.addLayout(self.layout_1)
-        self.layout_dynamic_widget.setContentsMargins(5, 5, 5, 5)
+        self.layout.addWidget(self.dynamic_widget)
 
-        self.static_widget = TriaxialStaticWidgetSoilTest()
+        self.refresh_button = QPushButton("Обновить")
+        self.refresh_button.clicked.connect(self._refresh)
 
-        self.tab_widget = QTabWidget()
-        self.tab_1 = self.static_widget
-        self.tab_2 = self.widget
-
-        self.tab_widget.addTab(self.tab_1, "Статический опыт")
-        self.tab_widget.addTab(self.tab_2, "Динамический опыт")
-        self.layout.addWidget(self.tab_widget)
+        self.layout_2.addWidget(self.identification)
+        self.layout.addLayout(self.layout_2)
+        self.layout_2.addWidget(self.refresh_button)
+        self.layout_2.addStretch(-1)
+        self.layout.setContentsMargins(5, 5, 5, 5)
 
     def set_test_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
-        app_logger.info(f"Моделирование опыта: {params.physical_properties.laboratory_number}")
-        try:
-            self._model.set_test_params(params)
-            self.static_widget.set_model(self._model._static_test_data)
-            self.static_widget.item_identification.set_data(params)
-            self._plot()
-            app_logger.info(f"Моделирование успешно")
-        except:
-            app_logger.info(f"Параметры моделируемого опыта: {params}")
-            app_logger.info("ОШИБКА")
-            app_logger.info(" ")
-            pass
-
-    def get_test_params(self):
-        return self._model.get_test_params()
-
-    def get_test_results(self):
-        return self._model.get_test_results()
-
-    def _static_model_change(self):
-        self._model._static_test_data = self.static_widget._model
         self._plot()
 
-    def save_log(self, directory):
-        self._model.save_log(directory)
+    def static_model_change(self, param):
+        VC_models[statment.current_test]._test_processing()
+        self._plot()
+
+    def _refresh(self):
+        try:
+            VC_models[statment.current_test].set_test_params()
+            self._plot()
+        except KeyError:
+            pass
 
     def _plot(self):
         """Построение графиков опыта"""
-        plots = self._model.get_plot_data()
-        res = self._model.get_test_results()
+        plots = VC_models[statment.current_test].get_plot_data()
+        res = VC_models[statment.current_test].get_test_results()
         self.dynamic_widget.plot(plots, res)
 
         #plots = self._model._static_test_data.get_plot_data()
@@ -115,55 +96,40 @@ class VibrationCreepSoilTestWidget(QWidget):
 
 class PredictVCTestResults(QDialog):
     """Класс отрисовывает таблицу физических свойств"""
-    def __init__(self, data=None, data_customer=None):
+    def __init__(self):
         super().__init__()
         self._table_is_full = False
-        self._data_customer = data_customer
-        self.setWindowTitle("Резонансная колонка")
+        self.setWindowTitle("Прогнозирование Kd")
         self.create_IU()
 
-        self._G0_ratio = 1
-        self._threshold_shear_strain_ratio = 1
-
-        self._original_keys_for_sort = list(data.keys())
-        self._set_data(data)
-        self.table_castomer.set_data(data_customer)
         self.resize(1400, 800)
 
-
-        self.open_data_button.clicked.connect(self._read_data_from_json)
-        self.save_data_button.clicked.connect(self._save_data_to_json)
         self.save_button.clicked.connect(self._save_pdf)
-        self.combo_box.activated.connect(self._sort_combo_changed)
+        self.combo_box.activated.connect(lambda s: self._sort_combo_changed(statment))
+
+        self._fill_table()
 
     def create_IU(self):
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(10)
 
-        self.table_castomer = Table_Castomer()
-        self.table_castomer.setFixedHeight(80)
+        self.table_castomer = TableCastomer()
+        self.table_castomer.set_data()
         self.layout.addWidget(self.table_castomer)
 
         self.l = QHBoxLayout()
         self.button_box = QGroupBox("Инструменты")
         self.button_box_layout = QHBoxLayout()
         self.button_box.setLayout(self.button_box_layout)
-        self.open_data_button = QPushButton("Подгрузить данные")
-        self.open_data_button.setFixedHeight(30)
-        self.save_data_button = QPushButton("Сохранить данные")
-        self.save_data_button.setFixedHeight(30)
         self.save_button = QPushButton("Сохранить данные PDF")
         self.save_button.setFixedHeight(30)
         self.combo_box = QComboBox()
         self.combo_box.setFixedHeight(30)
         self.combo_box.addItems(["Сортировка", "sigma_3", "depth"])
         self.button_box_layout.addWidget(self.combo_box)
-        self.button_box_layout.addWidget(self.open_data_button)
-        self.button_box_layout.addWidget(self.save_data_button)
         self.button_box_layout.addWidget(self.save_button)
 
         self.l.addStretch(-1)
-
         self.l.addWidget(self.button_box)
         self.layout.addLayout(self.l)
 
@@ -209,21 +175,20 @@ class PredictVCTestResults(QDialog):
 
     def _fill_table(self):
         """Заполнение таблицы параметрами"""
-        self.table.setRowCount(len(self._data))
-        ["Лаб. ном.", "Глубина", "Наименование грунта", "Консистенция Il", "e", "𝜎3, кПа", "qf, кПа", "t, кПа",
-         "Частота, Гц", "Kd, д.е."]
-        for string_number, lab_number in enumerate(self._data):
+        self.table.setRowCount(len(statment))
+
+        for string_number, lab_number in enumerate(statment):
             for i, val in enumerate([
                 lab_number,
-                str(self._data[lab_number].physical_properties.depth),
-                self._data[lab_number].physical_properties.soil_name,
-                str(self._data[lab_number].Il) if self._data[lab_number].Il else "-",
-                str(self._data[lab_number].e) if self._data[lab_number].e else "-",
-                str(np.round(self._data[lab_number].sigma_3)),
-                str(np.round(self._data[lab_number].qf)),
-                str(np.round(self._data[lab_number].t)),
-                str(self._data[lab_number].frequency).strip("[").strip("]"),
-                str(self._data[lab_number].Kd).strip("[").strip("]")
+                str(statment[lab_number].physical_properties.depth),
+                statment[lab_number].physical_properties.soil_name,
+                str(statment[lab_number].physical_properties.Il) if statment[lab_number].physical_properties.Il else "-",
+                str(statment[lab_number].physical_properties.e) if statment[lab_number].physical_properties.e else "-",
+                str(np.round(statment[lab_number].mechanical_properties.sigma_3)),
+                str(np.round(statment[lab_number].mechanical_properties.qf)),
+                str(np.round(statment[lab_number].mechanical_properties.t)),
+                str(statment[lab_number].mechanical_properties.frequency).strip("[").strip("]"),
+                str(statment[lab_number].mechanical_properties.Kd).strip("[").strip("]")
             ]):
 
                 self.table.setItem(string_number, i, QTableWidgetItem(val))
@@ -235,59 +200,37 @@ class PredictVCTestResults(QDialog):
         self._data = data
         self._fill_table()
 
-    def _sort_combo_changed(self):
+    def _sort_combo_changed(self, statment):
         """Изменение способа сортировки combo_box"""
         if self._table_is_full:
             if self.combo_box.currentText() == "Сортировка":
-                self._data = {key: self._data[key] for key in self._original_keys_for_sort}
+                statment.sort("origin")
                 self._clear_table()
             else:
-                self._sort_data(self.combo_box.currentText())
+                statment.sort(self.combo_box.currentText())
                 self._clear_table()
 
             self._fill_table()
 
-    def _save_data_to_json(self):
-        s = QFileDialog.getSaveFileName(self, 'Open file')[0]
-        if s:
-            s += ".json"
-            create_json_file(s, dataToDict(self.get_data()))
-
-    def _read_data_from_json(self):
-        s = QFileDialog.getOpenFileName(self, 'Open file')[0]
-        if s:
-            data = read_json_file(s)
-            if sorted(data) == sorted(self._data):
-                self._set_data(dictToData(data, VibrationCreepData))
-            else:
-                QMessageBox.critical(self, "Ошибка", "Неверная структура данных", QMessageBox.Ok)
-
-    def _sort_data(self, sort_key="sigma_3"):
-        """Сортировка проб"""
-        #sort_lab_numbers = sorted(list(self._data.keys()), key=lambda x: self._data[x][sort_key])
-        #self._data = {key: self._data[key] for key in sort_lab_numbers}
-        #self._data = dict(sorted(self._data.items(), key=lambda x: self._data[x[0]][sort_key]))
-
-        self._data = dict(sorted(self._data.items(), key=lambda x: getattr(self._data[x[0]], sort_key)))
+    def get_data(self):
+        for string_number, lab_number in enumerate(statment):
+            try:
+                statment[lab_number].mechanical_properties.Kd = [float(self.table.item(string_number, 9).text())]
+            except ValueError:
+                statment[lab_number].mechanical_properties.Kd = [float(x) for x in self.table.item(string_number, 9).text().split(",")]
 
     def _save_pdf(self):
         save_dir = QFileDialog.getExistingDirectory(self, "Select Directory")
         if save_dir:
             statement_title = "Прогнозирование парметров виброползучести"
-            titles, data, scales = PredictVCTestResults.transform_data_for_statment(self.get_data())
+            titles, data, scales = PredictVCTestResults.transform_data_for_statment(statment)
             try:
-                save_report(titles, data, scales, self._data_customer["data"], ['Заказчик:', 'Объект:'],
-                            [self._data_customer["customer"], self._data_customer["object_name"]], statement_title,
+                save_report(titles, data, scales, statment.general_data.end_date, ['Заказчик:', 'Объект:'],
+                            [statment.general_data.customer, statment.general_data.object_name], statement_title,
                             save_dir, "---", "Прогноз Kd.pdf")
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
             except PermissionError:
                 QMessageBox.critical(self, "Ошибка", "Закройте ведомость", QMessageBox.Ok)
-
-    def get_data(self):
-        data = self._data
-        for string_number, lab_number in enumerate(data):
-            data[lab_number].Kd = [float(x) for x in self.table.item(string_number, 9).text().split(",")]
-        return data
 
     @staticmethod
     def transform_data_for_statment(data):
@@ -297,15 +240,15 @@ class PredictVCTestResults(QDialog):
         for string_number, lab_number in enumerate(data):
                 data_structure.append([
                     lab_number,
-                    str(data[lab_number].physical_properties.depth),
-                    data[lab_number].physical_properties.soil_name,
-                    str(data[lab_number].Il) if data[lab_number].Il else "-",
-                    str(data[lab_number].e) if data[lab_number].e else "-",
-                    str(np.round(data[lab_number].sigma_3)),
-                    str(np.round(data[lab_number].qf)),
-                    str(np.round(data[lab_number].t)),
-                    str(data[lab_number].frequency).strip("[").strip("]"),
-                    str(data[lab_number].Kd).strip("[").strip("]")
+                    str(statment[lab_number].physical_properties.depth),
+                    statment[lab_number].physical_properties.soil_name,
+                    str(statment[lab_number].physical_properties.Il) if statment[lab_number].physical_properties.Il else "-",
+                    str(statment[lab_number].physical_properties.e) if statment[lab_number].physical_properties.e else "-",
+                    str(np.round(statment[lab_number].mechanical_properties.sigma_3)),
+                    str(np.round(statment[lab_number].mechanical_properties.qf)),
+                    str(np.round(statment[lab_number].mechanical_properties.t)),
+                    str(statment[lab_number].mechanical_properties.frequency).strip("[").strip("]"),
+                    str(statment[lab_number].mechanical_properties.Kd).strip("[").strip("]")
                 ])
 
         titles = ["Лаб. ном.", "Глубина", "Наименование грунта", "Консистенция Il д.е.", "e, д.е.", "𝜎3, кПа",
@@ -315,6 +258,156 @@ class PredictVCTestResults(QDialog):
 
         return (titles, data_structure, scale)
 
+class VibrationCreepSoilTestApp(QWidget):
+    def __init__(self):
+        """Определяем основную структуру данных"""
+        super().__init__()
+        # Создаем вкладки
+        self.layout = QHBoxLayout(self)
+
+        self.tab_widget = QTabWidget()
+        self.tab_1 = VibrationCreepStatment()
+        self.tab_2 = StaticSoilTestWidget()
+        self.tab_3 = VibrationCreepSoilTestWidget()
+        self.tab_4 = Save_Dir()
+
+        self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
+        self.tab_widget.addTab(self.tab_2, "Опыт E")
+        self.tab_widget.addTab(self.tab_3, "Опыт вибро")
+        self.tab_widget.addTab(self.tab_4, "Сохранение отчета")
+        self.layout.addWidget(self.tab_widget)
+
+        self.log_widget = QTextEdit()
+        self.log_widget.setFixedWidth(300)
+        self.layout.addWidget(self.log_widget)
+
+        handler.emit = lambda record: self.log_widget.append(handler.format(record))
+
+        self.tab_1.statment_directory[str].connect(lambda signal: self.tab_4.set_directory(signal, "Виброползучесть"))
+        #self.tab_1.signal[object].connect(self.tab_2.identification.set_data)
+        self.tab_1.signal[bool].connect(self._set_params)
+        self.tab_4.save_button.clicked.connect(self.save_report)
+        self.tab_4.save_all_button.clicked.connect(self.save_all_reports)
+        self.tab_2.signal[bool].connect(self.tab_3.set_test_params)
+
+        self.button_predict = QPushButton("Прогнозирование")
+        self.button_predict.setFixedHeight(50)
+        self.button_predict.clicked.connect(self._predict)
+        self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
+
+    def _set_params(self, param):
+        self.tab_2.set_params(param)
+        self.tab_3.set_test_params(param)
+        self.tab_3.identification.set_data()
+        self.tab_2.item_identification.set_data()
+
+    def save_report(self):
+        try:
+            assert statment.current_test, "Не выбран образец в ведомости"
+            file_path_name = statment.current_test.replace("/", "-").replace("*", "")
+
+            VC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="VC_models.pickle")
+            E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
+            statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
+                          name=statment.general_parameters.test_mode + "Виброползучесть.pickle")
+
+            test_parameter = {'sigma_3': statment[statment.current_test].mechanical_properties.sigma_3,
+                              't': statment[statment.current_test].mechanical_properties.t,
+                              'frequency': statment[statment.current_test].mechanical_properties.frequency,
+                              'Rezhim': 'Изотропная реконсолидация, девиаторное циклическое нагружение',
+                              'Oborudovanie': "Wille Geotechnik 13-HG/020:001", 'h': 76, 'd': 38}
+
+            save = self.tab_4.arhive_directory + "/" + file_path_name
+            save = save.replace("*", "")
+
+            if os.path.isdir(save):
+                pass
+            else:
+                os.mkdir(save)
+
+            file_name = "/" + "Отчет " + file_path_name + "-ВП" + ".pdf"
+
+            pick_deviator, _ = self.tab_2.deviator_loading.save_canvas(format=["jpg", "svg"])
+
+            pick_vc, pick_c = self.tab_3.dynamic_widget.save_canvas()
+
+            E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
+            VC_models[statment.current_test].save_log(save)
+
+            data_customer = statment.general_data
+            date = statment[statment.current_test].physical_properties.date
+            if date:
+                data_customer.end_date = date
+
+            report_VibrationCreep(save + "/" + file_name, data_customer,
+                                  statment[statment.current_test].physical_properties,
+                                  statment.current_test,
+                                  os.getcwd() + "/project_data/",
+                                  test_parameter, E_models[statment.current_test].get_test_results(),
+                                  VC_models[statment.current_test].get_test_results(),
+                                  [pick_vc, pick_deviator, pick_c], "{:.2f}".format(__version__))
+
+            shutil.copy(save + "/" + file_name, self.tab_4.report_directory + "/" + file_name)
+
+            if self.save_massage:
+                QMessageBox.about(self, "Сообщение", "Успешно сохранено")
+                app_logger.info(f"Проба {statment.current_test} успешно сохранена в папке {save}")
+
+            self.tab_1.table_physical_properties.set_row_color(
+                self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
+
+        except AssertionError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+            app_logger.exception(f"Не выгнан {statment.current_test}")
+
+        except TypeError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+            app_logger.exception(f"Не выгнан {statment.current_test}")
+
+        except PermissionError:
+            QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
+            app_logger.exception(f"Не выгнан {statment.current_test}")
+
+        except:
+            app_logger.exception(f"Не выгнан {statment.current_test}")
+
+    def save_all_reports(self):
+        progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
+        progress.setCancelButton(None)
+        progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setValue(0)
+
+        def save():
+            for i, test in enumerate(statment):
+                self.save_massage = False
+                statment.setCurrentTest(test)
+                self._set_params(True)
+                self.save_report()
+                progress.setValue(i)
+            progress.setValue(len(statment))
+            progress.close()
+            QMessageBox.about(self, "Сообщение", "Объект выгнан")
+            app_logger.info("Объект успешно выгнан")
+            self.save_massage = True
+
+        t = threading.Thread(target=save)
+        progress.show()
+        t.start()
+
+    def _predict(self):
+        if len(statment):
+            dialog = PredictVCTestResults()
+            dialog.show()
+
+            if dialog.exec() == QDialog.Accepted:
+                dialog.get_data()
+                VC_models.generateTests()
+                VC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="VC_models.pickle")
+                statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), "Виброползучесть.pickle")
+                app_logger.info("Новые параметры ведомости и модели сохранены")
+
+
 
 
 if __name__ == '__main__':
@@ -322,21 +415,10 @@ if __name__ == '__main__':
 
     # Now use a palette to switch to dark colors:
     app.setStyle('Fusion')
-    ex = VibrationCreepSoilTestWidget()
-
-    params = {'E': 50000.0, 'c': 0.023, 'fi': 45, 'qf': 593.8965363, "Kd": [0.86, 0.8, 0.7], 'sigma_3': 100,
-                      'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'sigma_1': 300, 'dilatancy': 4.95, 'OCR': 1, 'm': 0.61,
-     'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'depth': 9.8, 'Ip': 17.9,
-     'Il': 0.79, 'K0': 1, 'groundwater': 0.0, 'ro': 1.76, 'balnost': 2.0, 'magnituda': 5.0, 'rd': '0.912', 'N': 100,
-     'MSF': '2.82', 'I': 2.0, 'sigma1': 100, 't': 10, 'sigma3': 100, 'ige': '-', 'Nop': 20, 'lab_number': '4-5',
-     'data_phiz': {'borehole': 'rete', 'depth': 9.8,
-                   'name': 'Глина легкая текучепластичная пылеватая с примесью органического вещества', 'ige': '-',
-                   'rs': 2.73, 'r': 1.76, 'rd': 1.23, 'n': 55.0, 'e': 1.22, 'W': 43.4, 'Sr': 0.97, 'Wl': 47.1,
-                   'Wp': 29.2, 'Ip': 17.9, 'Il': 0.79, 'Ir': 6.8, 'str_index': 'l', 'gw_depth': 0.0, 'build_press': '-',
-                   'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 0.1,
-                   '005': 17.7, '001': 35.0, '0002': 18.8, '0000': 28.1, 'Nop': 20}, 'test_type': 'Сейсморазжижение',
-                               "frequency": [1, 5, 10], "n_fail": None, "Mcsr": 100}
-    ex.set_test_params(params)
+    #ex = VibrationCreepSoilTestApp()
+    ex = QTextEdit()
+    handler.emit = lambda record: ex.append(handler.format(record))
+    app_logger.info("dgf")
 
     ex.show()
     sys.exit(app.exec_())

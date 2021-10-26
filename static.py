@@ -1,25 +1,27 @@
-
 import os
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
-from static_loading.DigitRock_TriaxialStatick_widgets import DigitRock_TriaxialStatickSoilTest, __version__
 
+from static_loading.triaxial_static_test_widgets import StatickSoilTestApp, __version__
 from version_control.json_management import test_version, get_actual_version
+from version_control.configs import actual_version
 from loggers.logger import app_logger
 
 class App(QMainWindow):  # Окно и виджеты на нем
 
     def __init__(self):
         super().__init__()
-        self.title = "Triaxial Static Soil Test " + "{:.2f}".format(__version__)
+        self.title = "Static Loading Soil Test " + "{:.2f}".format(__version__)
         self.left = 100
         self.top = 30
-
+        self.width = 1500
+        self.height = 950
         self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, 1500, 900)
-        if test_version(__version__):
+        self.setGeometry(self.left, self.top, self.width, self.height)
+        #self.showFullScreen()
+        if test_version(actual_version):
             try:
-                self.table_widget = DigitRock_TriaxialStatickSoilTest()#
+                self.table_widget = StatickSoilTestApp()
                 self.setCentralWidget(self.table_widget)
                 self.show()
             except:
@@ -28,6 +30,9 @@ class App(QMainWindow):  # Окно и виджеты на нем
             QMessageBox.critical(self, "Ошибка",
                                  f"Скачайте актуальную версию приложения {get_actual_version()}",
                                  QMessageBox.Ok)
+        self.setCentralWidget(self.table_widget)
+
+        self.show()
 
     def keyPressEvent(self, event):
         if str(event.key()) == "16777216":
@@ -36,7 +41,6 @@ class App(QMainWindow):  # Окно и виджеты на нем
             else:
                 self.showFullScreen()
 
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
@@ -44,4 +48,5 @@ if __name__ == '__main__':
     app.setStyle('Fusion')
     #app.setStyleSheet("QLabel{font-size: 14pt;}")
     ex = App()
+    ex.show()
     sys.exit(app.exec_())

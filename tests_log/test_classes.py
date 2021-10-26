@@ -3,6 +3,7 @@ from abc import abstractmethod
 import numpy as np
 import random
 from tests_log.path_processing import cyclic_path_processing, FCE_path_processing
+from singletons import statment, models, E_models, FC_models
 
 def timedelta_to_dhms(duration, config=["дней", "часов", "минут"]):
     # преобразование в дни, часы, минуты и секунды
@@ -254,7 +255,6 @@ class TestsLog:
     def set_directory(self) -> None:
         pass
 
-
 class CyclicTest(Test):
     """Опыт циклики"""
     def _get_duration(self, test_file):
@@ -272,6 +272,7 @@ class TestsLogCyclic(TestsLog):
     test_class = CyclicTest
     equipment_names = ["Wille", "Geotech"]
     camera_assembly = CameraAssembly(30, 40)
+
     def set_directory(self, directory) -> int:
         self.tests = {}
         data = cyclic_path_processing(directory)
@@ -281,6 +282,11 @@ class TestsLogCyclic(TestsLog):
                 self.tests[key] = CyclicTest(data[key])
             return len(self.tests)
         return 0
+
+    def processing_models(self):
+        self.tests = {}
+        for key in models:
+            self.tests[key] = CyclicTest(models[key].test_duration)
 
 
 class TriaxialStaticTest(Test):
@@ -311,6 +317,26 @@ class TestsLogTriaxialStatic(TestsLog):
                         self.tests[f"{key} № {i + 1}"] = TriaxialStaticTest(path)
             return len(self.tests)
         return 0
+
+    def processing_models(self):
+        self.tests = {}
+
+        if statment.general_parameters.test_mode == "Трёхосное сжатие (E)" or statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
+            for key in E_models:
+                self.tests[key] = TriaxialStaticTest(E_models[key].test_duration)
+
+        if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C)":
+            for key in FC_models:
+                for i, test in enumerate(FC_models[key]):
+                    self.tests[f"{key} № {i + 1}"] = TriaxialStaticTest(test.test_duration)
+
+        elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
+            for key in E_models:
+                self.tests[key] = TriaxialStaticTest(E_models[key].test_duration)
+
+            for key in FC_models:
+                for i, test in enumerate(FC_models[key]):
+                    self.tests[f"{key} № {i + 1}"] = TriaxialStaticTest(test.test_duration)
 
 if __name__ == "__main__":
     """test_1 = CyclicTest("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив/Темплет В (V7) доп.1-9/Косинусное значение напряжения.txt")

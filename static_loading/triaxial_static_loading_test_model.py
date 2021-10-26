@@ -27,8 +27,9 @@ from static_loading.reconsolidation_model import ModelTriaxialReconsolidation, M
 from static_loading.consolidation_model import ModelTriaxialConsolidation, ModelTriaxialConsolidationSoilTest
 from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading, ModelTriaxialDeviatorLoadingSoilTest
 from general.general_functions import read_json_file, create_json_file
-from general.excel_data_parser import MechanicalProperties, PhysicalProperties, dictToData
-from loggers.logger import model_logger
+from loggers.logger import app_logger
+from datetime import timedelta
+from singletons import E_models, statment
 
 class ModelTriaxialStaticLoad:
     """Класс моделирования опыта трехосного сжатия
@@ -41,13 +42,10 @@ class ModelTriaxialStaticLoad:
 
     def set_test_data(self, test_data):
         """Получение массивов опытов и передача в соответствующий класс"""
-        try:
-            self.reconsolidation.set_test_data(test_data["reconsolidation"])
-            self.consolidation.set_test_data(test_data["consolidation"])
-            self.deviator_loading.set_test_data(test_data["deviator_loading"])
-        except:
-            model_logger.exception("Ошибка обработки данных")
-            pass
+        self.reconsolidation.set_test_data(test_data["reconsolidation"])
+        self.consolidation.set_test_data(test_data["consolidation"])
+        self.deviator_loading.set_test_data(test_data["deviator_loading"])
+
 
     def get_processing_parameters(self):
         return {
@@ -193,6 +191,12 @@ class ModelTriaxialStaticLoad:
 
                 deviator_loading["u"] = np.mean(read_data["PorePress"][begin_deviator_loading:end_deviator_loading])
 
+                if camera == "A":
+                    rod_accounting = (read_data['VerticalDeformation'][begin_deviator_loading:end_deviator_loading] -
+                                      read_data['VerticalDeformation'][begin_deviator_loading]) / (
+                                             np.pi * (10 ** 2) * (76 - delta_h))
+                    deviator_loading["cell_volume_strain"] -= rod_accounting
+
                 # Разгрузка
                 try:
                     begin_upload = read_data['Action'].index('CyclicUnloading')
@@ -269,47 +273,31 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         self.deviator_loading = ModelTriaxialDeviatorLoadingSoilTest()
         self.test_params = None
 
-    def set_test_params(self, test_params):
+    def set_test_params(self, reconsolidation=True):
         """Получение массивов опытов и передача в соответствующий класс"""
         #test_params.physical_properties.e = test_params.physical_properties.e if test_params.physical_properties.e else np.random.uniform(
             #0.6, 0.7)
-        try:
-            self.test_params = test_params
-            self.reconsolidation.set_test_params(test_params.sigma_3)
-
+        if reconsolidation:
+            self.reconsolidation.set_test_params()
             velocity = None
-
             while velocity is None:
                 self.consolidation.set_delta_h_reconsolidation(self.reconsolidation.get_test_results()["delta_h_reconsolidation"])
-                self.consolidation.set_test_params(test_params)
+                self.consolidation.set_test_params()
                 velocity = self.consolidation.get_test_results()["velocity"]
-
             self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
                                                        self.consolidation.get_delta_h_consolidation())
+            self.deviator_loading.set_test_params()
+        else:
+            self.reconsolidation = None
+            velocity = None
+            while velocity is None:
+                self.consolidation.set_delta_h_reconsolidation(0)
+                self.consolidation.set_test_params()
+                velocity = self.consolidation.get_test_results()["velocity"]
+            self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
+                                                       self.consolidation.get_delta_h_consolidation())
+            self.deviator_loading.set_test_params()
 
-            self.deviator_loading.set_test_params(test_params)
-        except:
-            model_logger.exception(f"Ошибка моделирования опыта {test_params.physical_properties.laboratory_number}")
-            pass
-        """E50 = np.round(test_params.E50/1000, 1)
-        params = self.deviator_loading.get_test_results()
-        E50_test = params["E50"]
-        count = 0
-        while abs(np.round(E50_test, 1) - np.round(E50, 1)) >= 0.02:
-            k = 1.0001
-            if count > 20:
-                k = 1.00001
-            print("Поиск сходимости решения. ", E50_test-E50)
-            if E50_test > E50:
-                test_params.E50 /= k
-            else:
-                test_params.E50 *= k
-
-            #test_params.E50 += 50*(E50 - E50_test)
-
-            self.deviator_loading.set_test_params(test_params)
-            params = self.deviator_loading.get_test_results()
-            E50_test = params["E50"]"""
 
     def get_test_params(self):
         return self.test_params
@@ -332,14 +320,23 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
     def save_log_file(self, file_path):
         """Метод генерирует логфайл прибора"""
-        reconsolidation_dict = self.reconsolidation.get_dict()
-        consolidation_dict = self.consolidation.get_dict(self.reconsolidation.get_effective_stress_after_reconsolidation())
+        try:
+            reconsolidation_dict = self.reconsolidation.get_dict()
+            consolidation_dict = self.consolidation.get_dict(self.reconsolidation.get_effective_stress_after_reconsolidation())
 
-        deviator_loading_dict = self.deviator_loading.get_dict()
+            deviator_loading_dict = self.deviator_loading.get_dict()
 
-        main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
-                                                                                         consolidation_dict,
-                                                                                         deviator_loading_dict)
+            main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
+                                                                                             consolidation_dict,
+                                                                                             deviator_loading_dict)
+        except AttributeError:
+            consolidation_dict = self.consolidation.get_dict(0)
+
+            deviator_loading_dict = self.deviator_loading.get_dict()
+
+            main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(None,
+                                                                                             consolidation_dict,
+                                                                                             deviator_loading_dict)
 
         ModelTriaxialStaticLoadSoilTest.text_file(file_path, main_dict)
         create_json_file('/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json",
@@ -350,6 +347,12 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
             file.write("strain\tdeviator\n")
             for i in range(len(plaxis["strain"])):
                 file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
+
+    @property
+    def test_duration(self):
+        time_in_min = self.reconsolidation.get_duration() + self.consolidation.get_duration() + \
+                      self.deviator_loading.get_duration()
+        return timedelta(minutes=time_in_min)
 
 
     @staticmethod
@@ -459,17 +462,15 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
     @staticmethod
     def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading):
-
-        data = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(b_test, consolidation, initial=True,
+        if b_test:
+            data = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(b_test, consolidation, initial=True,
                                         skip_keys=["SampleHeight_mm", "SampleDiameter_mm"])
+        else:
+            data = consolidation
+
         dictionary = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(copy.deepcopy(data), deviator_loading, initial=True,
                                               skip_keys=["SampleHeight_mm", "SampleDiameter_mm", "Action_Changed"])
 
-        #dictionary = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(consolidation, deviator_loading,
-                                                                              #initial=True,
-                                                                              #skip_keys=["SampleHeight_mm",
-                                                                                         #"SampleDiameter_mm",
-                                                                                         #"Action_Changed"])
 
         dictionary["Time"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["Time"], 3)
         dictionary["Deviator_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["Deviator_kPa"], 3)
@@ -515,22 +516,33 @@ if __name__ == '__main__':
     #open_geotek_log(file)
 
     #a = ModelTriaxialStaticLoadSoilTest()
-    param = { "ee": {'physical_properties': {'laboratory_number': '89-7', 'borehole': '89', 'depth': 3.0, 'soil_name': 'я есть грунт', 'ige': None, 'rs': 2.66, 'r': None, 'rd': None, 'n': None, 'e': None, 'W': 10.0, 'Sr': None, 'Wl': None, 'Wp': None, 'Ip': None, 'Il': None, 'Ir': None, 'stratigraphic_index': None, 'ground_water_depth': None, 'granulometric_10': None, 'granulometric_5': None, 'granulometric_2': None, 'granulometric_1': None, 'granulometric_05': None, 'granulometric_025': 2.2, 'granulometric_01': 90.5, 'granulometric_005': 7.3, 'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None, 'complete_flag': False, 'sample_number': 1, 'type_ground': 4, 'Rc': None, 'date': None, 'sample_size': (38, 76)}, 'Cv': 0.7, 'Ca': 0.02828, 'm': 0.53, 'E50': 275000.0, 'c': 2.0, 'fi': 1.0, 'K0': 0.5, 'dilatancy_angle': 7.15, 'sigma_3': 100, 'qf': 4074.0, 'sigma_1': 4174.0, 'poisons_ratio': 0.34, 'OCR': 1, 'build_press': 150.0, 'pit_depth': 4.0, 'Eur': None, 'pressure_array': {'set_by_user': None, 'calculated_by_pressure': [100, 200, 400], 'state_standard': [100, 200, 300]}, 'test_type': 'Трёхосное сжатие (E)'}
-}
+    param = { "ee": {'physical_properties': {'laboratory_number': '89-3', 'borehole': 89.0, 'depth': 6.0,
+                                     'soil_name': 'Суглинок полутвёрдый', 'ige': None, 'rs': 2.71, 'r': 2.16,
+                                     'rd': 1.89, 'n': 30.1, 'e': 0.43, 'W': 21.9, 'Sr': 0.88, 'Wl': 21.9, 'Wp': 12.8,
+                                     'Ip': 9.1, 'Il': 0.13, 'Ir': None, 'stratigraphic_index': None,
+                                     'ground_water_depth': None, 'granulometric_10': None, 'granulometric_5': None,
+                                     'granulometric_2': None, 'granulometric_1': None, 'granulometric_05': None,
+                                     'granulometric_025': None, 'granulometric_01': None, 'granulometric_005': None,
+                                     'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None,
+                                     'complete_flag': False, 'sample_number': 53, 'type_ground': 7, 'Rc': None},
+             'Cv': 0.128, 'Ca': 0.01126, 'm': 0.6, 'E50': 29600.0, 'c': 0.06, 'fi': 24.6, 'K0': 0.7,
+             'dilatancy_angle': 17.05, 'sigma_3': 100, 'qf': 329.5, 'sigma_1': 429.5, 'poisons_ratio': 0.34, 'OCR': 1,
+             'build_press': 150.0, 'pit_depth': 4.0, 'Eur': None}}
 
     param = dictToData(param, MechanicalProperties)
 
     test = "soil_test"
 
-    a = ModelTriaxialStaticLoadSoilTest()
-    a.set_test_params(param["ee"])
-    a.save_log_file("C:/Users/Пользователь/Desktop/Test.1.log")
-    a.plotter()
-    #else:
-        #a = ModelTriaxialStaticLoad()
+    if test == "soil_test":
+        a = ModelTriaxialStaticLoadSoilTest()
+        a.set_test_params(param["ee"])
+        a.save_log_file("C:/Users/Пользователь/Desktop/Test.1.log")
+        a.plotter()
+    else:
+        a = ModelTriaxialStaticLoad()
         #a.set_test_file_path("C:/Users/Пользователь/Desktop/Тест/Девиаторное нагружение/Архив/7а-3/Test.1.log")
-        #a.set_test_file_path("C:/Users/Пользователь/Desktop/Test.1.log")
-        #a.plotter()
+        a.set_test_file_path("C:/Users/Пользователь/Desktop/Test.1.log")
+        a.plotter()
 
 
 

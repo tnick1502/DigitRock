@@ -17,11 +17,12 @@ from general.general_widgets import Float_Slider, RangeSlider
 from general.general_functions import point_to_xy
 from configs.plot_params import plotter_params
 from general.general_functions import read_json_file
+from singletons import statment
 
-try:
-    plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
-except FileNotFoundError:
-    plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
+#try:
+#    plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
+#except FileNotFoundError:
+#    plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
 plt.style.use('bmh')
 
 class ModelTriaxialDeviatorLoadingUI(QWidget):
@@ -765,8 +766,8 @@ class ModelTriaxialItemUI(QWidget):
 
         self.layout.addWidget(self.box)
 
-    def set_data(self, data):
-        self.lab.setText(str(data.physical_properties.laboratory_number))
-        self.borehole.setText(str(data.physical_properties.borehole))
-        self.depth.setText(str(data.physical_properties.depth))
-        self.name.setText(str(data.physical_properties.soil_name))
+    def set_data(self):
+        self.lab.setText(str(statment[statment.current_test].physical_properties.laboratory_number))
+        self.borehole.setText(str(statment[statment.current_test].physical_properties.borehole))
+        self.depth.setText(str(statment[statment.current_test].physical_properties.depth))
+        self.name.setText(str(statment[statment.current_test].physical_properties.soil_name))

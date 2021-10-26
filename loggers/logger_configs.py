@@ -59,9 +59,6 @@ logger_config = {
         'app_logger.excel_logger': {
             'level': 'INFO',
         },
-        'app_logger.math_model': {
-            'level': 'INFO',
-        }
     },
 
     'filters': {

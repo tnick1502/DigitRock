@@ -29,12 +29,17 @@ from scipy.optimize import differential_evolution
 from general.general_functions import AttrDict
 from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
 from general.general_functions import read_json_file
-from loggers.logger import model_logger
+from loggers.logger import app_logger
+from singletons import statment
 
 try:
     plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
 except FileNotFoundError:
-    plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
+    try:
+        plt.rcParams.update(read_json_file(os.getcwd()[:-15] + "/configs/rcParams.json"))
+    except FileNotFoundError:
+        pass
+
 
 plt.style.use('bmh')
 
@@ -168,7 +173,7 @@ class ModelRezonantColumn:
                 ModelRezonantColumn.approximate_Hardin_Drnevick(self._test_data.shear_strain[self._test_cut_position.left : self._test_cut_position.right],
                                                                 self._test_data.G_array[self._test_cut_position.left : self._test_cut_position.right])
         except:
-            model_logger.exception("Ошибка обработки данных РК")
+            app_logger.exception("Ошибка обработки данных РК")
             pass
 
 
@@ -296,30 +301,17 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
                                       "threshold_shear_strain_ratio": 1,
                                       "frequency_step": 5})
 
-    def set_test_params(self, params):
+    def set_test_params(self):
         """Функция принимает параметры опыта для дальнейших построений"""
-        try:
-            self._getted_params = params
-
-            self._test_params.p_ref = params.reference_pressure
-            self._test_params.c = params.c
-            self._test_params.fi = params.fi
-            self._test_params.E = params.E50
-            self._test_params.K0 = params.K0
-            self._test_params.physical = params.physical_properties
-            self._test_params.G0 = params.G0
-            self._test_params.threshold_shear_strain = params.threshold_shear_strain
-        except:
-            model_logger.exception("Ошибка обработки входных параметров модели ")
-            pass
-        try:
-            self._test_modeling()
-        except:
-            model_logger.exception(f"Ошибка моделирования опыта {self._test_params.physical.laboratory_number}")
-            pass
-
-    def get_test_params(self):
-        return self._getted_params
+        self._test_params.p_ref = statment[statment.current_test].mechanical_properties.reference_pressure
+        self._test_params.c = statment[statment.current_test].mechanical_properties.c
+        self._test_params.fi = statment[statment.current_test].mechanical_properties.fi
+        self._test_params.E = statment[statment.current_test].mechanical_properties.E50
+        self._test_params.K0 = statment[statment.current_test].mechanical_properties.K0
+        self._test_params.physical = statment[statment.current_test].physical_properties
+        self._test_params.G0 = statment[statment.current_test].mechanical_properties.G0
+        self._test_params.threshold_shear_strain = statment[statment.current_test].mechanical_properties.threshold_shear_strain
+        self._test_modeling()
 
     def set_draw_params(self, params):
         """Считывание параметров отрисовки(для передачи на слайдеры)"""

@@ -20,6 +20,9 @@ class Save_Dir(QWidget):
 
         self.create_UI()
 
+        self.postfix = ""
+        self.mode = ""
+
         self.save_directory_text.setText(self._save_directory)
         self.tree.setRootIndex(self.model.index(self._save_directory))
 
@@ -41,8 +44,13 @@ class Save_Dir(QWidget):
         self.path_box_layout.addWidget(self.change_save_directory_button)
 
         self.save_button = QPushButton("Сохранить отчет")#Button(icons + "Сохранить.png", 52, 52, 0.7)
+        self.save_button.setFixedHeight(65)
         self.savebox_layout_line_1.addWidget(self.path_box)
         self.savebox_layout_line_1.addWidget(self.save_button)
+
+        self.save_all_button = QPushButton("Сохранить все отчеты")  # Button(icons + "Сохранить.png", 52, 52, 0.7)
+        self.save_all_button.setFixedHeight(65)
+        self.savebox_layout_line_1.addWidget(self.save_all_button)
 
         self.advanced_box = QGroupBox("Расширенные возможности")
         self.advanced_box_layout = QHBoxLayout()
@@ -52,8 +60,6 @@ class Save_Dir(QWidget):
         self.advanced_box_layout.addWidget(self.general_statment_button)
         self.jornal_button = QPushButton("Журнал опытов")
         self.advanced_box_layout.addWidget(self.jornal_button)
-        self.reprocessing_button = QPushButton("Перевыгонка протоколов")
-        self.advanced_box_layout.addWidget(self.reprocessing_button)
         self.advanced_box_layout.addStretch(-1)
 
         self.savebox_layout.addLayout(self.savebox_layout_line_1)
@@ -85,11 +91,15 @@ class Save_Dir(QWidget):
 
     @property
     def report_directory(self):
-        return self._save_directory + "/Отчеты/"
+        return self._save_directory + f"/{self.mode}{self.postfix}/"
 
     @property
     def arhive_directory(self):
-        return self._save_directory + "/Архив/"
+        return self._save_directory + f"/Архив {self.mode}{self.postfix}/"
+
+    @property
+    def directory(self):
+        return self._save_directory
 
     def _create_save_directory(self, path, mode=""):
         """Создание папки и подпапок для сохранения отчета"""
@@ -105,10 +115,18 @@ class Save_Dir(QWidget):
         self.tree.setRootIndex(self.model.index(self._save_directory))
 
         app_logger.info(f"Папка сохранения опытов {self._save_directory}")
-        app_logger.info(f"")
 
     def set_directory(self, signal, mode):
         """Получение пути к файлу ведомости excel"""
+        self.mode = mode
+        try:
+            self.postfix = signal[signal.index("мех")+3:-5]
+        except ValueError:
+            try:
+                self.postfix = signal[signal.index("циклика") + 7:-5]
+            except ValueError:
+                self.postfix = ""
+
         self._create_save_directory(signal[0:-signal[::-1].index("/")], mode)
 
     def change_save_directory(self):
@@ -119,7 +137,6 @@ class Save_Dir(QWidget):
 
     def _doubleclick(self, item):
         "Обработчик события двойного клика в проводнике. Открывает файл"
-        #print(str(item.data()))
         path = self.sender().model().filePath(item)
         os.startfile(path)
 
@@ -129,9 +146,6 @@ class Save_Dir(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
-
-
     Dialog = Save_Dir()
     Dialog.set_directory("C:/Users/Пользователь/Desktop/smof.xls", "FC")
     print(Dialog.report_directory)

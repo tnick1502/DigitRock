@@ -10,34 +10,12 @@ import pyexcel as p
 from general.general_functions import sigmoida, mirrow_element
 from cyclic_loading.cyclic_stress_ratio_function import define_fail_cycle
 from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
-from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTest
-from loggers.logger import excel_logger, log_this
+from loggers.logger import app_logger, log_this
 
 from excel_statment.position_configs import PhysicalPropertyPosition, MechanicalPropertyPosition, c_fi_E_PropertyPosition, \
     DynamicsPropertyPosition, IdentificationColumns
-from excel_statment.functions import str_df, float_df
-
-class DataTypeValidation:
-    """Дескриптор для валидации данных"""
-
-    def __init__(self, *args):
-        self.data_types = args
-
-    def __set_name__(self, owner, name):
-        self.attr = name
-
-    def __set__(self, instance, value):
-        if value is None:
-            instance.__dict__[self.attr] = value
-        elif any(isinstance(value, i) for i in self.data_types):
-            instance.__dict__[self.attr] = value
-        else:
-            raise ValueError(f"{value} must be a {str(self.data_types)} but it is {str(type(value))}")
-
-    def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        return instance.__dict__.get(self.attr, None)
+from excel_statment.functions import str_df, float_df, date_df
+from descriptors import DataTypeValidation
 
 class PhysicalProperties:
     """Класс, хранящий свойсва грунтов, которые считываются без обработки"""
@@ -76,7 +54,7 @@ class PhysicalProperties:
     type_ground = DataTypeValidation(int)
     Rc = DataTypeValidation(float, int)
     date = DataTypeValidation(datetime)
-    sample_size = DataTypeValidation(tuple)
+    sample_size = DataTypeValidation(tuple, list)
 
     def __init__(self):
         self._setNone()
@@ -87,12 +65,14 @@ class PhysicalProperties:
             if isinstance(getattr(PhysicalProperties, key), DataTypeValidation):
                 object.__setattr__(self, key, None)
 
-    @log_this(excel_logger, "debug")
+    @log_this(app_logger, "debug")
     def defineProperties(self, data_frame, string, identification_column=None) -> None:
         """Считывание строки свойств"""
         for attr_name in PhysicalPropertyPosition:
             if attr_name in ["laboratory_number", "borehole", "soil_name", "ige", "stratigraphic_index"]:
                 setattr(self, attr_name, str_df(data_frame.iat[string, PhysicalPropertyPosition[attr_name][1]]))
+            elif attr_name in ["date"]:
+                setattr(self, attr_name, date_df(data_frame.iat[string, PhysicalPropertyPosition[attr_name][1]]))
             else:
                 setattr(self, attr_name, float_df(data_frame.iat[string, PhysicalPropertyPosition[attr_name][1]]))
 
@@ -195,6 +175,7 @@ class MechanicalProperties:
         "set_by_user": None,
         "calculated_by_pressure": None,
         "state_standard": None,
+        "current": None
     }
 
     def __init__(self):
@@ -224,7 +205,7 @@ class MechanicalProperties:
         for attr in data:
             setattr(self, attr, data[attr])
 
-    @log_this(excel_logger, "debug")
+    @log_this(app_logger, "debug")
     def defineProperties(self, physical_properties, data_frame: pd.DataFrame, string: int,
                          test_mode=None, K0_mode=None) -> None:
         """Считывание строки свойств"""
@@ -252,7 +233,8 @@ class MechanicalProperties:
             if self.sigma_3 < 100:
                 self.sigma_3 = 100
 
-            self.qf = MechanicalProperties.define_qf(self.sigma_3, self.c, self.fi)
+            self.qf = np.round(float(MechanicalProperties.define_qf(self.sigma_3, self.c, self.fi) * np.random.uniform(0.95, 1.05)), 1)
+
             self.sigma_1 = np.round(self.qf + self.sigma_3, 1)
 
             self.poisons_ratio = MechanicalProperties.define_poissons_ratio(
@@ -264,9 +246,12 @@ class MechanicalProperties:
                 physical_properties.granulometric_5,
                 physical_properties.granulometric_2)
 
+            #self.dilatancy_angle = MechanicalProperties.define_dilatancy(
+                #self.sigma_1, self.sigma_3, self.fi, self.qf, self.E50, physical_properties.type_ground,
+                #physical_properties.rs, physical_properties.e, physical_properties.Il)
+
             self.dilatancy_angle = MechanicalProperties.define_dilatancy(
-                self.sigma_1, self.sigma_3, self.fi, self.qf, self.E50, physical_properties.type_ground,
-                physical_properties.rs, physical_properties.e, physical_properties.Il)
+                physical_properties.type_ground, physical_properties.e, physical_properties.Il, physical_properties.Ip) * np.random.uniform(0.9, 1.1)
 
             self.build_press = float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]])
             if self.build_press:
@@ -290,6 +275,12 @@ class MechanicalProperties:
                 "state_standard": MechanicalProperties.define_reference_pressure_array_state_standard(
                     physical_properties.e, physical_properties.Il, physical_properties.type_ground)
             }
+            if self.pressure_array["set_by_user"] is not None:
+                self.pressure_array["current"] = self.pressure_array["set_by_user"]
+            elif self.pressure_array["calculated_by_pressure"] is not None:
+                self.pressure_array["current"] = self.pressure_array["calculated_by_pressure"]
+            elif self.pressure_array["state_standard"] is not None:
+                self.pressure_array["current"] = self.pressure_array["state_standard"]
 
     @staticmethod
     def round_sigma_3(sigma_3, param=5):
@@ -508,7 +499,7 @@ class MechanicalProperties:
                 return np.round(np.random.uniform(0.25, 0.35), round_ratio)
 
     @staticmethod
-    def define_dilatancy(sigma_1: float, sigma_3: float, fi: float, qf: float, E50: float, type_ground: int, rs: float,
+    def define_dilatancy_old(sigma_1: float, sigma_3: float, fi: float, qf: float, E50: float, type_ground: int, rs: float,
                          e: float, Il: float) -> float:
 
         def define_dilatancy(sigma_1, sigma_3, fi, OCR, type_ground, rs, e):
@@ -694,6 +685,81 @@ class MechanicalProperties:
                         2)
 
     @staticmethod
+    def define_dilatancy(type_ground: int, e: float, Il: float, Ip: float) -> float:
+        """ Определение угла дилатснии в зависимости от типа грунта
+            :param type_ground: тип грунта
+            :param e: коэффициент пористости
+            :param Il: показатель текучести
+            :param Il: число пластичности
+            :return: угол дилатансии [градусы]"""
+
+        def define_dilatancy_for_clay(Il, Ip):
+            """Функция расчета параметра угла дилатансии для супесей, суглинков, глин и тофов"""
+
+            default_Ip = [1, 7, 12, 17, 24, 40]  # столбец
+            default_Il = [-0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1.5]  # строка
+
+            default_angle_of_dilatancy = [7, 4, 3, 2, 2, 0,
+                                          6, 4, 3, 2, 2, -1,
+                                          3, 2, 1, 0, 1, -2,
+                                          2, 2, 1, 0, 0, -3,
+                                          1, 1, 0, -2, -3, -4,
+                                          -1, -2, -2, -3, -4, -5,
+                                          -0.3, -4, -6, -7, -8, -10,
+                                          -3, -4, -6, -7, -8, -10]
+            if Il is None:
+                Il = np.random.uniform(0, 0.75)
+            if Ip is None:
+                Ip = np.random.uniform(12, 17)
+
+            if Il < default_Il[0]:
+                Il = default_Il[0]
+            if Il > default_Il[-1]:
+                Il = default_Il[-1]
+            if Ip < default_Ip[0]:
+                Ip = default_Ip[0]
+            if Ip > default_Ip[-1]:
+                Ip = default_Ip[-1]
+
+            default_Ip_Il = []
+            for _Il in default_Il:
+                default_Ip_Il.extend(list(map(lambda Ip: [_Il, Ip], default_Ip)))
+
+            angle_of_dilatancy = griddata(default_Ip_Il, default_angle_of_dilatancy, (Il, Ip), method='cubic').item()
+            return np.round(angle_of_dilatancy, 2)
+
+        def define_dilatacy_for_sand(angle_of_dilatancy_array, e):
+            """Функция расчета угла дилатнсии для песков"""
+
+            e_array = np.array([0.3, 0.5, 0.7, 0.9])
+            if e is None:
+                e = np.random.uniform(0.5, 0.7)
+            if e < e_array[0]:
+                e = e_array[0]
+            if e > e_array[-1]:
+                e = e_array[-1]
+
+            return np.interp(e, e_array, angle_of_dilatancy_array)
+
+        e = e if e else np.random.uniform(0.6, 0.7)
+        Ip = Ip if Ip else np.random.uniform(10, 20)
+        Il = Il if Il else np.random.uniform(0, 0.3)
+
+        dependence_angle_of_dilatancy_on_type_ground = {
+            1: define_dilatacy_for_sand(np.array([23, 18, 13, 11]), e),  # Песок гравелистый
+            2: define_dilatacy_for_sand(np.array([14, 10, 6, 5]), e),  # Песок крупный
+            3: define_dilatacy_for_sand(np.array([12, 9, 7, 4]), e),  # Песок средней крупности
+            4: define_dilatacy_for_sand(np.array([8, 6, 4, 3]), e),  # Песок мелкий
+            5: define_dilatacy_for_sand(np.array([5, 4, 3, 2]), e),  # Песок пылеватый
+            6: define_dilatancy_for_clay(Il, Ip),  # Супесь
+            7: define_dilatancy_for_clay(Il, Ip),  # Суглинок
+            8: define_dilatancy_for_clay(Il, Ip),  # Глина
+            9: define_dilatancy_for_clay(Il, 40),  # Торф
+        }
+
+        return dependence_angle_of_dilatancy_on_type_ground[type_ground]
+
+    @staticmethod
     def define_dilatancy_1(type_ground: int, e: float, Il: float, Ip: float) -> float:
 
         def type_1():
@@ -764,7 +830,9 @@ class MechanicalProperties:
     def define_reference_pressure_array_calculated_by_pressure(build_press: float, pit_depth: float, depth: float,
                                                                K0: float) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
-        if build_press and pit_depth:
+        if build_press:
+            if not pit_depth:
+                pit_depth = 0
             sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10 * depth
 
             sigma_max_1 = MechanicalProperties.round_sigma_3(sigma_max * K0)
@@ -782,6 +850,68 @@ class MechanicalProperties:
         else:
             val = list(map(lambda val: int(float(val.replace(",", ".").strip(" ")) * 1000), val.split("/")))
             return val
+
+class ConsolidationProperties:
+    Eoed = DataTypeValidation(float, int)
+    Cv = DataTypeValidation(float, int)
+    Ca = DataTypeValidation(float, int)
+    p_max = DataTypeValidation(float, int)
+    m = DataTypeValidation(float, int)
+
+    def __init__(self):
+        for key in ConsolidationProperties.__dict__:
+            if isinstance(getattr(ConsolidationProperties, key), DataTypeValidation):
+                object.__setattr__(self, key, None)
+
+    @log_this(app_logger, "debug")
+    def defineProperties(self, physical_properties, data_frame: pd.DataFrame, string: int,
+                         test_mode=None, K0_mode=None) -> None:
+        """Считывание строки свойств"""
+
+        self.Eoed = float_df(data_frame.iat[string, MechanicalPropertyPosition["Eoed"][1]])
+
+        if self.Eoed:
+            Cv = float_df(data_frame.iat[string, MechanicalPropertyPosition["Cv"][1]])
+            Ca = float_df(data_frame.iat[string, MechanicalPropertyPosition["Ca"][1]])
+
+            self.m = MechanicalProperties.define_m(physical_properties.e, physical_properties.Il)
+            self.Cv = Cv if Cv else np.round(MechanicalProperties.define_Cv(
+                MechanicalProperties.define_kf(physical_properties.type_ground, physical_properties.e)), 3)
+            self.Ca = Ca if Ca else np.round(np.random.uniform(0.001, 0.003), 5)
+
+            if self.Cv > 0.1:
+                self.Cv = 0.1
+
+            self.p_max = ConsolidationProperties.round_pmax(ConsolidationProperties.define_loading_pressure(
+                float_df(data_frame.iat[string, MechanicalPropertyPosition["p_max"][1]]),
+                build_press=float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]]),
+                pit_depth=float_df(data_frame.iat[string, MechanicalPropertyPosition["pit_depth"][1]]),
+                depth=physical_properties.depth))
+
+    @staticmethod
+    def define_loading_pressure(pmax, build_press: float, pit_depth: float, depth: float):
+        """Функция рассчета максимального давления"""
+        if pmax:
+            return pmax
+        if build_press:
+            if not pit_depth:
+                pit_depth = 0
+            sigma_max = (2 * (depth - pit_depth) * 10) / 1000 + build_press if (depth - pit_depth) > 0 else (2 * 10 * depth) / 1000
+            return sigma_max
+        else:
+            return np.round((2 * 10 * depth) / 1000, 1)
+
+    @staticmethod
+    def round_pmax(sigma, param=5):
+        sigma = round(sigma * 1000)
+        integer = sigma // 10
+        remains = sigma % 10
+        if remains == 0:
+            return (integer * 10) / 1000
+        elif remains <= param:
+            return (integer * 10 + param) / 1000
+        else:
+            return (integer * 10 + 10) / 1000
 
 class CyclicProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
@@ -881,11 +1011,48 @@ class CyclicProperties(MechanicalProperties):
                 else:
                     self.Ms = np.round(np.random.uniform(0.7, 0.9), 2)
             else:
-                self.Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
+                self.Ms = CyclicProperties.define_Ms(
                     self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.t, self.cycles_count,
                     physical_properties.e, physical_properties.Il)
 
             self.CSR = np.round(self.t / self.sigma_1, 2)
+
+    @staticmethod
+    def define_Ms(c, fi, Mcsr, sigma_3, sigma_1, t, cycles_count, e, Il) -> float:
+        """Функция находит зависимость параметра Msf от физических свойств и параметров нагрузки
+        Средняя линия отклонения деформации будет определена как 0.05 / Msf"""
+        if (sigma_1 - sigma_3) <= 1.5*t:
+            return np.round(np.random.uniform(100, 500), 2)
+
+        e = e if e else np.random.uniform(0.6, 0.7)
+        Il = Il if Il else np.random.uniform(-0.1, 0.3)
+
+        def define_qf(sigma_3, c, fi):
+            """Функция определяет qf через обжимающее давление и c fi"""
+            fi = fi * np.pi / 180
+            return np.round(
+                (2 * (c * 1000 + (np.tan(fi)) * sigma_3)) / (np.cos(fi) - np.tan(fi) + np.sin(fi) * np.tan(fi)), 1)
+
+        qf = define_qf(sigma_3*(1 - 1 / Mcsr), c, fi)
+
+        max_deviator = sigma_1 - sigma_3 + 2*t
+
+        #Ms = ModelTriaxialCyclicLoadingSoilTest.critical_line(
+            #c, fi, (1 - 1 / Mcsr) * max_deviator) / max_deviator if Mcsr else 1
+
+        Ms = 0.8 * qf / max_deviator if Mcsr else 1
+
+        CSR_dependence = sigmoida(mirrow_element(t/sigma_1, 0.5), 2, 0.9, 2.1, 1.5)
+        e_dependence = sigmoida(mirrow_element(e, 0.5), 0.7, 0.5, 0.9, 1.5)
+        Il_dependence = sigmoida(mirrow_element(Il, 0.5), 0.7, 0.5, 1, 1.5)
+        cycles_count_dependence = sigmoida(mirrow_element(cycles_count, 100), 0.3, 100, 1.1, 250)
+
+        Ms *= (CSR_dependence * e_dependence * Il_dependence * cycles_count_dependence)
+
+        if Ms <= 0.7:
+            Ms = np.random.uniform(0.6, 0.8)
+
+        return np.round(Ms, 2)
 
     @staticmethod
     def define_acceleration(intensity: float) -> float:
@@ -943,8 +1110,8 @@ class RCProperties(MechanicalProperties):
 
 class VibrationCreepProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
-    Kd = DataTypeValidation(float, int, np.int32)
-    frequency = DataTypeValidation(float, int, np.int32)
+    Kd = DataTypeValidation(list, float, int)
+    frequency = DataTypeValidation(list, float, int)
     n_fail = DataTypeValidation(float, int, np.int32)
     Mcsr = DataTypeValidation(float, int, np.int32)
     t = DataTypeValidation(float, int, np.int32)
@@ -960,7 +1127,6 @@ class VibrationCreepProperties(MechanicalProperties):
             if isinstance(getattr(VibrationCreepProperties, key), DataTypeValidation):
                 object.__setattr__(self, key, None)
 
-
     def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode) -> None:
         super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
         if self.c and self.fi and self.E50:
@@ -973,7 +1139,7 @@ class VibrationCreepProperties(MechanicalProperties):
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
             if str(Kd) == "nan":
                 self.Kd = [VibrationCreepProperties.define_Kd(
-                    self.qf, self.t, self.physical_properties.e, self.physical_properties.Il, frequency) for frequency
+                    self.qf, self.t, physical_properties.e, physical_properties.Il, frequency) for frequency
                     in self.frequency]
             else:
                 self.Kd = VibrationCreepProperties.val_to_list(Kd)
@@ -1012,6 +1178,14 @@ class VibrationCreepProperties(MechanicalProperties):
         Kd *= load_dependence * e_dependence * Il_dependence * frequency_dependence * np.random.uniform(0.98, 1.02)
 
         return np.round(Kd, 2)
+
+PropertiesDict = {
+    "PhysicalProperties": PhysicalProperties,
+    "MechanicalProperties": MechanicalProperties,
+    "CyclicProperties": CyclicProperties,
+    "RCProperties": RCProperties,
+    "VibrationCreepProperties": VibrationCreepProperties
+}
 
 
 

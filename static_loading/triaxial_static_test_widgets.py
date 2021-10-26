@@ -1,19 +1,31 @@
-__version__ = 1
 
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFrame, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, \
     QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout,\
-    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox
+    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog
 from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject
 from PyQt5.QtGui import QPalette, QBrush
 import matplotlib.pyplot as plt
+import shutil
+import threading
 
+from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
+from excel_statment.initial_statment_widgets import TriaxialStaticStatment
+from general.save_widget import Save_Dir
+from excel_statment.functions import set_cell_data
+from general.reports import report_consolidation, report_FCE, report_FC
 from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI, ModelTriaxialFileOpenUI, ModelTriaxialReconsolidationUI, \
     ModelTriaxialConsolidationUI, ModelTriaxialDeviatorLoadingUI
-from static_loading.triaxial_static_loading_test_model import ModelTriaxialStaticLoad, ModelTriaxialStaticLoadSoilTest
 from general.general_widgets import Float_Slider
 from configs.styles import style
+from singletons import E_models, FC_models, statment
+from loggers.logger import app_logger, log_this, handler
+from tests_log.widget import TestsLogWidget
+from tests_log.test_classes import TestsLogTriaxialStatic
+import os
+from version_control.configs import actual_version
+__version__ = actual_version
 
-class TriaxialStaticWidget(QWidget):
+class StaticProcessingWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
@@ -39,10 +51,10 @@ class TriaxialStaticWidget(QWidget):
         self._create_UI()
         self._wigets_connect()
 
-        if model:
-            self.set_model(model)
-        else:
-            self._model = ModelTriaxialStaticLoad()
+        #if model:
+            #self.set_model(model)
+        #else:
+            #self._model = ModelTriaxialStaticLoad()
 
     def _create_UI(self):
         self.layout_wiget = QVBoxLayout()
@@ -80,20 +92,6 @@ class TriaxialStaticWidget(QWidget):
         self.consolidation.log_canvas.mpl_connect("motion_notify_event", self._canvas_on_moove)
         self.consolidation.log_canvas.mpl_connect('button_release_event', self._canvas_on_release)
 
-    def set_model(self, model):
-        self._model = model
-
-        self.layout_wiget.removeWidget(self.open_log_file)
-        self.open_log_file.deleteLater()
-        self.open_log_file = None
-
-        self._plot_reconsolidation()
-        self._plot_consolidation_sqrt()
-        self._plot_consolidation_log()
-        self._plot_deviator_loading()
-
-        self._connect_model_Ui()
-
     def _open_file(self, path=None):
         if not path:
             self.log_file_path = QFileDialog.getOpenFileName(self, 'Open file')[0]
@@ -117,39 +115,50 @@ class TriaxialStaticWidget(QWidget):
 
     def _connect_model_Ui(self):
         """Связь слайдеров с моделью"""
-        self._cut_slider_deviator_set_len(len(self._model.deviator_loading._test_data.strain))
-        self._cut_slider_deviator_set_val(self._model.deviator_loading.get_borders())
-        self._cut_slider_consolidation_set_len(len(self._model.consolidation._test_data.time))
+        self._cut_slider_deviator_set_len(len(E_models[statment.current_test].deviator_loading._test_data.strain))
+        self._cut_slider_deviator_set_val(E_models[statment.current_test].deviator_loading.get_borders())
+        self._cut_slider_consolidation_set_len(len(E_models[statment.current_test].consolidation._test_data.time))
 
-        self._deviator_volumeter_current_vol(self._model.deviator_loading.get_current_volume_strain())
-        self._consolidation_volumeter_current_vol(self._model.consolidation.get_current_volume_strain())
+        self._deviator_volumeter_current_vol(E_models[statment.current_test].deviator_loading.get_current_volume_strain())
+        self._consolidation_volumeter_current_vol(E_models[statment.current_test].consolidation.get_current_volume_strain())
 
     def _plot_reconsolidation(self):
-        plot_data = self._model.reconsolidation.get_plot_data()
-        res = self._model.reconsolidation.get_test_results()
-        self.reconsolidation.plot(plot_data, res)
+        try:
+            plot_data = E_models[statment.current_test].reconsolidation.get_plot_data()
+            res = E_models[statment.current_test].reconsolidation.get_test_results()
+            self.reconsolidation.plot(plot_data, res)
+        except KeyError:
+            pass
 
     def _plot_consolidation_sqrt(self):
-        plot_data = self._model.consolidation.get_plot_data_sqrt()
-        res = self._model.consolidation.get_test_results()
-        self.consolidation.plot_sqrt(plot_data, res)
+        try:
+            plot_data = E_models[statment.current_test].consolidation.get_plot_data_sqrt()
+            res = E_models[statment.current_test].consolidation.get_test_results()
+            self.consolidation.plot_sqrt(plot_data, res)
+        except KeyError:
+            pass
 
     def _plot_consolidation_log(self):
-        plot_data = self._model.consolidation.get_plot_data_log()
-        res = self._model.consolidation.get_test_results()
-        self.consolidation.plot_log(plot_data, res)
+        try:
+            plot_data = E_models[statment.current_test].consolidation.get_plot_data_log()
+            res = E_models[statment.current_test].consolidation.get_test_results()
+            self.consolidation.plot_log(plot_data, res)
+        except KeyError:
+            pass
 
     def _plot_deviator_loading(self):
-        plot_data = self._model.deviator_loading.get_plot_data()
-        res = self._model.deviator_loading.get_test_results()
-        self.deviator_loading.plot(plot_data, res)
-
+        try:
+            plot_data = E_models[statment.current_test].deviator_loading.get_plot_data()
+            res = E_models[statment.current_test].deviator_loading.get_test_results()
+            self.deviator_loading.plot(plot_data, res)
+        except KeyError:
+            pass
 
     def _deviator_volumeter(self, button):
         """Передача значения выбранного волюмометра в модель"""
-        if self._model.deviator_loading.check_none():
-            self._model.deviator_loading.choise_volume_strain(button.text())
-            self._cut_slider_deviator_set_val(self._model.deviator_loading.get_borders())
+        if E_models[statment.current_test].deviator_loading.check_none():
+            E_models[statment.current_test].deviator_loading.choise_volume_strain(button.text())
+            self._cut_slider_deviator_set_val(E_models[statment.current_test].deviator_loading.get_borders())
             self._plot_deviator_loading()
 
     def _deviator_volumeter_current_vol(self, current_volume_strain):
@@ -181,9 +190,9 @@ class TriaxialStaticWidget(QWidget):
 
     def _cut_slider_deviator_moove(self):
         """Обработчик перемещения слайдера обрезки"""
-        if self._model.deviator_loading.check_none():
+        if E_models[statment.current_test].deviator_loading.check_none():
             if (int(self.deviator_loading.slider_cut.high()) - int(self.deviator_loading.slider_cut.low())) >= 50:
-                self._model.deviator_loading.change_borders(int(self.deviator_loading.slider_cut.low()),
+                E_models[statment.current_test].deviator_loading.change_borders(int(self.deviator_loading.slider_cut.low()),
                                                         int(self.deviator_loading.slider_cut.high()))
             self._plot_deviator_loading()
 
@@ -207,9 +216,9 @@ class TriaxialStaticWidget(QWidget):
 
     def _consolidation_volumeter(self, button):
         """Передача значения выбранного волюмометра в модель"""
-        if self._model.consolidation.check_none():
-            self._model.consolidation.choise_volume_strain(button.text())
-            self._cut_slider_consolidation_set_len(len(self._model.consolidation._test_data.time))
+        if E_models[statment.current_test].consolidation.check_none():
+            E_models[statment.current_test].consolidation.choise_volume_strain(button.text())
+            self._cut_slider_consolidation_set_len(len(E_models[statment.current_test].consolidation._test_data.time))
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
 
@@ -220,9 +229,9 @@ class TriaxialStaticWidget(QWidget):
         self.consolidation.slider_cut.setHigh(len)
 
     def _cut_slider_consolidation_moove(self):
-        if self._model.consolidation.check_none():
+        if E_models[statment.current_test].consolidation.check_none():
             if (int(self.consolidation.slider_cut.high()) - int(self.consolidation.slider_cut.low())) >= 50:
-                self._model.consolidation.change_borders(int(self.consolidation.slider_cut.low()),
+                E_models[statment.current_test].consolidation.change_borders(int(self.consolidation.slider_cut.low()),
                                                             int(self.consolidation.slider_cut.high()))
                 self._plot_consolidation_sqrt()
                 self._plot_consolidation_log()
@@ -241,22 +250,22 @@ class TriaxialStaticWidget(QWidget):
                 self.consolidation.function_replacement_slider.set_borders(0, 5)
                 self.consolidation.function_replacement_slider.set_value(2)
 
-            self._model.consolidation.set_interpolation_param(param)
-            self._model.consolidation.set_interpolation_type(interpolation_type)
+            E_models[statment.current_test].consolidation.set_interpolation_param(param)
+            E_models[statment.current_test].consolidation.set_interpolation_type(interpolation_type)
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
 
     def _interpolate_slider_consolidation_moove(self):
         """Перемещение слайдера интерполяции. Не производит обработки, только отрисовка интерполированной кривой"""
-        if self._model.consolidation.check_none():
+        if E_models[statment.current_test].consolidation.check_none():
             param = self.consolidation.function_replacement_slider.current_value()
-            plot = self._model.consolidation.set_interpolation_param(param)
+            plot = E_models[statment.current_test].consolidation.set_interpolation_param(param)
             self.consolidation.plot_interpolate(plot)
 
     def _interpolate_slider_consolidation_release(self):
         """Обработка консолидации при окончании движения слайдера"""
-        if self._model.consolidation.check_none():
-            self._model.consolidation.change_borders(int(self.consolidation.slider_cut.low()),
+        if E_models[statment.current_test].consolidation.check_none():
+            E_models[statment.current_test].consolidation.change_borders(int(self.consolidation.slider_cut.low()),
                                                      int(self.consolidation.slider_cut.high()))
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
@@ -269,7 +278,7 @@ class TriaxialStaticWidget(QWidget):
         if event.canvas is self.consolidation.log_canvas:
             canvas = "log"
         if event.button == 1 and event.xdata and event.ydata:
-            self.point_identificator = self._model.consolidation.define_click_point(float(event.xdata),
+            self.point_identificator = E_models[statment.current_test].consolidation.define_click_point(float(event.xdata),
                                                                                     float(event.ydata), canvas)
 
     def _canvas_on_moove(self, event):
@@ -280,7 +289,7 @@ class TriaxialStaticWidget(QWidget):
             canvas = "log"
 
         if self.point_identificator and event.xdata and event.ydata and event.button == 1:
-            self._model.consolidation.moove_catch_point(float(event.xdata), float(event.ydata), self.point_identificator,
+            E_models[statment.current_test].consolidation.moove_catch_point(float(event.xdata), float(event.ydata), self.point_identificator,
                                                         canvas)
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
@@ -290,7 +299,7 @@ class TriaxialStaticWidget(QWidget):
         self.point_identificator = None
 
     def get_test_results(self):
-        return self._model.get_test_results()
+        return E_models[statment.current_test].get_test_results()
 
 class TriaxialStaticLoading_Sliders(QWidget):
     """Виджет с ползунками для регулирования значений переменных.
@@ -396,11 +405,12 @@ class TriaxialStaticLoading_Sliders(QWidget):
 
         self._sliders_moove()
 
-class TriaxialStaticWidgetSoilTest(TriaxialStaticWidget):
+class StaticSoilTestWidget(StaticProcessingWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
-    def __init__(self, model=None):
+    signal = pyqtSignal(bool)
+    def __init__(self):
         super().__init__()
 
         self.open_log_file.setParent(None)
@@ -413,8 +423,9 @@ class TriaxialStaticWidgetSoilTest(TriaxialStaticWidget):
                   "residual_strength_param": "Изгиб остаточной прочности",
                   "qocr": "Значение дивиатора OCR",
                   "poisson": "Коэффициент Пуассона",
-                  "dilatancy": "Угол дилатансии"})
-        self.deviator_loading_sliders.setFixedHeight(180)
+                  "dilatancy": "Угол дилатансии",
+                  "volumetric_strain_xc": "Объемн. деформ. в пике"})
+        self.deviator_loading_sliders.setFixedHeight(210)
 
         self.consolidation_sliders = TriaxialStaticLoading_Sliders({"max_time": "Время испытания",
                                                                          "volume_strain_90": "Объемная деформация в Cv"})
@@ -424,12 +435,7 @@ class TriaxialStaticWidgetSoilTest(TriaxialStaticWidget):
         self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)
 
         self.consolidation.setFixedHeight(500+90)
-        self.deviator_loading.setFixedHeight(500+180)
-
-        if model:
-            self.set_model(model)
-        else:
-            self._model = ModelTriaxialStaticLoadSoilTest()
+        self.deviator_loading.setFixedHeight(530+180)
 
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.consolidation_sliders.signal[object].connect(self._consolidation_sliders_moove)
@@ -439,109 +445,401 @@ class TriaxialStaticWidgetSoilTest(TriaxialStaticWidget):
         self.refresh_test_button.clicked.connect(self.refresh)
         self.layout_wiget.insertWidget(0, self.refresh_test_button)
 
-       # self.set_test_params()
-    def set_model(self, model):
-        self._model = model
-        self.deviator_loading_sliders.set_sliders_params(self._model.get_deviator_loading_draw_params())
-        self.consolidation_sliders.set_sliders_params(self._model.get_consolidation_draw_params())
-
-        self._plot_reconsolidation()
-        self._plot_consolidation_sqrt()
-        self._plot_consolidation_log()
-        self._plot_deviator_loading()
-        self._connect_model_Ui()
-
     def refresh(self):
-        param = self._model.get_test_params()
-        self._model.set_test_params(param)
-        self.deviator_loading_sliders.set_sliders_params(self._model.get_deviator_loading_draw_params())
-        self.consolidation_sliders.set_sliders_params(self._model.get_consolidation_draw_params())
+        try:
+            E_models[statment.current_test].set_test_params()
+            self.deviator_loading_sliders.set_sliders_params(E_models[statment.current_test].get_deviator_loading_draw_params())
+            self.consolidation_sliders.set_sliders_params(E_models[statment.current_test].get_consolidation_draw_params())
 
-        self._plot_reconsolidation()
-        self._plot_consolidation_sqrt()
-        self._plot_consolidation_log()
-        self._plot_deviator_loading()
-        self._connect_model_Ui()
+            self._plot_reconsolidation()
+            self._plot_consolidation_sqrt()
+            self._plot_consolidation_log()
+            self._plot_deviator_loading()
+            self._connect_model_Ui()
+            self.signal.emit(True)
+        except KeyError:
+            pass
 
-    def set_params(self, param):
-        """param = {'E': 30500.0, 'sigma_3': 186.4, 'sigma_1': 981.1, 'c': 0.001, 'fi': 42.8, 'qf': 794.7, 'K0': 0.5,
-                 'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
-                 'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1',
-                 'data_physical': {'borehole': '7а', 'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-',
-                                   'rs': 2.73, 'r': '-', 'rd': '-', 'n': '-', 'e': '-', 'W': 12.8, 'Sr': '-', 'Wl': '-',
-                                   'Wp': '-', 'Ip': '-', 'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-',
-                                   'build_press': 500.0, 'pit_depth': 7.0, '10': '-', '5': '-', '2': 6.8, '1': 39.2,
-                                   '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-', '0002': '-', '0000': '-',
-                                   'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие (E)'}"""
-        self._model.set_test_params(param)
-        self.deviator_loading_sliders.set_sliders_params(self._model.get_deviator_loading_draw_params())
-        self.consolidation_sliders.set_sliders_params(self._model.get_consolidation_draw_params())
+    @log_this(app_logger, "debug")
+    def set_params(self, param=None):
+        try:
+            self.deviator_loading_sliders.set_sliders_params(E_models[statment.current_test].get_deviator_loading_draw_params())
+            self.consolidation_sliders.set_sliders_params(E_models[statment.current_test].get_consolidation_draw_params())
 
-        self._plot_reconsolidation()
-        self._plot_consolidation_sqrt()
-        self._plot_consolidation_log()
-        self._plot_deviator_loading()
-        self._connect_model_Ui()
+            self._plot_reconsolidation()
+            self._plot_consolidation_sqrt()
+            self._plot_consolidation_log()
+            self._plot_deviator_loading()
+            self._connect_model_Ui()
+        except KeyError:
+            pass
 
+    @log_this(app_logger, "debug")
     def _consolidation_sliders_moove(self, params):
         """Обработчик движения слайдера"""
-        self._model.set_consolidation_draw_params(params)
-        self._plot_consolidation_sqrt()
-        self._plot_consolidation_log()
-        self._connect_model_Ui()
+        try:
+            E_models[statment.current_test].set_consolidation_draw_params(params)
+            self._plot_consolidation_sqrt()
+            self._plot_consolidation_log()
+            self._connect_model_Ui()
+            self.signal.emit(True)
+        except KeyError:
+            pass
 
+    @log_this(app_logger, "debug")
     def _deviator_loading_sliders_moove(self, params):
         """Обработчик движения слайдера"""
-        self._model.set_deviator_loading_draw_params(params)
-        self._plot_deviator_loading()
-        self._connect_model_Ui()
+        try:
+            E_models[statment.current_test].set_deviator_loading_draw_params(params)
+            self._plot_deviator_loading()
+            self._connect_model_Ui()
+            self.signal.emit(True)
+        except KeyError:
+            pass
 
 
+class StatickProcessingApp(QWidget):
 
-class TriaxialStaticDialog(QDialog):
-    def __init__(self,test, parent=None):
-        super(TriaxialStaticDialog, self).__init__(parent)
-        self.resize(1200, 800)
-        self.setWindowTitle("Обработка опыта")
+    def __init__(self):
+        super(QWidget, self).__init__()
+
+        # Создаем вкладки
         self.layout = QVBoxLayout(self)
-        self.widget = TriaxialStaticWidget(test)
-        self.layout.addWidget(self.widget)
 
-        self.buttonBox = QDialogButtonBox()
-        self.buttonBox.setOrientation(Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
-        self.buttonBox.setObjectName("buttonBox")
-        self.layout.addWidget(self.buttonBox)
+        self.tab_widget = QTabWidget()
+        self.tab_1 = TriaxialStaticStatment()
+        self.tab_2 = StaticProcessingWidget()
+        self.tab_3 = MohrWidget()
+        self.tab_4 = Save_Dir()
+        #self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-        #QMetaObject.connectSlotsByName(TriaxialStaticDialog)
+        self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
+        self.tab_widget.addTab(self.tab_2, "Опыт Е")
+        self.tab_widget.addTab(self.tab_3, "Опыт FC")
+        self.tab_widget.addTab(self.tab_4, "Сохранение отчета")
+        self.layout.addWidget(self.tab_widget)
 
-class TriaxialStaticDialogSoilTest(QDialog):
-    def __init__(self,test, parent=None):
-        super(TriaxialStaticDialogSoilTest, self).__init__(parent)
-        self.resize(1200, 800)
-        self.setWindowTitle("Обработка опыта")
-        self.layout = QVBoxLayout(self)
-        self.widget = TriaxialStaticWidgetSoilTest(test)
+        self.tab_1.signal[object].connect(self.tab_2.item_identification.set_data)
+        self.tab_1.signal[object].connect(self.tab_3.item_identification.set_data)
+        self.tab_1.statment_directory[str].connect(self.set_save_directory)
+        self.tab_4.save_button.clicked.connect(self.save_report)
+        #self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
+
+    def save_report(self):
+        try:
+            assert self.tab_1.get_lab_number(), "Не выбран образец в ведомости"
+            #assert self.tab_2.test_processing_widget.model._test_data.cycles, "Не выбран файл прибора"
+            read_parameters = self.tab_1.open_line.get_data()
+
+            test_parameter = {"equipment": read_parameters["equipment"],
+                              "mode": "КД, девиаторное нагружение в кинематическом режиме",
+                              "sigma_3": self.tab_2._model.deviator_loading._test_params.sigma_3,
+                              "K0": "1",
+                              "h": 76,
+                              "d": 38}
+
+            test_result = self.tab_2.get_test_results()
+
+            save = self.tab_4.arhive_directory + "/" + self.tab_1.get_lab_number().replace("/", "-")
+            save = save.replace("*", "")
+            if os.path.isdir(save):
+                pass
+            else:
+                os.mkdir(save)
+
+            data_customer = self.tab_1.get_customer_data()
+            if params.date:
+                data_customer.data = params.date
+
+            if read_parameters["test_type"] == "Трёхосное сжатие (E)":
+                assert self.tab_2._model.deviator_loading._test_params.sigma_3, "Не загружен файл опыта"
+                #Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
+                Name = self.tab_1.get_lab_number().replace("*", "") + " " +\
+                       data_customer["object_number"] + " ТС Р" + ".pdf"
+
+                report_consolidation(save + "/" + Name, data_customer,
+                                 self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
+                                 os.getcwd() + "/project_data/",
+                                 test_parameter, test_result,
+                                 (*self.tab_2.consolidation.save_canvas(),
+                                  *self.tab_2.deviator_loading.save_canvas()), "{:.2f}".format(__version__))
+
+            elif read_parameters["test_type"] == "Трёхосное сжатие (F, C, E)":
+                assert self.tab_3._model._test_result.fi, "Не загружен файл опыта"
+                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = self.tab_3._model.get_sigma_3_1()
+                test_result["c"], test_result["fi"] = self.tab_3._model.get_test_results()["c"], self.tab_3._model.get_test_results()["fi"]
+                # Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
+                Name = self.tab_1.get_lab_number().replace("*", "") +\
+                       " " + data_customer["object_number"] + " ТД" + ".pdf"
+
+                report_FCE(save + "/" + Name, data_customer, self.tab_1.get_physical_data(),
+                           self.tab_1.get_lab_number(), os.getcwd() + "/project_data/",
+                           test_parameter, test_result,
+                           (*self.tab_2.deviator_loading.save_canvas(),
+                            *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+
+            shutil.copy(save + "/" + Name, self.tab_4.report_directory + "/" + Name)
+            QMessageBox.about(self, "Сообщение", "Успешно сохранено")
+
+        except AssertionError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
+        except TypeError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
+        except PermissionError:
+            QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
+
+    def set_save_directory(self, signal):
+        read_parameters = self.tab_1.open_line.get_data()
+        self.tab_4.set_directory(signal, read_parameters["test_type"])
+
+class StatickSoilTestApp(QWidget):
+
+    def __init__(self):
+        super(QWidget, self).__init__()
+
+        # Создаем вкладки
+        self.layout = QHBoxLayout(self)
+
+        self.tab_widget = QTabWidget()
+        self.tab_1 = TriaxialStaticStatment()
+        self.tab_2 = StaticSoilTestWidget()
+        self.tab_3 = MohrWidgetSoilTest()
+        self.tab_4 = Save_Dir()
+        # self.Tab_3.Save.save_button.clicked.connect(self.save_report)
+
+        self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
+        self.tab_widget.addTab(self.tab_2, "Опыт Е")
+        self.tab_widget.addTab(self.tab_3, "Опыт FC")
+        self.tab_widget.addTab(self.tab_4, "Сохранение отчета")
+        self.layout.addWidget(self.tab_widget)
+        self.log_widget = QTextEdit()
+        self.log_widget.setFixedWidth(300)
+        self.layout.addWidget(self.log_widget)
+
+        handler.emit = lambda record: self.log_widget.append(handler.format(record))
+
+        self.tab_1.signal[bool].connect(self.set_test_parameters)
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.set_directory(x, statment.general_parameters.test_mode))
+
+        self.tab_4.save_button.clicked.connect(self.save_report)
+        self.tab_4.save_all_button.clicked.connect(self.save_all_reports)
+        self.tab_4.jornal_button.clicked.connect(self.jornal)
+
+        self.save_massage = True
+        # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
+
+    def keyPressEvent(self, event):
+        if statment.current_test:
+            list = [x for x in statment]
+            index = list.index(statment.current_test)
+            if str(event.key()) == "90":
+                if index >= 1:
+                    statment.current_test = list[index-1]
+                    self.set_test_parameters(True)
+            elif str(event.key()) == "88":
+                if index < len(list) -1:
+                    statment.current_test = list[index + 1]
+                    self.set_test_parameters(True)
+
+    def set_test_parameters(self, params):
+        if statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C, E)':
+            self.tab_2.item_identification.set_data()
+            self.tab_3.item_identification.set_data()
+            self.tab_2.set_params()
+            self.tab_3.set_params()
+        elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)':
+            self.tab_3.item_identification.set_data()
+            self.tab_3.set_params()
+        elif statment.general_parameters.test_mode == 'Трёхосное сжатие (E)':
+            self.tab_2.item_identification.set_data()
+            self.tab_2.set_params()
+        elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
+            self.tab_2.item_identification.set_data()
+            self.tab_2.set_params()
+
+    def save_report(self):
+        try:
+            assert statment.current_test, "Не выбран образец в ведомости"
+            file_path_name = statment.current_test.replace("/", "-").replace("*", "")
+
+            if statment.general_parameters.equipment == "АСИС ГТ.2.0.5 (150х300)":
+                h, d = 300, 150
+            else:
+                d, h = statment[statment.current_test].physical_properties.sample_size
+
+            test_parameter = {"equipment": statment.general_parameters.equipment,
+                              "mode": "КД, девиаторное нагружение в кинематическом режиме",
+                              "sigma_3": statment[statment.current_test].mechanical_properties.sigma_3,
+                              "K0": [statment[statment.current_test].mechanical_properties.K0,
+                                     "-" if self.tab_3.reference_pressure_array_box.get_checked() == "set_by_user" or
+                                            self.tab_3.reference_pressure_array_box.get_checked() == "state_standard"
+                                     else statment[statment.current_test].mechanical_properties.K0],
+                              "h": h,
+                              "d": d}
+
+            data_customer = statment.general_data
+            date = statment[statment.current_test].physical_properties.date
+            if date:
+                data_customer.end_date = date
+
+            save = self.tab_4.arhive_directory + "/" + file_path_name
+            save = save.replace("*", "")
+            if os.path.isdir(save):
+                pass
+            else:
+                os.mkdir(save)
+
+            if statment.general_parameters.test_mode == "Трёхосное сжатие (E)":
+                name = file_path_name + " " + statment.general_data.object_number + " ТС" + ".pdf"
+                E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
+                E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
+                test_result = E_models[statment.current_test].get_test_results()
+                report_consolidation(save + "/" + name, data_customer,
+                                 statment[statment.current_test].physical_properties, statment.current_test,
+                                 os.getcwd() + "/project_data/",
+                                 test_parameter, test_result,
+                                 (*self.tab_2.consolidation.save_canvas(),
+                                  *self.tab_2.deviator_loading.save_canvas()), "{:.2f}".format(__version__))
+
+                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+
+                set_cell_data(self.tab_1.path,
+                              "BK" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              test_result["E50"], sheet="Лист1", color="FF6961")
+
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
+                name = file_path_name + " " + statment.general_data.object_number + " ТС Р" + ".pdf"
+                E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
+                E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
+                test_result = E_models[statment.current_test].get_test_results()
+                report_consolidation(save + "/" + name, data_customer,
+                                     statment[statment.current_test].physical_properties, statment.current_test,
+                                     os.getcwd() + "/project_data/",
+                                     test_parameter, test_result,
+                                     (*self.tab_2.consolidation.save_canvas(),
+                                      *self.tab_2.deviator_loading.save_canvas()), "{:.2f}".format(__version__))
+
+                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+
+                set_cell_data(self.tab_1.path,
+                              'GI' + str(statment[statment.current_test].physical_properties.sample_number.sample_number + 7),
+                              test_result["Eur"], sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.path,
+                              "BN" + str(statment[statment.current_test].physical_properties.sample_number.sample_number + 7),
+                              test_result["E50"], sheet="Лист1", color="FF6961")
+
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
+                name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
+
+                E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
+                FC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="FC_models.pickle")
+                FC_models[statment.current_test].save_log_files(save)
+                E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
+
+                test_result = E_models[statment.current_test].get_test_results()
+                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[statment.current_test].get_sigma_3_1()
+                test_result["c"], test_result["fi"] = FC_models[statment.current_test].get_test_results()["c"], \
+                                                      FC_models[statment.current_test].get_test_results()["fi"]
+
+                report_FCE(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
+                          statment.current_test, os.getcwd() + "/project_data/",
+                           test_parameter, test_result,
+                           (*self.tab_2.deviator_loading.save_canvas(),
+                            *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+
+                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+
+                set_cell_data(self.tab_1.path,
+                              "BE" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              test_result["E50"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              "BC" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              test_result["c"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              "BD" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              test_result["fi"], sheet="Лист1", color="FF6961")
+
+            elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)':
+                name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
+                FC_models[statment.current_test].save_log_files(save)
+                FC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="FC_models.pickle")
+                test_result = {}
+                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[
+                    statment.current_test].get_sigma_3_1()
+                test_result["c"], test_result["fi"] = FC_models[statment.current_test].get_test_results()["c"], \
+                                                      FC_models[statment.current_test].get_test_results()["fi"]
+
+                report_FC(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
+                           statment.current_test, os.getcwd() + "/project_data/",
+                           test_parameter, test_result,
+                          (*self.tab_3.save_canvas(),
+                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+
+                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+
+                set_cell_data(self.tab_1.path,
+                              "BG" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              test_result["fi"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              "BF" + str(statment[statment.current_test].physical_properties.sample_number+ 7),
+                              test_result["c"], sheet="Лист1", color="FF6961")
+
+            statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
+                          name=statment.general_parameters.test_mode + ".pickle")
+
+            if self.save_massage:
+                QMessageBox.about(self, "Сообщение", "Успешно сохранено")
+                app_logger.info(
+                    f"Проба {statment.current_test} успешно сохранена в папке {save}")
+
+            self.tab_1.table_physical_properties.set_row_color(
+                self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
+
+        except AssertionError as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+            app_logger.exception(f"Не выгнан {statment.current_test}")
+
+        except PermissionError:
+            QMessageBox.critical(self, "Ошибка", f"Закройте файл отчета {name}", QMessageBox.Ok)
+            app_logger.exception(f"Не выгнан {statment.current_test}")
+
+        except:
+            app_logger.exception(f"Не выгнан {statment.current_test}")
+
+    def save_all_reports(self):
+        progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
+        progress.setCancelButton(None)
+        progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setValue(0)
+
+        def save():
+            for i, test in enumerate(statment):
+                self.save_massage = False
+                statment.setCurrentTest(test)
+                self.set_test_parameters(True)
+                self.save_report()
+                progress.setValue(i)
+            progress.setValue(len(statment))
+            progress.close()
+            QMessageBox.about(self, "Сообщение", "Объект выгнан")
+            app_logger.info("Объект успешно выгнан")
+            self.save_massage = True
+
+        t = threading.Thread(target=save)
+        progress.show()
+        t.start()
+
+    def jornal(self):
+        self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic, self.tab_1.path)
+        self.dialog.show()
 
 
-        self.widget.item_identification.setParent(None)
-        self.widget.layout_wiget.removeWidget(self.widget.item_identification)
-        self.widget.layout_wiget.deleteLater()
-        self.widget.layout_wiget = None
-
-        self.layout.addWidget(self.widget)
-
-        self.buttonBox = QDialogButtonBox()
-        self.buttonBox.setOrientation(Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
-        self.buttonBox.setObjectName("buttonBox")
-        self.layout.addWidget(self.buttonBox)
-
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-        #QMetaObject.connectSlotsByName(TriaxialStaticDialog)
 
 
 if __name__ == '__main__':
@@ -551,7 +849,7 @@ if __name__ == '__main__':
     # Now use a palette to switch to dark colors:
     app.setStyle('Fusion')
     # app.setStyleSheet("QLabel{font-size: 14pt;}")
-    ex = TriaxialStaticWidgetSoilTest()
+    ex = StatickSoilTestApp()
     ex.show()
     sys.exit(app.exec_())
 

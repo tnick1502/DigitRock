@@ -31,6 +31,7 @@ from general.general_functions import sigmoida, make_increas, line_approximate, 
     define_dilatancy, define_type_ground, AttrDict, find_line_area, interpolated_intercept, Point, point_to_xy, \
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, define_qf, define_E50
 from configs.plot_params import plotter_params
+from singletons import statment
 
 
 class ModelTriaxialReconsolidation:
@@ -339,11 +340,11 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         self.params = AttrDict({"sigma_ref": None,
                                 "param_for_b_test": None})
 
-    def set_test_params(self, sigma_ref):
+    def set_test_params(self):
         """Записываются параметры для моделирования реконсолидации, запускается процессов моделирования эксперимента и
         нахождения коэффициента кемптона"""
 
-        self.params.sigma_ref = sigma_ref
+        self.params.sigma_ref = statment[statment.current_test].mechanical_properties.sigma_3
         if self.params.sigma_ref < 100:
             self.params.sigma_ref = 100
         # Получаешь self.params входные данные для моделирования входных данных эксперимента
@@ -371,6 +372,9 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
 
     def get_effective_stress_after_reconsolidation(self):
         return self._test_data_all['CellPress_kPa'][-1] - self._test_data_all['PorePress_kPa'][-1]
+
+    def get_duration(self):
+        return self._test_data.time[-1]
 
 
     @staticmethod

@@ -14,6 +14,7 @@ from tests_log.test_classes import TestsLogCyclic, timedelta_to_dhms, TestsLogTr
 
 from general.general_functions import unique_number
 from general.report_general_statment import save_report
+from singletons import statment
 
 class ValueDial(QWidget):
     _dialProperties = ('minimum', 'maximum', 'value', 'singleStep', 'pageStep',
@@ -156,21 +157,23 @@ class TestsLogWidget(QWidget):
 
         self._model = model()
 
-        self._statment_path: str = None
-        self._data_customer: dict = None
+        self._statment_path = excel
 
         self._createIU()
         self._retranslateUI()
 
-        if excel:
-            self._openStatment(excel)
+        self.box_statment_widget.set_data()
+        self.box_test_date_start_date.setDate(statment.general_data.start_date)
+        self.box_test_date_end_date.setDate(statment.general_data.start_date)
+        self.box_statment_path_line.setText(self._statment_path)
+        self._model.processing_models()
 
     def _createIU(self):
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(5)
 
         self.box_statment = QGroupBox("Ведомость")
-        self.box_statment.setFixedHeight(200)
+        self.box_statment.setFixedHeight(225)
         self.box_statment_layout = QGridLayout()
         self.box_statment.setLayout(self.box_statment_layout)
         self.box_statment_open_button = QPushButton("Выбрать ведомость")
@@ -259,7 +262,7 @@ class TestsLogWidget(QWidget):
         self.box_test_equipment_spin.setMinimum(1)
         self.box_test_equipment_spin.setMaximum(len(self._equipment))
 
-        self.box_statment_open_button.clicked.connect(self._openStatment)
+        #self.box_statment_open_button.clicked.connect(self._openStatment)
         self.box_test_path_open_button.clicked.connect(self._openDirectory)
         self.box_test_date_processing.clicked.connect(self._processing)
         self.box_save_excel_button.clicked.connect(self._writeExcel)
@@ -300,30 +303,6 @@ class TestsLogWidget(QWidget):
             self.table.setItem(i, 2, QTableWidgetItem(self._model[key].end_datetime.strftime("%H:%M %d.%m.%Y")))
             self.table.setItem(i, 3, QTableWidgetItem(timedelta_to_dhms(self._model[key].duration, ["д", "ч", "мин"])))
             self.table.setItem(i, 4, QTableWidgetItem(self._model[key].equipment))
-
-    def _openStatment(self, path=None):
-        if not path:
-            file = QFileDialog.getOpenFileName(self, 'Open file')[0]
-            if file != "":
-                self._statment_path = resave_xls_to_xlsx(file)
-        else:
-            self._statment_path = resave_xls_to_xlsx(path)
-
-        if self._statment_path:
-            wb = load_workbook(self._statment_path, data_only=True)
-
-            marker, customer = read_customer(wb)
-
-            try:
-                assert not marker, "Проверьте " + customer
-            except AssertionError as error:
-                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
-            else:
-                self._data_customer = customer
-                self.box_statment_widget.setData(self._data_customer)
-                self.box_test_date_start_date.setDate(self._data_customer["start_date"])
-                self.box_test_date_end_date.setDate(self._data_customer["start_date"])
-                self.box_statment_path_line.setText(self._statment_path)
 
     def _openDirectory(self):
         dir = QFileDialog.getExistingDirectory(self, 'Выберите папку с архивом')
@@ -379,10 +358,10 @@ class TestsLogWidget(QWidget):
 
             scales = ["*", "*", "*", "*", "*"]
 
-            data_report = self._data_customer["data"]
+            data_report = statment.general_data.end_date
             customer_data_info = ['Заказчик:', 'Объект:']
             # Сами данные (подробнее см. Report.py)
-            customer_data = [self._data_customer[i] for i in ["customer", "object_name"]]
+            customer_data = [statment.general_data.customer, statment.general_data.object_name]
 
             try:
                 if save_file_pass:

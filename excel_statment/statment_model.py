@@ -3,13 +3,16 @@ from openpyxl import load_workbook
 import pandas as pd
 import os
 import pyexcel as p
+import pickle
 
-from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, CyclicProperties, \
-    DataTypeValidation, RCProperties
-from loggers.logger import excel_logger, log_this
+from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, PropertiesDict, ConsolidationProperties
+from descriptors import DataTypeValidation
 from excel_statment.position_configs import PhysicalPropertyPosition, MechanicalPropertyPosition, c_fi_E_PropertyPosition, \
     DynamicsPropertyPosition, IdentificationColumns
 from excel_statment.functions import str_df, float_df
+from general.general_functions import read_json_file, create_json_file
+import shelve
+
 
 class StatmentData:
     """Класс, хранящий данные ведомости"""
@@ -20,7 +23,6 @@ class StatmentData:
     accreditation = DataTypeValidation(str)
     object_number = DataTypeValidation(str)
 
-    @log_this(excel_logger, "debug")
     def __init__(self, statment_path):
         wb = load_workbook(statment_path, data_only=True)
         object_name = str(wb["Лист1"]["A2"].value)
@@ -48,6 +50,9 @@ class StatmentData:
     def __repr__(self):
         return str(self.__dict__)
 
+    def get_json(self):
+        return self.__dict__
+
 class GeneralParameters:
     """Класс, хранящий общие свойства по испытаниям"""
     def __init__(self, data: dict):
@@ -59,17 +64,45 @@ class GeneralParameters:
     def __repr__(self):
         return str(self.__dict__)
 
+    def get_json(self):
+        return self.__dict__
+
 class Test:
     physical_properties = DataTypeValidation(PhysicalProperties)
-    mechanical_properties = DataTypeValidation(MechanicalProperties)
+    mechanical_properties = DataTypeValidation(MechanicalProperties, ConsolidationProperties)
 
-    def __init__(self, test_class, data_frame, i, test_mode, K0_mode, identification_column):
-        self.physical_properties = PhysicalProperties()
-        self.physical_properties.defineProperties(data_frame=data_frame, string=i,
-                                                      identification_column=identification_column)
-        self.mechanical_properties = test_class()
-        self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame, string=i,
-                                                    test_mode=test_mode, K0_mode=K0_mode)
+    def __init__(self, test_class=None, data_frame=None, i=None, test_mode=None, K0_mode=None,
+                 identification_column=None, physical_properties_dict=None, mechanical_properties_dict=None):
+        if physical_properties_dict and mechanical_properties_dict:
+            self.physical_properties = PhysicalProperties()
+            for attr in physical_properties_dict:
+                if attr == "date":
+                    if physical_properties_dict[attr] is None:
+                        setattr(self.physical_properties, attr, physical_properties_dict[attr])
+                    else:
+                        setattr(self.physical_properties, attr,
+                                datetime.strptime(physical_properties_dict[attr].split(".")[0], "%Y-%m-%d %H:%M:%S"))
+                else:
+                    setattr(self.physical_properties, attr, physical_properties_dict[attr])
+
+            self.mechanical_properties = test_class()
+            for attr in mechanical_properties_dict:
+                setattr(self.mechanical_properties, attr, mechanical_properties_dict[attr])
+
+        else:
+            self.physical_properties = PhysicalProperties()
+            self.physical_properties.defineProperties(data_frame=data_frame, string=i,
+                                                          identification_column=identification_column)
+            self.mechanical_properties = test_class()
+            self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame, string=i,
+                                                        test_mode=test_mode, K0_mode=K0_mode)
+
+
+    def get_json(self):
+        return {
+            "physical_properties": self.physical_properties.__dict__,
+            "mechanical_properties": self.mechanical_properties.__dict__
+        }
 
     def __repr__(self):
         return f"Физические свойства: {self.physical_properties}, Механические свойства {self.mechanical_properties}"
@@ -79,22 +112,28 @@ class Statment:
     general_data = DataTypeValidation(StatmentData)
     general_parameters = DataTypeValidation(GeneralParameters)
     test_class = None
-    model_class = None
     current_test: str
+    original_keys: list = None
 
-    def __init__(self, test_class):
-        self.test_class = test_class
-        self.general_parameters = GeneralParameters(
-            {
-                "test_mode": "Сейсморазжижение",
-                "K0_mode": "K0: K0 = 1"
-            }
-        )
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(Statment, cls).__new__(cls)
+        return cls.instance
+
+    def __init__(self):
+        self.test_class = None
+        self.general_parameters = None
         self.tests = {}
         self.current_test = None
 
-    @log_this(excel_logger, "debug")
+    def setTestClass(self, cls):
+        self.test_class = cls
+
+    def setCurrentTest(self, lab):
+        self.current_test = lab
+
     def readExcelFile(self, excel_path, identification_column):
+        self.tests = {}
 
         assert self.general_parameters, "Определите начальные параметры"
 
@@ -102,14 +141,72 @@ class Statment:
 
         data_frame = Statment.createDataFrame(excel_path)
 
+        if not hasattr(self.general_parameters, "K0_mode"):
+            self.general_parameters.K0_mode = None
+
         if data_frame is not None:
             for i in range(len(data_frame["Лаб. № пробы"])):
                 self.tests[str_df(data_frame.iat[i, PhysicalPropertyPosition["laboratory_number"][1]])] = \
                     Test(self.test_class, data_frame, i, self.general_parameters.test_mode,
                          self.general_parameters.K0_mode, identification_column)
+        self.original_keys = list(self.tests.keys())
 
     def setGeneralParameters(self, data):
         self.general_parameters = GeneralParameters(data)
+
+    def sort(self, key):
+        if key == "origin":
+            self.tests = {key: self.tests[key] for key in self.original_keys}
+        elif hasattr(self.tests[self.original_keys[0]].physical_properties, key):
+            self.tests = dict(sorted(self.tests.items(), key=lambda x: getattr(self.tests[x[0]].physical_properties, key)))
+        elif hasattr(self.tests[self.original_keys[0]].mechanical_properties, key):
+            self.tests = dict(sorted(self.tests.items(), key=lambda x: getattr(self.tests[x[0]].mechanical_properties, key)))
+
+    #def save(self, directory):
+        #directory += "/statment.json"
+        #general_data = {
+            #"tests": {key: self.tests[key].get_json() for key in self.tests},
+            #"general_data": self.general_data.get_json(),
+            #"general_parameters": self.general_parameters.get_json(),
+            #"test_class": str(self.test_class).split('.')[2][:-2],
+            #"original_keys": self.original_keys
+        #}
+        #create_json_file(directory, general_data)
+
+    #def load(self, file):
+        #self.tests = {}
+        #data = read_json_file(file)
+        #self.test_class = PropertiesDict[data["test_class"]]
+
+        #for test in data["tests"]:
+            #self.tests[test] = Test(
+                #test_class=self.test_class,
+               #physical_properties_dict=data["tests"][test]["physical_properties"],
+                #mechanical_properties_dict=data["tests"][test]["mechanical_properties"]
+            #)
+        #self.original_keys = data["original_keys"]
+        #self.general_parameters = GeneralParameters(data["general_parameters"])
+
+    def dump(self, directory, name="statment.pickle"):
+        general_data = {
+            "tests": self.tests,
+            "general_data": self.general_data,
+            "general_parameters": self.general_parameters,
+            "test_class": self.test_class,
+            "original_keys": self.original_keys
+        }
+        with open(directory + "/" + name, "wb") as file:
+            pickle.dump(general_data, file)
+
+    def load(self, file):
+        with open(file, 'rb') as f:
+            data = pickle.load(f)
+            self.tests = data["tests"]
+            self.general_data = data["general_data"]
+            self.general_parameters = data["general_parameters"]
+            self.test_class = data["test_class"]
+            self.original_keys = data["original_keys"]
+
 
     @staticmethod
     def createDataFrame(excel_path, read_xls=False) -> pd.DataFrame:
@@ -174,9 +271,4 @@ class Statment:
 
 
 if __name__ == '__main__':
-    f = Statment(CyclicProperties)
-    f.readExcelFile("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", 219)
-    print(f)
-
-    # print(getCyclicExcelData("C:/Users/Пользователь/Desktop/Тест/818-20 Атомфлот - мех.xlsx", "Сейсморазжижение", "K0: K0 = 1"))
-
+    pass

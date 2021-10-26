@@ -19,8 +19,6 @@
         Метод_test_modeling моделируют соотвествующие массивы опытных данных. Вызыванется при передачи пользовательских
          параметров отрисовки.."""
 
-__version__ = 1
-
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import pchip_interpolate
@@ -29,7 +27,7 @@ import scipy.ndimage as ndimage
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, mirrow_element, \
     define_dilatancy, define_type_ground, AttrDict, find_line_area, interpolated_intercept, Point, point_to_xy, \
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, define_qf, define_E50
-from static_loading.consolidation_functions import function_consalidation, function_consalidation_without_Cv
+from consolidation.function_consalidation_for_compr import function_consalidation, define_final_deformation
 from configs.plot_params import plotter_params
 from singletons import statment
 
@@ -58,8 +56,6 @@ class ModelTriaxialConsolidation:
         self._interpolation_type = "ermit"
         self._interpolation_param = 2
         self.points_count = 50
-        self.current_volume_strain = {"current": "pore_volume", "pore_volume": True, "cell_volume": True}
-
         self.catch_point_identificator = None
 
     def _reset_data(self):
@@ -119,21 +115,7 @@ class ModelTriaxialConsolidation:
             self._test_data.time = test_data["time"]
 
             # Объемная деформация до обработки
-            self._test_data.pore_volume_strain = test_data["pore_volume_strain"]
-            self._test_data.cell_volume_strain = test_data["cell_volume_strain"]
-            self._test_data.delta_h_reconsolidation = round(test_data["delta_h_reconsolidation"], 4)
-            self._test_data.delta_h_consolidation = round(test_data["delta_h_consolidation"], 4)
-
-            if abs(np.mean(self._test_data.pore_volume_strain - self._test_data.pore_volume_strain[0])) > 0.01:
-                self._test_data.volume_strain = self._test_data.pore_volume_strain
-                self.current_volume_strain = {"current": "pore_volume", "pore_volume": True, "cell_volume": True}
-                self.change_borders(0, len(self._test_data.time))
-            elif abs(np.mean(self._test_data.cell_volume_strain - self._test_data.cell_volume_strain[0])) > 0.01:
-                self._test_data.volume_strain = self._test_data.cell_volume_strain
-                self.current_volume_strain = {"current": "cell_volume", "pore_volume": False, "cell_volume": True}
-                self.change_borders(0, len(self._test_data.time))
-            else:
-                print("Этап консолидации не проводился")
+            self._test_data.volume_strain = test_data["strain"]
         else:
             print("Этап консолидации не проводился")
 
@@ -157,22 +139,6 @@ class ModelTriaxialConsolidation:
                     "time_sqrt": self._test_data.time_sqrt,
                     "time_log": self._test_data.time_log,
                     "volume_strain_approximate": self._test_data.volume_strain_approximate}
-
-    def choise_volume_strain(self, volume_strain):
-        """Выбор данных с порового валюмометра или волюмометра с камеры для последующей обработки"""
-        if self._test_data.time_sqrt is not None:
-            if volume_strain == "pore_volume":
-                self._test_data.volume_strain = self._test_data.pore_volume_strain
-                self.change_borders(0, len(self._test_data.time))
-            else:
-                self._test_data.volume_strain = self._test_data.cell_volume_strain
-                self.change_borders(0, len(self._test_data.time))
-
-    def get_current_volume_strain(self):
-        """Метод возвращает действующий волюмометр
-                При получении данных проверяется, какие волюмометры были активны. Приоритетный волюмометр выбирается как
-                 поровый, если в нем нет данных, то выберется камеры"""
-        return self.current_volume_strain
 
     def change_borders(self, left, right):
         """Выделение границ для обрезки значений всего опыта"""
@@ -203,10 +169,12 @@ class ModelTriaxialConsolidation:
                 sqrt_t90_horizontal_line = point_to_xy(Point(x=4 * mooveX, y=self.processed_points_sqrt.Cv.y),
                                                   Point(x=self.processed_points_sqrt.Cv.x,
                                                         y=self.processed_points_sqrt.Cv.y))
-                sqrt_t90_text =  Point(x=self.processed_points_sqrt.Cv.x,
+                sqrt_t90_text = Point(x=self.processed_points_sqrt.Cv.x,
                                        y=max(self._test_data.volume_strain_approximate[0],
-                                             self.processed_points_sqrt.Cv.y) - 2.70 * mooveY)
-                sqrt_strain90_text = Point(x=4 * mooveX, y=self.processed_points_sqrt.Cv.y)
+                                                  self.processed_points_sqrt.line_start_point.y))
+                sqrt_strain90_text = Point(x=4 * mooveX, y=max(self._test_data.volume_strain_approximate[0],
+                                                            self.processed_points_sqrt.line_start_point.y))
+                print(self._test_data.volume_strain_approximate[0], self.processed_points_sqrt.line_start_point.y)
 
             else:
                 sqrt_t90_vertical_line = None
@@ -231,9 +199,9 @@ class ModelTriaxialConsolidation:
                         Point(x=self._test_data.time_sqrt[index_sqrt_strain_100[0]],
                               y=self._test_data.volume_strain_approximate[index_sqrt_strain_100[0]]))
 
-                    sqrt_t100_text =  Point(x=self._test_data.time_sqrt[index_sqrt_strain_100[0]],
+                    sqrt_t100_text = Point(x=self._test_data.time_sqrt[index_sqrt_strain_100[0]],
                                             y=max(self._test_data.volume_strain_approximate[0],
-                                                  self.processed_points_sqrt.Cv.y) - 2.70 * mooveY)
+                                                  self.processed_points_sqrt.line_start_point.y))
 
                     sqrt_strain100_text = Point(x=4 * mooveX,
                                                  y=self._test_data.volume_strain_approximate[index_sqrt_strain_100[0]])
@@ -310,7 +278,7 @@ class ModelTriaxialConsolidation:
 
                 sqrt_t90_vertical_line = point_to_xy(Point(x=self.processed_points_sqrt.Cv.x,
                                                       y=max(self._test_data.volume_strain_approximate[0],
-                                                            self.processed_points_sqrt.line_start_point.y) - 5 * mooveY),
+                                                            self.processed_points_sqrt.line_start_point.y) - 4 * mooveY),
                                                 Point(x=self.processed_points_sqrt.Cv.x,
                                                       y=self.processed_points_sqrt.Cv.y))
                 sqrt_t90_horizontal_line = point_to_xy(Point(x=4 * mooveX, y=self.processed_points_sqrt.Cv.y),
@@ -318,7 +286,7 @@ class ModelTriaxialConsolidation:
                                                         y=self.processed_points_sqrt.Cv.y))
                 sqrt_t90_text =  Point(x=self.processed_points_sqrt.Cv.x,
                                        y=max(self._test_data.volume_strain_approximate[0],
-                                             self.processed_points_sqrt.Cv.y) - 2.70 * mooveY)
+                                             self.processed_points_sqrt.line_start_point.y) - 2.70 * mooveY)
                 sqrt_strain90_text = Point(x=4 * mooveX, y=self.processed_points_sqrt.Cv.y)
 
             else:
@@ -335,7 +303,7 @@ class ModelTriaxialConsolidation:
                 if len(index_sqrt_strain_100):
                     sqrt_t100_vertical_line = point_to_xy(Point(x=self._test_data.time_sqrt[index_sqrt_strain_100[0]],
                                                                  y=max(self._test_data.volume_strain_approximate[0],
-                                                                       self.processed_points_sqrt.line_start_point.y) - 5 * mooveY),
+                                                                       self.processed_points_sqrt.line_start_point.y) - 4 * mooveY),
                                                            Point(x=self._test_data.time_sqrt[index_sqrt_strain_100[0]],
                                                                  y=self._test_data.volume_strain_approximate[
                                                                      index_sqrt_strain_100[0]]))
@@ -346,7 +314,7 @@ class ModelTriaxialConsolidation:
 
                     sqrt_t100_text = Point(x=self._test_data.time_sqrt[index_sqrt_strain_100[0]],
                                             y=max(self._test_data.volume_strain_approximate[0],
-                                                  self.processed_points_sqrt.Cv.y) - 2.70 * mooveY)
+                                                  self.processed_points_sqrt.line_start_point.y) - 2.70 * mooveY)
 
                     sqrt_strain100_text = Point(x=4 * mooveX,
                                                  y=self._test_data.volume_strain_approximate[index_sqrt_strain_100[0]])
@@ -731,6 +699,7 @@ class ModelTriaxialConsolidation:
             self._test_data.time_sqrt, self._test_data.volume_strain_cut = make_increas(self._test_data.time_sqrt,
                                                                                     self._test_data.volume_strain_cut)
             self._test_data.time_log = np.log(self._test_data.time_sqrt ** 2 + 1)
+
             self._test_data.volume_strain_approximate = pchip_interpolate(self._test_data.time_cut**0.5,
                                                                           self._test_data.volume_strain_cut,
                                                                           self._test_data.time_sqrt)
@@ -988,24 +957,15 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         """Установка основных параметров опыта"""
         self._test_params.Cv = statment[statment.current_test].mechanical_properties.Cv
         self._test_params.Ca = statment[statment.current_test].mechanical_properties.Ca
-        self._test_params.E = statment[statment.current_test].mechanical_properties.E50
-        self._test_params.sigma_3 = statment[statment.current_test].mechanical_properties.sigma_3
-        self._test_params.K0 = statment[statment.current_test].mechanical_properties.K0
+        self._test_params.Eoed = statment[statment.current_test].mechanical_properties.Eoed
+        self._test_params.p_max = statment[statment.current_test].mechanical_properties.p_max
+        self._test_params.m = statment[statment.current_test].mechanical_properties.m
 
         self._draw_params.max_time = (((0.848 * 3.8 * 3.8) / (4 * self._test_params.Cv)))*np.random.uniform(5, 7)
-        self._draw_params.volume_strain_90 = np.random.uniform(0.14, 0.2)
+        self._draw_params.strain = define_final_deformation(self._test_params.p_max, self._test_params.Eoed, self._test_params.m)
 
-        self._test_data.delta_h_consolidation = round((76 * (self._test_params.sigma_3 / (3 * self._test_params.E)) \
-                                                + self._test_data.delta_h_reconsolidation), 5)
         self._test_modeling()
-        self._test_data.volume_strain = self._test_data.pore_volume_strain
         self.change_borders(0, len(self._test_data.time))
-
-    def set_delta_h_reconsolidation(self, delta_h_reconsolidation):
-        self._test_data.delta_h_reconsolidation = round(delta_h_reconsolidation, 5)
-
-    def get_delta_h_consolidation(self):
-        return self._test_data.delta_h_consolidation
 
     def get_dict(self, effective_stress_after_reconsolidation):
        return ModelTriaxialConsolidationSoilTest.dictionary_consalidation(self._test_data.time,
@@ -1020,59 +980,31 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         """Возвращает параметры отрисовки для установки на ползунки"""
         params = {"max_time": {"value": self._draw_params.max_time, "borders":
             [self._draw_params.max_time/2, self._draw_params.max_time*10]},
-                  "volume_strain_90":  {"value": self._draw_params.volume_strain_90, "borders":
-            [self._draw_params.volume_strain_90/2, self._draw_params.volume_strain_90*3]}}
+                  "strain":  {"value": -self._draw_params.strain, "borders":
+            [-self._draw_params.strain/2, -self._draw_params.strain*3]}}
         return params
 
     def set_draw_params(self, params):
         """Устанавливает переданные параметры отрисовки, считанные с ползунков, на модель"""
         self._draw_params.max_time = params["max_time"]
-        self._draw_params.volume_strain_90 = params["volume_strain_90"]
+        self._draw_params.strain = - params["strain"]
         self._test_modeling()
-        self._test_data.volume_strain = self._test_data.pore_volume_strain
         self.change_borders(0, len(self._test_data.time))
 
     def _test_modeling(self):
         """Функция моделирования опыта"""
-        random = np.random.choice([2, 3])
-        if random == 1:
-            self._test_data.time, self._test_data.pore_volume_strain = function_consalidation(Cv=self._test_params.Cv,
-                                                        volume_strain_90=-self._draw_params.volume_strain_90,
-                                                        deviation=0.003,
-                                                        Ca=-self._test_params.Ca,
-                                                        E=self._test_params.E,
-                                                        sigma_3=self._test_params.sigma_3,
-                                                        max_time=self._draw_params.max_time,
-                                                        approximate=True)
-        elif random == 2:
-            self._test_data.time, self._test_data.pore_volume_strain = function_consalidation(Cv=self._test_params.Cv,
-                                                        volume_strain_90=-self._draw_params.volume_strain_90,
-                                                        deviation=0.003,
-                                                        Ca=-self._test_params.Ca,
-                                                        E=self._test_params.E,
-                                                        sigma_3=self._test_params.sigma_3 if self._test_params.sigma_3 >= 100 else 100,
-                                                        max_time=self._draw_params.max_time,
-                                                        approximate=False)
-        elif random == 3:
-            self._test_data.time, self._test_data.pore_volume_strain = function_consalidation_without_Cv(Cv=self._test_params.Cv,
-                                                        volume_strain_90=-self._draw_params.volume_strain_90,
-                                                        deviation=0.003,
-                                                        Ca=-self._test_params.Ca,
-                                                        E=self._test_params.E,
-                                                        sigma_3=self._test_params.sigma_3 if self._test_params.sigma_3 >= 100 else 100,
-                                                        max_time=self._draw_params.max_time)
+        self._test_data.time, self._test_data.volume_strain = function_consalidation(
+            self._draw_params.strain,
+            Cv=self._test_params.Cv,
+            reverse=True,
+            max_time=self._draw_params.max_time,
+            Ca=-self._test_params.Ca)
 
-        self._test_data.cell_volume_strain = self._test_data.pore_volume_strain + \
-                                             create_deviation_curve(self._test_data.time,
-                            abs(self._test_data.pore_volume_strain[-1] - self._test_data.pore_volume_strain[0]) * 0.1,
-                                                                    val = (1, 0.1), points = np.random.uniform(5, 20))
-        self._test_data.time = np.round(self._test_data.time, 3)
-        self._test_data.cell_volume_strain = np.round(
-            self._test_data.cell_volume_strain * np.pi * (19 ** 2) / (76 - self._test_data.delta_h_reconsolidation) /
-            (np.pi * (19 ** 2) / (76 - self._test_data.delta_h_reconsolidation)), 6)
-        self._test_data.pore_volume_strain = np.round(
-            self._test_data.pore_volume_strain * np.pi * (19 ** 2) / (76 - self._test_data.delta_h_reconsolidation) /
-            (np.pi * (19 ** 2) / (76 - self._test_data.delta_h_reconsolidation)), 6)
+        #self._test_data.time = np.round(self._test_data.time, 3)
+
+        #self._test_data.volume_strain = np.round(
+            #self._test_data.volume_strain * np.pi * (19 ** 2) / (76) /
+            #(np.pi * (19 ** 2) / (76)), 6)
 
     def get_duration(self):
         return self._test_data.time[-1]
@@ -1140,29 +1072,11 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 if __name__ == '__main__':
     file = r"C:\Users\Пользователь\PycharmProjects\Willie\Test.1.log"
     file = r"Z:\МДГТ - Механика\3. Трехосные испытания\1365\Test\Test.1.log"
-    param = {'E': 30495, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5,
-             'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
-             'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
-                                                                                         'depth': 19.0,
-                                                                                         'name': 'Песок крупный неоднородный',
-                                                                                         'ige': '-', 'rs': 2.73,
-                                                                                         'r': '-', 'rd': '-', 'n': '-',
-                                                                                         'e': '-', 'W': 12.8, 'Sr': '-',
-                                                                                         'Wl': '-', 'Wp': '-',
-                                                                                         'Ip': '-', 'Il': '-',
-                                                                                         'Ir': '-', 'str_index': '-',
-                                                                                         'gw_depth': '-',
-                                                                                         'build_press': 500.0,
-                                                                                         'pit_depth': 7.0, '10': '-',
-                                                                                         '5': '-', '2': 6.8, '1': 39.2,
-                                                                                         '05': 28.0, '025': 9.2,
-                                                                                         '01': 6.1, '005': 10.7,
-                                                                                         '001': '-', '0002': '-',
-                                                                                         '0000': '-', 'Nop': 7,
-                                                                                         'flag': False},
-             'test_type': 'Трёхосное сжатие (E)'}
+
 
     a = ModelTriaxialConsolidationSoilTest()
-    a.set_test_params(param)
+    statment.load("C:/Users/Пользователь/Desktop/test/consolidation.pickle")
+    statment.current_test = "2-1"
+    a.set_test_params()
     a.plotter()
     plt.show()

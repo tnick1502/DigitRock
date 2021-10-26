@@ -2,13 +2,13 @@ import os
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
-from resonant_column.DigitRock_Rezonant_Column_widgets import DigitRock_RezonantColumn_SoilTest
+from resonant_column.resonant_column_widgets import RezonantColumnSoilTestApp, __version__
 
 class App(QMainWindow):  # Окно и виджеты на нем
 
     def __init__(self):
         super().__init__()
-        self.title = "DigitRock"
+        self.title = "Rezonant Column Soil Test " + "{:.2f}".format(__version__)
         self.left = 100
         self.top = 30
         self.width = 1800
@@ -18,7 +18,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.setGeometry(self.left, self.top, 1500, 1000)
         #self.showFullScreen()
 
-        self.table_widget = DigitRock_RezonantColumn_SoilTest()#
+        self.table_widget = RezonantColumnSoilTestApp()#
         self.setCentralWidget(self.table_widget)
 
         self.show()
