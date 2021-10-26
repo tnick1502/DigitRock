@@ -38,17 +38,19 @@ logger_config = {
             'formatter': 'std_format',
             'filters': ["color_filter"]
         },
-        'file_handler': {
-            'class': 'logging.FileHandler',
-            'level': 'INFO',
-            'formatter': 'std_format',
-            'filename': file
-        }
+        #'file_handler': {
+            #'class': 'logging.FileHandler',
+            #'level': 'INFO',
+            #'formatter': 'std_format',
+            #'filename': file
+        #}
     },
     'loggers': {
         'app_logger': {
             'level': 'INFO',
-            'handlers': ['stream_handler', 'file_handler'],
+            #'handlers': ['stream_handler', 'file_handler'],
+            'handlers': ['stream_handler'],
+
             'propagate': False
         },
         'app_logger.model_logger': {

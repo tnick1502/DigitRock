@@ -515,33 +515,22 @@ if __name__ == '__main__':
     #open_geotek_log(file)
 
     #a = ModelTriaxialStaticLoadSoilTest()
-    param = { "ee": {'physical_properties': {'laboratory_number': '89-3', 'borehole': 89.0, 'depth': 6.0,
-                                     'soil_name': 'Суглинок полутвёрдый', 'ige': None, 'rs': 2.71, 'r': 2.16,
-                                     'rd': 1.89, 'n': 30.1, 'e': 0.43, 'W': 21.9, 'Sr': 0.88, 'Wl': 21.9, 'Wp': 12.8,
-                                     'Ip': 9.1, 'Il': 0.13, 'Ir': None, 'stratigraphic_index': None,
-                                     'ground_water_depth': None, 'granulometric_10': None, 'granulometric_5': None,
-                                     'granulometric_2': None, 'granulometric_1': None, 'granulometric_05': None,
-                                     'granulometric_025': None, 'granulometric_01': None, 'granulometric_005': None,
-                                     'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None,
-                                     'complete_flag': False, 'sample_number': 53, 'type_ground': 7, 'Rc': None},
-             'Cv': 0.128, 'Ca': 0.01126, 'm': 0.6, 'E50': 29600.0, 'c': 0.06, 'fi': 24.6, 'K0': 0.7,
-             'dilatancy_angle': 17.05, 'sigma_3': 100, 'qf': 329.5, 'sigma_1': 429.5, 'poisons_ratio': 0.34, 'OCR': 1,
-             'build_press': 150.0, 'pit_depth': 4.0, 'Eur': None}}
+    param = { "ee": {'physical_properties': {'laboratory_number': '89-7', 'borehole': '89', 'depth': 3.0, 'soil_name': 'я есть грунт', 'ige': None, 'rs': 2.66, 'r': None, 'rd': None, 'n': None, 'e': None, 'W': 10.0, 'Sr': None, 'Wl': None, 'Wp': None, 'Ip': None, 'Il': None, 'Ir': None, 'stratigraphic_index': None, 'ground_water_depth': None, 'granulometric_10': None, 'granulometric_5': None, 'granulometric_2': None, 'granulometric_1': None, 'granulometric_05': None, 'granulometric_025': 2.2, 'granulometric_01': 90.5, 'granulometric_005': 7.3, 'granulometric_001': None, 'granulometric_0002': None, 'granulometric_0000': None, 'complete_flag': False, 'sample_number': 1, 'type_ground': 4, 'Rc': None, 'date': None, 'sample_size': (38, 76)}, 'Cv': 0.7, 'Ca': 0.02828, 'm': 0.53, 'E50': 275000.0, 'c': 2.0, 'fi': 1.0, 'K0': 0.5, 'dilatancy_angle': 7.15, 'sigma_3': 100, 'qf': 4074.0, 'sigma_1': 4174.0, 'poisons_ratio': 0.34, 'OCR': 1, 'build_press': 150.0, 'pit_depth': 4.0, 'Eur': None, 'pressure_array': {'set_by_user': None, 'calculated_by_pressure': [100, 200, 400], 'state_standard': [100, 200, 300]}, 'test_type': 'Трёхосное сжатие (E)'}
+}
 
     param = dictToData(param, MechanicalProperties)
 
     test = "soil_test"
 
-    if test == "soil_test":
-        a = ModelTriaxialStaticLoadSoilTest()
-        a.set_test_params(param["ee"])
-        a.save_log_file("C:/Users/Пользователь/Desktop/Test.1.log")
-        a.plotter()
-    else:
-        a = ModelTriaxialStaticLoad()
+    a = ModelTriaxialStaticLoadSoilTest()
+    a.set_test_params(param["ee"])
+    a.save_log_file("C:/Users/Пользователь/Desktop/Test.1.log")
+    a.plotter()
+    #else:
+        #a = ModelTriaxialStaticLoad()
         #a.set_test_file_path("C:/Users/Пользователь/Desktop/Тест/Девиаторное нагружение/Архив/7а-3/Test.1.log")
-        a.set_test_file_path("C:/Users/Пользователь/Desktop/Test.1.log")
-        a.plotter()
+        #a.set_test_file_path("C:/Users/Пользователь/Desktop/Test.1.log")
+        #a.plotter()
 
 
 

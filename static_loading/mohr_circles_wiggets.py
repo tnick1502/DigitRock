@@ -336,28 +336,6 @@ class MohrWidgetSoilTest(MohrWidget):
         """Дополнительный интерфейс"""
         self.reference_pressure_array_box = PressureArray()
         self.layout_wiget.addWidget(self.reference_pressure_array_box)
-        """self.reference_pressure_array_box = QGroupBox("Обжимающие давления")
-        self.reference_pressure_array_box_layout = QVBoxLayout()
-        self.reference_pressure_array_box.setLayout(self.reference_pressure_array_box_layout)
-        self.reference_pressure_array_box.setFixedWidth(600)
-        self.reference_pressure_array_box.setFixedHeight(70)
-        self.reference_pressure_array_box_layout.setContentsMargins(5, 5, 5, 5)
-
-        self.reference_pressure_array_box_line_1_layout = QHBoxLayout()
-        self.reference_pressure_array_box_line_user = QLineEdit()
-        self.reference_pressure_array_box_line = QLineEdit()
-        self.reference_pressure_array_box_line.setDisabled(True)
-
-        self.reference_pressure_array_box_line_1_label = QLabel("Рассчитанные давления")
-        self.reference_pressure_array_box_line_1_label_user = QLabel("Пользовательский массив")
-        self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line_1_label)
-        self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line)
-        self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line_1_label_user)
-        self.reference_pressure_array_box_line_1_layout.addWidget(self.reference_pressure_array_box_line_user)
-        self.reference_pressure_array_box_layout.addLayout(self.reference_pressure_array_box_line_1_layout)
-
-        self.layout_wiget.addWidget(self.reference_pressure_array_box)
-        self.reference_pressure_array_box_layout.addStretch(-1)"""
 
     def add_test(self, path):
         self._model.add_test(path)
