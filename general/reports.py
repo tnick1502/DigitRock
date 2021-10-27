@@ -12,6 +12,8 @@ from svglib.svglib import svg2rlg  # Эта
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.utils import ImageReader
 
+from excel_statment.params import accreditation
+
 import ctypes
 import io
 
@@ -133,10 +135,10 @@ def SaveCode(version):  # Создает защитный код и записы
 
 def main_frame(canvas, path, Data_customer, code, list):
 
-    if Data_customer.accreditation == "ООО":
-        accreditation = "ON"
-    elif Data_customer.accreditation == "ОАО" or Data_customer.accreditation == "АО":
-        accreditation = "AN"
+    #if Data_customer.accreditation == "ООО":
+        #accreditation = "ON"
+    #elif Data_customer.accreditation == "ОАО" or Data_customer.accreditation == "АО":
+        #accreditation = "AN"
 
     data = Data_customer.end_date
 
@@ -168,17 +170,22 @@ def main_frame(canvas, path, Data_customer, code, list):
         A.append(p)
         line = fi.readline().strip()
     fi.close()
+    
+    dat4 = [
+        [accreditation[Data_customer.accreditation][Data_customer.accreditation_key][0]],
+        [accreditation[Data_customer.accreditation][Data_customer.accreditation_key][1]],
+    ]
 
-    if accreditation == "OS":
-        dat4 = [[A[9][1]], [A[9][2]]]
-    elif accreditation == "ON":
-        dat4 = [[A[10][1]], [A[10][2]]]
-    elif accreditation == "AS":
-        dat4 = [[A[11][1]], [A[11][2]]]
-    elif accreditation == "AN":
-        dat4 = [[A[12][1]], [A[12][2]]]
-    else:
-        dat4 = ["", ""]
+    #if accreditation == "OS":
+        #dat4 = [[A[9][1]], [A[9][2]]]
+    #elif accreditation == "ON":
+        #dat4 = [[A[10][1]], [A[10][2]]]
+    #elif accreditation == "AS":
+        #dat4 = [[A[11][1]], [A[11][2]]]
+    #elif accreditation == "AN":
+        #dat4 = [[A[12][1]], [A[12][2]]]
+    #else:
+        #dat4 = ["", ""]
 
 
     t = Table(dat4, colWidths=145 * mm, rowHeights=3 * mm)

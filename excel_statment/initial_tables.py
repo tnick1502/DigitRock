@@ -1,10 +1,11 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QHeaderView, QTableWidgetItem, QVBoxLayout, QTableWidget, QHBoxLayout, \
-    QLineEdit, QGroupBox, QPushButton, QComboBox
+    QLineEdit, QGroupBox, QPushButton, QComboBox, QLabel, QRadioButton
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5 import QtGui
 from datetime import datetime
 from singletons import statment
 from loggers.logger import app_logger, log_this
+from excel_statment.params import accreditation
 
 class Table(QTableWidget):
     """Расширенный класс таблиц"""
@@ -261,6 +262,11 @@ class TableCastomer(QWidget):
         for i, key in enumerate(["customer", "object_name", "start_date", "end_date", "accreditation"]):
             if key in ("start_date", "end_date"):
                 self.table.setItem(i, 1, QTableWidgetItem(str(getattr(statment.general_data, key).strftime("%d.%m.%Y"))))
+            elif key == "accreditation":
+                self.table.setItem(i, 1, QTableWidgetItem(
+                    accreditation[statment.general_data.accreditation][statment.general_data.accreditation_key][0] +
+                    " " +
+                    accreditation[statment.general_data.accreditation][statment.general_data.accreditation_key][1]))
             else:
                 self.table.setItem(i, 1, QTableWidgetItem(str(getattr(statment.general_data, key))))
 

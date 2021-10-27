@@ -29,8 +29,12 @@ class StatmentData:
         object_name = str(wb["Лист1"]["A2"].value)
         customer = str(wb["Лист1"]["A1"].value)
         accreditation = str(wb["Лист1"]["I2"].value)
-        if accreditation == "ОАО":
-            accreditation == "АО"
+
+        if accreditation in ["OAO", "ОАО"]:
+            accreditation = "АО"
+        elif accreditation == "OOO":
+            accreditation = "ООО"
+
         object_number = str(wb["Лист1"]["AI1"].value)
         start_date = wb["Лист1"]["U1"].value
         end_date = wb["Лист1"]["Q1"].value
@@ -43,7 +47,10 @@ class StatmentData:
         assert customer, "Не указан заказчик"
         assert accreditation, "Не указана аккредитация"
 
-        #self.accreditation.ke
+        if accreditation in ["AO", "АО"]:
+            self.accreditation_key = "новая"
+        elif accreditation == "ООО" or accreditation == "OOO":
+            self.accreditation_key = "новая 1"
 
         self.object_name = object_name
         self.customer = customer

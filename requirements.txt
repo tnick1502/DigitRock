@@ -8,3 +8,4 @@ pyexcel
 svglib==1.0.1
 pdfrw
 intersect
+transliterate

@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QGroupBox, QTableWidget, QDialog, \
     QComboBox, QWidget, QHeaderView, QTableWidgetItem, QFileSystemModel, QTreeView, QLineEdit, QSplitter, QPushButton, \
-    QVBoxLayout, QLabel, QMessageBox, QProgressBar, QSlider, QStyle, QStyleOptionSlider
+    QVBoxLayout, QLabel, QMessageBox, QProgressBar, QSlider, QStyle, QStyleOptionSlider, QRadioButton
 from PyQt5.QtGui import QPainter, QPalette, QBrush, QPen
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5 import QtGui, QtCore
@@ -22,7 +22,57 @@ from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTe
 from static_loading.triaxial_static_loading_test_model import ModelTriaxialStaticLoadSoilTest
 from static_loading.mohr_circles_test_model import ModelMohrCirclesSoilTest
 from vibration_creep.vibration_creep_model import ModelVibrationCreepSoilTest
+from excel_statment.params import accreditation
 
+from transliterate import translit
+
+
+class SetAccreditation(QGroupBox):
+    signal = pyqtSignal()
+
+    def __init__(self):
+        super().__init__()
+        self.add_UI()
+
+    def add_UI(self):
+        """Дополнительный интерфейс"""
+        self.setTitle('Аккредитация')
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+        self.layout_1 = QHBoxLayout()
+
+        self.label = QLineEdit()
+        self.label.setDisabled(True)
+
+        self.rb_layout = QVBoxLayout()
+
+        self.layout_1.addWidget(QLabel("Текущая аккредитация: "))
+        self.layout_1.addWidget(self.label)
+        self.layout.addLayout(self.layout_1)
+        self.layout.addLayout(self.rb_layout)
+        self.layout.addStretch(-1)
+
+    def _onClicked(self):
+        radioButton = self.sender()
+        if radioButton.isChecked():
+            statment.general_data.accreditation_key = radioButton.value
+        self.signal.emit()
+
+    def set_data(self):
+        self.label.setText(statment.general_data.accreditation)
+        for key in accreditation[statment.general_data.accreditation]:
+            setattr(self, "{}_radio".format(translit(key, language_code='ru', reversed=True)), QRadioButton(key))
+            rb = getattr(self, "{}_radio".format(translit(key, language_code='ru', reversed=True)))
+            rb.value = key
+            rb.toggled.connect(self._onClicked)
+            self.rb_layout.addWidget(rb)
+
+            if key == statment.general_data.accreditation_key:
+                rb.setChecked(True)
+            else:
+                rb.setChecked(False)
 
 class InitialStatment(QWidget):
     """Класс макет для ведомости
@@ -42,6 +92,7 @@ class InitialStatment(QWidget):
         self.create_IU(fill_keys)
         self.open_line.combo_changes_signal.connect(self.file_open)
         self.table_physical_properties.laboratory_number_click_signal.connect(self.table_physical_properties_click)
+        self.accreditation.signal.connect(self.customer_line.set_data)
         self.open_line.button_open.clicked.connect(self.button_open_click)
         self.open_line.button_refresh.clicked.connect(self.button_refresh_click)
 
@@ -55,6 +106,8 @@ class InitialStatment(QWidget):
         self.open_line.setFixedHeight(80)
 
         self.customer_line = TableCastomer()
+        self.accreditation = SetAccreditation()
+        self.accreditation.setFixedWidth(200)
         #self.customer_line.setFixedHeight(80)
 
         self.layout_tables = QHBoxLayout()
@@ -79,7 +132,12 @@ class InitialStatment(QWidget):
         #self.layout_tables.setAlignment(Qt.AlignTop)
 
         self.table_splitter_propetries_customer = QSplitter(Qt.Vertical)
-        self.table_splitter_propetries_customer.addWidget(self.customer_line)
+        self.customer_layout_widget = QWidget()
+        self.customer_layout = QHBoxLayout()
+        self.customer_layout.addWidget(self.customer_line)
+        self.customer_layout.addWidget(self.accreditation)
+        self.customer_layout_widget.setLayout(self.customer_layout)
+        self.table_splitter_propetries_customer.addWidget(self.customer_layout_widget)
         self.table_splitter_propetries_customer.addWidget(self.table_splitter_propetries)
         self.table_splitter_propetries_customer.setStretchFactor(0, 1)
         self.table_splitter_propetries_customer.setStretchFactor(1, 10)
@@ -177,6 +235,7 @@ class RezonantColumnStatment(InitialStatment):
                     statment.dump("".join([i for i in os.path.split(self.path)[:-1]]), name="Резонансная колонка.pickle")
 
                 self.customer_line.set_data()
+                self.accreditation.set_data()
 
                 keys = list(statment.tests.keys())
                 for test in keys:
@@ -294,6 +353,7 @@ class TriaxialStaticStatment(InitialStatment):
                         del statment.tests[test]
 
                 self.customer_line.set_data()
+                self.accreditation.set_data()
 
                 if len(statment) < 1:
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
@@ -427,6 +487,7 @@ class CyclicStatment(InitialStatment):
                         del statment.tests[test]
 
                 self.customer_line.set_data()
+                self.accreditation.set_data()
 
                 if len(statment) < 1:
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
@@ -521,6 +582,7 @@ class VibrationCreepStatment(InitialStatment):
                 load_statment("Виброползучесть.pickle")
 
                 self.customer_line.set_data()
+                self.accreditation.set_data()
 
                 if len(statment) < 1:
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта"
@@ -606,6 +668,7 @@ class ConsolidationStatment(InitialStatment):
                 load_statment("consolidation.pickle")
 
                 self.customer_line.set_data()
+                self.accreditation.set_data()
 
                 keys = list(statment.tests.keys())
                 for test in keys:
