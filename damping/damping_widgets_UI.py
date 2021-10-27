@@ -153,6 +153,7 @@ class CyclicDampingUI(QWidget):
 
     def plot(self, plot_data, results):
         """Построение графиков опыта"""
+        print("ojpds")
         try:
             self.strain_ax.clear()
             self.strain_ax.set_xlabel(self.strain_params["label_x"])

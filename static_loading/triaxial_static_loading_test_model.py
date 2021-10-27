@@ -350,8 +350,11 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
     @property
     def test_duration(self):
-        time_in_min = self.reconsolidation.get_duration() + self.consolidation.get_duration() + \
-                      self.deviator_loading.get_duration()
+        time_in_min = 0
+        for test_parts in [self.reconsolidation, self.consolidation, self.deviator_loading]:
+            if test_parts:
+                time_in_min += test_parts.get_duration()
+        
         return timedelta(minutes=time_in_min)
 
 

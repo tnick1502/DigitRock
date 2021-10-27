@@ -229,7 +229,7 @@ class CyclicDampingUI(QWidget):
         super().__init__()
 
         # Параметры построения для всех графиков
-        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.2, "wspace": 0.12, "hspace": 0.07, "left": 0.14}
+        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.2, "wspace": 0.12, "hspace": 0.07, "left": 0.15}
 
         self._create_UI()
 
@@ -265,41 +265,6 @@ class CyclicDampingUI(QWidget):
         self.layout.setContentsMargins(5, 5, 5, 5)
         self.setLayout(self.layout)
 
-    def _canvas_UI(self, name, params):
-        """Функция создания графика"""
-        # Создадим рамку для графика
-        setattr(self, "{name_widget}_canvas_frame".format(name_widget=name), QFrame())
-        chart_frame = getattr(self, "{name_widget}_canvas_frame".format(name_widget=name))
-        chart_frame.setFrameShape(QFrame.StyledPanel)
-        chart_frame.setStyleSheet('background: #ffffff')
-        setattr(self, "{name_widget}_canvas_frame_layout".format(name_widget=name), QVBoxLayout())
-        chart_frame_layout = getattr(self,
-                                     "{name_widget}_canvas_frame_layout".format(name_widget=name))
-
-        # Создадим canvas
-        setattr(self, "{name_widget}_figure".format(name_widget=name), plt.figure())
-        figure = getattr(self, "{name_widget}_figure".format(name_widget=name))
-        figure.subplots_adjust(**params["plot_params"])
-
-        setattr(self, "{name_widget}_canvas".format(name_widget=name), FigureCanvas(figure))
-        canvas = getattr(self, "{name_widget}_canvas".format(name_widget=name))
-        setattr(self, "{name_widget}_ax".format(name_widget=name), figure.add_subplot(111))
-        ax = getattr(self, "{name_widget}_ax".format(name_widget=name))
-        ax.set_xlabel(params["label_x"])
-        ax.set_ylabel(params["label_y"])
-        canvas.draw()
-
-        chart_frame_layout.setSpacing(0)
-        chart_frame_layout.addWidget(canvas)
-
-        if params["toolbar"]:
-            setattr(self, "{name_widget}_canvas_toolbar".format(name_widget=name),
-                    NavigationToolbar(canvas, self))
-            toolbar = getattr(self, "{name_widget}_canvas_toolbar".format(name_widget=name))
-            chart_frame_layout.addWidget(toolbar)
-
-        chart_frame.setLayout(chart_frame_layout)
-
     def plot(self, plots, results):
         """Построение графиков опыта"""
 
@@ -316,22 +281,40 @@ class CyclicDampingUI(QWidget):
             self.deviator_ax.plot([], [], label="ζ, %" + ", д.е. = " + str(results["damping_ratio"]),
                                        color="#eeeeee")
 
-        self.deviator_ax.legend(loc='upper right')
+        self.deviator_ax.legend(loc='upper left')
+
+        self.deviator_canvas.draw()
 
     def save_canvas(self, format_="svg"):
         """Сохранение графиков для передачи в отчет"""
 
-        def save(figure, canvas, size_figure, file_type):
-            path = BytesIO()
-            size = figure.get_size_inches()
-            figure.set_size_inches(size_figure)
-            if file_type == "svg":
-                figure.savefig(path, format='svg', transparent=True)
-            elif file_type == "jpg":
-                figure.savefig(path, format='jpg', dpi=200, bbox_inches='tight')
-            path.seek(0)
-            figure.set_size_inches(size)
-            canvas.draw()
+        def save(figure, canvas, size_figure, ax, file_type):
+            try:
+                ax.get_legend().remove()
+                canvas.draw()
+
+                path = BytesIO()
+                size = figure.get_size_inches()
+                figure.set_size_inches(size_figure)
+                if file_type == "svg":
+                    figure.savefig(path, format='svg', transparent=True)
+                elif file_type == "jpg":
+                    figure.savefig(path, format='jpg', dpi=500, bbox_inches='tight')
+                path.seek(0)
+                figure.set_size_inches(size)
+                ax.legend(loc='upper left')
+                canvas.draw()
+            except AttributeError:
+                path = BytesIO()
+                size = figure.get_size_inches()
+                figure.set_size_inches(size_figure)
+                if file_type == "svg":
+                    figure.savefig(path, format='svg', transparent=True)
+                elif file_type == "jpg":
+                    figure.savefig(path, format='jpg', dpi=500, bbox_inches='tight')
+                path.seek(0)
+                figure.set_size_inches(size)
+                canvas.draw()
             return path
 
         if format_ == "jpg":
@@ -341,11 +324,7 @@ class CyclicDampingUI(QWidget):
         else:
             format = 'svg'
 
-        return [save(fig, can, size, format) for fig, can, size in zip([self.strain_figure,
-                                                                        self.PPR_figure, self.stress_figure],
-                                                                       [self.strain_canvas, self.PPR_canvas,
-                                                                        self.stress_canvas],
-                                                                       [[3, 3], [3, 3], [6, 3]])]
+        return save(self.deviator_figure, self.deviator_canvas, [4.75, 4.75], self.deviator_ax, "jpg")
 
 class CyclicLoadingOpenTestUI(QWidget):
     """Виджет для открытия файла прибора и определения параметров опыта"""

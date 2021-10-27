@@ -62,7 +62,7 @@ class ConsilidationSoilTestWidget(QWidget):
         self._wigets_connect()
 
         self.refresh_test_button = QPushButton("Обновить опыт")
-        # self.refresh_test_button.clicked.connect(self.refresh)
+        self.refresh_test_button.clicked.connect(self.refresh)
         self.layout.insertWidget(0, self.refresh_test_button)
 
         #if model:
@@ -196,7 +196,7 @@ class ConsilidationSoilTestWidget(QWidget):
         try:
             models[statment.current_test].set_test_params()
             self.set_params(True)
-        except KeyError:
+        except:
             pass
 
     @log_this(app_logger, "debug")
@@ -268,11 +268,17 @@ class ConsolidationSoilTestApp(QWidget):
             assert statment.current_test, "Не выбран образец в ведомости"
             file_path_name = statment.current_test.replace("/", "-").replace("*", "")
 
-            test_parameter = {"equipment": statment.general_parameters.equipment,
+            if statment[statment.current_test].mechanical_properties.p_max >= 1:
+                equipment = "GIG, Absolut Digimatic ID-S"
+            else:
+                equipment = "ЛИГА КЛ1, КППА 60/25 ДС (ГТ 1.1.1), GIG, Absolut Digimatic ID-S, АСИС ГТ.2.0.5"
+
+
+            test_parameter = {"equipment": equipment,
                               "mode": "Статическая нагрузка",
                               "p_max": statment[statment.current_test].mechanical_properties.p_max,
-                              "h": 70,
-                              "d": 20}
+                              "h": 20,
+                              "d": 71}
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date
@@ -286,7 +292,7 @@ class ConsolidationSoilTestApp(QWidget):
             else:
                 os.mkdir(save)
 
-            name = file_path_name + " " + statment.general_data.object_number + " ТС" + ".pdf"
+            name = file_path_name + " " + statment.general_data.object_number + " ВК" + ".pdf"
             models.dump(''.join(os.path.split(self.tab_2.save_wigdet.directory)[:-1]), name="consolidation_models.pickle")
             #models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
             test_result = models[statment.current_test].get_test_results()
@@ -305,7 +311,7 @@ class ConsolidationSoilTestApp(QWidget):
 
             statment.dump(''.join(os.path.split(self.tab_2.save_wigdet.directory)[:-1]), "consolidation.pickle")
 
-            models[statment.current_test].save_log(save, "file")
+            models[statment.current_test].save_log(save, file_path_name + " " + statment.general_data.object_number + "ВК")
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")

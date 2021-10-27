@@ -224,7 +224,8 @@ class ModelTriaxialCyclicLoading:
                                                         self._test_result.fail_cycle_criterion_stress,
                                                         self._test_result.fail_cycle_criterion_PPR] if i], default=None)
 
-        self._damping_strain, self._damping_deviator = None, None
+        self._damping_strain = None
+        self._damping_deviator = None
 
         self._test_result.damping_ratio, self._damping_strain, self._damping_deviator = \
             ModelTriaxialCyclicLoading.define_damping_ratio(
@@ -772,6 +773,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.sigma_3 = statment[statment.current_test].mechanical_properties.sigma_3
         self._test_params.physical = statment[statment.current_test].physical_properties
         self._test_params.Cv = statment[statment.current_test].mechanical_properties.Cv
+        self._test_params.damping_ratio = statment[statment.current_test].mechanical_properties.damping_ratio
 
         self._test_params.c = statment[statment.current_test].mechanical_properties.c
         self._test_params.fi = statment[statment.current_test].mechanical_properties.fi
@@ -966,7 +968,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         # Стабилизация деформации к ассимптоте
         self._draw_params.strain_stabilization = 0.1
 
-        self._draw_params.strain_phase_offset = np.random.uniform(0.05*np.pi, 0.1*np.pi)
+        self._draw_params.strain_phase_offset = self._test_params.damping_ratio/40
 
         # Погрешность и коэффициент сглаживания
         self._draw_params.strain_deviation = 0.0001

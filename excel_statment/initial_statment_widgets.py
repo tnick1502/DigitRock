@@ -403,7 +403,8 @@ class CyclicStatment(InitialStatment):
             "test_mode": [
                 "Режим испытания",
                 "Сейсморазжижение",
-                "Штормовое разжижение"
+                "Штормовое разжижение",
+                "Демпфирование"
             ],
             "K0_mode": [
                 "Тип определения K0",
@@ -431,7 +432,8 @@ class CyclicStatment(InitialStatment):
             "MSF": "MSF",
             "frequency": "Частота, Гц",
             "Hw": "Расчетная высота волны, м",
-            "rw": "Плотность воды, кН/м3"
+            "rw": "Плотность воды, кН/м3",
+            "damping_ratio": "Коэффициент демпфирования, %"
         }
 
         super().__init__(data_test_parameters, fill_keys)
@@ -456,12 +458,14 @@ class CyclicStatment(InitialStatment):
                     "Заполните уровень грунтовых вод в ведомости"
 
                 if combo_params["test_mode"] == "Штормовое разжижение":
-                    assert column_fullness_test(wb, columns=['HR', 'HS', 'HT','HU'], \
-                                                    initial_columns=list(columns_marker)), "Заполните данные по шторму в ведомости"
+                    assert column_fullness_test(wb, columns=['HR', 'HS', 'HT','HU'],
+                                                initial_columns=list(columns_marker)), "Заполните данные по шторму в ведомости"
                 elif combo_params["test_mode"] == "Штормовое разжижение":
-                    assert column_fullness_test(wb, columns=["AM", "AQ"],
-                                                    initial_columns=list(columns_marker)), \
+                    assert column_fullness_test(wb, columns=["AM", "AQ"], initial_columns=list(columns_marker)), \
                         "Заполните магнитуду и бальность"
+                elif combo_params["test_mode"] == "Демпфирование":
+                    assert column_fullness_test(wb, columns=["AO", "AN"], initial_columns=list(columns_marker)), \
+                        "Заполните амплитуду ('AO') и частоту ('AN')"
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
@@ -623,7 +627,8 @@ class ConsolidationStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
     def __init__(self):
         data_test_parameters = {
-            "equipment": ["Выберите прибор", "ЛИГА", "АСИС ГТ.2.0.5", "GIESA UP-25a"]
+            "equipment": ["Выберите прибор", "ЛИГА КЛ1", "КППА 60/25 ДС (ГТ 1.1.1)", "GIG, Absolut Digimatic ID-S",
+                          "АСИС ГТ.2.0.5"]
         }
 
         fill_keys = {

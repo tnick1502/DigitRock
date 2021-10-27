@@ -109,7 +109,7 @@ def cfe_test_type_columns(test_type):
     elif test_type == "Трёхосное сжатие с разгрузкой":
         return ["BL", "BM", "BN"]
 
-    elif test_type == "Сейсморазжижение" or test_type == "Штормовое разжижение":
+    elif test_type == "Сейсморазжижение" or test_type == "Штормовое разжижение" or test_type == "Демпфирование":
         return ["BZ", "BY", "CA"]
 
     elif test_type == "Виброползучесть":

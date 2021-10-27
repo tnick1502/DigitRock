@@ -931,6 +931,7 @@ class CyclicProperties(MechanicalProperties):
     Mcsr = DataTypeValidation(float, int, np.int32)
     Msf = DataTypeValidation(float, int, np.int32)
     n_fail = DataTypeValidation(float, int, np.int32)
+    damping_ratio = DataTypeValidation(float, int, np.int32)
 
     def __init__(self):
         self._setNone()
@@ -1001,13 +1002,33 @@ class CyclicProperties(MechanicalProperties):
 
                 self.frequency = float_df(data_frame.iat[string, DynamicsPropertyPosition["frequency_storm"][1]])
 
+            elif test_mode == "Демпфирование":
+                if physical_properties.depth <= physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
+                elif physical_properties.depth > physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                            9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+
+                if self.sigma_1 < 10:
+                    self.sigma_1 = 10
+
+                self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
+                self.cycles_count = 5
+
+                self.frequency = np.round(float_df(data_frame.iat[string,
+                                                         DynamicsPropertyPosition["frequency_vibration_creep"][1]]), 1)
+
+                self.t = np.round(float_df(data_frame.iat[string,
+                                                          DynamicsPropertyPosition["sigma_d_vibration_creep"][1]]) / 2,
+                                  1)
 
             self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
                                                        physical_properties.Ip,
                                                        physical_properties.Il, physical_properties.e)
             if self.n_fail:
                 if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
-                    self.Ms = np.round(np.random.uniform(100, 500), 2)
+                    self.Ms = np.round(np.random.uniform(60, 200), 2)
                 else:
                     self.Ms = np.round(np.random.uniform(0.7, 0.9), 2)
             else:
@@ -1016,6 +1037,8 @@ class CyclicProperties(MechanicalProperties):
                     physical_properties.e, physical_properties.Il)
 
             self.CSR = np.round(self.t / self.sigma_1, 2)
+
+            self.damping_ratio = np.round(CyclicProperties.define_damping_ratio(), 2)
 
     @staticmethod
     def define_Ms(c, fi, Mcsr, sigma_3, sigma_1, t, cycles_count, e, Il) -> float:
@@ -1080,6 +1103,10 @@ class CyclicProperties(MechanicalProperties):
         else:
             N = 5
         return N
+
+    @staticmethod
+    def define_damping_ratio() -> float:
+        return np.random.uniform(5, 15)
 
 class RCProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""

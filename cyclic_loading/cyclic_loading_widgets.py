@@ -10,7 +10,7 @@ import os
 import time
 import pyautogui
 import shutil
-from general.reports import report_triaxial_cyclic
+from general.reports import report_triaxial_cyclic, report_cyclic_damping
 import threading
 
 
@@ -149,12 +149,13 @@ class CyclicSoilTestWidget(QWidget):
             "MSF": "MSF",
             "frequency": "Частота, Гц",
             "Hw": "Расчетная высота волны, м",
-            "rw": "Плотность воды, кН/м3"
+            "rw": "Плотность воды, кН/м3",
+            "damping_ratio": "Коэффициент демпфирования, %"
         }
         self.identification = TableVertical(fill_keys)
         self.identification.setFixedWidth(400)
         self.damping = CyclicDampingUI()
-        self.damping.setFixedHeight(300)
+        self.damping.setFixedHeight(320)
         self.layout_2 = QVBoxLayout()
         self.layout_1.addWidget(self.test_widget)
         self.layout_2.addWidget(self.identification)
@@ -204,7 +205,6 @@ class CyclicSoilTestWidget(QWidget):
 
     def set_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
-        models[statment.current_test].set_test_params()
         strain_params, ppr_params, cycles_count_params = models[statment.current_test].get_draw_params()
         self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params)
         self._plot()
@@ -298,11 +298,11 @@ class CyclicPredictLiquefaction(QDialog):
         while (self.table.rowCount() > 0):
             self.table.removeRow(0)
 
-        self.table.setColumnCount(12)
+        self.table.setColumnCount(13)
         #self.table.horizontalHeader().resizeSection(1, 200)
         self.table.setHorizontalHeaderLabels(
             ["Лаб. ном.", "Глубина", "Наименование грунта", "Консистенция Il", "e", "𝜎3, кПа", "𝜎1, кПа", "t, кПа", "CSR", "Число циклов",
-             "Nfail", "Ms"])
+             "Nfail", "Ms", "Коэф. демпф."])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setDefaultSectionSize(25)
         self.table.horizontalHeader().setMinimumSectionSize(100)
@@ -318,6 +318,7 @@ class CyclicPredictLiquefaction(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(9, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(10, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(11, QHeaderView.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(12, QHeaderView.Fixed)
 
     def _fill_table(self):
         """Заполнение таблицы параметрами"""
@@ -337,7 +338,8 @@ class CyclicPredictLiquefaction(QDialog):
                         str(statment[lab_number].mechanical_properties.CSR),
                         str(statment[lab_number].mechanical_properties.cycles_count),
                         str(statment[lab_number].mechanical_properties.n_fail) if statment[lab_number].mechanical_properties.n_fail else "-",
-                        str(statment[lab_number].mechanical_properties.Ms)
+                        str(statment[lab_number].mechanical_properties.Ms),
+                        str(statment[lab_number].mechanical_properties.damping_ratio)
                     ]):
 
                 self.table.setItem(string_number, i, QTableWidgetItem(val))
@@ -432,13 +434,14 @@ class CyclicPredictLiquefaction(QDialog):
                     str(statment[lab_number].mechanical_properties.cycles_count),
                     str(statment[lab_number].mechanical_properties.n_fail) if statment[
                         lab_number].mechanical_properties.n_fail else "-",
-                    str(statment[lab_number].mechanical_properties.Ms)
+                    str(statment[lab_number].mechanical_properties.Ms),
+                    str(statment[lab_number].mechanical_properties.damping_ratio)
                 ])
 
         titles = ["Лаб. номер", "Глубина, м", "Наименование грунта", "Il", "e", "CSR, д.е.", "Общее число циклов",
-                   "Цикл разрушения", "Ms"]
+                   "Цикл разрушения", "Ms", "Коэф. демпф."]
 
-        scale = [70, 70, "*", 70, 70, 70]
+        scale = [60, 60, "*", 60, 60, 60, 60, 60, 60, 60]
 
         return (titles, data_structure, scale)
 
@@ -650,6 +653,8 @@ class CyclicSoilTestApp(QWidget):
                 file_name = save + "/" + "Отчет " + file_path_name + "-С" + ".pdf"
             elif statment.general_parameters.test_mode == "Штормовое разжижение":
                 file_name = save + "/" + "Отчет " + file_path_name + "-ШТ" + ".pdf"
+            elif statment.general_parameters.test_mode == "Демпфирование":
+                file_name = save + "/" + "Отчет " + file_path_name + "-Д" + ".pdf"
 
 
             test_parameter = {'sigma3': statment[statment.current_test].mechanical_properties.sigma_3,
@@ -670,8 +675,11 @@ class CyclicSoilTestApp(QWidget):
 
             test_result = models[statment.current_test].get_test_results()
 
-            results = {'PPRmax': test_result['max_PPR'], 'EPSmax': test_result['max_strain'],
-                       'res': test_result['conclusion'], 'nc': check_none(test_result['fail_cycle'])}
+            results = {'PPRmax': test_result['max_PPR'],
+                       'EPSmax': test_result['max_strain'],
+                       'res': test_result['conclusion'],
+                       'nc': check_none(test_result['fail_cycle']),
+                       "damping_ratio": test_result["damping_ratio"]}
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date
@@ -681,11 +689,19 @@ class CyclicSoilTestApp(QWidget):
             if test_result["fail_cycle"] is None:
                 test_result["fail_cycle"] = "-"
 
-            report_triaxial_cyclic(file_name, data_customer,
-                                   statment[statment.current_test].physical_properties,
-                                   statment.current_test,
-                                   os.getcwd() + "/project_data/", test_parameter, results,
-                                   self.tab_2.test_widget.save_canvas(), "{:.2f}".format(__version__))
+            if statment.general_parameters.test_mode == "Сейсморазжижение" or statment.general_parameters.test_mode == "Штормовое разжижение":
+                report_triaxial_cyclic(file_name, data_customer,
+                                       statment[statment.current_test].physical_properties,
+                                       statment.current_test,
+                                       os.getcwd() + "/project_data/", test_parameter, results,
+                                       self.tab_2.test_widget.save_canvas(), "{:.2f}".format(__version__))
+            elif statment.general_parameters.test_mode == "Демпфирование":
+                report_cyclic_damping(file_name, data_customer,
+                                       statment[statment.current_test].physical_properties,
+                                       statment.current_test,
+                                       os.getcwd() + "/project_data/", test_parameter, results,
+                                       [self.tab_2.damping.save_canvas()], "{:.2f}".format(__version__))
+
 
             models[statment.current_test].generate_log_file(save)
 

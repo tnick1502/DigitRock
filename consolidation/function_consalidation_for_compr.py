@@ -99,7 +99,6 @@ def function_consalidation(final_volume_strain,
                            Cv=3,
                            max_time = np.random.uniform(800, 1200),
                            Ca=-0.001,
-                           deviation=0.003,
                            reverse=True,
                            point_time=0.25):
     '''
@@ -115,6 +114,7 @@ def function_consalidation(final_volume_strain,
     # Расчет смещения объемной деформации на этапе приложения нагрузки
     load_stage_strain = final_volume_strain*np.random.uniform(0.1, 0.2)
     final_volume_strain -= load_stage_strain
+    deviation = np.random.uniform(0.01, 0.02)*final_volume_strain
 
     t_90_sqrt = math.sqrt((0.848 * 3.8 * 3.8) / (4 * Cv))
     t_90_log = np.log(t_90_sqrt ** 2 + 1)
@@ -145,7 +145,8 @@ def function_consalidation(final_volume_strain,
     myb = final_volume_strain - Ca * max_time_log
     min_volume_strain = Ca*t_90_log + final_volume_strain - Ca * max_time_log # последний линейный участок
 
-    volume_strain_90 = abs(max_volume_strain_90-min_volume_strain) * np.random.uniform(0.3, 0.35) + min_volume_strain
+    #volume_strain_90 = abs(max_volume_strain_90-min_volume_strain) * np.random.uniform(0.3, 0.35) + min_volume_strain
+    volume_strain_90 = abs(max_volume_strain_90 - min_volume_strain) * np.random.uniform(0.5, 0.6) + min_volume_strain
 
     yP = -np.random.uniform(0.20 * abs(volume_strain_90), 0.25 * abs(volume_strain_90))
     k1 = (volume_strain_90) / (t_90_sqrt-1)
@@ -165,13 +166,12 @@ def function_consalidation(final_volume_strain,
     else:
         y_part1 = spline(x_for_part1, y_for_part1, time_line_sqrt, -3 * abs(k2), -abs(k2), k=3)
 
-    '''интерполяция третьего участка (xP, xK)'''
+    '''интерполяция третьего участка (xK, t90)'''
     x_for_part3 = [xK, t_90_sqrt]
     y_for_part3 = [yK, volume_strain_90]
-
     y_part3 = spline(x_for_part3, y_for_part3, time_line_sqrt, -abs(k2), -abs(k2/2), k=3)
 
-    y_0_xc = np.linspace(0, 2 * t_90_sqrt, len(time_line_sqrt))
+    y_0_xc = np.zeros_like(time_line_sqrt)
     for i in range(len(time_line_sqrt)):
         if time_line_sqrt[i] < xP:
             y_0_xc[i] = y_part1[i]
@@ -181,13 +181,13 @@ def function_consalidation(final_volume_strain,
             y_0_xc[i] = y_part3[i]
 
     volume_strain_line = np.zeros_like(time_line_sqrt)
-
     index_xca_log, = np.where(time_line_log >= t_90_log)
     pr_xc = (y_0_xc[index_xca_log[0] - 1] - y_0_xc[index_xca_log[0] - 2]) / (
             time_line_log[index_xca_log[0] - 1] - time_line_log[index_xca_log[0] - 2])
 
     b4 = volume_strain_creep - Ca * t_creep_log
     y4 = Ca * time_line_log + b4
+
     x_for_part5 = [np.log(t_90_sqrt ** 2 + 1), t_creep_log]
     y_for_part5 = [volume_strain_90, volume_strain_creep]
     y_part5 = spline(x_for_part5, y_for_part5, time_line_log, pr_xc, Ca, k=3)  # интерполяция пятого участка
@@ -213,13 +213,11 @@ def function_consalidation(final_volume_strain,
     x_time = x_for_time
     y_time = y_for_time
 
-    # load_stage_strain = 0
-
     y_time += load_stage_strain
 
-    # y_time += consolidation_deviation(x_time, t_90_sqrt, deviation)
-    # y_time += np.random.uniform(-0.0004, 0.0004, len(y_time))
-    # y_time = discrete_array(y_time, 0.0008)
+    y_time += consolidation_deviation(x_time, t_90_sqrt, deviation)
+    y_time += np.random.uniform(-0.0004, 0.0004, len(y_time))
+    y_time = discrete_array(y_time, 0.0008)
     return x_time, y_time
     # return x_time, y_time, np.array([t_90_log, t_creep_log, max_time_log, np.log(xP**2+1),  np.log(xK**2+1)]), \
     #       np.array([volume_strain_90  + load_stage_strain, volume_strain_creep  + load_stage_strain, final_volume_strain  + load_stage_strain, yP+ load_stage_strain, yK+ load_stage_strain])
