@@ -37,6 +37,7 @@ class StaticProcessingWidget(QWidget):
 
         self.item_identification = ModelTriaxialItemUI()
         self.item_identification.setFixedHeight(330)
+        self.item_identification.setFixedWidth(450)
         self.reconsolidation = ModelTriaxialReconsolidationUI()
         self.line = QHBoxLayout()
         self.line.addWidget(self.item_identification)

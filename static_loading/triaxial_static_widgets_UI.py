@@ -15,6 +15,7 @@ from io import BytesIO
 
 from general.general_widgets import Float_Slider, RangeSlider
 from general.general_functions import point_to_xy
+from excel_statment.initial_tables import TableVertical
 from configs.plot_params import plotter_params
 from general.general_functions import read_json_file
 from singletons import statment
@@ -703,7 +704,7 @@ class ModelTriaxialFileOpenUI(QWidget):
     def set_path(self, path):
         self.file_path_line.setText(path)
 
-class ModelTriaxialItemUI(QWidget):
+class ModelTriaxialItemUIOld(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
@@ -771,3 +772,28 @@ class ModelTriaxialItemUI(QWidget):
         self.borehole.setText(str(statment[statment.current_test].physical_properties.borehole))
         self.depth.setText(str(statment[statment.current_test].physical_properties.depth))
         self.name.setText(str(statment[statment.current_test].physical_properties.soil_name))
+
+class ModelTriaxialItemUI(TableVertical):
+    """Интерфейс обработчика циклического трехосного нагружения.
+    При создании требуется выбрать модель трехосного нагружения методом set_model(model).
+    Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
+    def __init__(self):
+        fill_keys = {
+            "laboratory_number": "Лаб. ном.",
+            "E50": "Модуль деформации E50, кПа",
+            "c": "Сцепление с, МПа",
+            "fi": "Угол внутреннего трения, град",
+            "qf": "Максимальный девиатор qf, кПа",
+            "sigma_3": "Обжимающее давление 𝜎3, кПа",
+            "K0": "K0",
+            "poisons_ratio": "Коэффициент Пуассона",
+            "Cv": "Коэффициент консолидации Cv",
+            "Ca": "Коэффициент вторичной консолидации Ca",
+            "build_press": "Давление от здания, кПа",
+            "pit_depth": "Глубина котлована, м",
+            "Eur": "Модуль разгрузки Eur, кПа",
+            "dilatancy_angle": "Угол дилатансии, град",
+            "OCR": "OCR",
+            "m": "Показатель степени жесткости"
+        }
+        super().__init__(fill_keys=fill_keys)
