@@ -282,6 +282,10 @@ class MechanicalProperties:
             elif self.pressure_array["state_standard"] is not None:
                 self.pressure_array["current"] = self.pressure_array["state_standard"]
 
+            if self.pressure_array["calculated_by_pressure"] is None:
+                self.pressure_array["calculated_by_pressure"] = \
+                    MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3)
+
     @staticmethod
     def round_sigma_3(sigma_3, param=5):
         integer = sigma_3 // param
@@ -844,6 +848,19 @@ class MechanicalProperties:
             return None
 
     @staticmethod
+    def define_reference_pressure_array_calculated_by_referense_pressure(sigma_3: float) -> list:
+        """Функция рассчета обжимающих давлений для кругов мора"""
+
+        sigma_max = sigma_3
+
+        sigma_max_1 = MechanicalProperties.round_sigma_3(sigma_max)
+        sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * 0.5)
+        sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * 0.25)
+
+        return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+
+
+    @staticmethod
     def define_reference_pressure_array_set_by_user(val) -> list:
         if val is None:
             return None
@@ -1144,6 +1161,7 @@ class VibrationCreepProperties(MechanicalProperties):
     t = DataTypeValidation(float, int, np.int32)
     Ms = DataTypeValidation(float, int, np.int32)
     cycles_count = DataTypeValidation(float, int, np.int32)
+    damping_ratio = DataTypeValidation(float, int, np.int32)
 
     def __init__(self):
         self._setNone()
@@ -1177,6 +1195,8 @@ class VibrationCreepProperties(MechanicalProperties):
                                                                      Kd.split(";")))"""
 
             self.cycles_count = int(np.random.uniform(2000, 5000))
+
+            self.damping_ratio = np.round(CyclicProperties.define_damping_ratio(), 2)
 
     @staticmethod
     def val_to_list(val) -> list:

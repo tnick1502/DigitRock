@@ -295,6 +295,8 @@ class VibrationCreepSoilTestApp(QWidget):
         self.button_predict.clicked.connect(self._predict)
         self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
 
+        self.save_massage = True
+
     def _set_params(self, param):
         self.tab_2.set_params(param)
         self.tab_3.set_test_params(param)

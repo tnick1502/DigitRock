@@ -61,6 +61,8 @@ class SetAccreditation(QGroupBox):
         self.signal.emit()
 
     def set_data(self):
+        for i in reversed(range(self.rb_layout.count())):
+            self.rb_layout.itemAt(i).widget().setParent(None)
         self.label.setText(statment.general_data.accreditation)
         for key in accreditation[statment.general_data.accreditation]:
             setattr(self, "{}_radio".format(translit(key, language_code='ru', reversed=True)), QRadioButton(key))
@@ -555,7 +557,6 @@ class VibrationCreepStatment(InitialStatment):
             columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
             marker, customer = read_customer(wb)
 
-
             try:
                 assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker_cfe)),\
                     "Заполните K0 в ведомости"
@@ -591,6 +592,10 @@ class VibrationCreepStatment(InitialStatment):
                 if len(statment) < 1:
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта"
                                         + str(cfe_test_type_columns("Виброползучесть")), QMessageBox.Ok)
+                keys = list(statment.tests.keys())
+                for test in keys:
+                    if not statment[test].mechanical_properties.E50:
+                        del statment.tests[test]
                 else:
                     self.table_physical_properties.set_data()
                     self.statment_directory.emit(self.path)

@@ -129,6 +129,10 @@ class CyclicSoilTestWidget(QWidget):
         self.test_widget.sliders_widget.cycles_count_signal[object].connect(self._sliders_cycles_count)
         self.screen_button.clicked.connect(self._screenshot)
 
+        self.refresh_button = QPushButton("Обновить")
+        self.refresh_button.clicked.connect(self.refresh)
+        self.test_widget.sliders_widget.cycles_count_box_layout.addWidget(self.refresh_button)
+
     def _create_Ui(self):
         self.layout = QVBoxLayout(self)
         self.layout_1 = QHBoxLayout(self)
@@ -214,6 +218,12 @@ class CyclicSoilTestWidget(QWidget):
         test_data = ModelTriaxialCyclicLoading.open_wille_log(path)
         self._model.set_test_data(test_data)
         self._model.set_processing_parameters(test_data)
+        self._plot()
+
+    def refresh(self):
+        models[statment.current_test].set_test_params()
+        strain_params, ppr_params, cycles_count_params = models[statment.current_test].get_draw_params()
+        self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params, True)
         self._plot()
 
     def _plot(self):

@@ -50,7 +50,7 @@ class StatmentData:
         if accreditation in ["AO", "АО"]:
             self.accreditation_key = "новая"
         elif accreditation == "ООО" or accreditation == "OOO":
-            self.accreditation_key = "новая 1"
+            self.accreditation_key = "2"
 
         self.object_name = object_name
         self.customer = customer
