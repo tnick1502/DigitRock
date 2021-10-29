@@ -329,9 +329,11 @@ class ModelTriaxialDeviatorLoading:
             ModelTriaxialDeviatorLoading.define_Eur(self._test_data.strain_cut,
                                   self._test_data.deviator_cut, self._test_data.reload_points_cut)
 
-        self._test_result.poissons_ratio,\
-        self._test_result.dilatancy_angle =\
-            ModelTriaxialDeviatorLoading.define_poissons_dilatancy(self._test_data.strain_cut,
+        self._test_result.poissons_ratio = ModelTriaxialDeviatorLoading.define_poissons(self._test_data.strain_cut,
+                                  self._test_data.deviator_cut,
+                                    self._test_data.volume_strain_approximate)
+
+        self._test_result.dilatancy_angle = ModelTriaxialDeviatorLoading.define_dilatancy(self._test_data.strain_cut,
                                   self._test_data.deviator_cut,
                                     self._test_data.volume_strain_approximate)
 
@@ -458,61 +460,48 @@ class ModelTriaxialDeviatorLoading:
             return None
 
     @staticmethod
-    def define_poissons_dilatancy(strain, deviator, volume_strain):
-        # Коэффициент Пуассона и дилатансия
+    def define_poissons(strain, deviator, volume_strain):
+        # Коэффициент Пуассона
         qf = np.max(deviator)
-
-        # Найдкм коэффициент пуассона
         strain50 = (np.interp(qf / 2, deviator, strain))
+        puasson = (1 + (np.interp(strain50, strain, volume_strain) / strain50)) / 2
+        return np.round(puasson, 2)
 
-        puasson = (1 + (np.interp(strain50, strain, volume_strain) / strain50))/2
-
+    @staticmethod
+    def define_dilatancy(strain, deviator, volume_strain):
         # Найдкм угол дилатансии
         i_top = np.argmax(deviator)
 
         if strain[i_top] >= 0.14:
             dilatancy = None
         else:
-            scale = (max(volume_strain) - min(volume_strain)) / 5
             x_area = 0.002
-            try:
-                if x_area <= (strain[i_top + 1] - strain[i_top - 1]):
-                    x_area = (strain[i_top + 2] - strain[i_top - 2])
+            if x_area <= (strain[i_top + 1] - strain[i_top - 1]):
+                x_area = (strain[i_top + 2] - strain[i_top - 2])
 
-                i_begin, = np.where(strain >= strain[i_top] - x_area)
-                i_end, = np.where(strain >= strain[i_top] + x_area)
-                x_dilatancy = strain[i_begin[0]:i_end[0]]
-                y_dilatancy = volume_strain[i_begin[0]:i_end[0]]
+            i_begin, = np.where(strain >= strain[i_top] - x_area)
+            i_end, = np.where(strain >= strain[i_top] + x_area)
 
-                # p = np.polyfit(x_dilatancy, y_dilatancy, 1)
-                # approx = np.polyval(p, x_dilatancy)
-                # A1 = (approx[-1] - approx[0]) / (x_dilatancy[-1] - x_dilatancy[0])
-                # B1 = np.polyval(p, 0)
+            A1, B1 = line_approximate(strain[i_begin[0]:i_end[0]], volume_strain[i_begin[0]:i_end[0]])
+            B1 = volume_strain[i_top] - A1 * strain[i_top]
 
-                A1, B1 = line_approximate(x_dilatancy, y_dilatancy)
-                B1 = volume_strain[i_top] - A1 * strain[i_top]
+            delta_EpsV = line(A1, B1, strain[i_end[0]]) - line(A1, B1, strain[i_begin[0]])
+            delta_Eps1 = (strain[i_end[0]] - strain[i_begin[0]])
 
-                dilatancy_begin, = np.where(line(A1, B1, strain) >= volume_strain[i_top] - scale)
-                dilatancy_end, = np.where(line(A1, B1, strain) >= volume_strain[i_top] + scale)
+            dilatancy_value = np.rad2deg(np.arcsin(delta_EpsV / (delta_EpsV + 2 * delta_Eps1)))
 
-                if dilatancy_begin[0] == 0:
-                    dilatancy_begin, = np.where(line(A1, B1, strain) <= volume_strain[i_top] - scale)
-                    dilatancy_end, = np.where(line(A1, B1, strain) >= volume_strain[i_top] + scale)
+            dilatancy_plot_param = int(len(volume_strain)/10)
+            begin = i_top - dilatancy_plot_param
+            end = i_top + dilatancy_plot_param
 
-                delta_EpsV = line(A1, B1, strain[dilatancy_end[0]]) - line(A1, B1, strain[dilatancy_begin[0]])
-                delta_Eps1 = (strain[dilatancy_end[0]] - strain[dilatancy_begin[0]])
+            if end > len(volume_strain):
+                end = len(volume_strain)
 
-                #dilatancy_value = round(A1 * (180 / np.pi))
-                dilatancy_value = np.rad2deg(np.arcsin(delta_EpsV / (delta_EpsV + 2 * delta_Eps1)))
+            dilatancy = (
+                round(dilatancy_value, 2), [strain[begin], strain[end]],
+                [line(A1, B1, strain[begin]), line(A1, B1, strain[end])])
 
-                dilatancy = (
-                    round(dilatancy_value, 2), [strain[dilatancy_begin[0]], strain[dilatancy_end[0]]],
-                    [line(A1, B1, strain[dilatancy_begin[0]]), line(A1, B1, strain[dilatancy_end[0]])])
-
-            except IndexError:
-                dilatancy = None
-
-        return round(puasson, 2), dilatancy
+        return dilatancy
 
     @staticmethod
     def plaxis_dictionary(strain: np.array, deviator: np.array, index_loop: list) -> dict:
