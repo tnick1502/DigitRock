@@ -38,8 +38,8 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 
 import numpy as np
-stylesheet=getSampleStyleSheet()
-styles= {
+stylesheet = getSampleStyleSheet()
+styles = {
         'default': ParagraphStyle(
             'default',
             fontName='Times',
@@ -831,6 +831,13 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
     r = 30
+
+    def str_Kf(x):
+        s = "{:.2e}".format(x).replace(".", ",")
+        return s[:-4], str(int(s[5:]))
+
+    kf, pow = str_Kf(Res["Kf_log"])
+
     for i in range(r):
         tableData.append([""])
 
@@ -840,7 +847,8 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
     tableData.append(
         [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", "",
          zap(Res["Ca_log"], 5), ""])
-    tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", "", zap(Res["Kf_log"], 7), ""])
+    tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", "",
+                      Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle), ""])
 
 
     try:

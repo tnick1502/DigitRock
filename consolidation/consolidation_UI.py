@@ -174,10 +174,10 @@ class ModelTriaxialConsolidationUI(QWidget):
                     self.sqrt_ax.scatter(*plots["sqrt_line_points"].Cv, zorder=5, color="tomato")
 
                     # Пунктирные линии
-                    self.sqrt_ax.plot(*plots["sqrt_t90_vertical_line"],
-                                      **plotter_params["static_loading_black_dotted_line"])
-                    self.sqrt_ax.plot(*plots["sqrt_t90_horizontal_line"],
-                                      **plotter_params["static_loading_black_dotted_line"])
+                    #self.sqrt_ax.plot(*plots["sqrt_t90_vertical_line"],
+                                      #**plotter_params["static_loading_black_dotted_line"])
+                    #self.sqrt_ax.plot(*plots["sqrt_t90_horizontal_line"],
+                                      #**plotter_params["static_loading_black_dotted_line"])
 
                     if plots["sqrt_t100_vertical_line"]:
                         self.sqrt_ax.plot(*plots["sqrt_t100_vertical_line"],
@@ -186,10 +186,10 @@ class ModelTriaxialConsolidationUI(QWidget):
                                           **plotter_params["static_loading_black_dotted_line"])
 
                     # Текстовые подписи
-                    self.sqrt_ax.text(*plots["sqrt_t90_text"], '$\sqrt{t_{90}}$', horizontalalignment='center',
-                                 verticalalignment='bottom')
-                    self.sqrt_ax.text(*plots["sqrt_strain90_text"], '$ε_{90}$', horizontalalignment='right',
-                                 verticalalignment='center')
+                    #self.sqrt_ax.text(*plots["sqrt_t90_text"], '$\sqrt{t_{90}}$', horizontalalignment='center',
+                                 #verticalalignment='bottom')
+                    #self.sqrt_ax.text(*plots["sqrt_strain90_text"], '$ε_{90}$', horizontalalignment='right',
+                                 #verticalalignment='center')
                     if plots["sqrt_t100_text"]:
                         self.sqrt_ax.text(*plots["sqrt_t100_text"], '$\sqrt{t_{100}}$', horizontalalignment='center',
                                      verticalalignment='bottom')

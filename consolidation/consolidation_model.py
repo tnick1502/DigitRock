@@ -141,7 +141,7 @@ class ModelTriaxialConsolidation:
             return {"volume_strain": self._test_data.volume_strain,
                     "time": self._test_data.time,
                     "time_sqrt_origin": self._test_data.time ** 0.5,
-                    "time_log_origin": np.log(self._test_data.time + 1),
+                    "time_log_origin": np.log10(self._test_data.time + 1),
                     "time_sqrt": self._test_data.time_sqrt,
                     "time_log": self._test_data.time_log,
                     "volume_strain_approximate": self._test_data.volume_strain_approximate}
@@ -697,7 +697,7 @@ class ModelTriaxialConsolidation:
 
         # Сделаем чтобы на осях кв.корня и логарифма шаг по оси был постоянным
         self._test_data.time_sqrt = np.linspace(0, self._test_data.time_cut[-1] ** 0.5, self.points_count)
-        self._test_data.time_log = np.log(self._test_data.time_sqrt ** 2 + 1)
+        self._test_data.time_log = np.log10(self._test_data.time_sqrt ** 2 + 1)
 
         if type == "poly":
             # Аппроксимация полиномом
@@ -710,7 +710,7 @@ class ModelTriaxialConsolidation:
             # Интерполяция Эрмита
             self._test_data.time_sqrt, self._test_data.volume_strain_cut = make_increas(self._test_data.time_sqrt,
                                                                                         self._test_data.volume_strain_cut)
-            self._test_data.time_log = np.log(self._test_data.time_sqrt ** 2 + 1)
+            self._test_data.time_log = np.log10(self._test_data.time_sqrt ** 2 + 1)
 
             self._test_data.volume_strain_approximate = pchip_interpolate(self._test_data.time_cut ** 0.5,
                                                                           self._test_data.volume_strain_cut,
@@ -739,7 +739,7 @@ class ModelTriaxialConsolidation:
                                                                                   self._test_data.volume_strain_approximate,
                                                                                   self.processed_points_sqrt)
         if self.processed_points_sqrt.Cv:
-            self._test_result.Cv_sqrt = round(((0.848 * 3.8 * 3.8) / (4 * self.processed_points_sqrt.Cv.x ** 2)), 3)
+            self._test_result.Cv_sqrt = round(((0.848 * 7.1 * 7.1) / (4 * self.processed_points_sqrt.Cv.x ** 2)), 3)
             self._test_result.t90_sqrt = self.processed_points_sqrt.Cv.x ** 2
 
             self._test_result.t100_sqrt, self._test_result.strain100_sqrt = interpolated_intercept(
@@ -793,16 +793,16 @@ class ModelTriaxialConsolidation:
                                                                                 ((self.processed_points_log.Cv.y +
                                                                                   self._test_result.d0) / 2)),
                                               self._test_data.volume_strain_approximate)
-            self._test_result.t50_log = round(np.e ** strain50[0])
+            self._test_result.t50_log = round(10 ** strain50[0])
 
-            self._test_result.Cv_log = round(((3.8 * 3.8 * 0.197) / (4 * self._test_result.t50_log)), 3)
+            self._test_result.Cv_log = round(((7.1 * 7.1 * 0.197) / (4 * self._test_result.t50_log)), 3)
 
             self._test_result.Ca_log = round(((abs(self.processed_points_log.second_line_end_point.y) -
                                                abs(abs(self.processed_points_log.second_line_start_point.y)))
                                               / (self.processed_points_log.second_line_end_point.x -
                                                  self.processed_points_log.second_line_start_point.x)), 4)
 
-            self._test_result.t100_log = round(np.e ** self.processed_points_log.Cv.x)
+            self._test_result.t100_log = round(10 ** self.processed_points_log.Cv.x)
             self._test_result.strain100_log = self.processed_points_log.Cv.y
 
             self._test_result.Kf_log = ModelTriaxialConsolidation.define_Kf(self._test_result.strain100_log,
@@ -993,7 +993,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._test_params.p_max = statment[statment.current_test].mechanical_properties.p_max
         self._test_params.m = statment[statment.current_test].mechanical_properties.m
 
-        self._draw_params.max_time = (((0.848 * 3.8 * 3.8) / (4 * self._test_params.Cv))) * np.random.uniform(5, 7)
+        self._draw_params.max_time = (((0.848 * 7.1 * 7.1) / (4 * self._test_params.Cv))) * np.random.uniform(5, 7)
         self._draw_params.strain = define_final_deformation(self._test_params.p_max, self._test_params.Eoed,
                                                             self._test_params.m)
 
@@ -1168,8 +1168,8 @@ if __name__ == '__main__':
     file = r"Z:\МДГТ - Механика\3. Трехосные испытания\1365\Test\Test.1.log"
 
     a = ModelTriaxialConsolidationSoilTest()
-    statment.load("C:/Users/Пользователь/Desktop/test/consolidation.pickle")
-    statment.current_test = "2-1"
+    statment.load(r"C:\Users\Пользователь\YandexDisk\Work\Compression\Consolidation_Nikita3\consolidation.pickle")
+    statment.current_test = "6.1П-1"
     a.set_test_params()
     a.plotter()
     plt.show()

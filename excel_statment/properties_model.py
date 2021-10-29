@@ -896,8 +896,8 @@ class ConsolidationProperties:
                 MechanicalProperties.define_kf(physical_properties.type_ground, physical_properties.e)), 3)
             self.Ca = Ca if Ca else np.round(np.random.uniform(0.001, 0.003), 5)
 
-            if self.Cv > 0.1:
-                self.Cv = 0.1
+            if self.Cv > 1.5:
+                self.Cv = np.random.uniform(1, 1.5)
 
             self.p_max = ConsolidationProperties.round_pmax(ConsolidationProperties.define_loading_pressure(
                 float_df(data_frame.iat[string, MechanicalPropertyPosition["p_max"][1]]),
@@ -916,7 +916,7 @@ class ConsolidationProperties:
             sigma_max = (2 * (depth - pit_depth) * 10) / 1000 + build_press if (depth - pit_depth) > 0 else (2 * 10 * depth) / 1000
             return sigma_max
         else:
-            return np.round((2 * 10 * depth) / 1000, 1)
+            return (2 * 10 * depth) / 1000
 
     @staticmethod
     def round_pmax(sigma, param=5):
