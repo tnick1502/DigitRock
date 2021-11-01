@@ -60,11 +60,11 @@ def consolidation_deviation(x_time, xc, deviation):
     i_2 = i[0]
 
     deviation_array = np.hstack((create_deviation_curve(x_time[0:i_1], deviation, val=(1, 1),
-                                                        points=np.random.uniform(2, 3), borders="zero_diff"),
+                                                        points=np.random.uniform(2, 3), borders="zero_diff", one_side=True),
                                  create_deviation_curve(x_time[i_1:i_2], deviation / 5, val=(1, 0.1),
-                                                        points=np.random.uniform(2, 3), borders="zero_diff"),
+                                                        points=np.random.uniform(2, 3), borders="zero_diff",  one_side=True),
                                  create_deviation_curve(x_time[i_2:len(x_time)], deviation / 10, val=(1, 0.1),
-                                                        points=np.random.uniform(3, 4), borders="zero_diff")))
+                                                        points=np.random.uniform(3, 4), borders="zero_diff",  one_side=True)))
 
     return deviation_array
 
@@ -114,7 +114,7 @@ def function_consalidation(final_volume_strain,
     # Расчет смещения объемной деформации на этапе приложения нагрузки
     load_stage_strain = final_volume_strain*np.random.uniform(0.1, 0.2)
     final_volume_strain -= load_stage_strain
-    deviation = np.random.uniform(0.01, 0.02)*final_volume_strain
+    deviation = abs(np.random.uniform(0.01, 0.02)*final_volume_strain)
 
     t_90_sqrt = math.sqrt((0.848 * 7.1 * 7.1) / (4 * Cv))
     t_90_log = np.log10(t_90_sqrt ** 2 + 1)
@@ -215,7 +215,10 @@ def function_consalidation(final_volume_strain,
 
     y_time += load_stage_strain
 
-    y_time += consolidation_deviation(x_time, t_90_sqrt, deviation)
+    # plt.plot(np.log(x_time+1), y_time,np.log(x_time+1), y_time-consolidation_deviation(x_time, t_90_sqrt, deviation) )
+    # plt.show()
+
+    y_time -= consolidation_deviation(x_time, t_90_sqrt, deviation)
     y_time += np.random.uniform(-0.0004, 0.0004, len(y_time))
     y_time = discrete_array(y_time, 0.0008)
     return x_time, y_time
@@ -322,27 +325,27 @@ def round_pmax(sigma, param=5):
 
 if __name__ == "__main__":
 
-    # finale = define_final_deformation(0.3, 10, 0.3)
-    # print(finale)
-    # x1, y1, xp, yp = function_consalidation(finale, Cv=1,reverse=True, max_time=800, point_time=0.001, Ca=-0.001)
-    # #x1, y1 = function_consalidation(-0.06113427426476852, Cv=0.1, reverse=True, max_time=500, point_time=0.0025, Ca=-0.01082)
-    #
+    finale = define_final_deformation(0.3, 10, 0.3)
+    print(finale)
+    x1, y1= function_consalidation(finale, Cv=0.03,reverse=True, max_time=12000, point_time=0.001, Ca=-0.0001)
+    #x1, y1 = function_consalidation(-0.06113427426476852, Cv=0.1, reverse=True, max_time=500, point_time=0.0025, Ca=-0.01082)
+
     # time_sqrt = np.linspace(0, x1[-1] ** 0.5, 50)
     #
     # volume_strain_approximate = pchip_interpolate(x1 ** 0.5, y1, time_sqrt)
-    #
-    #
-    # fig = plt.figure(figsize=(10, 10))
-    # ax1 = plt.subplot()
-    #
-    #
-    # ax1.scatter(np.array(xp),np.array(yp), color=['yellow', 'green','blue', 'red', 'pink'])
-    # #ax1.plot(time_sqrt, volume_strain_approximate)
-    # ax1.plot(np.log10(x1+1),y1)
-    # ax1.legend()
-    # save_device2('C:\\Users\\Пользователь', x1, y1, 0.3)
-    #plt.show()
-    # vol_test()
-    print(define_loading_pressure(None, None, None, 1.5))
+
+
+    fig = plt.figure(figsize=(10, 10))
+    ax1 = plt.subplot()
+
+
+    #ax1.scatter(np.array(xp),np.array(yp), color=['yellow', 'green','blue', 'red', 'pink'])
+    #ax1.plot(time_sqrt, volume_strain_approximate)
+    ax1.plot(np.log10(x1+1),y1)
+    ax1.legend()
+    save_device2('C:\\Users\\Пользователь', x1, y1, 0.3)
+    plt.show()
+    #vol_test()
+
 
 

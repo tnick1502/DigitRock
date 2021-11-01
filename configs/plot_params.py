@@ -29,5 +29,12 @@ plotter_params = {
 
     "static_loading_sandybrown_dotted_line": {
         "linewidth": 1.5, "color": "sandybrown", "linestyle": "--"
-    }
+    },
+    "consolidation_black_dotted_line": {
+        "linewidth": 0.8, "color": "black", "linestyle": "--"
+    },
+
+    "consolidation_sandybrown_line": {
+        "linewidth": 0.8, "color": "sandybrown", "linestyle": "--"
+    },
 }

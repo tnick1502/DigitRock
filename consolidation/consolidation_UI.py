@@ -163,38 +163,38 @@ class ModelTriaxialConsolidationUI(QWidget):
                     # Основные линии обработки
                     self.sqrt_ax.plot(*point_to_xy(plots["sqrt_line_points"].line_start_point,
                                               plots["sqrt_line_points"].line_end_point),
-                                 **plotter_params["static_loading_sandybrown_line"])
+                                 **plotter_params["consolidation_sandybrown_line"])
 
                 if plots["sqrt_line_points"].Cv:
                     self.sqrt_ax.plot(
                         *point_to_xy(plots["sqrt_line_points"].line_start_point, plots["sqrt_line_points"].Cv),
-                        **plotter_params["static_loading_sandybrown_line"])
+                        **plotter_params["consolidation_sandybrown_line"])
 
                     # Точки обработки
                     self.sqrt_ax.scatter(*plots["sqrt_line_points"].Cv, zorder=5, color="tomato")
 
                     # Пунктирные линии
-                    #self.sqrt_ax.plot(*plots["sqrt_t90_vertical_line"],
-                                      #**plotter_params["static_loading_black_dotted_line"])
-                    #self.sqrt_ax.plot(*plots["sqrt_t90_horizontal_line"],
-                                      #**plotter_params["static_loading_black_dotted_line"])
+                    self.sqrt_ax.plot(*plots["sqrt_t90_vertical_line"],
+                                      **plotter_params["consolidation_black_dotted_line"])
+                    self.sqrt_ax.plot(*plots["sqrt_t90_horizontal_line"],
+                                      **plotter_params["consolidation_black_dotted_line"])
 
-                    if plots["sqrt_t100_vertical_line"]:
-                        self.sqrt_ax.plot(*plots["sqrt_t100_vertical_line"],
-                                          **plotter_params["static_loading_black_dotted_line"])
-                        self.sqrt_ax.plot(*plots["sqrt_t100_horizontal_line"],
-                                          **plotter_params["static_loading_black_dotted_line"])
+                    #if plots["sqrt_t100_vertical_line"]:
+                        #self.sqrt_ax.plot(*plots["sqrt_t100_vertical_line"],
+                                          #**plotter_params["static_loading_black_dotted_line"])
+                        #self.sqrt_ax.plot(*plots["sqrt_t100_horizontal_line"],
+                                          #**plotter_params["static_loading_black_dotted_line"])
 
                     # Текстовые подписи
-                    #self.sqrt_ax.text(*plots["sqrt_t90_text"], '$\sqrt{t_{90}}$', horizontalalignment='center',
-                                 #verticalalignment='bottom')
-                    #self.sqrt_ax.text(*plots["sqrt_strain90_text"], '$ε_{90}$', horizontalalignment='right',
-                                 #verticalalignment='center')
-                    if plots["sqrt_t100_text"]:
-                        self.sqrt_ax.text(*plots["sqrt_t100_text"], '$\sqrt{t_{100}}$', horizontalalignment='center',
-                                     verticalalignment='bottom')
-                        self.sqrt_ax.text(*plots["sqrt_strain100_text"], '$ε_{100}$', horizontalalignment='right',
-                                     verticalalignment='center')
+                    self.sqrt_ax.text(*plots["sqrt_t90_text"], '$\sqrt{t_{90}}$', horizontalalignment='center',
+                                 verticalalignment='bottom')
+                    self.sqrt_ax.text(*plots["sqrt_strain90_text"], '$ε_{90}$', horizontalalignment='right',
+                                 verticalalignment='center')
+                    #if plots["sqrt_t100_text"]:
+                        #self.sqrt_ax.text(*plots["sqrt_t100_text"], '$\sqrt{t_{100}}$', horizontalalignment='center',
+                                     #verticalalignment='bottom')
+                        #self.sqrt_ax.text(*plots["sqrt_strain100_text"], '$ε_{100}$', horizontalalignment='right',
+                                     #verticalalignment='center')
 
 
                     self.sqrt_ax.plot([], [], label="$C_{v}$" + " = " + str(res["Cv_sqrt"]),
@@ -226,10 +226,10 @@ class ModelTriaxialConsolidationUI(QWidget):
                     # Основные линии обработки
                     self.log_ax.plot(*point_to_xy(plots["log_line_points"].first_line_start_point,
                                              plots["log_line_points"].first_line_end_point),
-                                **plotter_params["static_loading_sandybrown_line"])
+                                **plotter_params["consolidation_sandybrown_line"])
                     self.log_ax.plot(*point_to_xy(plots["log_line_points"].second_line_start_point,
                                              plots["log_line_points"].second_line_end_point),
-                                **plotter_params["static_loading_sandybrown_line"])
+                                **plotter_params["consolidation_sandybrown_line"])
 
                     # Точки концов линий
                     self.log_ax.scatter(*plots["log_line_points"].first_line_start_point, zorder=5, color="dimgray")
@@ -240,19 +240,25 @@ class ModelTriaxialConsolidationUI(QWidget):
                     # Точки обработки
                     if plots["log_line_points"].Cv:
                         self.log_ax.scatter(*plots["log_line_points"].Cv, zorder=5, color="tomato")
-                        self.log_ax.scatter(*plots["d0"], zorder=5, color="tomato")
+                        #self.log_ax.scatter(*plots["d0"], zorder=5, color="tomato")
 
                         # Пунктирные линии
                         self.log_ax.plot(*plots["log_t100_vertical_line"],
-                                         **plotter_params["static_loading_black_dotted_line"])
+                                         **plotter_params["consolidation_black_dotted_line"])
                         self.log_ax.plot(*plots["log_t100_horizontal_line"],
-                                         **plotter_params["static_loading_black_dotted_line"])
+                                         **plotter_params["consolidation_black_dotted_line"])
+                        self.log_ax.plot(*plots["d0_line"],
+                                         **plotter_params["consolidation_black_dotted_line"])
 
                         # Текстовые подписи
-                        self.log_ax.text(*plots["log_t100_text"], '$\sqrt{t_{100}}$', horizontalalignment='center',
+                        self.log_ax.text(*plots["log_t100_text"], '$\lg{(t_{100})}$', horizontalalignment='center',
                                     verticalalignment='bottom')
                         self.log_ax.text(*plots["log_strain100_text"], '$ε_{100}$', horizontalalignment='right',
                                     verticalalignment='center')
+
+                        self.log_ax.text(*plots["d0"], '$d_{0}$', horizontalalignment='center',
+                                         verticalalignment='center')
+
 
                     self.log_ax.plot([], [], label="$C_{v}$" + " = " + str(res["Cv_log"]), color="#eeeeee")
                     self.log_ax.plot([], [], label="$t_{100}$" + " = " + str(res["t100_log"]),
