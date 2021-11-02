@@ -68,6 +68,7 @@ class ModelTriaxialDeviatorLoading:
         self._test_data = AttrDict({"strain": None,
                                     "deviator": None,
 
+                                    "pore_pressure": None,
                                     "reload_points": None,
 
                                     "volume_strain": None,
@@ -77,6 +78,7 @@ class ModelTriaxialDeviatorLoading:
                                     "cell_volume_strain": None,
 
                                     "strain_cut": None,
+                                    "pore_pressure_cut": None,
                                     "volume_strain_cut": None,
                                     "deviator_cut": None,
                                     "reload_points_cut": None})
@@ -92,6 +94,7 @@ class ModelTriaxialDeviatorLoading:
                                       "E": None,
                                       "Eur": None,
                                       "qf": None,
+                                      "max_pore_pressure": None,
                                       "poissons_ratio": None,
                                       "dilatancy_angle": None})
 
@@ -153,10 +156,7 @@ class ModelTriaxialDeviatorLoading:
     def get_test_results(self):
         """Получение результатов обработки опыта"""
         dict = self._test_result.get_dict()
-        dict["sigma_3"] = np.round(self._test_params.get_dict()["sigma_3"]/1000, 3)\
-            if self._test_params.get_dict()["sigma_3"] is not None else None
-        dict["u"] = round(self._test_params.get_dict()["u"]/1000, 2)\
-            if self._test_params.get_dict()["u"] is not None else None
+        dict["sigma_3"] = np.round((self._test_params.sigma_3 - float(dict["max_pore_pressure"])) / 1000, 3)
         return dict
 
     def get_plot_data(self):
@@ -315,6 +315,10 @@ class ModelTriaxialDeviatorLoading:
         self._test_data.deviator_cut = self._test_data.deviator[
                                        self._test_cut_position.left:self._test_cut_position.right] - \
                                        self._test_data.deviator[self._test_cut_position.left]
+
+        self._test_data.pore_pressure_cut = self._test_data.pore_pressure[
+                                       self._test_cut_position.left:self._test_cut_position.right] - \
+                                       self._test_data.pore_pressure[self._test_cut_position.left]
         if self._test_data.reload_points:
             self._test_data.reload_points_cut = [self._test_data.reload_points[0] - self._test_cut_position.left,
                                                  self._test_data.reload_points[1] - self._test_cut_position.left,
@@ -339,6 +343,11 @@ class ModelTriaxialDeviatorLoading:
 
         self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
                                   self._test_data.deviator_cut, self._test_params.sigma_3)
+
+        self._test_result.max_pore_pressure = max(self._test_data.pore_pressure_cut)
+
+        if self._test_result.max_pore_pressure <= 5:
+            self._test_result.max_pore_pressure = 0
 
     def get_processing_parameters(self):
         "Функция возвращает данные по обрезанию краев графиков"
@@ -603,7 +612,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         xc, residual_strength = ModelTriaxialDeviatorLoadingSoilTest.define_xc_value_residual_strength(
             statment[statment.current_test].physical_properties, statment[statment.current_test].mechanical_properties.sigma_3,
             statment[statment.current_test].mechanical_properties.qf, statment[statment.current_test].mechanical_properties.E50)
-
+        if isinstance(statment[statment.current_test].mechanical_properties.u, list):
+            self._test_params.u = None
+        else:
+            self._test_params.u = statment[statment.current_test].mechanical_properties.u
 
         if xc <= 0.14:
             xc *= np.random.uniform(0.8, 1.05)
@@ -652,7 +664,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         return ModelTriaxialDeviatorLoadingSoilTest.dictionary_deviator_loading(self._test_data.strain,
                                                                                 self._test_data.deviator,
                                     self._test_data.pore_volume_strain, self._test_data.cell_volume_strain,
-                                    self._test_data.reload_points, velocity=self._test_params.velocity,
+                                    self._test_data.reload_points, pore_pressure=self._test_data.pore_pressure,
+                                                                                velocity=self._test_params.velocity,
                                     delta_h_consolidation = self._test_params.delta_h_consolidation)
 
     def get_draw_params(self):
@@ -697,7 +710,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         if self._test_params.qf >= 150:
             if self._test_params.Eur:
                 self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin, _, self._test_data.pore_pressure = curve(self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
                                                                     x2=self._draw_params.residual_strength_param,
                                                                     qf2=self._draw_params.residual_strength,
                                                                     qocr=self._draw_params.qocr,
@@ -707,10 +720,11 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                     Eur=self._test_params.Eur,
                                                                     y_rel_p=self.unloading_borders[0],
                                                                     point2_y=self.unloading_borders[1],
-                                                                    v_d_xc=-self._draw_params.volumetric_strain_xc)
+                                                                    v_d_xc=-self._draw_params.volumetric_strain_xc,
+                                                                    U=self._test_params.u)
             else:
                 self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin, _, self._test_data.pore_pressure = curve(
                     self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
                     x2=self._draw_params.residual_strength_param,
                     qf2=self._draw_params.residual_strength,
@@ -718,7 +732,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                     m_given=self._draw_params.poisson,
                     amount_points=max_time,
                     angle_of_dilatacy=dilatancy,
-                    v_d_xc=-self._draw_params.volumetric_strain_xc)
+                    v_d_xc=-self._draw_params.volumetric_strain_xc,
+                    U=self._test_params.u)
 
             self._test_data.deviator = np.round(self._test_data.deviator, 3)
             self._test_data.strain = np.round(
@@ -743,7 +758,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             k = 250/self._test_params.qf
             if self._test_params.Eur:
                 self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(self._test_params.qf*k,
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin, _, self._test_data.pore_pressure = curve(self._test_params.qf*k,
                                                 self._test_params.E50*k,
                                                 xc=self._draw_params.fail_strain,
                                                 x2=self._draw_params.residual_strength_param,
@@ -757,7 +772,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                 point2_y=self.unloading_borders[1]*k)
             else:
                 self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin, _, self._test_data.pore_pressure = curve(
                     self._test_params.qf * k,
                     self._test_params.E50 * k,
                     xc=self._draw_params.fail_strain,
@@ -772,9 +787,13 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         i_end = ModelTriaxialDeviatorLoadingSoilTest.define_final_loading_point(self._test_data.deviator, 0.08 + np.random.uniform(0.01, 0.03))
 
         self._test_data.strain = self._test_data.strain[:i_end]
+        self._test_data.pore_pressure = self._test_data.pore_pressure[:i_end]
         self._test_data.deviator = self._test_data.deviator[:i_end]
         self._test_data.pore_volume_strain = self._test_data.pore_volume_strain[:i_end]
         self._test_data.cell_volume_strain = self._test_data.cell_volume_strain[:i_end]
+        #plt.plot(self._test_data.strain, self._test_data.pore_pressure)
+       # plt.plot(self._test_data.strain, self._test_data.deviator)
+        #plt.show()
 
         # Действия для того, чтобы полученный массив данных записывался в словарь для последующей обработки
         k = np.max(np.round(self._test_data.deviator[begin:] - self._test_data.deviator[begin], 3)) / self._test_params.qf
@@ -1071,8 +1090,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         return 5.5 - 30 * xc
 
     @staticmethod
-    def dictionary_deviator_loading(strain, deviator, pore_volume_strain, cell_volume_strain, indexs_loop, velocity=1,
-                                    delta_h_consolidation=0):
+    def dictionary_deviator_loading(strain, deviator, pore_volume_strain, cell_volume_strain, indexs_loop,
+                                    pore_pressure, velocity=1, delta_h_consolidation=0,):
         """Формирует словарь девиаторного нагружения"""
 
         index_unload, = np.where(strain >= strain[-1] * 0.92)  # индекс абциссы конца разгрузки
@@ -1146,7 +1165,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             "VerticalDeformation_mm": strain * (76 - delta_h_consolidation),
             "CellPress_kPa": np.full(len(time), 0) + np.random.uniform(-0.1, 0.1, len(time)),
             "CellVolume_mm3": (cell_volume_strain * np.pi * 19 ** 2 * (76 - delta_h_consolidation)),
-            "PorePress_kPa": np.full(len(time), 0) + np.random.uniform(-0.1, 0.1, len(time)),
+            "PorePress_kPa": pore_pressure,
             "PoreVolume_mm3": pore_volume_strain * np.pi * 19 ** 2 * (76 - delta_h_consolidation),
             "VerticalPress_kPa": deviator + np.random.uniform(-0.1, 0.1, len(time)),
             "Trajectory": np.full(len(time), 'CTC')}
@@ -1221,29 +1240,9 @@ if __name__ == '__main__':
     a.set_test_data(ModelTriaxialStaticLoad.open_geotek_log(file)["deviator_loading"])
     a.plotter()
     plt.show()"""
-    param = {'E50': 50000, 'sigma_3': 170, 'sigma_1': 800, 'c': 0.025, 'fi': 45, 'qf': 700, 'K0': 0.5, "Eur": None,
-             'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0,
-             'dilatancy': 5, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
-                                                                                         'depth': 19.0,
-                                                                                         'name': 'Песок крупный неоднородный',
-                                                                                         'ige': '-', 'rs': 2.73,
-                                                                                         'r': '-', 'rd': '-', 'n': '-',
-                                                                                         'e': '-', 'W': 12.8, 'Sr': '-',
-                                                                                         'Wl': '-', 'Wp': '-',
-                                                                                         'Ip': '-', 'Il': '-',
-                                                                                         'Ir': '-', 'str_index': '-',
-                                                                                         'gw_depth': '-',
-                                                                                         'build_press': 500.0,
-                                                                                         'pit_depth': 7.0, '10': '-',
-                                                                                         '5': '-', '2': 6.8, '1': 39.2,
-                                                                                         '05': 28.0, '025': 9.2,
-                                                                                         '01': 6.1, '005': 10.7,
-                                                                                         '001': '-', '0002': '-',
-                                                                                         '0000': '-', 'Nop': 7,
-                                                                                         'flag': False},
-             'test_type': 'Трёхосное сжатие (E)'}
-
     a = ModelTriaxialDeviatorLoadingSoilTest()
-    a.set_test_params(param)
+    statment.load(r"C:\Users\Пользователь\Desktop\test\Трёхосное сжатие КН.pickle")
+    statment.current_test = "7а-3"
+    a.set_test_params()
     a.plotter()
     plt.show()

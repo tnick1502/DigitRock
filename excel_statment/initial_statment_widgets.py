@@ -279,7 +279,9 @@ class TriaxialStaticStatment(InitialStatment):
                 "Выберите тип испытания", "Трёхосное сжатие (E)",
                 "Трёхосное сжатие (F, C)",
                 "Трёхосное сжатие (F, C, E)",
-                "Трёхосное сжатие с разгрузкой"],
+                "Трёхосное сжатие с разгрузкой",
+                "Трёхосное сжатие КН",
+                "Трёхосное сжатие НН"],
 
             "K0_mode": [
                 "Тип определения K0",
@@ -304,7 +306,8 @@ class TriaxialStaticStatment(InitialStatment):
             "Eur": "Модуль разгрузки Eur, кПа",
             "dilatancy_angle": "Угол дилатансии, град",
             "OCR": "OCR",
-            "m": "Показатель степени жесткости"
+            "m": "Показатель степени жесткости",
+            "u": "Поровое давление"
         }
 
         super().__init__(data_test_parameters, fill_keys)
@@ -388,7 +391,9 @@ class TriaxialStaticStatment(InitialStatment):
                             FC_models.generateTests()
                             FC_models.dump("".join([i for i in os.path.split(self.path)[:-1]]), "FC_models.pickle")
 
-                    if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C)":
+                    if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C)" or \
+                            statment.general_parameters.test_mode == "Трёхосное сжатие КН" or \
+                            statment.general_parameters.test_mode == "Трёхосное сжатие НН":
                         load_FC_models()
 
                     elif statment.general_parameters.test_mode == "Трёхосное сжатие (E)" or statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":

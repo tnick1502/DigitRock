@@ -158,6 +158,7 @@ class MechanicalProperties:
     Cv = DataTypeValidation(float, int)
     Ca = DataTypeValidation(float, int)
     m = DataTypeValidation(float, int)
+    u = DataTypeValidation(float, int, np.int32)
     E50 = DataTypeValidation(float, int)
     c = DataTypeValidation(float, int)
     fi = DataTypeValidation(float, int)
@@ -171,6 +172,7 @@ class MechanicalProperties:
     build_press = DataTypeValidation(float, int)
     pit_depth = DataTypeValidation(float, int)
     Eur = DataTypeValidation(float, int)
+    u = DataTypeValidation(list, float, int, np.int32)
     pressure_array: dict = {
         "set_by_user": None,
         "calculated_by_pressure": None,
@@ -209,8 +211,10 @@ class MechanicalProperties:
     def defineProperties(self, physical_properties, data_frame: pd.DataFrame, string: int,
                          test_mode=None, K0_mode=None) -> None:
         """Считывание строки свойств"""
-
-        self.c, self.fi, self.E50 = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
+        if test_mode == "Трёхосное сжатие КН":
+            self.c, self.fi, self.E50, self.u = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
+        else:
+            self.c, self.fi, self.E50 = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
 
         if self.c and self.fi and self.E50:
 
@@ -285,6 +289,11 @@ class MechanicalProperties:
             if self.pressure_array["calculated_by_pressure"] is None:
                 self.pressure_array["calculated_by_pressure"] = \
                     MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3)
+
+            if test_mode == "Трёхосное сжатие КН":
+                self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
+            elif test_mode == "Трёхосное сжатие НН":
+                self.u = [np.round(i * np.random.uniform(0.85, 0.95), 1) for i in self.pressure_array["current"]]
 
     @staticmethod
     def round_sigma_3(sigma_3, param=5):

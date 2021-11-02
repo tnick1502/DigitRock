@@ -650,7 +650,9 @@ class StatickSoilTestApp(QWidget):
             self.tab_3.item_identification.set_data()
             self.tab_2.set_params()
             self.tab_3.set_params()
-        elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)':
+        elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)' or \
+                statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or \
+                statment.general_parameters.test_mode == 'Трёхосное сжатие КН':
             self.tab_3.item_identification.set_data()
             self.tab_3.set_params()
         elif statment.general_parameters.test_mode == 'Трёхосное сжатие (E)':

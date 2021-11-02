@@ -633,7 +633,7 @@ def loop(x, y, Eur, y_rel_p, point2_y):
 
     crosspoint_y = point1_y * 0.97  # точка пересечения участка разгрузки и повторной нагрузки
     icp, = np.where(crosspoint_y >= y1_l)
-    crosspoint_x = x1_l[icp[0]]  # точка пересечения участка разгрузки и повторной нагрузки
+    #crosspoint_x = x1_l[icp[0]]  # точка пересечения участка разгрузки и повторной нагрузки
 
     '''
     spl2 = interpolate.make_interp_spline([point2_x, crosspoint_x, point3_x],
@@ -1073,6 +1073,11 @@ def curve(qf, e50, **kwargs):
     except KeyError:
         kwargs["point2_y"] = 10
 
+    try:
+        kwargs["U"]
+    except KeyError:
+        kwargs["U"] = None
+
     xc = kwargs.get('xc')
     x2 = kwargs.get('x2')
     qf2 = kwargs.get('qf2')
@@ -1082,6 +1087,7 @@ def curve(qf, e50, **kwargs):
     Eur = kwargs.get('Eur')
     y_rel_p = kwargs.get('y_rel_p')
     point2_y = kwargs.get('point2_y')
+    U = kwargs.get('U')
 
     if y_rel_p > qf:
         y_rel_p = qf
@@ -1356,7 +1362,33 @@ def curve(qf, e50, **kwargs):
     else:
         indexs_loop = [0, 0, 0]
 
-    return x, y, y1, y2, indexs_loop, len(x_start)
+    if U:
+        e50_U = U / x50
+        x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50,  kwargs.get('xc'), 1.2* kwargs.get('xc'), np.random.uniform(0.3, 0.7)*U,
+                                            0, 0, amount_points, 0.8*U, False, 10)
+        index_x2, = np.where(x_U >= 0.15)
+        x_U = x_U[:index_x2[0]]
+        y_U = y_U[:index_x2[0]]
+
+        #x_last_point = np.random.uniform(0.005, 0.01) - (x_U[-1] - x_U[-2])
+        x_start = np.linspace(0, x_last_point, int(x_last_point / (x_U[-1] - x_U[-2])) + 1)
+        slant = np.random.uniform(20, 30)
+        #amplitude = np.random.uniform(15, 25)
+        y_start = exponent(x_start, amplitude, slant)
+        x_start -= x_start[-1] + (x_U[-1] - x_U[-2])
+        y_start -= y_start[-1]
+        y_start = y_start + np.random.uniform(-1, 1, len(y_start))
+        y_start = discrete_array(y_start, 0.5)
+        x_U = np.hstack((x_start, x_U))
+
+        x_U += abs(x_U[0])
+
+        y_U = np.hstack((y_start, y_U))
+        y_U += abs(y_U[0])
+        y_U[0] = 0.
+
+        return x, y, y1, y2, indexs_loop, len(x_start), x_U, y_U
+    return x, y, y1, y2, indexs_loop, len(x_start), x, np.random.uniform(-0.1, 0.1, len(x))
 
 
 def vol_test():
@@ -1564,33 +1596,33 @@ if __name__ == '__main__':
     # plt.ylabel("Девиатор q, кПа")
     #    x1, y1, x_log1, y_0_xca1, point_time1 = function_consalidation(Cv=0.379, point_time=1, reverse=1, last_point=250)
 
-    {'E50': 29710.0, 'sigma_3': 186.4, 'sigma_1': 981.1, 'c': 0.001, 'fi': 42.8, 'qf': 794.7, 'K0': 0.5,
-     'Cv': 1.906625504418318, 'Ca': 0.006335165735463461, 'poisson': 0.34, 'build_press': 500.0, 'pit_depth': 7.0,
-     'Eur': 61121, 'dilatancy': 10.55, 'OCR': 1, 'm': 0.64, 'lab_number': '7а-1',
-     'data_phiz': {'borehole': '7а', 'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73,
-                   'r': '-', 'rd': '-', 'n': '-', 'e': 0.5, 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-',
-                   'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0,
-                   '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-',
-                   '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
-    (596.48, 382.8)
+    # {'E50': 29710.0, 'sigma_3': 186.4, 'sigma_1': 981.1, 'c': 0.001, 'fi': 42.8, 'qf': 794.7, 'K0': 0.5,
+    #  'Cv': 1.906625504418318, 'Ca': 0.006335165735463461, 'poisson': 0.34, 'build_press': 500.0, 'pit_depth': 7.0,
+    #  'Eur': 61121, 'dilatancy': 10.55, 'OCR': 1, 'm': 0.64, 'lab_number': '7а-1',
+    #  'data_phiz': {'borehole': '7а', 'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73,
+    #                'r': '-', 'rd': '-', 'n': '-', 'e': 0.5, 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-',
+    #                'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0,
+    #                '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-',
+    #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
+    # (596.48, 382.8)
 
-    x, y, z, z1, loop, a = curve(794.7, 29710.0, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
+    x, y, y1, y2, indexs_loop, a, x_U, y_U = curve(800, 29710.0, xc=0.05, x2=0.16, qf2=500, qocr=0, m_given=0.35,
                                  amount_points=500, angle_of_dilatacy=6, Eur=30000, y_rel_p=596, point2_y=382)
 
-
-    i, = np.where(x >= max(x) - 0.15)
-    x = x[i[0]:] - x[i[0]]
-    z = z[i[0]:] - z[i[0]]
-    z1 = z1[i[0]:] - z1[i[0]]
-    y = y[i[0]:] - y[i[0]]
-    pu, d = find_puasson_dilatancy(x, y, z)
-    d = d[0]
-    y += np.random.uniform(-1, 1, len(y))
-    #E, q = find_E50_qf(x, y)
-    #print(E)
-    i = np.argmax(y)
-    y -= y[0]
-    plt.plot(x, z)
+    #
+    # i, = np.where(x >= max(x) - 0.15)
+    # x = x[i[0]:] - x[i[0]]
+    # z = z[i[0]:] - z[i[0]]
+    # z1 = z1[i[0]:] - z1[i[0]]
+    # y = y[i[0]:] - y[i[0]]
+    # pu, d = find_puasson_dilatancy(x, y, z)
+    # d = d[0]
+    # y += np.random.uniform(-1, 1, len(y))
+    # #E, q = find_E50_qf(x, y)
+    # #print(E)
+    # i = np.argmax(y)
+    # y -= y[0]
+    plt.plot(x, y, x_U, y_U)
     #with open("C:/Users/Пользователь/Desktop/test_file.txt", "w") as file:
         #for i in range(len(y)):
             #file.write(str(np.round(-x[i], 4)).replace(".", ",") + "\t" + str(np.round(y[i], 4)).replace(".", ",")+ "\n")

@@ -72,7 +72,7 @@ class MohrTable(QWidget):
 
         self.set_param({"sigma_3": "",
                         "sigma_1": "",
-                        "u": ""})
+                        "max_pore_pressure": ""})
 
         self.plot_button = QPushButton("Обработчик опыта")
         self.plot_button.setFixedHeight(50)
@@ -91,7 +91,7 @@ class MohrTable(QWidget):
                                     ["σ3', МПа",
                                      "σ1', МПа",
                                      "u, МПа"],
-                                    [param["sigma_3"], param["sigma_1"], param["u"]]], "Stretch")
+                                    [param["sigma_3"], param["sigma_1"], param["max_pore_pressure"]]], "Stretch")
 
 class MohrTestManager(QWidget):
     """Класс для табличного отображения параметров кругов Мора"""
@@ -244,8 +244,11 @@ class MohrWidget(QWidget):
             res["sigma_1"] = res["sigma_3"] + res["qf"]
 
             _format = "{:.3f}"
-            for key in ["sigma_1", "sigma_3", "u"]:
-                res[key] = _format.format(res[key])
+            for key in ["sigma_1", "sigma_3", "max_pore_pressure"]:
+                if key == "max_pore_pressure":
+                    res[key] = _format.format(round(res[key]/1000, 3))
+                else:
+                    res[key] = _format.format(res[key])
 
             setattr(self, "MohrTable_{}".format(num), MohrTable(num))
             mohr = getattr(self, "MohrTable_{}".format(num))

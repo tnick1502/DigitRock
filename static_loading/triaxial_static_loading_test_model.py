@@ -46,7 +46,6 @@ class ModelTriaxialStaticLoad:
         self.consolidation.set_test_data(test_data["consolidation"])
         self.deviator_loading.set_test_data(test_data["deviator_loading"])
 
-
     def get_processing_parameters(self):
         return {
             "consolidation": self.consolidation.get_processing_parameters(),
@@ -191,6 +190,10 @@ class ModelTriaxialStaticLoad:
 
                 deviator_loading["u"] = np.mean(read_data["PorePress"][begin_deviator_loading:end_deviator_loading])
 
+                deviator_loading["pore_pressure"] = read_data["PorePress"][begin_deviator_loading:end_deviator_loading]
+
+                deviator_loading["pore_pressure"] = deviator_loading["pore_pressure"] - deviator_loading["pore_pressure"][0]
+
                 if camera == "A":
                     rod_accounting = (read_data['VerticalDeformation'][begin_deviator_loading:end_deviator_loading] -
                                       read_data['VerticalDeformation'][begin_deviator_loading]) / (
@@ -298,7 +301,6 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
                                                        self.consolidation.get_delta_h_consolidation())
             self.deviator_loading.set_test_params()
 
-
     def get_test_params(self):
         return self.test_params
 
@@ -356,7 +358,6 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
                 time_in_min += test_parts.get_duration()
         
         return timedelta(minutes=time_in_min)
-
 
     @staticmethod
     def addition_of_dictionaries(data1, data2, initial=True, skip_keys=None):

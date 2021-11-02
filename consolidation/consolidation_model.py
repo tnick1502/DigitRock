@@ -1042,6 +1042,10 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         # self._test_data.volume_strain = np.round(
         # self._test_data.volume_strain * np.pi * (19 ** 2) / (76) /
         # (np.pi * (19 ** 2) / (76)), 6)
+        for i in range(len(self._test_data.volume_strain)):
+            self._test_data.volume_strain[i] = ModelTriaxialConsolidationSoilTest.round_srain(self._test_data.volume_strain[i])
+        print(self._test_data.volume_strain)
+
 
     def save_log(self, path, name):
         ModelTriaxialConsolidationSoilTest.save_device(path=path, time_model=self._test_data.time,
@@ -1072,9 +1076,13 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             hours = math.floor(time_model[-1] / 3600)
             time = [0] + [t + t0 for t in
                           [0, 15, 30, 60, 2 * 60, 5 * 60, 10 * 60, 20 * 60, 30 * 60] + [h * 3600 for h in
-                                                                                        range(1, hours + 1)]]
+                                                                                      range(1, hours + 1)]]
+            time = np.round(np.array(time))
+            time += np.round(np.random.uniform(0.1, 0.8, len(time)), 6)
+            time[0] = 0
             strain = np.interp(time, time_model, strain_model)
-            return np.array(time), np.array(strain)
+            return time, np.array(strain)
+
 
         header1 = "SampleHeight;SampleDiameter;TaskID;TaskName;TaskTypeID;TaskTypeName;AlgorithmID;AlgorithmName;Sample"
         header2 = ';'.join(['20', '71.4', '0', '', '', '', '', 'Компрессионное сжатие', ''])
@@ -1100,7 +1108,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                 f.write(';'.join([f'{i + 1}',
                                   f'{np.round(time[i], 6):.6f}',
                                   f'{np.round(pressure_array[i], 4):.4f}',
-                                  f'{round(abs(strain[i]), 2):.2f}',
+                                  f'{round(abs(strain[i])*20, 2):.2f}',
                                   f'{int(stab_end[i])}',
                                   f'{int(consolidation_array[i])}']) + '\n')
         print("{} saved".format(path))
@@ -1165,6 +1173,34 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         }
         return data
 
+    @staticmethod
+    def round_srain(x: float, precision = 4) -> float:
+        """Rounds value as sensor with sensitivity = 0.0005:
+            0.0000 - 0.0000
+            0.0001 - 0.0000
+            0.0002 - 0.0000
+            0.0003 - 0.0005
+            0.0004 - 0.0005
+            0.0005 - 0.0005
+            0.0006 - 0.0005
+            0.0007 - 0.0005
+            0.0008 - 0.0010
+            0.0009 - 0.0010
+            0.0010 - 0.0010
+            0.0063 - 0.0065
+        """
+        order = 10 ** precision
+
+        condition = round(x % 10 ** (-(precision - 1)) * order, 1)
+
+        if 0 < condition <= 2:
+            return round(x // (10 / order) / (order / 10), precision)
+        if 2 < condition < 8:
+            return round(x // (10 / order) / (order / 10) + 5 / order, precision)
+        if condition >= 8:
+            return round(x // (10 / order) / (order / 10) + 1 / (order / 10), precision)
+        return round(x, precision)
+
 
 if __name__ == '__main__':
     file = r"C:\Users\Пользователь\PycharmProjects\Willie\Test.1.log"
@@ -1176,4 +1212,6 @@ if __name__ == '__main__':
     a.set_test_params()
     a.plotter()
     plt.show()
+
+
 

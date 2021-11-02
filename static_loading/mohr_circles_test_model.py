@@ -75,7 +75,7 @@ class ModelMohrCircles:
 
             for test in self._tests:
                 results = test.deviator_loading.get_test_results()
-                sigma_3.append(np.round((results["sigma_3"]), 3))
+                sigma_3.append(np.round(results["sigma_3"], 3))
                 sigma_1.append(np.round(results["sigma_3"] + results["qf"], 3))
 
             return sigma_3, sigma_1
@@ -310,11 +310,14 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         qf_array = []
         sigma_1_array = []
         E50_array = []
+        if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
+            u_array = statment[statment.current_test].mechanical_properties.u
 
         sigma_3_origin = statment[statment.current_test].mechanical_properties.sigma_3
         qf_origin = statment[statment.current_test].mechanical_properties.qf
         sigma_1_origin = statment[statment.current_test].mechanical_properties.sigma_1
         E50_origin = statment[statment.current_test].mechanical_properties.E50
+        u_origin = statment[statment.current_test].mechanical_properties.u
 
         for num, sigma_3 in enumerate(self._reference_pressure_array):
             sigma_3_array.append(sigma_3)
@@ -365,12 +368,15 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
             statment[statment.current_test].mechanical_properties.qf = qf_array[i]
             statment[statment.current_test].mechanical_properties.sigma_1 = sigma_1_array[i]
             statment[statment.current_test].mechanical_properties.E50 = E50_array[i]
+            if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
+                statment[statment.current_test].mechanical_properties.u = u_array[i]
             self.add_test_st()
 
         statment[statment.current_test].mechanical_properties.sigma_3 = sigma_3_origin
         statment[statment.current_test].mechanical_properties.qf = qf_origin
         statment[statment.current_test].mechanical_properties.sigma_1 = sigma_1_origin
         statment[statment.current_test].mechanical_properties.E50 = E50_origin
+        statment[statment.current_test].mechanical_properties.u = u_origin
 
         self._test_processing()
 
@@ -388,8 +394,6 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                     os.mkdir(path)
                 file_name = os.path.join(path, "Test.1.log")
                 test.save_log_file(file_name)
-
-
 
     @staticmethod
     def noise_for_mohrs_circles(sigma3, sigma1, fi, c):
@@ -511,9 +515,6 @@ if __name__ == '__main__':
                     'dilatancy_angle': 17.05, 'sigma_3': 100, 'qf': 329.5, 'sigma_1': 429.5, 'poisons_ratio': 0.34,
                     'OCR': 1,
                     'build_press': 150.0, 'pit_depth': 4.0, 'Eur': None}}
-
-    param = dictToData(param, MechanicalProperties)
-
     a = ModelMohrCirclesSoilTest()
     a.set_test_params(param["ee"])
     a.set_reference_pressure_array([100, 200, 400])

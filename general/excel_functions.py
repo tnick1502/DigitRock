@@ -44,7 +44,6 @@ def resave_xls_to_xlsx(file):
     return current_file_name
 
 
-
 # Считываем с excel
 def float_from_excel(s):  # Проверяет строку из Exel и делает ее str. Если она пустая, то возвращает -
     if str(s) == "None":
@@ -57,7 +56,6 @@ def float_from_excel(s):  # Проверяет строку из Exel и дел�
                 return str(s)
             except ValueError:
                 return '-'
-
 
 
 # Проверки на заполненость
@@ -108,6 +106,12 @@ def cfe_test_type_columns(test_type):
 
     elif test_type == "Трёхосное сжатие с разгрузкой":
         return ["BL", "BM", "BN"]
+
+    elif test_type == "Трёхосное сжатие КН":
+        return ["CO", "CP", "CQ"]
+
+    elif test_type == "Трёхосное сжатие НН":
+        return ["CJ", "CL", "CM"]
 
     elif test_type == "Сейсморазжижение" or test_type == "Штормовое разжижение" or test_type == "Демпфирование":
         return ["BZ", "BY", "CA"]
