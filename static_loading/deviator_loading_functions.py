@@ -1374,6 +1374,7 @@ def curve(qf, e50, **kwargs):
         x_start = np.linspace(0, x_last_point, int(x_last_point / (x_U[-1] - x_U[-2])) + 1)
         slant = np.random.uniform(20, 30)
         #amplitude = np.random.uniform(15, 25)
+        amplitude *= np.random.uniform(1, 2)
         y_start = exponent(x_start, amplitude, slant)
         x_start -= x_start[-1] + (x_U[-1] - x_U[-2])
         y_start -= y_start[-1]
@@ -1387,8 +1388,34 @@ def curve(qf, e50, **kwargs):
         y_U += abs(y_U[0])
         y_U[0] = 0.
 
-        return x, y, y1, y2, indexs_loop, len(x_start), x_U, y_U
-    return x, y, y1, y2, indexs_loop, len(x_start), x, np.random.uniform(-0.1, 0.1, len(x))
+        """u = exponent(x[len(x_start):np.argmax(y)] - x[len(x_start)], U, np.random.uniform(8, 10)) + amplitude
+        y_start = np.linspace(0, amplitude, len(x_start))
+        u *= (np.max(u)/(U+amplitude))
+        shape = np.random.uniform(0.005, 0.01)
+        fall = np.random.uniform(0.05, 0.1) * U
+        i, = np.where(x > x[np.argmax(y)] + shape)
+        u_fall = step_sin(mirrow_element(x[np.argmax(y): i[0]], (x[np.argmax(y)] + x[i[0]])/2), fall/2, (x[np.argmax(y)] + x[i[0]])/2, shape) + U + amplitude - fall/2
+        y_U = np.hstack((
+            y_start,
+            u,
+            u_fall,
+            np.full(len(y) - len(u) - len(y_start) - len(u_fall), u_fall[-1])
+        ))
+        y_U += abs(y_U[0])
+        y_U[0] = 0.
+        y_U += create_deviation_curve(x, 10, points=np.random.uniform(5, 8), low_first_district=1)
+        y_U += np.random.uniform(-3, 3, len(y_U))
+        y_U[0] = 0.
+        y_U *= ((U + amplitude )/ np.max(y_U))
+        y_U[0] = 0.
+        discrete_array(y_start, 0.5)
+        y_U[len(x_start)] = amplitude
+        y_U[len(x_start) + 1] = amplitude
+        y_U[len(x_start) - 1] = amplitude"""
+
+        return x, y, y1, y2, indexs_loop, len(x_start)
+
+    return x, y, y1, y2, indexs_loop, len(x_start)
 
 
 def vol_test():
@@ -1606,8 +1633,8 @@ if __name__ == '__main__':
     #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
     # (596.48, 382.8)
 
-    x, y, y1, y2, indexs_loop, a, x_U, y_U = curve(800, 29710.0, xc=0.05, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                 amount_points=500, angle_of_dilatacy=6, Eur=30000, y_rel_p=596, point2_y=382)
+    x, y, y1, y2, indexs_loop, a, x_U, y_U = curve(800, 29710.0, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
+                                 amount_points=500, angle_of_dilatacy=6, y_rel_p=596, point2_y=382, U=300)
 
     #
     # i, = np.where(x >= max(x) - 0.15)
@@ -1622,7 +1649,7 @@ if __name__ == '__main__':
     # #print(E)
     # i = np.argmax(y)
     # y -= y[0]
-    plt.plot(x, y, x_U, y_U)
+    plt.plot(x[a:] - x[a], y[a:] - y[a], x[a:] - x[a], y_U[a:] - y_U[a])
     #with open("C:/Users/Пользователь/Desktop/test_file.txt", "w") as file:
         #for i in range(len(y)):
             #file.write(str(np.round(-x[i], 4)).replace(".", ",") + "\t" + str(np.round(y[i], 4)).replace(".", ",")+ "\n")

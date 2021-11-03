@@ -26,13 +26,13 @@ from scipy.interpolate import make_interp_spline
 
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, mirrow_element, \
     define_dilatancy, define_type_ground, AttrDict, find_line_area, interpolated_intercept, Point, point_to_xy, \
-    array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, define_qf, define_E50
+    array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, exponent
 from typing import Dict, List
 from static_loading.deviator_loading_functions import curve
 from configs.plot_params import plotter_params
 from intersect import intersection
 from singletons import statment
-
+import copy
 
 class ModelTriaxialDeviatorLoading:
     """Модель обработки девиаторного нагружения
@@ -155,7 +155,7 @@ class ModelTriaxialDeviatorLoading:
 
     def get_test_results(self):
         """Получение результатов обработки опыта"""
-        dict = self._test_result.get_dict()
+        dict = copy.deepcopy(self._test_result.get_dict())
         dict["sigma_3"] = np.round((self._test_params.sigma_3 - float(dict["max_pore_pressure"])) / 1000, 3)
         return dict
 
@@ -344,10 +344,11 @@ class ModelTriaxialDeviatorLoading:
         self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
                                   self._test_data.deviator_cut, self._test_params.sigma_3)
 
-        self._test_result.max_pore_pressure = max(self._test_data.pore_pressure_cut)
+        self._test_result.max_pore_pressure = np.round(np.max(self._test_data.pore_pressure_cut))
 
         if self._test_result.max_pore_pressure <= 5:
             self._test_result.max_pore_pressure = 0
+
 
     def get_processing_parameters(self):
         "Функция возвращает данные по обрезанию краев графиков"
@@ -503,8 +504,8 @@ class ModelTriaxialDeviatorLoading:
             begin = i_top - dilatancy_plot_param
             end = i_top + dilatancy_plot_param
 
-            if end > len(volume_strain):
-                end = len(volume_strain)
+            if end >= len(volume_strain):
+                end = len(volume_strain) - 1
 
             dilatancy = (
                 round(dilatancy_value, 2), [strain[begin], strain[end]],
@@ -529,7 +530,9 @@ class ModelTriaxialDeviatorLoading:
         index_05qf = index_05qf[0]
 
         if index_loop[-1] <= 0:
-
+            if len(strain) < 100:
+                return {"strain": -strain,
+                        "deviator": deviator}
             return {"strain": -list_generator(strain, point_count, [index_qf, index_05qf]),
                     "deviator": list_generator(deviator, point_count, [index_qf, index_05qf])}
 
@@ -710,7 +713,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         if self._test_params.qf >= 150:
             if self._test_params.Eur:
                 self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                self._test_data.cell_volume_strain, self._test_data.reload_points, begin, _, self._test_data.pore_pressure = curve(self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
                                                                     x2=self._draw_params.residual_strength_param,
                                                                     qf2=self._draw_params.residual_strength,
                                                                     qocr=self._draw_params.qocr,
@@ -724,7 +727,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                     U=self._test_params.u)
             else:
                 self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                self._test_data.cell_volume_strain, self._test_data.reload_points, begin, _, self._test_data.pore_pressure = curve(
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
                     self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
                     x2=self._draw_params.residual_strength_param,
                     qf2=self._draw_params.residual_strength,
@@ -758,7 +761,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             k = 250/self._test_params.qf
             if self._test_params.Eur:
                 self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                self._test_data.cell_volume_strain, self._test_data.reload_points, begin, _, self._test_data.pore_pressure = curve(self._test_params.qf*k,
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(self._test_params.qf*k,
                                                 self._test_params.E50*k,
                                                 xc=self._draw_params.fail_strain,
                                                 x2=self._draw_params.residual_strength_param,
@@ -772,7 +775,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                 point2_y=self.unloading_borders[1]*k)
             else:
                 self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-                self._test_data.cell_volume_strain, self._test_data.reload_points, begin, _, self._test_data.pore_pressure = curve(
+                self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
                     self._test_params.qf * k,
                     self._test_params.E50 * k,
                     xc=self._draw_params.fail_strain,
@@ -785,12 +788,18 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             self._test_data.deviator /= k
 
         i_end = ModelTriaxialDeviatorLoadingSoilTest.define_final_loading_point(self._test_data.deviator, 0.08 + np.random.uniform(0.01, 0.03))
-
         self._test_data.strain = self._test_data.strain[:i_end]
-        self._test_data.pore_pressure = self._test_data.pore_pressure[:i_end]
         self._test_data.deviator = self._test_data.deviator[:i_end]
         self._test_data.pore_volume_strain = self._test_data.pore_volume_strain[:i_end]
         self._test_data.cell_volume_strain = self._test_data.cell_volume_strain[:i_end]
+
+        if self._test_params.u:
+            self._test_data.pore_pressure = ModelTriaxialDeviatorLoadingSoilTest.define_pore_pressure_array(
+                self._test_data.strain, begin, self._test_params.u,
+                self._test_data.deviator[begin]*np.random.uniform(1, 2))
+        else:
+            self._test_data.pore_pressure = np.random.uniform(-1, 1, len(self._test_data.strain))
+
         #plt.plot(self._test_data.strain, self._test_data.pore_pressure)
        # plt.plot(self._test_data.strain, self._test_data.deviator)
         #plt.show()
@@ -820,6 +829,25 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     def get_duration(self):
         return int((self._test_data.strain[-1] * (76 - self._test_params.delta_h_consolidation)) / self._test_params.velocity)
+
+    @staticmethod
+    def define_pore_pressure_array(strain, start, pore_pressure, amplitude):
+        u = exponent(strain[start:] - strain[start], pore_pressure, np.random.uniform(8, 10)) + amplitude
+        y_start = np.linspace(0, amplitude, start)
+        y_U = np.hstack((y_start, u))
+        y_U += abs(y_U[0])
+        y_U[0] = 0.
+        #y_U += create_deviation_curve(strain, u/20, points=np.random.uniform(15, 30), low_first_district=1)
+        #y_U += create_deviation_curve(strain, u/50, points=np.random.uniform(50, 70), low_first_district=1)
+        y_U += np.random.uniform(-3, 3, len(y_U))
+        y_U[0] = 0.
+        y_U *= ((pore_pressure + amplitude) / np.max(y_U))
+        y_U[0] = 0.
+        y_U = discrete_array(y_U, 0.5)
+        y_U[start] = amplitude
+        y_U[start + 1] = amplitude
+        y_U[start - 1] = amplitude
+        return y_U
 
     @staticmethod
     def define_k_q(il, e0, sigma3):
@@ -1131,6 +1159,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         time = np.linspace(0, int((strain[-1] * (76 - delta_h_consolidation)) / velocity), len(strain))
 
         action = ['WaitLimit' for __ in range(len(time))]
+        pore_pressure = np.hstack((
+            pore_pressure,
+            np.linspace(pore_pressure[-1], pore_pressure[-1] * np.random.uniform(0.3, 0.5), len(time) - len(pore_pressure))
+        ))
 
         if indexs_loop[0] != 0:
             for i in range(len(action)):
