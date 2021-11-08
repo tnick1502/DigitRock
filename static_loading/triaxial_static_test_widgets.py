@@ -12,7 +12,7 @@ from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from excel_statment.initial_statment_widgets import TriaxialStaticStatment
 from general.save_widget import Save_Dir
 from excel_statment.functions import set_cell_data
-from general.reports import report_consolidation, report_FCE, report_FC
+from general.reports import report_consolidation, report_FCE, report_FC, report_FC_KN
 from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI, ModelTriaxialFileOpenUI, ModelTriaxialReconsolidationUI, \
     ModelTriaxialConsolidationUI, ModelTriaxialDeviatorLoadingUI
 from general.general_widgets import Float_Slider
@@ -812,7 +812,7 @@ class StatickSoilTestApp(QWidget):
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
-                report_FC(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
+                report_FC_KN(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
                            statment.current_test, os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                           (*self.tab_3.save_canvas(),

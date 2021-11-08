@@ -1188,6 +1188,88 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
                              width=80 * mm, height=40 * mm)
 
 
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    r = 21
+    table_move = 3
+    for i in range(table_move):
+        tableData.append([""])
+
+
+    tableData.append(["Напряжение, МПа", "", "", "", "", ""])
+    tableData.append([Paragraph('''<p>σ<sub rise="0.5" size="5">3c</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ<sub rise="0.5" size="5">1c</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ<sub rise="0.5" size="5">1f</sub></p>''', CentralStyle), "", "", ""])
+
+    tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_1_mohr"][2], 3), "", "", ""])
+
+    for i in range(r):
+        tableData.append([""])
+
+    tableData.append(
+        [Paragraph('''<p>Эффективное сцепление с', МПа:</p>''', LeftStyle), "", "", "",
+         zap(Res["c"], 3), ""])
+    tableData.append(
+        [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "", "",
+         zap(Res["fi"], 1), ""])
+
+    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+    t.setStyle([('SPAN', (0, 0), (-1, 0)),
+
+                ('SPAN', (0, 1), (-1, table_move)),
+
+                ('SPAN', (0, table_move+1), (2, table_move+1)),
+                ('SPAN', (3, 1), (-1, -4)),
+
+                ('SPAN', (0, 6+table_move), (-1, r+table_move+5)),
+
+                ('SPAN', (0, -1), (3, -1)),
+                ('SPAN', (-2, -1), (-1, -1)),
+                #('SPAN', (2, -1), (3, -1)),
+                #('SPAN', (4, -1), (5, -1)),
+                ('SPAN', (0, -2), (3, -2)),
+                ('SPAN', (-2, -2), (-1, -2)),
+                #('SPAN', (2, -2), (3, -2)),
+                #('SPAN', (4, -2), (5, -2)),
+                #('SPAN', (2, -3), (3, -3)),
+              #  ('SPAN', (4, -3), (5, -3)),
+
+                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+
+                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                ("ALIGN", (0, r+1), (0, -1), "LEFT"),
+                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
+
+def result_table_CF_KN(canvas, Res, pick, scale = 0.8):
+
+
+    try:
+        a = svg2rlg(pick[0])
+        a.scale(scale, scale)
+        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        b = svg2rlg(pick[1])
+        b.scale(scale, scale)
+        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+    except AttributeError:
+        a = ImageReader(pick[0])
+        #canvas.drawImage(a, 31 * mm, 81 * mm,
+                            # width=80* mm, height=80 * mm)
+        b = ImageReader(pick[1])
+        canvas.drawImage(b, 115 * mm, 81 * mm,
+                             width=80 * mm, height=40 * mm)
+
+
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", "", "", ""]]
     r = 21
     table_move = 3
@@ -1251,6 +1333,7 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
 
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
+
 
 
 
@@ -1582,11 +1665,7 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
     test_parameter["K0"] = test_parameter["K0"][1]
-    if any(res["u_mohr"]):
-        test_parameter["mode"] = "КН, девиаторное нагружение в кинематическом режиме"
-        name = "КН"
-    else:
-        name = "ТД"
+    name = "ТД"
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
@@ -1601,6 +1680,32 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     test_mode_consolidation(canvas, test_parameter)
 
     result_table_CF(canvas, res, [picks[0],picks[1]])
+
+    canvas.save()
+
+def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+    test_parameter["K0"] = test_parameter["K0"][1]
+    test_parameter["mode"] = "КН, девиаторное нагружение в кинематическом режиме"
+    name = "КН"
+
+    canvas = Canvas(Name, pagesize=A4)
+
+    code = SaveCode(version)
+
+    main_frame(canvas, path, Data_customer, code, "1/1")
+    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
+                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
+
+    parameter_table(canvas, Data_phiz, Lab)
+    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
+    test_mode_consolidation(canvas, test_parameter)
+
+    result_table_CF_KN(canvas, res, [picks[0],picks[1]])
 
     canvas.save()
 
