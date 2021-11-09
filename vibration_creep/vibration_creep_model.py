@@ -111,15 +111,15 @@ class ModelVibrationCreep:
         for dyn_test, test_result in zip(self._dynamic_tests, self._test_results):
             if test_result.E50d:
                 E50d.append(point_to_xy(Point(x=0, y=0), Point(
-                    x=1.1 * np.max(dyn_test.deviator_dynamic) / (test_result.E50d * 1000),
-                    y=1.1 * np.max(dyn_test.deviator_dynamic) / 1000)))
+                    x=1.05 * np.max(dyn_test.deviator_dynamic) / (test_result.E50d * 1000),
+                    y=1.05 * np.max(dyn_test.deviator_dynamic) / 1000)))
             else:
                 E50d.append(None)
 
             if test_result.E50:
                 E50.append(point_to_xy(Point(x=0, y=0), Point(
-                    x=1.1 * np.max(dyn_test.deviator_dynamic) / (test_result.E50 * 1000),
-                    y=1.1 * np.max(dyn_test.deviator_dynamic)/1000)))
+                    x=1.05 * np.max(dyn_test.deviator_dynamic) / (test_result.E50 * 1000),
+                    y=1.05 * np.max(dyn_test.deviator_dynamic) / 1000)))
             else:
                 E50.append(None)
         return {"strain_dynamic": [i.strain_dynamic for i in self._dynamic_tests],
@@ -262,7 +262,7 @@ class ModelVibrationCreep:
         return time - time[0], strain - strain[0]
 
     @staticmethod
-    def find_E50d(strain, deviator, start_dynamic=False):
+    def find_E50d_old(strain, deviator, start_dynamic=False):
         start = start_dynamic
         mean_dynamic_load = np.mean(np.array(deviator[int(start):]))
 
@@ -282,6 +282,16 @@ class ModelVibrationCreep:
         #elif deviator[int(start)] < mean_dynamic_load:
             #i, = np.where(np.array(deviator[:int(start)]) > mean_dynamic_load)
             #E50 = mean_dynamic_load / strain[int(start) + i[0]]
+
+        E50 = mean_dynamic_load / (0.5*(np.min(strain[int(start):]) + strain[int(start)]))
+
+        return (round(E50 / 1000, 2), round(E50d / 1000, 2))
+
+    @staticmethod
+    def find_E50d(strain, deviator, start_dynamic=False):
+        start = start_dynamic
+        mean_dynamic_load = 0.5 * (np.max(np.array(deviator[int(start):])) - np.min(np.array(deviator[int(start):]))) + np.min(np.array(deviator[int(start):]))
+        E50d = mean_dynamic_load / max(strain)
 
         E50 = mean_dynamic_load / (0.5*(np.min(strain[int(start):]) + strain[int(start)]))
 

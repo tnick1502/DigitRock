@@ -329,8 +329,6 @@ class VibrationCreepSoilTestApp(QWidget):
 
             file_name = "/" + "Отчет " + file_path_name + "-ВП" + ".pdf"
 
-            pick_deviator, _ = self.tab_2.deviator_loading.save_canvas(format=["jpg", "svg"])
-
             pick_vc, pick_c = self.tab_3.dynamic_widget.save_canvas()
 
             E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
@@ -347,7 +345,7 @@ class VibrationCreepSoilTestApp(QWidget):
                                   os.getcwd() + "/project_data/",
                                   test_parameter, E_models[statment.current_test].get_test_results(),
                                   VC_models[statment.current_test].get_test_results(),
-                                  [pick_vc, pick_deviator, pick_c], "{:.2f}".format(__version__))
+                                  [pick_vc, pick_c, *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])], "{:.2f}".format(__version__))
 
             shutil.copy(save + "/" + file_name, self.tab_4.report_directory + "/" + file_name)
 

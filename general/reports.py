@@ -990,6 +990,66 @@ def result_table_deviator1(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (42-((r-30)*4) - 4) * mm)
 
+def result_table_deviator_vc(canvas, Res, pick, scale = 0.8):
+
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    r = 29
+    for i in range(r):
+        tableData.append([""])
+
+    tableData.append(
+        [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
+         Res["qf"], ""])
+    tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", Res["E"][0], ""])
+    tableData.append(
+        [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+
+    a = ImageReader(pick[1])
+    canvas.drawImage(a, 32 * mm, 60 * mm,
+                     width=160 * mm, height=54 * mm)
+    b = ImageReader(pick[0])
+    canvas.drawImage(b, 32 * mm, 114 * mm,
+                     width=160 * mm, height=54 * mm)
+
+
+    style = [('SPAN', (0, 0), (-1, 0)),
+             ('SPAN', (0, 1), (-1, r)),
+
+             ('SPAN', (0, -1), (3, -1)),
+             ('SPAN', (-2, -1), (-1, -1)),
+             # ('SPAN', (2, -1), (3, -1)),
+             # ('SPAN', (4, -1), (5, -1)),
+             ('SPAN', (0, -2), (3, -2)),
+             ('SPAN', (-2, -2), (-1, -2)),
+             # ('SPAN', (2, -2), (3, -2)),
+             # ('SPAN', (4, -2), (5, -2)),
+             ('SPAN', (0, -3), (3, -3)),
+             ('SPAN', (-2, -3), (-1, -3)),
+
+             # ('SPAN', (2, -3), (3, -3)),
+             #  ('SPAN', (4, -3), (5, -3)),
+
+             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+             ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+             ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+             ("FONTSIZE", (0, 0), (-1, -1), 8),
+             # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+             ("ALIGN", (0, 0), (-1, r), "CENTER"),
+             ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+             ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+             ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+    t.setStyle(style)
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, (42-((r-30)*4) - 4) * mm)
+
+
+
 def result_table_deviator_reload(canvas, Res, pick, scale = 0.8):
 
     try:
@@ -1104,13 +1164,12 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8):
 def result_vibration_creep(canvas, Res, pick, scale = 0.8):
 
     try:
-        a = ImageReader(pick)
+        a = ImageReader(pick[1])
         canvas.drawImage(a, 32 * mm, 60 * mm,
-                         width=160* mm, height=108 * mm)
-
-        #a = svg2rlg(pick)
-        #a.scale(scale, scale)
-        #renderPDF.draw(a, canvas, 36 * mm, 64 * mm)
+                         width=160 * mm, height=54 * mm)
+        b = ImageReader(pick[0])
+        canvas.drawImage(b, 32 * mm, 114 * mm,
+                         width=160 * mm, height=54 * mm)
 
     except AttributeError:
         print("lksdfksdfkmsdf")
@@ -1122,16 +1181,27 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8):
     for i in range(r):
         tableData.append([""])
 
-    Kd = ""
-    for i in range(len(Res)):
-        Kd += zap(Res[i]["Kd"], 2) + "; "
-
-    Ed = ""
-    for i in range(len(Res)):
-        Ed += zap(Res[i]["E50d"], 2) + "; "
+    if len(Res) > 1:
+        Kd = ""
+        Ed = ""
+        E50 = ""
+        for i in range(len(Res)):
+            Kd += zap(Res[i]["Kd"], 2) + "; "
+            Ed += zap(Res[i]["E50d"], 2) + "; "
+            E50 += zap(Res[i]["E50"], 2) + "; "
+    else:
+        Kd = zap(Res[0]["Kd"], 2)
+        Ed = zap(Res[0]["E50d"], 2)
+        E50 = zap(Res[0]["E50"], 2)
 
     tableData.append(
-        [Paragraph('''<p>Модуль деформации после динамического нагружения E50<sub rise="0.5" size="6">d</sub>, МПа:</p>''', LeftStyle), "",
+        [Paragraph(
+            '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''',
+            LeftStyle), "",
+         "", "", E50, ""])
+
+    tableData.append(
+        [Paragraph('''<p>Модуль деформации после динамического нагружения E<sub rise="0.5" size="6">50d</sub>, МПа:</p>''', LeftStyle), "",
          "", "", Ed, ""])
 
     tableData.append(
@@ -1144,6 +1214,9 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8):
                 ('SPAN', (0, -1), (3, -1)),
                 ('SPAN', (-2, -1), (-1, -1)),
 
+                ('SPAN', (0, -3), (3, -3)),
+                ('SPAN', (-2, -3), (-1, -3)),
+
                 ('SPAN', (0, -2), (3, -2)),
                 ('SPAN', (-2, -2), (-1, -2)),
                 #('SPAN', (2, -1), (3, -1)),
@@ -1155,6 +1228,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8):
 
                 ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
                 ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -1727,7 +1801,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_vibration_creep(canvas, test_parameter)
 
-    result_vibration_creep(canvas, res_dynamic, picks[0])
+    result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]])
 
     canvas.showPage()
 
@@ -1739,7 +1813,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_vibration_creep(canvas, test_parameter)
 
-    result_table_deviator1(canvas, res_static, [picks[1], picks[2]])
+    result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]])
 
     canvas.save()
 
