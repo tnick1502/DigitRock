@@ -311,7 +311,7 @@ class VibrationCreepSoilTestApp(QWidget):
             VC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="VC_models.pickle")
             E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
             statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
-                          name=statment.general_parameters.test_mode + "Виброползучесть.pickle")
+                          name=statment.general_parameters.test_mode + ".pickle")
 
             test_parameter = {'sigma_3': statment[statment.current_test].mechanical_properties.sigma_3,
                               't': statment[statment.current_test].mechanical_properties.t,

@@ -349,7 +349,6 @@ class ModelTriaxialDeviatorLoading:
         if self._test_result.max_pore_pressure <= 5:
             self._test_result.max_pore_pressure = 0
 
-
     def get_processing_parameters(self):
         "Функция возвращает данные по обрезанию краев графиков"
         return {

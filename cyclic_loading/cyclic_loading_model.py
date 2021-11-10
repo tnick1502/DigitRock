@@ -967,7 +967,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._draw_params.strain_rise_after_fail = np.random.uniform(2, 3)
 
         # Стабилизация деформации к ассимптоте
-        self._draw_params.strain_stabilization = 0.1
+        self._draw_params.strain_stabilization = np.random.uniform(0.01, 0.03)
 
         self._draw_params.strain_phase_offset = self._test_params.damping_ratio/40
 

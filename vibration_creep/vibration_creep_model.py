@@ -16,6 +16,9 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import copy
+from scipy.optimize import curve_fit
+from scipy.optimize import differential_evolution
+import warnings
 
 from general.general_functions import point_to_xy, Point
 from configs.plot_params import plotter_params
@@ -49,12 +52,15 @@ class TestResultModelVibrationCreep:
     Kd: float = None
     E50d: float = None
     E50: float = None
+    prediction: dict = None
+    #{alpha, betta, 50_years, 100_years}
 
     def get_dict(self):
         return {
             "Kd": self.Kd,
             "E50d": self.E50d,
-            "E50": self.E50
+            "E50": self.E50,
+            "prediction": self.prediction
         }
 
 class ModelVibrationCreep:
@@ -107,6 +113,7 @@ class ModelVibrationCreep:
         static_plots = E_models[statment.current_test].deviator_loading.get_plot_data()
         E50 = []
         E50d = []
+        approximate_curve = []
 
         for dyn_test, test_result in zip(self._dynamic_tests, self._test_results):
             if test_result.E50d:
@@ -122,6 +129,17 @@ class ModelVibrationCreep:
                     y=1.05 * np.max(dyn_test.deviator_dynamic) / 1000)))
             else:
                 E50.append(None)
+
+            if test_result.prediction:
+                time_prediction = np.array(dyn_test.time[int(len(dyn_test.time)/4):])
+                time_prediction[-1] = time_prediction[-1]*2
+                approximate_curve.append([
+                    time_prediction,
+                    test_result.prediction["alpha"]*np.log(time_prediction) + test_result.prediction["betta"]])
+            else:
+                approximate_curve.append(None)
+
+
         return {"strain_dynamic": [i.strain_dynamic for i in self._dynamic_tests],
                 "deviator_dynamic": [i.deviator_dynamic/1000 for i in self._dynamic_tests],
                 "time": [i.time for i in self._dynamic_tests],
@@ -130,6 +148,7 @@ class ModelVibrationCreep:
                 "deviator": static_plots["deviator"],
                 "E50d": E50d,
                 "E50": E50,
+                "approximate_curve": approximate_curve,
                 "frequency": [i.frequency for i in self._dynamic_tests]}
 
     def plotter(self, save_path=None):
@@ -181,9 +200,12 @@ class ModelVibrationCreep:
             if plot_data["creep_curve"][i] is not None:
                 ax_creep.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,
                               label="frequency = " + str(plot_data["frequency"][i]) + " Hz")
+                ax_creep.plot(*plot_data["approximate_curve"][i], alpha=0.9, color=color,
+                              label="prediction 50/100 year = " + str(result_data[i]["prediction"]["50_years"]) + "/" + str(result_data[i]["prediction"]["100_years"]),
+                              linestyle="--")
 
             if plot_data["E50d"][i]:
-                ax_deviator.plot(*plot_data["E50d"][i], **plotter_params["black_dotted_line"])
+                ax_deviator.plot(*plot_data["E50d"][i], **plotter_params["static_loading_black_dotted_line"])
 
             #if plot_data["E50"][i]:
                 #ax_deviator.plot(*plot_data["E50"][i], **plotter_params["black_dotted_line"])
@@ -217,6 +239,9 @@ class ModelVibrationCreep:
                         dyn_test.time, dyn_test.creep_curve = \
                             ModelVibrationCreep.plastic_creep(dyn_test.strain_dynamic, dyn_test.deviator_dynamic,
                                                               dyn_test.time, start_dynamic=dyn_test.start_dynamic)
+
+                        test_result.prediction = ModelVibrationCreep.approximate_plastic_creep(dyn_test.time[int(len(dyn_test.time)/3):],
+                                                                                               dyn_test.creep_curve[int(len(dyn_test.time)/3):])
 
                         """test_result.E50 = ModelVibrationCreep.find_E50_dynamic(dyn_test.strain_dynamic,
                                                                              dyn_test.deviator_dynamic, qf*1000)
@@ -322,6 +347,47 @@ class ModelVibrationCreep:
                 break
         return index_1
 
+    @staticmethod
+    def approximate_plastic_creep(time, strain):
+        #time = np.log(time + 1)
+        approximate_func = lambda x, a, b: a * np.log(x) + b
+
+        def sumOfSquaredError(parameterTuple):
+            warnings.filterwarnings("ignore")  # do not print warnings by genetic algorithm
+            val = approximate_func(time, *parameterTuple)
+            return np.sum((time - val) ** 2.0)
+
+        def generate_Initial_Parameters():
+            # min and max used for bounds
+            maxX = np.max(time)
+            minX = np.min(time)
+            maxY = np.max(strain)
+            minY = np.min(strain)
+
+            parameterBounds = []
+            parameterBounds.append([minX, maxX])  # search bounds for h
+            parameterBounds.append([minY, maxY])
+            result = differential_evolution(sumOfSquaredError, parameterBounds, seed=3)
+            return result.x
+
+        geneticParameters = generate_Initial_Parameters()
+
+        popt, pcov = curve_fit(approximate_func, time, strain, geneticParameters)
+
+        a, b = popt
+        #time = np.e**time - 1
+
+        SEC_IN_YEAR = 31536000
+
+        return {
+            "alpha": a,
+            "betta": b,
+            "50_years": np.round(approximate_func(SEC_IN_YEAR*50, a, b)*100, 3),
+            "100_years": np.round(approximate_func(SEC_IN_YEAR*100, a, b)*100, 3)
+        }
+
+        return np.round(G, 2), np.round(threshold_shear_strain*10000, 2)
+
 class ModelVibrationCreepSoilTest(ModelVibrationCreep):
     """Модель виброползучести"""
     def __init__(self):
@@ -388,18 +454,14 @@ if __name__ == '__main__':
     a.set_dynamic_test_path(file)
     a.plotter()"""
 
-
-
     a = ModelVibrationCreepSoilTest()
-    static_params = {'E': 50000.0, 'sigma_3': 100, 'sigma_1': 300, 'c': 0.025, 'fi': 45, 'qf': 593.8965363, 'K0': 0.5,
-             'Cv': 0.013, 'Ca': 0.001, 'poisson': 0.32, 'build_press': 500.0, 'pit_depth': 7.0, 'Eur': '-',
-             'dilatancy': 4.95, 'OCR': 1, 'm': 0.61, 'lab_number': '7а-1', 'data_phiz': {'borehole': '7а',
-                                                                                             'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73, 'r': '-', 'rd': '-', 'n': '-', 'e': '-', 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-', 'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0, '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-', '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type':
-                         'Трёхосное сжатие (E)'}
-    #a.set_static_test_params(static_params)
-    dynamic_params = {'E50': 11300.0, 'sigma_3': 100, "Eur": None, 'sigma_1': 271.6, 'c': 0.028, 'fi': 45, 'qf': 171.6, 'K0': 0.8, 'Cv': 0.135, 'Ca': 0.001, 'poisson': 0.36, 'build_press': '-', 'pit_depth': '-', 'Eur': '-', 'dilatancy': 12.85, 'OCR': 1, 'm': None, 'N': 4343, 'n_fail': None, 'Mcsr': 343.0873024216593, 't': 5.0, 'sigma3': 100, 'sigma1': 271.6, 'frequency': [52.0], 'Kd': [0.71], 'lab_number': '1-1', 'data_phiz': {'borehole': 'rtrth', 'depth': 0.4, 'name': 'Суглинок легкий тугопластичный пылеватый с примесью органического вещества', 'ige': '-', 'rs': 3.0, 'r': 2.0, 'rd': 1.58, 'n': 41.2, 'e': 0.7, 'W': 25.8, 'Sr': 0.99, 'Wl': 31.4, 'Wp': 20.9, 'Ip': 10.5, 'Il': 0.46, 'Ir': 4.4, 'str_index': 'l', 'gw_depth': 0.0, 'build_press': '-', 'pit_depth': '-', '10': '-', '5': '-', '2': '-', '1': '-', '05': '-', '025': 0.3, '01': 3.3, '005': 23.2, '001': 44.5, '0002': 13.3, '0000': 15.4, 'Nop': 7, 'flag': False}}
+    statment.load(r"C:\Users\Пользователь\Desktop\test\Виброползучесть.pickle")
+    statment.current_test = "1-2"
+    E_models.setModelType(ModelTriaxialStaticLoadSoilTest)
 
+    E_models.load(r"C:\Users\Пользователь\Desktop\test\E_models.pickle")
 
-    a.set_test_params(dynamic_params)
+    a.set_test_params()
     a.plotter()
+    plt.show()
 
