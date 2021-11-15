@@ -925,13 +925,14 @@ def result_table_deviator1(canvas, Res, pick, scale = 0.8):
              "", Res["Eur"], ""])
 
     else:
+        E = Res["E"][0] if Res["E"][0] > Res["E50"] else "-"
         tableData.append(
             [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
              Res["qf"], ""])
         tableData.append(
             [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
              Res["E50"], ""])
-        tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", Res["E"][0], ""])
+        tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", E, ""])
         tableData.append(
             [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
 

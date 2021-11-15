@@ -289,7 +289,15 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
                 velocity = self.consolidation.get_test_results()["velocity"]
             self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
                                                        self.consolidation.get_delta_h_consolidation())
-            self.deviator_loading.set_test_params()
+            poisons_ratio = 0
+            poisons_ratio_global = statment[statment.current_test].mechanical_properties.poisons_ratio
+            iteration = 0
+
+            while (poisons_ratio > poisons_ratio_global + 0.2 or poisons_ratio < poisons_ratio_global - 0.2) and iteration < 10:
+                self.deviator_loading.set_test_params()
+                iteration += 1
+                poisons_ratio = self.deviator_loading.get_test_results()["poissons_ratio"]
+
         else:
             self.reconsolidation = None
             velocity = None
@@ -299,7 +307,15 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
                 velocity = self.consolidation.get_test_results()["velocity"]
             self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
                                                        self.consolidation.get_delta_h_consolidation())
-            self.deviator_loading.set_test_params()
+            poisons_ratio = 0
+            poisons_ratio_global = statment[statment.current_test].mechanical_properties.poisons_ratio
+            iteration = 0
+
+            while (
+                    (poisons_ratio > poisons_ratio_global + 0.02) or (poisons_ratio < poisons_ratio_global - 0.02)) and iteration < 10:
+                self.deviator_loading.set_test_params()
+                iteration += 1
+                poisons_ratio = self.deviator_loading.get_test_results()["poissons_ratio"]
 
     def get_test_params(self):
         return self.test_params

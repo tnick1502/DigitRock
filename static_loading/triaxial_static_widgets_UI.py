@@ -175,20 +175,17 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                     plt.yticks(fontsize=8)
 
                 else:
-                    self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', МПa", fontsize=8)
-                    self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
-
                     #lim = self.deviator_ax.get_xlim()
                     #self.deviator_ax2.set_xlim([lim[0], lim[1]])
-
+                    self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', МПa", fontsize=8)
+                    self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
                     self.deviator_ax2.plot(plots["strain"], plots["deviator"] + plots["sigma_3"],
-                                      **plotter_params["static_loading_main_line"])
+                                           **plotter_params["static_loading_main_line"])
+                    if res["E50"] < res["E"][0]:
+                        self.deviator_ax2.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"],
+                                          **plotter_params["static_loading_black_dotted_line"])
+                                          #label="$E$" + ", MПа = " + str(res["E"][0]) + "\n" + "$E$" + ", MПа = " + str(res["E"][0]))
 
-                    self.deviator_ax2.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"],
-                                      **plotter_params["static_loading_black_dotted_line"])
-                                      #label="$E$" + ", MПа = " + str(res["E"][0]) + "\n" + "$E$" + ", MПа = " + str(res["E"][0]))
-                    plt.xticks(fontsize=8)
-                    plt.yticks(fontsize=8)
                     #self.deviator_ax2.set_xticklabels(self.deviator_ax2.get_xticks(), size=8)
                     #self.deviator_ax2.set_yticklabels(self.deviator_ax2.get_yticks(), size=8)
 
