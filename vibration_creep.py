@@ -19,16 +19,30 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
         #self.showFullScreen()
+
+
         if test_version(actual_version):
-
-            self.table_widget = VibrationCreepSoilTestApp()
-            self.setCentralWidget(self.table_widget)
-            self.show()
-
+            try:
+                self.table_widget = VibrationCreepSoilTestApp()
+                self.setCentralWidget(self.table_widget)
+                self.show()
+            except:
+                app_logger.exception("Ошибка приложения")
         else:
-            QMessageBox.critical(self, "Ошибка",
-                                 f"Скачайте актуальную версию приложения {get_actual_version()}",
-                                 QMessageBox.Ok)
+            ret = QMessageBox.question(self, 'Предупреждение',
+                                       f"Вы запускаете устаревшую версию программы. Актуальная версия {get_actual_version()}",
+                                       QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+            if ret == QMessageBox.Yes:
+                try:
+                    self.table_widget = VibrationCreepSoilTestApp()
+                    self.setCentralWidget(self.table_widget)
+                    self.show()
+                except:
+                    app_logger.exception("Ошибка приложения")
+            else:
+                sys.exit()
+
+
         self.setCentralWidget(self.table_widget)
 
         self.show()

@@ -1,8 +1,11 @@
 import os
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 
 from resonant_column.resonant_column_widgets import RezonantColumnSoilTestApp, __version__
+from version_control.json_management import test_version, get_actual_version
+from version_control.configs import actual_version
+from loggers.logger import app_logger
 
 class App(QMainWindow):  # Окно и виджеты на нем
 
@@ -18,7 +21,29 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.setGeometry(self.left, self.top, 1500, 1000)
         #self.showFullScreen()
 
-        self.table_widget = RezonantColumnSoilTestApp()#
+
+        if test_version(actual_version):
+            try:
+                self.table_widget = RezonantColumnSoilTestApp()
+                self.setCentralWidget(self.table_widget)
+                self.show()
+            except:
+                app_logger.exception("Ошибка приложения")
+        else:
+            ret = QMessageBox.question(self, 'Предупреждение',
+                                       f"Вы запускаете устаревшую версию программы. Актуальная версия {get_actual_version()}",
+                                       QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+            if ret == QMessageBox.Yes:
+                try:
+                    self.table_widget = RezonantColumnSoilTestApp()
+                    self.setCentralWidget(self.table_widget)
+                    self.show()
+                except:
+                    app_logger.exception("Ошибка приложения")
+            else:
+                sys.exit()
+
+
         self.setCentralWidget(self.table_widget)
 
         self.show()

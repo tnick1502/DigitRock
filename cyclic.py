@@ -18,6 +18,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.setWindowTitle(self.title)
         #self.setWindowIcon(QIcon(icons + "ST.png"))
         self.setGeometry(self.left, self.top, 1500, 1000)
+
         if test_version(actual_version):
             try:
                 self.table_widget = CyclicSoilTestApp()
@@ -26,9 +27,20 @@ class App(QMainWindow):  # Окно и виджеты на нем
             except:
                 app_logger.exception("Ошибка приложения")
         else:
-            QMessageBox.critical(self, "Ошибка",
-                                 f"Скачайте актуальную версию приложения {get_actual_version()}",
-                                 QMessageBox.Ok)
+            ret = QMessageBox.question(self, 'Предупреждение',
+                                       f"Вы запускаете устаревшую версию программы. Актуальная версия {get_actual_version()}",
+                                       QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+            if ret == QMessageBox.Yes:
+                try:
+                    self.table_widget = CyclicSoilTestApp()
+                    self.setCentralWidget(self.table_widget)
+                    self.show()
+                except:
+                    app_logger.exception("Ошибка приложения")
+
+            else:
+                sys.exit()
+
 
     def keyPressEvent(self, event):
         if str(event.key()) == "16777216":

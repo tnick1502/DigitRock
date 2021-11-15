@@ -27,9 +27,19 @@ class App(QMainWindow):  # Окно и виджеты на нем
             except:
                 app_logger.exception("Ошибка приложения")
         else:
-            QMessageBox.critical(self, "Ошибка",
-                                 f"Скачайте актуальную версию приложения {get_actual_version()}",
-                                 QMessageBox.Ok)
+            ret = QMessageBox.question(self, 'Предупреждение',
+                                       f"Вы запускаете устаревшую версию программы. Актуальная версия {get_actual_version()}",
+                                       QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+            if ret == QMessageBox.Yes:
+                try:
+                    self.table_widget = StatickSoilTestApp()
+                    self.setCentralWidget(self.table_widget)
+                    self.show()
+                except:
+                    app_logger.exception("Ошибка приложения")
+            else:
+                sys.exit()
+
         self.setCentralWidget(self.table_widget)
 
         self.show()
