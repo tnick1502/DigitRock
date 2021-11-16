@@ -743,8 +743,10 @@ class StatickSoilTestApp(QWidget):
 
                 test_result = E_models[statment.current_test].get_test_results()
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[statment.current_test].get_sigma_3_1()
-                test_result["c"], test_result["fi"] = FC_models[statment.current_test].get_test_results()["c"], \
-                                                      FC_models[statment.current_test].get_test_results()["fi"]
+                test_result["c"], test_result["fi"], test_result["m"] = \
+                FC_models[statment.current_test].get_test_results()["c"], \
+                FC_models[statment.current_test].get_test_results()["fi"], \
+                FC_models[statment.current_test].get_test_results()["m"]
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
@@ -777,8 +779,9 @@ class StatickSoilTestApp(QWidget):
                     statment.current_test].get_sigma_3_1()
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
-                test_result["c"], test_result["fi"] = FC_models[statment.current_test].get_test_results()["c"], \
-                                                      FC_models[statment.current_test].get_test_results()["fi"]
+                test_result["c"], test_result["fi"], test_result["m"] = FC_models[statment.current_test].get_test_results()["c"], \
+                                                      FC_models[statment.current_test].get_test_results()["fi"], \
+                                                      FC_models[statment.current_test].get_test_results()["m"]
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 

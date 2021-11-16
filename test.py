@@ -1,8 +1,4 @@
-num = 80
+a = type("a", (), {"a": 3, "get_a": lambda self: self.a})
 
-
-def str_Kf(x):
-    s = "{:.2e}".format(x).replace(".", ",")
-    return s[:-4], str(int(s[5:]))
-
-print(str_Kf(0.005))
+b = a()
+print(b.get_a())

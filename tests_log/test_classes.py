@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from abc import abstractmethod
+from abc import abstractmethod, ABCMeta
 import numpy as np
 import random
 from tests_log.path_processing import cyclic_path_processing, FCE_path_processing
@@ -52,7 +52,7 @@ class CameraAssembly:
         return timedelta(minutes=np.random.uniform(self.min, self.max))
 
 
-class Test:
+class Test(metaclass=ABCMeta):
     """Суперкласс опыта
 
     Атрибуты:
@@ -99,9 +99,9 @@ class Test:
 
     @abstractmethod
     def _get_duration(self, test_file) -> timedelta:
-        pass
+        raise NotImplementedError
 
-class TestsLog:
+class TestsLog(metaclass=ABCMeta):
     """Суперкласс журнала опытов
 
     Атрибуты:
@@ -253,7 +253,7 @@ class TestsLog:
 
     @abstractmethod
     def set_directory(self) -> None:
-        pass
+        raise NotImplementedError
 
 class CyclicTest(Test):
     """Опыт циклики"""
@@ -336,6 +336,7 @@ class TestsLogTriaxialStatic(TestsLog):
             for key in FC_models:
                 for i, test in enumerate(FC_models[key]):
                     self.tests[f"{key} № {i + 1}"] = TriaxialStaticTest(test.test_duration)
+
 
 if __name__ == "__main__":
     """test_1 = CyclicTest("C:/Users/Пользователь/Desktop/Тест/Сейсморазжижение/Архив/Темплет В (V7) доп.1-9/Косинусное значение напряжения.txt")

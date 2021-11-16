@@ -181,9 +181,9 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                     self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
                     self.deviator_ax2.plot(plots["strain"], plots["deviator"] + plots["sigma_3"],
                                            **plotter_params["static_loading_main_line"])
-                    if res["E50"] < res["E"][0]:
-                        self.deviator_ax2.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"],
-                                          **plotter_params["static_loading_black_dotted_line"])
+                    #if res["E50"] < res["E"][0]:
+                        #self.deviator_ax2.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"],
+                                          #**plotter_params["static_loading_black_dotted_line"])
                                           #label="$E$" + ", MПа = " + str(res["E"][0]) + "\n" + "$E$" + ", MПа = " + str(res["E"][0]))
 
                     #self.deviator_ax2.set_xticklabels(self.deviator_ax2.get_xticks(), size=8)
