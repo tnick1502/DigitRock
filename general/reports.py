@@ -1299,9 +1299,9 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
         [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "", "",
          zap(Res["fi"], 1), ""])
 
-    tableData.append(
-        [Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
-         zap(Res["m"], 2), ""])
+    #tableData.append(
+        #[Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
+         #zap(Res["m"], 2), ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
@@ -1320,8 +1320,8 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
                 ('SPAN', (0, -2), (3, -2)),
                 ('SPAN', (-2, -2), (-1, -2)),
 
-                ('SPAN', (0, -3), (3, -3)),
-                ('SPAN', (-2, -3), (-1, -3)),
+                #('SPAN', (0, -3), (3, -3)),
+                #('SPAN', (-2, -3), (-1, -3)),
                 #('SPAN', (2, -2), (3, -2)),
                 #('SPAN', (4, -2), (5, -2)),
                 #('SPAN', (2, -3), (3, -3)),
@@ -1329,7 +1329,7 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
 
                 ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
                 ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+               # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -1342,7 +1342,7 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6 - 4) * mm)
+    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
 
 def result_table_CF_KN(canvas, Res, pick, scale = 0.8):
 
