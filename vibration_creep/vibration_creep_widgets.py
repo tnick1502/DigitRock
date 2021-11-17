@@ -332,8 +332,8 @@ class VibrationCreepSoilTestApp(QWidget):
 
             pick_vc, pick_c = self.tab_3.dynamic_widget.save_canvas()
 
-            #E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
-            #VC_models[statment.current_test].save_log(save)
+            E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
+            VC_models[statment.current_test].save_log(save)
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date

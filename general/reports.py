@@ -149,17 +149,20 @@ def main_frame(canvas, path, Data_customer, code, list):
 
 
     # Верхняя надпись
-    canvas.line((50) * mm, (280 ) * mm, (198) * mm, (280 ) * mm)  # Линия аккредитации
+    canvas.line((47) * mm, (280 ) * mm, (179) * mm, (280 ) * mm)  # Линия аккредитации
     canvas.drawImage(path + "Report Data/Logo2.jpg", 23 * mm, 270 * mm,
                      width=21 * mm, height=21 * mm)  # логотип
+
+    b = svg2rlg(path + "Report Data/qr.svg")
+    b.scale(0.053, 0.053)
+    renderPDF.draw(b, canvas, 180 * mm, 269 * mm)
+
     canvas.setFont('TimesDj', 20)
-    canvas.drawString((50) * mm, (282) * mm, "МОСТДОРГЕОТРЕСТ")
+    canvas.drawString((47) * mm, (282) * mm, "МОСТДОРГЕОТРЕСТ")
     canvas.setFont('TimesDj', 12)
-    canvas.drawString((130) * mm, (284.8) * mm, "испытательная лаборатория")
-    canvas.setFont('Times', 10)
-    canvas.drawString((130) * mm, (281) * mm, "129344, г. Москва, ул. Искры, д.31, к.1")
-
-
+    canvas.drawString((125) * mm, (284.8) * mm, "испытательная лаборатория")
+    canvas.setFont('Times', 9)
+    canvas.drawString((124.5) * mm, (282) * mm, "129344, г. Москва, ул. Искры, д.31, к.1")
 
     # Аккредитация
     A = []  # аккредитация и низ
@@ -188,7 +191,7 @@ def main_frame(canvas, path, Data_customer, code, list):
         #dat4 = ["", ""]
 
 
-    t = Table(dat4, colWidths=145 * mm, rowHeights=3 * mm)
+    t = Table(dat4, colWidths=132 * mm, rowHeights=3 * mm)
     t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
                  ("FONTSIZE", (0, 0), (-1, -1), 7),
                  ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -197,7 +200,7 @@ def main_frame(canvas, path, Data_customer, code, list):
                  ("ALIGN", (0, 0), (-1, -1), "CENTER"), ])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, (50) * mm, (273.5) * mm)
+    t.drawOn(canvas, (47) * mm, (273.5) * mm)
 
 
 
