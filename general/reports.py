@@ -1189,13 +1189,13 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8):
         prediction = ""
         for i in range(len(Res)):
             Kd += zap(Res[i]["Kd"], 2) + "; "
-            Ed += zap(Res[i]["E50d"], 2) + "; "
-            E50 += zap(Res[i]["E50"], 2) + "; "
+            Ed += zap(Res[i]["E50d"], 1) + "; "
+            E50 += zap(Res[i]["E50"], 1) + "; "
             prediction += zap(Res[i]["prediction"]["50_years"], 3) + "; "
     else:
         Kd = zap(Res[0]["Kd"], 2)
-        Ed = zap(Res[0]["E50d"], 2)
-        E50 = zap(Res[0]["E50"], 2)
+        Ed = zap(Res[0]["E50d"], 1)
+        E50 = zap(Res[0]["E50"], 1)
         prediction = zap(Res[0]["prediction"]["50_years"], 3)
 
     tableData.append(

@@ -17,6 +17,7 @@ from general.initial_tables import TableVertical
 from static_loading.triaxial_static_test_widgets import StaticSoilTestWidget
 from general.initial_tables import TableCastomer
 from general.excel_functions import create_json_file, read_json_file
+from excel_statment.functions import set_cell_data
 from general.report_general_statment import save_report
 from singletons import E_models, VC_models, statment
 from loggers.logger import app_logger, handler
@@ -331,8 +332,8 @@ class VibrationCreepSoilTestApp(QWidget):
 
             pick_vc, pick_c = self.tab_3.dynamic_widget.save_canvas()
 
-            E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
-            VC_models[statment.current_test].save_log(save)
+            #E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
+            #VC_models[statment.current_test].save_log(save)
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date
@@ -355,6 +356,22 @@ class VibrationCreepSoilTestApp(QWidget):
 
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
+
+            set_cell_data(self.tab_1.path,
+                          "BU" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                          E_models[statment.current_test].get_test_results()["E50"], sheet="Лист1",
+                          color="FF6961")
+            res = VC_models[statment.current_test].get_test_results()[0]
+            set_cell_data(self.tab_1.path,
+                          "IH" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                          res["E50"], sheet="Лист1", color="FF6961")
+            set_cell_data(self.tab_1.path,
+                          "II" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                          res["E50d"], sheet="Лист1", color="FF6961")
+            set_cell_data(self.tab_1.path,
+                          "CB" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                          res["Kd"], sheet="Лист1",
+                          color="FF6961")
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
