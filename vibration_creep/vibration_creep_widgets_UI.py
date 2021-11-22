@@ -105,7 +105,7 @@ class VibrationCreepUI(QWidget):
         """Построение графиков опыта"""
         self.vibration_creep_ax.clear()
         self.vibration_creep_ax.set_xlabel("Деформация $ε_1$, д.е.")
-        self.vibration_creep_ax.set_ylabel("Девиатор q, МПА")
+        self.vibration_creep_ax.set_ylabel("Девиатор q, МПа")
 
         #self.dyn_phase_ax.clear()
         #self.dyn_phase_ax.set_title('Динамическая нагрузка')#, fontsize=10)
@@ -139,11 +139,11 @@ class VibrationCreepUI(QWidget):
             if plot_data["creep_curve"][i] is not None:
                 self.creep_ax.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,
                               label="frequency = " + str(plot_data["frequency"][i]) + " Hz")
-                self.creep_ax.plot(*plot_data["approximate_curve"][i], alpha=0.9, color=color,
-                                             label="prediction 50/100 year = " + str(
-                                                 result_data[i]["prediction"]["50_years"]) + "/" + str(
-                                                 result_data[i]["prediction"]["100_years"]),
-                                             linestyle="--")
+                #self.creep_ax.plot(*plot_data["approximate_curve"][i], alpha=0.9, color=color,
+                     #                        label="prediction 50/100 year = " + str(
+                    #                             result_data[i]["prediction"]["50_years"]) + "/" + str(
+                    #                             result_data[i]["prediction"]["100_years"]),
+                    #                         linestyle="--")
 
             if plot_data["E50d"][i]:
                 self.vibration_creep_ax.plot(*plot_data["E50d"][i], **plotter_params["static_loading_black_dotted_line"])
