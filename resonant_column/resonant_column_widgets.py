@@ -19,7 +19,7 @@ from general.reports import report_rc
 from excel_statment.initial_statment_widgets import RezonantColumnStatment
 from loggers.logger import app_logger, log_this, handler
 from general.excel_functions import set_cell_data
-from singletons import models, statment
+from singletons import RC_models, statment
 from version_control.configs import actual_version
 __version__ = actual_version
 
@@ -104,8 +104,8 @@ class RezonantColumnSoilTestWidget(QWidget):
 
     def _cut_sliders_moove(self):
         try:
-            if models[statment.current_test]._test_data.G_array is not None:
-                models[statment.current_test].set_borders(int(self.test_widget.cut_slider.low()),
+            if RC_models[statment.current_test]._test_data.G_array is not None:
+                RC_models[statment.current_test].set_borders(int(self.test_widget.cut_slider.low()),
                                                             int(self.test_widget.cut_slider.high()))
                 self._plot()
         except KeyError:
@@ -120,7 +120,7 @@ class RezonantColumnSoilTestWidget(QWidget):
 
     def set_test_params(self, params):
         try:
-            self._cut_slider_set_len(len(models[statment.current_test]._test_data.G_array))
+            self._cut_slider_set_len(len(RC_models[statment.current_test]._test_data.G_array))
             self._plot()
         except KeyError:
             pass
@@ -128,7 +128,7 @@ class RezonantColumnSoilTestWidget(QWidget):
     @log_this(app_logger, "debug")
     def _params_slider_moove(self, params):
         try:
-            models[statment.current_test].set_draw_params(params)
+            RC_models[statment.current_test].set_draw_params(params)
             self.set_test_params(True)
         except KeyError:
             pass
@@ -136,8 +136,8 @@ class RezonantColumnSoilTestWidget(QWidget):
     @log_this(app_logger, "debug")
     def _refresh(self):
         try:
-            models[statment.current_test].set_test_params()
-            self._cut_slider_set_len(len(models[statment.current_test]._test_data.G_array))
+            RC_models[statment.current_test].set_test_params()
+            self._cut_slider_set_len(len(RC_models[statment.current_test]._test_data.G_array))
             self._plot()
         except KeyError:
             pass
@@ -145,8 +145,8 @@ class RezonantColumnSoilTestWidget(QWidget):
     def _plot(self):
         """Построение графиков опыта"""
         try:
-            plots = models[statment.current_test].get_plot_data()
-            res = models[statment.current_test].get_test_results()
+            plots = RC_models[statment.current_test].get_plot_data()
+            res = RC_models[statment.current_test].get_test_results()
             self.test_widget.plot(plots, res)
         except KeyError:
             pass
@@ -448,8 +448,8 @@ class RezonantColumnSoilTestApp(QWidget):
 
             if dialog.exec() == QDialog.Accepted:
                 dialog.get_data()
-                models.generateTests()
-                models.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]), name="rc_models.pickle")
+                RC_models.generateTests()
+                RC_models.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]), name="rc_models.pickle")
                 statment.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]),
                               name="Резонансная колонка.pickle")
                 app_logger.info("Новые параметры ведомости и модели сохранены")
@@ -470,7 +470,7 @@ class RezonantColumnSoilTestApp(QWidget):
 
             file_name = save + "/" + "Отчет " + file_path_name + "-РК" + ".pdf"
 
-            test_result = models[statment.current_test].get_test_results()
+            test_result = RC_models[statment.current_test].get_test_results()
 
             results = {"G0": test_result["G0"], "gam07": test_result["threshold_shear_strain"]}
 
@@ -491,7 +491,7 @@ class RezonantColumnSoilTestApp(QWidget):
 
             shutil.copy(file_name, self.tab_2.save_widget.report_directory + "/" + file_name[len(file_name) -
                                                                                       file_name[::-1].index("/"):])
-            models[statment.current_test].save_log_file(save)
+            RC_models[statment.current_test].save_log_file(save)
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
                 app_logger.info(f"Проба {statment.current_test} успешно сохранена в папке {save}")
@@ -499,7 +499,7 @@ class RezonantColumnSoilTestApp(QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
-            models.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]), name="rc_models.pickle")
+            RC_models.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]), name="rc_models.pickle")
             statment.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]),
                           name="Резонансная колонка.pickle")
 

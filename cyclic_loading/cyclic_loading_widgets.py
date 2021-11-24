@@ -22,7 +22,7 @@ from excel_statment.initial_statment_widgets import CyclicStatment
 from excel_statment.functions import write_to_excel
 from excel_statment.initial_tables import TableVertical
 from loggers.logger import app_logger, log_this, handler
-from singletons import models, statment
+from singletons import Cyclic_models, statment
 
 from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogCyclic
@@ -184,7 +184,7 @@ class CyclicSoilTestWidget(QWidget):
     @log_this(app_logger, "debug")
     def _sliders_strain(self, param):
         try:
-            models[statment.current_test].set_strain_params(param)
+            Cyclic_models[statment.current_test].set_strain_params(param)
             self._plot()
         except KeyError:
             pass
@@ -192,7 +192,7 @@ class CyclicSoilTestWidget(QWidget):
     @log_this(app_logger, "debug")
     def _sliders_PPR(self, param):
         try:
-            models[statment.current_test].set_PPR_params(param)
+            Cyclic_models[statment.current_test].set_PPR_params(param)
             self._plot()
         except KeyError:
             pass
@@ -200,8 +200,8 @@ class CyclicSoilTestWidget(QWidget):
     @log_this(app_logger, "debug")
     def _sliders_cycles_count(self, param):
         try:
-            models[statment.current_test].set_cycles_count(param["cycles_count"])
-            strain_params, ppr_params, cycles_count_params = models[statment.current_test].get_draw_params()
+            Cyclic_models[statment.current_test].set_cycles_count(param["cycles_count"])
+            strain_params, ppr_params, cycles_count_params = Cyclic_models[statment.current_test].get_draw_params()
             self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params, True)
             self._plot()
         except KeyError:
@@ -209,7 +209,7 @@ class CyclicSoilTestWidget(QWidget):
 
     def set_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
-        strain_params, ppr_params, cycles_count_params = models[statment.current_test].get_draw_params()
+        strain_params, ppr_params, cycles_count_params = Cyclic_models[statment.current_test].get_draw_params()
         self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params)
         self._plot()
 
@@ -221,15 +221,15 @@ class CyclicSoilTestWidget(QWidget):
         self._plot()
 
     def refresh(self):
-        models[statment.current_test].set_test_params()
-        strain_params, ppr_params, cycles_count_params = models[statment.current_test].get_draw_params()
+        Cyclic_models[statment.current_test].set_test_params()
+        strain_params, ppr_params, cycles_count_params = Cyclic_models[statment.current_test].get_draw_params()
         self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params, True)
         self._plot()
 
     def _plot(self):
         """Построение графиков опыта"""
-        plots = models[statment.current_test].get_plot_data()
-        res = models[statment.current_test].get_test_results()
+        plots = Cyclic_models[statment.current_test].get_plot_data()
+        res = Cyclic_models[statment.current_test].get_test_results()
         self.test_widget.plot(plots, res)
         self.damping.plot(plots, res)
 
@@ -634,8 +634,8 @@ class CyclicSoilTestApp(QWidget):
             dialog.show()
 
             if dialog.exec() == QDialog.Accepted:
-                models.generateTests()
-                models.dump(''.join(os.path.split(self.tab_3.directory)[:-1]), name="cyclic_models.pickle")
+                Cyclic_models.generateTests()
+                Cyclic_models.dump(''.join(os.path.split(self.tab_3.directory)[:-1]), name="cyclic_models.pickle")
                 statment.dump(''.join(os.path.split(self.tab_3.directory)[:-1]), name=statment.general_parameters.test_mode + ".pickle")
                 app_logger.info("Новые параметры ведомости и модели сохранены")
 
@@ -683,7 +683,7 @@ class CyclicSoilTestApp(QWidget):
                               'Oborudovanie': "Камера трехосного сжатия динамическая ГТ 2.3.20, Wille Geotechnik 13-HG/020:001",
                               'h': 100, 'd': 50}
 
-            test_result = models[statment.current_test].get_test_results()
+            test_result = Cyclic_models[statment.current_test].get_test_results()
 
             results = {'PPRmax': test_result['max_PPR'],
                        'EPSmax': test_result['max_strain'],
@@ -713,7 +713,7 @@ class CyclicSoilTestApp(QWidget):
                                        [self.tab_2.damping.save_canvas()], "{:.2f}".format(__version__))
 
 
-            models[statment.current_test].generate_log_file(save)
+            Cyclic_models[statment.current_test].generate_log_file(save)
 
             shutil.copy(file_name, self.tab_3.report_directory + "/" + file_name[len(file_name) -
                                                                                  file_name[::-1].index("/"):])
@@ -736,7 +736,7 @@ class CyclicSoilTestApp(QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
-            models.dump(''.join(os.path.split(self.tab_3.directory)[:-1]), name="cyclic_models.pickle")
+            Cyclic_models.dump(''.join(os.path.split(self.tab_3.directory)[:-1]), name="cyclic_models.pickle")
             statment.dump(''.join(os.path.split(self.tab_3.directory)[:-1]),
                           name=statment.general_parameters.test_mode + ".pickle")
 

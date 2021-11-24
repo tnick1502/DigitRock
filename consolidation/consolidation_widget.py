@@ -17,7 +17,7 @@ from general.reports import report_consolidation, report_FCE, report_FC
 from consolidation.consolidation_UI import ModelTriaxialConsolidationUI
 from general.general_widgets import Float_Slider
 from configs.styles import style
-from singletons import models, statment
+from singletons import Consolidation_models, statment
 from loggers.logger import app_logger, log_this, handler
 from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogTriaxialStatic, TestsLogCyclic
@@ -99,20 +99,20 @@ class ConsilidationSoilTestWidget(QWidget):
 
     def _connect_model_Ui(self):
         """Связь слайдеров с моделью"""
-        self._cut_slider_consolidation_set_len(len(models[statment.current_test]._test_data.time))
+        self._cut_slider_consolidation_set_len(len(Consolidation_models[statment.current_test]._test_data.time))
 
     def _plot_consolidation_sqrt(self):
         try:
-            plot_data = models[statment.current_test].get_plot_data_sqrt()
-            res = models[statment.current_test].get_test_results()
+            plot_data = Consolidation_models[statment.current_test].get_plot_data_sqrt()
+            res = Consolidation_models[statment.current_test].get_test_results()
             self.consolidation.plot_sqrt(plot_data, res)
         except KeyError:
             pass
 
     def _plot_consolidation_log(self):
         try:
-            plot_data = models[statment.current_test].get_plot_data_log()
-            res = models[statment.current_test].get_test_results()
+            plot_data = Consolidation_models[statment.current_test].get_plot_data_log()
+            res = Consolidation_models[statment.current_test].get_test_results()
             self.consolidation.plot_log(plot_data, res)
         except KeyError:
             pass
@@ -124,16 +124,16 @@ class ConsilidationSoilTestWidget(QWidget):
         self.consolidation.slider_cut.setHigh(len)
 
     def _cut_slider_consolidation_moove(self):
-        if models[statment.current_test].check_none():
+        if Consolidation_models[statment.current_test].check_none():
             if (int(self.consolidation.slider_cut.high()) - int(self.consolidation.slider_cut.low())) >= 50:
-                models[statment.current_test].consolidation.change_borders(int(self.consolidation.slider_cut.low()),
+                Consolidation_models[statment.current_test].consolidation.change_borders(int(self.consolidation.slider_cut.low()),
                                                             int(self.consolidation.slider_cut.high()))
                 self._plot_consolidation_sqrt()
                 self._plot_consolidation_log()
 
     def _consolidation_interpolation_type(self, button):
         """Смена метода интерполяции консолидации"""
-        if models[statment.current_test].check_none():
+        if Consolidation_models[statment.current_test].check_none():
             if button.text() == "Интерполяция полиномом":
                 interpolation_type = "poly"
                 param = 8
@@ -145,22 +145,22 @@ class ConsilidationSoilTestWidget(QWidget):
                 self.consolidation.function_replacement_slider.set_borders(0, 5)
                 self.consolidation.function_replacement_slider.set_value(2)
 
-            models[statment.current_test].set_interpolation_param(param)
-            models[statment.current_test].set_interpolation_type(interpolation_type)
+            Consolidation_models[statment.current_test].set_interpolation_param(param)
+            Consolidation_models[statment.current_test].set_interpolation_type(interpolation_type)
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
 
     def _interpolate_slider_consolidation_moove(self):
         """Перемещение слайдера интерполяции. Не производит обработки, только отрисовка интерполированной кривой"""
-        if models[statment.current_test].check_none():
+        if Consolidation_models[statment.current_test].check_none():
             param = self.consolidation.function_replacement_slider.current_value()
-            plot = models[statment.current_test].set_interpolation_param(param)
+            plot = Consolidation_models[statment.current_test].set_interpolation_param(param)
             self.consolidation.plot_interpolate(plot)
 
     def _interpolate_slider_consolidation_release(self):
         """Обработка консолидации при окончании движения слайдера"""
-        if models[statment.current_test].check_none():
-            models[statment.current_test].change_borders(int(self.consolidation.slider_cut.low()),
+        if Consolidation_models[statment.current_test].check_none():
+            Consolidation_models[statment.current_test].change_borders(int(self.consolidation.slider_cut.low()),
                                                      int(self.consolidation.slider_cut.high()))
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
@@ -172,7 +172,7 @@ class ConsilidationSoilTestWidget(QWidget):
         if event.canvas is self.consolidation.log_canvas:
             canvas = "log"
         if event.button == 1 and event.xdata and event.ydata:
-            self.point_identificator = models[statment.current_test].define_click_point(float(event.xdata),
+            self.point_identificator = Consolidation_models[statment.current_test].define_click_point(float(event.xdata),
                                                                                     float(event.ydata), canvas)
 
     def _canvas_on_moove(self, event):
@@ -183,7 +183,7 @@ class ConsilidationSoilTestWidget(QWidget):
             canvas = "log"
 
         if self.point_identificator and event.xdata and event.ydata and event.button == 1:
-            models[statment.current_test].moove_catch_point(float(event.xdata), float(event.ydata), self.point_identificator,
+            Consolidation_models[statment.current_test].moove_catch_point(float(event.xdata), float(event.ydata), self.point_identificator,
                                                         canvas)
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
@@ -194,7 +194,7 @@ class ConsilidationSoilTestWidget(QWidget):
 
     def refresh(self):
         try:
-            models[statment.current_test].set_test_params()
+            Consolidation_models[statment.current_test].set_test_params()
             self.set_params(True)
         except:
             pass
@@ -202,7 +202,7 @@ class ConsilidationSoilTestWidget(QWidget):
     @log_this(app_logger, "debug")
     def set_params(self, param=None):
         try:
-            self.consolidation_sliders.set_sliders_params(models[statment.current_test].get_draw_params())
+            self.consolidation_sliders.set_sliders_params(Consolidation_models[statment.current_test].get_draw_params())
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
             self._connect_model_Ui()
@@ -213,7 +213,7 @@ class ConsilidationSoilTestWidget(QWidget):
     def _consolidation_sliders_moove(self, params):
         """Обработчик движения слайдера"""
         try:
-            models[statment.current_test].set_draw_params(params)
+            Consolidation_models[statment.current_test].set_draw_params(params)
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
             self._connect_model_Ui()
@@ -293,9 +293,9 @@ class ConsolidationSoilTestApp(QWidget):
                 os.mkdir(save)
 
             name = file_path_name + " " + statment.general_data.object_number + " ВК" + ".pdf"
-            models.dump(''.join(os.path.split(self.tab_2.save_wigdet.directory)[:-1]), name="consolidation_models.pickle")
+            Consolidation_models.dump(''.join(os.path.split(self.tab_2.save_wigdet.directory)[:-1]), name="consolidation_models.pickle")
             #models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
-            test_result = models[statment.current_test].get_test_results()
+            test_result = Consolidation_models[statment.current_test].get_test_results()
 
             report_consolidation(save + "/" + name, data_customer,
                                  statment[statment.current_test].physical_properties, statment.current_test,
@@ -311,7 +311,7 @@ class ConsolidationSoilTestApp(QWidget):
 
             statment.dump(''.join(os.path.split(self.tab_2.save_wigdet.directory)[:-1]), "consolidation.pickle")
 
-            models[statment.current_test].save_log(save, file_path_name + " " + statment.general_data.object_number + "ВК")
+            Consolidation_models[statment.current_test].save_log(save, file_path_name + " " + statment.general_data.object_number + "ВК")
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")

@@ -22,7 +22,7 @@ from general.general_widgets import Float_Slider
 from configs.plot_params import plotter_params
 from general.general_functions import read_json_file, create_json_file
 from configs.styles import style
-from singletons import models, statment
+from singletons import Cyclic_models, statment
 from general.report_general_statment import save_report
 
 try:

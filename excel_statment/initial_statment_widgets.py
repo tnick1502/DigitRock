@@ -15,7 +15,7 @@ from excel_statment.properties_model import PhysicalProperties, MechanicalProper
     DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties
 from excel_statment.position_configs import IdentificationColumns
 from loggers.logger import app_logger, log_this
-from singletons import statment, models, E_models, FC_models, VC_models
+from singletons import statment, models, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models
 from resonant_column.rezonant_column_hss_model import ModelRezonantColumnSoilTest
 from consolidation.consolidation_model import ModelTriaxialConsolidationSoilTest
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTest
@@ -172,6 +172,35 @@ class InitialStatment(QWidget):
         """Открытие и проверка заполненности всего файла веддомости"""
         pass
 
+    def load_statment(self, statment_name, properties_type, general_params):
+
+        statment_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/" + statment_name
+
+        if os.path.exists(statment_file):
+            statment.load(statment_file)
+            app_logger.info(f"Загружен сохраненный файл ведомости {statment_name}")
+        else:
+            statment.setTestClass(properties_type)
+            statment.setGeneralParameters(general_params)
+            statment.readExcelFile(self.path, None)
+            statment.dump("".join([i for i in os.path.split(self.path)[:-1]]), name=statment_name)
+            app_logger.info(f"Сгенерирован сохраненен новый файл ведомости {statment_name}")
+
+        self.customer_line.set_data()
+        self.accreditation.set_data()
+
+    def load_models(self, models_name, models, models_type):
+        model_file = "".join([i for i in os.path.split(self.path)[:-1]]) + f"/{models_name}"
+        models.setModelType(models_type)
+
+        if os.path.exists(model_file):
+            models.load(model_file)
+            app_logger.info(f"Загружен файл модели {models_name}")
+        else:
+            models.generateTests()
+            models.dump("".join([i for i in os.path.split(self.path)[:-1]]), models_name)
+            app_logger.info(f"Сгенерирован сохраненен новый файл модели {models_name}")
+
     @log_this(app_logger, "debug")
     def table_physical_properties_click(self, laboratory_number):
         self.table_vertical.set_data()
@@ -224,20 +253,12 @@ class RezonantColumnStatment(InitialStatment):
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
             else:
-                statment_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/Резонансная колонка.pickle"
+                combo_params["test_mode"] = "Резонансная колонка"
 
-                if os.path.exists(statment_file):
-                    statment.load(statment_file)
-                    app_logger.info(f"Загружен сохраненный файл ведомости Резонансная колонка.pickle")
-                else:
-                    statment.setTestClass(RCProperties)
-                    combo_params["test_mode"] = "Резонансная колонка"
-                    statment.setGeneralParameters(combo_params)
-                    statment.readExcelFile(self.path, IdentificationColumns["Резонансная колонка"])
-                    statment.dump("".join([i for i in os.path.split(self.path)[:-1]]), name="Резонансная колонка.pickle")
-
-                self.customer_line.set_data()
-                self.accreditation.set_data()
+                self.load_statment(
+                    statment_name="Резонансная колонка.pickle",
+                    properties_type=RCProperties,
+                    general_params=combo_params)
 
                 keys = list(statment.tests.keys())
                 for test in keys:
@@ -251,17 +272,9 @@ class RezonantColumnStatment(InitialStatment):
                     self.table_physical_properties.set_data()
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
-                    app_logger.info(f"Загружена ведомость: {self.path}")
 
-                    model_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/rc_models.pickle"
-                    models.setModelType(ModelRezonantColumnSoilTest)
-
-                    if os.path.exists(model_file):
-                        app_logger.info("Загружен файл модели")
-                        models.load(model_file)
-                    else:
-                        models.generateTests()
-                        models.dump("".join([i for i in os.path.split(self.path)[:-1]]), name="rc_models.pickle")
+                    self.load_models(models_name="RC_models.pickle",
+                                     models=RC_models, models_type=ModelRezonantColumnSoilTest)
 
 class TriaxialStaticStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -335,20 +348,10 @@ class TriaxialStaticStatment(InitialStatment):
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
             else:
 
-                def load_statment(statment_name):
-
-                    statment_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/" + statment_name
-
-                    if os.path.exists(statment_file):
-                        statment.load(statment_file)
-                        app_logger.info(f"Загружен сохраненный файл ведомости {statment_name}")
-                    else:
-                        statment.setTestClass(MechanicalProperties)
-                        statment.setGeneralParameters(combo_params)
-                        statment.readExcelFile(self.path, None)
-                        statment.dump("".join([i for i in os.path.split(self.path)[:-1]]), name=statment_name)
-
-                load_statment(self.open_line.get_data()["test_mode"] + ".pickle")
+                self.load_statment(
+                    statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
+                    properties_type=MechanicalProperties,
+                    general_params=combo_params)
 
                 statment.general_parameters.reconsolidation = False
 
@@ -357,9 +360,6 @@ class TriaxialStaticStatment(InitialStatment):
                     if not statment[test].mechanical_properties.E50:
                         del statment.tests[test]
 
-                self.customer_line.set_data()
-                self.accreditation.set_data()
-
                 if len(statment) < 1:
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
                                         + str(columns_marker), QMessageBox.Ok)
@@ -367,41 +367,22 @@ class TriaxialStaticStatment(InitialStatment):
                     self.table_physical_properties.set_data()
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
-                    app_logger.info(f"Загружена ведомость: {self.path}")
-
-                    def load_E_models():
-                        E_model_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/E_models.pickle"
-                        E_models.setModelType(ModelTriaxialStaticLoadSoilTest)
-
-                        if os.path.exists(E_model_file):
-                            app_logger.info("Загружен файл модели")
-                            E_models.load(E_model_file)
-                        else:
-                            E_models.generateTests()
-                            E_models.dump("".join([i for i in os.path.split(self.path)[:-1]]), "E_models.pickle")
-
-                    def load_FC_models():
-                        FC_model_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/FC_models.pickle"
-                        FC_models.setModelType(ModelMohrCirclesSoilTest)
-
-                        if os.path.exists(FC_model_file):
-                            app_logger.info("Загружен файл модели")
-                            FC_models.load(FC_model_file)
-                        else:
-                            FC_models.generateTests()
-                            FC_models.dump("".join([i for i in os.path.split(self.path)[:-1]]), "FC_models.pickle")
 
                     if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C)" or \
                             statment.general_parameters.test_mode == "Трёхосное сжатие КН" or \
                             statment.general_parameters.test_mode == "Трёхосное сжатие НН":
-                        load_FC_models()
+                        self.load_models(models_name="FC_models.pickle",
+                                         models=FC_models, models_type=ModelMohrCirclesSoilTest)
 
                     elif statment.general_parameters.test_mode == "Трёхосное сжатие (E)" or statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
-                        load_E_models()
+                        self.load_models(models_name="E_models.pickle",
+                                         models=E_models, models_type=ModelTriaxialStaticLoadSoilTest)
 
                     elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
-                        load_E_models()
-                        load_FC_models()
+                        self.load_models(models_name="E_models.pickle",
+                                         models=E_models, models_type=ModelTriaxialStaticLoadSoilTest)
+                        self.load_models(models_name="FC_models.pickle",
+                                         models=FC_models, models_type=ModelMohrCirclesSoilTest)
 
 class CyclicStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -477,20 +458,11 @@ class CyclicStatment(InitialStatment):
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
             else:
-                def load_statment(statment_name):
 
-                    statment_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/" + statment_name
-
-                    if os.path.exists(statment_file):
-                        statment.load(statment_file)
-                        app_logger.info(f"Загружен сохраненный файл ведомости {statment_name}")
-                    else:
-                        statment.setTestClass(CyclicProperties)
-                        statment.setGeneralParameters(combo_params)
-                        statment.readExcelFile(self.path, None)
-                        statment.dump("".join([i for i in os.path.split(self.path)[:-1]]), name=statment_name)
-
-                load_statment(self.open_line.get_data()["test_mode"] + ".pickle")
+                self.load_statment(
+                    statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
+                    properties_type=CyclicProperties,
+                    general_params=combo_params)
 
                 keys = list(statment.tests.keys())
                 for test in keys:
@@ -507,17 +479,9 @@ class CyclicStatment(InitialStatment):
                     self.table_physical_properties.set_data()
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
-                    app_logger.info(f"Загружена ведомость: {self.path}")
 
-                    model_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/cyclic_models.pickle"
-                    models.setModelType(ModelTriaxialCyclicLoadingSoilTest)
-
-                    if os.path.exists(model_file):
-                        app_logger.info("Загружен файл модели")
-                        models.load(model_file)
-                    else:
-                        models.generateTests()
-                        models.dump("".join([i for i in os.path.split(self.path)[:-1]]), name="cyclic_models.pickle")
+                    self.load_models(models_name="cyclic_models.pickle",
+                                     models=Cyclic_models, models_type=ModelTriaxialCyclicLoadingSoilTest)
 
 class VibrationCreepStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -575,24 +539,12 @@ class VibrationCreepStatment(InitialStatment):
 
             else:
 
-                def load_statment(statment_name):
+                combo_params["test_mode"] = "Виброползучесть"
 
-                    statment_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/" + statment_name
-
-                    if os.path.exists(statment_file):
-                        statment.load(statment_file)
-                        app_logger.info(f"Загружен сохраненный файл ведомости {statment_name}")
-                    else:
-                        statment.setTestClass(VibrationCreepProperties)
-                        combo_params["test_mode"] = "Виброползучесть"
-                        statment.setGeneralParameters(combo_params)
-                        statment.readExcelFile(self.path, None)
-                        statment.dump("".join([i for i in os.path.split(self.path)[:-1]]), name=statment_name)
-
-                load_statment("Виброползучесть.pickle")
-
-                self.customer_line.set_data()
-                self.accreditation.set_data()
+                self.load_statment(
+                    statment_name="Виброползучесть.pickle",
+                    properties_type=VibrationCreepProperties,
+                    general_params=combo_params)
 
                 if len(statment) < 1:
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта"
@@ -608,30 +560,11 @@ class VibrationCreepStatment(InitialStatment):
 
                     app_logger.info(f"Загружена ведомость: {self.path}")
 
-                    def load_E_models():
-                        E_model_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/E_models.pickle"
-                        E_models.setModelType(ModelTriaxialStaticLoadSoilTest)
+                    self.load_models(models_name="E_models.pickle",
+                                     models=E_models, models_type=ModelTriaxialStaticLoadSoilTest)
 
-                        if os.path.exists(E_model_file):
-                            app_logger.info("Загружен файл модели E_models.pickle")
-                            E_models.load(E_model_file)
-                        else:
-                            E_models.generateTests()
-                            E_models.dump("".join([i for i in os.path.split(self.path)[:-1]]), "E_models.pickle")
-
-                    def load_VC_models():
-                        VC_model_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/VC_models.pickle"
-                        VC_models.setModelType(ModelVibrationCreepSoilTest)
-
-                        if os.path.exists(VC_model_file):
-                            #app_logger.info("Загружен файл модели")
-                            VC_models.load(VC_model_file)
-                        else:
-                            VC_models.generateTests()
-                            VC_models.dump("".join([i for i in os.path.split(self.path)[:-1]]), "VC_models.pickle")
-
-                    load_E_models()
-                    load_VC_models()
+                    self.load_models(models_name="VC_models.pickle",
+                                     models=VC_models, models_type=ModelVibrationCreepSoilTest)
 
 class ConsolidationStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -668,22 +601,10 @@ class ConsolidationStatment(InitialStatment):
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
             else:
 
-                def load_statment(statment_name):
-                    statment_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/" + statment_name
-
-                    if os.path.exists(statment_file):
-                        statment.load(statment_file)
-                        app_logger.info(f"Загружен сохраненный файл ведомости {statment_name}")
-                    else:
-                        statment.setTestClass(ConsolidationProperties)
-                        statment.setGeneralParameters(combo_params)
-                        statment.readExcelFile(self.path, None)
-                        statment.dump("".join([i for i in os.path.split(self.path)[:-1]]), name=statment_name)
-
-                load_statment("consolidation.pickle")
-
-                self.customer_line.set_data()
-                self.accreditation.set_data()
+                self.load_statment(
+                    statment_name="Консолидация.pickle",
+                    properties_type=ConsolidationProperties,
+                    general_params=combo_params)
 
                 keys = list(statment.tests.keys())
                 for test in keys:
@@ -696,17 +617,9 @@ class ConsolidationStatment(InitialStatment):
                     self.table_physical_properties.set_data()
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
-                    app_logger.info(f"Загружена ведомость: {self.path}")
 
-                    model_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/consolidation_models.pickle"
-                    models.setModelType(ModelTriaxialConsolidationSoilTest)
-
-                    if os.path.exists(model_file):
-                        app_logger.info("Загружен файл модели")
-                        models.load(model_file)
-                    else:
-                        models.generateTests()
-                        models.dump("".join([i for i in os.path.split(self.path)[:-1]]), name="consolidation_models.pickle")
+                    self.load_models(models_name="consolidation_models.pickle",
+                                     models=Consolidation_models, models_type=ModelTriaxialConsolidationSoilTest)
 
 
 if __name__ == "__main__":

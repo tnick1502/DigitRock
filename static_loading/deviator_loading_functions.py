@@ -166,14 +166,14 @@ def deviator_loading_deviation(strain, deviator, xc):
     i_xc, = np.where(strain >= xc)
     if xc >= 0.14:  # без пика
         try:
-            curve = create_deviation_curve(strain[i_60[0]:i_xc[0]], devition_1 * 2,
-                                           points=np.random.uniform(3, 7), borders="zero_diff",
+            curve = create_deviation_curve(strain[i_60[0]:i_xc[0]], devition_1/2,
+                                           points=np.random.uniform(6, 15), borders="zero_diff",
                                            low_first_district=1, one_side=True) + \
                     create_deviation_curve(strain[i_60[0]:i_xc[0]], devition_1,
                                            points=np.random.uniform(20, 30), borders="zero_diff",
                                            low_first_district=1, one_side=True)
             deviation_array = -np.hstack((np.zeros(i_60[0]),
-                                          -curve,
+                                          curve,
                                           np.zeros(len(strain) - i_xc[0])))
         except IndexError:
             deviation_array = np.zeros(len(strain))
