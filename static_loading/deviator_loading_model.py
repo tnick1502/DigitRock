@@ -605,7 +605,12 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         """Установка основных параметров опыта"""
         self._test_params.qf = statment[statment.current_test].mechanical_properties.qf
         self._test_params.sigma_3 = statment[statment.current_test].mechanical_properties.sigma_3
-        self._test_params.E50 = statment[statment.current_test].mechanical_properties.E50
+
+        if statment.general_parameters.test_mode == "Виброползучесть":
+            self._test_params.E50 = statment[statment.current_test].mechanical_properties.E50 * np.random.uniform(0.9, 1.1)
+        else:
+            self._test_params.E50 = statment[statment.current_test].mechanical_properties.E50
+
         self._test_params.K0 = statment[statment.current_test].mechanical_properties.K0
         self._test_params.c = statment[statment.current_test].mechanical_properties.c
         self._test_params.fi = statment[statment.current_test].mechanical_properties.fi

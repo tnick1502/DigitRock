@@ -321,8 +321,7 @@ class ModelVibrationCreep:
         #E50 = mean_dynamic_load / (0.5*(np.min(strain[int(start):]) + strain[int(start)]))
 
         index_50, = np.where(deviator >= mean_dynamic_load)
-
-        E50 = deviator[index_50[0]] / strain[index_50[0]]
+        E50 = deviator[index_50[0] - 1] / strain[index_50[0] - 1]
 
         return (round(E50 / 1000, 2), round(E50d / 1000, 2))
 
@@ -418,13 +417,19 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
         Kd_origin = statment[statment.current_test].mechanical_properties.Kd
         E50_origin = statment[statment.current_test].mechanical_properties.E50
 
+        i = 0
         for frequency, Kd in zip(statment[statment.current_test].mechanical_properties.frequency,
                                  statment[statment.current_test].mechanical_properties.Kd):
             self._dynamic_tests_models.append(ModelTriaxialCyclicLoadingSoilTest())
             statment[statment.current_test].mechanical_properties.frequency = frequency
-            statment[statment.current_test].mechanical_properties.E50 = E50_origin*np.random.uniform(0.94, 1.06)
+            if i == 0:
+                statment[statment.current_test].mechanical_properties.E50 = E50_origin#*np.random.uniform(0.94, 1.06)
+            else:
+                statment[statment.current_test].mechanical_properties.E50 = E50_origin *np.random.uniform(0.94, 1.06)
+
             statment[statment.current_test].mechanical_properties.Kd = Kd
             self._dynamic_tests_models[-1].set_test_params(cosine=True)
+            i += 1
 
         statment[statment.current_test].mechanical_properties.frequency = frequency_origin
         statment[statment.current_test].mechanical_properties.Kd = Kd_origin

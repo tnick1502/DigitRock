@@ -129,7 +129,7 @@ class VibrationCreepUI(QWidget):
             self.vibration_creep_ax.plot(plot_data["strain_dynamic"][i], plot_data["deviator_dynamic"][i], alpha=0.5,
                              linewidth=1.5,
                              color=color, label="Kd = " + str(result_data[i]["Kd"]) + "; f = " + str(
-                    plot_data["frequency"][i]) + " Hz")
+                    plot_data["frequency"][i]) + " Hz" +  "; E50 = " + str(result_data[i]["E50"]))
 
             #self.dyn_phase_ax.plot(plot_data["creep_curve"][i],
                               #plot_data["deviator_dynamic"][i][len(plot_data["deviator_dynamic"][i]) -

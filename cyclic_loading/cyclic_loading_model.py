@@ -1425,11 +1425,17 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                      create_deviation_curve(x[i2[0]:], PPR_max / 100, (1, 1), (len(x) - i2[0]) / 200,
                                             "zero_diff")))
             except:
-                PPR_exp += np.hstack(
-                    (create_deviation_curve(x[:i1[0]], PPR_max / 30, (1, 0.1), np.random.uniform(6, 12),
-                                            "zero_diff"), np.zeros(len(x) - i1[0])))
-            PPR_exp += np.hstack((create_deviation_curve(x[:i1[0]], PPR_max / 50, (1, 0.1), i1[0] / 5, "zero_diff"),
+                try:
+                    PPR_exp += np.hstack(
+                        (create_deviation_curve(x[:i1[0]], PPR_max / 30, (1, 0.1), np.random.uniform(6, 12),
+                                                "zero_diff"), np.zeros(len(x) - i1[0])))
+                except ValueError:
+                    pass
+            try:
+                PPR_exp += np.hstack((create_deviation_curve(x[:i1[0]], PPR_max / 50, (1, 0.1), i1[0] / 5, "zero_diff"),
                                   np.zeros(len(x) - i1[0])))
+            except (ValueError, ZeroDivisionError):
+                pass
 
         else:
             PPR_exp = current_exponent(x, PPR_max, PPR_slant)

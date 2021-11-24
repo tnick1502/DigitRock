@@ -357,14 +357,13 @@ class VibrationCreepSoilTestApp(QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
+            res = VC_models[statment.current_test].get_test_results()[0]
+
             set_cell_data(self.tab_1.path,
                           "BU" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                          E_models[statment.current_test].get_test_results()["E50"], sheet="Лист1",
+                          res["E50"], sheet="Лист1",
                           color="FF6961")
-            res = VC_models[statment.current_test].get_test_results()[0]
-            set_cell_data(self.tab_1.path,
-                          "IH" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                          res["E50"], sheet="Лист1", color="FF6961")
+
             set_cell_data(self.tab_1.path,
                           "II" + str(statment[statment.current_test].physical_properties.sample_number + 7),
                           res["E50d"], sheet="Лист1", color="FF6961")
