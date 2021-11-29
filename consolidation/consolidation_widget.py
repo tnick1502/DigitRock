@@ -47,9 +47,12 @@ class ConsilidationSoilTestWidget(QWidget):
 
         self.consolidation = ModelTriaxialConsolidationUI()
 
-        self.consolidation_sliders = TriaxialStaticLoading_Sliders({"max_time": "Время испытания",
-                                                                    "strain": "Значение деформации"})
-        self.consolidation_sliders.setFixedHeight(90)
+        self.consolidation_sliders = TriaxialStaticLoading_Sliders({
+            "Cv": "Коэфициент Cv",
+            "Ca": "Коэфициент Ca",
+            "max_time": "Время испытания",
+            "strain": "Значение деформации"})
+        self.consolidation_sliders.setFixedHeight(150)
 
         self.consolidation.graph_layout.addWidget(self.consolidation_sliders)
 

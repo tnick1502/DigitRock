@@ -964,6 +964,10 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._draw_params.strain_E0 = ModelTriaxialCyclicLoadingSoilTest.define_E0(self._test_params.physical.Il,
                                                 self._test_params.E, self._test_params.t*2, \
                                     define_qf(self._test_params.sigma_3, self._test_params.c , self._test_params.fi))
+
+        if self._test_params.Kd:
+            self._draw_params.strain_E0*=np.random.uniform(4, 6)
+
         # Параметр, отвечающий за рост деформации после цикла разрушения
         self._draw_params.strain_rise_after_fail = np.random.uniform(2, 3)
 
@@ -1191,8 +1195,9 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             if self._test_params.Kd >= 0.9:
                 k = 1
             else:
-                k = 1 + (1 - self._test_params.Kd) * 1.1
-            self._draw_params.strain_max = self._load_stage.strain[-1] * (1 - self._test_params.Kd)
+                k = 1 + (1 - self._test_params.Kd) * 1.5
+
+            self._draw_params.strain_max = self._load_stage.strain[-1] * (1 - self._test_params.Kd) - (self._test_params.t / self._draw_params.strain_E0)
         else:
             self._draw_params.strain_max = np.random.uniform(0.05 / Ms, 0.06 / Ms)
 

@@ -63,6 +63,7 @@ class TestResultModelVibrationCreep:
             "prediction": self.prediction
         }
 
+
 class ModelVibrationCreep:
     """Модель виброползучести"""
     def __init__(self):
@@ -316,7 +317,7 @@ class ModelVibrationCreep:
     def find_E50d(strain, deviator, start_dynamic=False):
         start = start_dynamic
         mean_dynamic_load = 0.5 * (np.max(np.array(deviator[int(start):])) - np.min(np.array(deviator[int(start):]))) + np.min(np.array(deviator[int(start):]))
-        E50d = mean_dynamic_load / max(strain)
+        E50d = mean_dynamic_load / np.max(strain)
 
         #E50 = mean_dynamic_load / (0.5*(np.min(strain[int(start):]) + strain[int(start)]))
 

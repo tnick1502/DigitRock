@@ -1000,6 +1000,9 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._draw_params.strain = define_final_deformation(self._test_params.p_max, self._test_params.Eoed,
                                                             self._test_params.m)
 
+        self._draw_params.Cv = self._test_params.Cv
+        self._draw_params.Ca = self._test_params.Ca
+
         self._test_modeling()
         self.change_borders(0, len(self._test_data.time))
 
@@ -1015,16 +1018,28 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
-        params = {"max_time": {"value": self._draw_params.max_time, "borders":
-            [self._draw_params.max_time / 2, self._draw_params.max_time * 10]},
-                  "strain": {"value": -self._draw_params.strain, "borders":
-                      [-self._draw_params.strain / 2, -self._draw_params.strain * 3]}}
+        params = {
+            "max_time":
+                {"value": self._draw_params.max_time,
+                 "borders": [self._draw_params.max_time / 2, self._draw_params.max_time * 10]},
+            "strain":
+                {"value": -self._draw_params.strain,
+                 "borders":[-self._draw_params.strain / 2, -self._draw_params.strain * 2]},
+            "Cv":
+                {"value": self._test_params.Cv,
+                 "borders": [self._test_params.Cv / 5, self._draw_params.Cv * 5]},
+            "Ca":
+                {"value": self._test_params.Ca,
+                 "borders": [self._test_params.Ca / 5, self._draw_params.Ca * 5]}
+        }
         return params
 
     def set_draw_params(self, params):
         """Устанавливает переданные параметры отрисовки, считанные с ползунков, на модель"""
         self._draw_params.max_time = params["max_time"]
         self._draw_params.strain = - params["strain"]
+        self._draw_params.Cv = params["Cv"]
+        self._draw_params.Ca = params["Ca"]
         self._test_modeling()
         self.change_borders(0, len(self._test_data.time))
 
@@ -1032,10 +1047,10 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         """Функция моделирования опыта"""
         self._test_data.time, self._test_data.volume_strain = function_consalidation(
             self._draw_params.strain,
-            Cv=self._test_params.Cv,
+            Cv=self._draw_params.Cv,
             reverse=True,
             max_time=self._draw_params.max_time,
-            Ca=-self._test_params.Ca)
+            Ca=-self._draw_params.Ca)
 
         # self._test_data.time = np.round(self._test_data.time, 3)
 
@@ -1044,7 +1059,6 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         # (np.pi * (19 ** 2) / (76)), 6)
         for i in range(len(self._test_data.volume_strain)):
             self._test_data.volume_strain[i] = ModelTriaxialConsolidationSoilTest.round_srain(self._test_data.volume_strain[i])
-        print(self._test_data.volume_strain)
 
 
     def save_log(self, path, name):

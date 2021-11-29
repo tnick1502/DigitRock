@@ -6,10 +6,12 @@ import pickle
 instances = {}
 
 def singleton(aClass):
+    instance = None
     def onCall(*args, **kwargs):
-        if aClass not in instances:
-            instances[aClass] = aClass(*args, **kwargs)
-        return instances[aClass]
+        nonlocal instance
+        if instance == None:
+            instance = aClass(*args, **kwargs)
+        return instance
     return onCall
 
 

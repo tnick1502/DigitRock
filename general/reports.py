@@ -922,11 +922,44 @@ def result_table_deviator1(canvas, Res, pick, scale = 0.8):
             [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
              Res["E50"], ""])
         tableData.append(
-            [Paragraph('''<p>Коэффициент поперечного расширения ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+            [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
         tableData.append(
             [Paragraph('''<p>Разгрузочный модуль E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "",
              "", Res["Eur"], ""])
 
+        style = [('SPAN', (0, 0), (-1, 0)),
+                 ('SPAN', (0, 1), (-1, r)),
+
+                 ('SPAN', (0, -1), (3, -1)),
+                 ('SPAN', (-2, -1), (-1, -1)),
+                 # ('SPAN', (2, -1), (3, -1)),
+                 # ('SPAN', (4, -1), (5, -1)),
+                 ('SPAN', (0, -2), (3, -2)),
+                 ('SPAN', (-2, -2), (-1, -2)),
+                 # ('SPAN', (2, -2), (3, -2)),
+                 # ('SPAN', (4, -2), (5, -2)),
+                 ('SPAN', (0, -3), (3, -3)),
+                 ('SPAN', (-2, -3), (-1, -3)),
+
+                 ('SPAN', (0, -4), (3, -4)),
+                 ('SPAN', (-2, -4), (-1, -4)),
+                 # ('SPAN', (2, -3), (3, -3)),
+                 #  ('SPAN', (4, -3), (5, -3)),
+
+                 ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+
+                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                 ("FONTSIZE", (0, 0), (-1, -1), 8),
+                 # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                 ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                 ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
     else:
         E = Res["E"][0] if Res["E"][0] > Res["E50"] else "-"
         tableData.append(
@@ -954,7 +987,7 @@ def result_table_deviator1(canvas, Res, pick, scale = 0.8):
             canvas.drawImage(b, 32 * mm, 114 * mm,
                              width=160 * mm, height=54 * mm)
 
-    style = [('SPAN', (0, 0), (-1, 0)),
+        style = [('SPAN', (0, 0), (-1, 0)),
              ('SPAN', (0, 1), (-1, r)),
 
              ('SPAN', (0, -1), (3, -1)),
@@ -1699,6 +1732,42 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     canvas.showPage()
 
     canvas.save()
+
+def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    canvas = Canvas(Name, pagesize=A4)
+
+    code = SaveCode(version)
+
+    #canvas.showPage()
+    main_frame(canvas, path, Data_customer, code, "1/1")
+    if res["Eur"]:
+        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
+                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТС/Р")
+    else:
+        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
+                                 "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТС")
+
+    K0 = test_parameter["K0"]
+
+    parameter_table(canvas, Data_phiz, Lab)
+
+    test_parameter["K0"] = K0[0]
+
+    test_mode_consolidation(canvas, test_parameter)
+
+    result_table_deviator1(canvas, res, [picks[2], picks[3]])
+
+    canvas.showPage()
+
+    canvas.save()
+
 
 def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты

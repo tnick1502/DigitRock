@@ -1,12 +1,23 @@
 import time
 
-def decorator(f):
-    def wrapper(*args):
+def decorator(**kwargs):
+    def wrapper(*args, **kwargs):
         wrapper.cals += 1
         print(wrapper.cals)
         return f(*args)
     wrapper.cals = 0
     return wrapper
+
+def delegate_str(aClass):
+
+    class wrap:
+        def __init__(self, *args, **kwargs):
+            self.wrapped = aClass(*args, **kwargs)
+        def __getattr__(self, item):
+            print("wrap")
+            return getattr(self.wrapped, item)
+    return wrap
+
 
 
 class tracer:
@@ -18,6 +29,7 @@ class tracer:
         print(self.calls)
         return self.func(*args)
 
+@delegate_str
 class Person:
     def __init__ (self, name, pay) :
         self.name = name
@@ -25,3 +37,6 @@ class Person:
     #@decorator
     def giveRaise(self, percent): # giveRaise = tracer (giveRaise)
         self.pay *= (1.0 + percent)
+
+p = Person("12", 10)
+p.giveRaise(10)

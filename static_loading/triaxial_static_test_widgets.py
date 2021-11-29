@@ -12,7 +12,7 @@ from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from excel_statment.initial_statment_widgets import TriaxialStaticStatment
 from general.save_widget import Save_Dir
 from excel_statment.functions import set_cell_data
-from general.reports import report_consolidation, report_FCE, report_FC, report_FC_KN
+from general.reports import report_consolidation, report_FCE, report_FC, report_FC_KN, report_E
 from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI, ModelTriaxialFileOpenUI, ModelTriaxialReconsolidationUI, \
     ModelTriaxialConsolidationUI, ModelTriaxialDeviatorLoadingUI
 from general.general_widgets import Float_Slider
@@ -699,7 +699,7 @@ class StatickSoilTestApp(QWidget):
                 E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
                 E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
                 test_result = E_models[statment.current_test].get_test_results()
-                report_consolidation(save + "/" + name, data_customer,
+                report_E(save + "/" + name, data_customer,
                                  statment[statment.current_test].physical_properties, statment.current_test,
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
@@ -717,7 +717,7 @@ class StatickSoilTestApp(QWidget):
                 E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
                 E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
                 test_result = E_models[statment.current_test].get_test_results()
-                report_consolidation(save + "/" + name, data_customer,
+                report_E(save + "/" + name, data_customer,
                                      statment[statment.current_test].physical_properties, statment.current_test,
                                      os.getcwd() + "/project_data/",
                                      test_parameter, test_result,
@@ -727,10 +727,10 @@ class StatickSoilTestApp(QWidget):
                 shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
 
                 set_cell_data(self.tab_1.path,
-                              'GI' + str(statment[statment.current_test].physical_properties.sample_number.sample_number + 7),
+                              'GI' + str(statment[statment.current_test].physical_properties.sample_number+ 7),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
                 set_cell_data(self.tab_1.path,
-                              "BN" + str(statment[statment.current_test].physical_properties.sample_number.sample_number + 7),
+                              "BN" + str(statment[statment.current_test].physical_properties.sample_number + 7),
                               test_result["E50"], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
