@@ -123,6 +123,7 @@ class ModelTriaxialConsolidationUI(QWidget):
         self.log_figure.subplots_adjust(**self.plot_params)
         self.log_canvas = FigureCanvas(self.log_figure)
         self.log_ax = self.log_figure.add_subplot(111)
+        self.log_ax.set_xscale("log")
         self.log_ax.grid(axis='both', linewidth='0.4')
         self.log_ax.set_xlabel("Время")
         self.log_ax.set_ylabel("Относительная вертикальная\nдеформация $ε_1$, д.е.")
@@ -213,13 +214,16 @@ class ModelTriaxialConsolidationUI(QWidget):
         """Построение графиков опыта"""
         try:
             self.log_ax.clear()
+            self.log_ax.set_xscale("log")
+            self.log_ax.set_xlim([0.1, plots["time_log"][-1]*1.05])
             self.log_ax.set_xlabel("Логарифм времени")
             self.log_ax.set_ylabel("Относительная вертикальная\nдеформация $ε_1$, д.е.")
 
             if plots is not None:
                 # Логарифм
                 # Основной график
-                self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"], **plotter_params["static_loading_main_line"])
+                self.log_ax.plot(plots["time"], plots["volume_strain"], linewidth=2, alpha=0.6)
+                self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"], color="tomato", linewidth=1)
 
                 # Линии обработки
                 if plots["log_line_points"]:
@@ -253,10 +257,10 @@ class ModelTriaxialConsolidationUI(QWidget):
                         # Текстовые подписи
                         self.log_ax.text(*plots["log_t100_text"], '$\lg{(t_{100})}$', horizontalalignment='center',
                                     verticalalignment='bottom')
-                        self.log_ax.text(*plots["log_strain100_text"], '$ε_{100}$', horizontalalignment='right',
+                        self.log_ax.text(*plots["log_strain100_text"], '$ε_{100}$', horizontalalignment='left',
                                     verticalalignment='center')
 
-                        self.log_ax.text(*plots["d0"], '$d_{0}$', horizontalalignment='center',
+                        self.log_ax.text(*plots["d0"], '$d_{0}$', horizontalalignment='left',
                                          verticalalignment='center')
 
 

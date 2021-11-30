@@ -33,6 +33,7 @@ from general.general_functions import sigmoida, make_increas, line_approximate, 
 from consolidation.function_consalidation_for_compr import function_consalidation, define_final_deformation
 from configs.plot_params import plotter_params
 from singletons import statment
+from intersect import intersection
 
 class ModelTriaxialConsolidation:
     """Модель обработки консолидации
@@ -221,19 +222,21 @@ class ModelTriaxialConsolidation:
                 sqrt_strain100_text = None
 
             if self.processed_points_log.Cv:
-                mooveX = (self._test_data.time_log[-1] - self._test_data.time_log[0]) * 2 / 100
+                time_log = self._test_data.time
+
+                mooveX = (time_log[-1] - time_log[0]) * 2 / 100
                 mooveY = (-self._test_data.volume_strain_approximate[-1] + self._test_data.volume_strain_approximate[0]) \
                          * 3 / 100
 
                 log_t100_vertical_line = point_to_xy(
-                    Point(x=self.processed_points_log.Cv.x,
+                    Point(x=10**(self.processed_points_log.Cv.x + 1),
                           y=self._test_data.volume_strain_approximate[0] - 4 * mooveY),
-                    Point(x=self.processed_points_log.Cv.x, y=self.processed_points_log.Cv.y))
+                    Point(x=10**(self.processed_points_log.Cv.x + 1), y=self.processed_points_log.Cv.y))
                 log_t100_horizontal_line = point_to_xy(Point(x=5 * mooveX, y=self.processed_points_log.Cv.y),
-                                                       Point(x=self.processed_points_log.Cv.x,
+                                                       Point(x=10**(self.processed_points_log.Cv.x + 1),
                                                              y=self.processed_points_log.Cv.y))
 
-                log_t100_text = Point(x=self.processed_points_log.Cv.x,
+                log_t100_text = Point(x=10**(self.processed_points_log.Cv.x + 1),
                                       y=self._test_data.volume_strain_approximate[0] - 4 * mooveY)
                 log_strain100_text = Point(x=5 * mooveX, y=self.processed_points_log.Cv.y)
                 d0 = Point(x=self._test_data.time_log[0], y=self._test_result.d0)
@@ -392,8 +395,10 @@ class ModelTriaxialConsolidation:
     def get_plot_data_log(self):
         """Получение данных для построения графиков"""
         if self._test_data.volume_strain_approximate is not None:
+            time_log = 10 ** (self._test_data.time_log) - 1
             if self.processed_points_log.Cv:
-                mooveX = (self._test_data.time_log[-1] - self._test_data.time_log[0]) * 2 / 100
+
+                mooveX = (time_log[-1] - time_log[0]) * 2 / 100
                 mooveY = (-self._test_data.volume_strain_approximate[-1] + self._test_data.volume_strain_approximate[0]) \
                          *3 / 100
 
@@ -401,17 +406,17 @@ class ModelTriaxialConsolidation:
                     Point(x=self.processed_points_log.Cv.x,
                           y=self._test_data.volume_strain_approximate[0] - 4 * mooveY),
                     Point(x=self.processed_points_log.Cv.x, y=self.processed_points_log.Cv.y))
-                log_t100_horizontal_line = point_to_xy(Point(x=4 * mooveX, y=self.processed_points_log.Cv.y),
+                log_t100_horizontal_line = point_to_xy(Point(x=0.15, y=self.processed_points_log.Cv.y),
                                                        Point(x=self.processed_points_log.Cv.x,
                                                              y=self.processed_points_log.Cv.y))
 
                 log_t100_text = Point(x=self.processed_points_log.Cv.x,
                                       y=self._test_data.volume_strain_approximate[0] - 3 * mooveY)
-                log_strain100_text = Point(x=3 * mooveX, y=self.processed_points_log.Cv.y)
-                d0 = Point(x=self._test_data.time_log[0], y=self._test_result.d0)
-                d0_line = point_to_xy(Point(x=self._test_data.time_log[0] + 1.5 * mooveX,
+                log_strain100_text = Point(x=0.1, y=self.processed_points_log.Cv.y)
+                d0 = Point(x=0.1, y=self._test_result.d0)
+                d0_line = point_to_xy(Point(x=0.15,
                                             y=self._test_result.d0),
-                                        Point(x=self._test_data.time_log[-1],
+                                        Point(x=time_log[-1],
                                               y=self._test_result.d0))
             else:
                 log_t100_vertical_line = None
@@ -422,8 +427,9 @@ class ModelTriaxialConsolidation:
                 d0_line = None
 
             return {"volume_strain_approximate": self._test_data.volume_strain_approximate,
-
-                    "time_log": self._test_data.time_log,
+                    "time": self._test_data.time_cut,
+                    "volume_strain": self._test_data.volume_strain,
+                    "time_log": time_log,
                     "log_line_points": self.processed_points_log,
                     "log_line_1": self.processed_points_log,
                     "d0": d0,
@@ -446,6 +452,7 @@ class ModelTriaxialConsolidation:
         plots = self.get_plot_data()
         res = self.get_test_results()
         if plots is not None:
+            plots = self.get_plot_data_sqrt()
             figure = plt.figure(figsize=[9.3, 6])
             figure.subplots_adjust(right=0.98, top=0.98, bottom=0.1, wspace=0.25, hspace=0.25, left=0.1)
 
@@ -511,10 +518,11 @@ class ModelTriaxialConsolidation:
 
                     ax_sqrt.plot([], [], label="$C_{v}$" + " = " + str(res["Cv_sqrt"]),
                                  color="#eeeeee")
-                    ax_sqrt.plot([], [], label="$t_{100}$" + " = " + str(round(res["t100_sqrt"])),
-                                 color="#eeeeee")
+                    #ax_sqrt.plot([], [], label="$t_{100}$" + " = " + str(round(res["t100_sqrt"])),
+                                 #color="#eeeeee")
                     ax_sqrt.legend()
 
+            plots = self.get_plot_data_log()
             # Логарифм
             # Основной график
             ax_log.plot(plots["time_log"], plots["volume_strain_approximate"],
@@ -701,7 +709,7 @@ class ModelTriaxialConsolidation:
 
         # Сделаем чтобы на осях кв.корня и логарифма шаг по оси был постоянным
         self._test_data.time_sqrt = np.linspace(0, self._test_data.time_cut[-1] ** 0.5, self.points_count)
-        self._test_data.time_log = np.log10(self._test_data.time_sqrt ** 2 + 1)
+        self._test_data.time_log = np.log10(np.linspace(0, self._test_data.time_cut[-1] ** 0.5, self.points_count) + 1)
 
         if type == "poly":
             # Аппроксимация полиномом
@@ -786,18 +794,28 @@ class ModelTriaxialConsolidation:
                 self._test_data.volume_strain_approximate)
 
         self.processed_points_log.Cv = ModelTriaxialConsolidation.define_cv_log(self._test_data.time_log,
-                                                                                self.processed_points_log)
+                                                                                self.processed_points_log,
+                                                                                self._test_data.volume_strain_approximate)
         if self.processed_points_log.Cv:
             if self.processed_points_log.Cv.y > np.max(self._test_data.volume_strain_approximate):
                 self.processed_points_log.Cv = None
             self._test_result.d0 = ModelTriaxialConsolidation.find_d0(self._test_data.time_log,
                                                                       self._test_data.volume_strain_approximate)
 
-            strain50 = interpolated_intercept(self._test_data.time_log, np.full(len(self._test_data.time_log),
+            '''strain50 = interpolated_intercept(self._test_data.time_log, np.full(len(self._test_data.time_log),
                                                                                 ((self.processed_points_log.Cv.y +
                                                                                   self._test_result.d0) / 2)),
                                               self._test_data.volume_strain_approximate)
-            self._test_result.t50_log = round(10 ** strain50[0])
+            self._test_result.t50_log = round(10 ** strain50[0])'''
+            #
+            x, y = intersection(
+                x1=10**(self._test_data.time_log) - 1,
+                y1=np.full(len(self._test_data.time_log), ((self.processed_points_log.Cv.y + self._test_result.d0) / 2)),
+                x2=10**(self._test_data.time_log) - 1,
+                y2=self._test_data.volume_strain_approximate,
+            )
+
+            self._test_result.t50_log = x[0]
 
             self._test_result.Cv_log = np.round(((7.1 * 7.1 * 0.197) / (4 * self._test_result.t50_log)), 4)
 
@@ -806,7 +824,7 @@ class ModelTriaxialConsolidation:
                                               / (self.processed_points_log.second_line_end_point.x -
                                                  self.processed_points_log.second_line_start_point.x)), 4)
 
-            self._test_result.t100_log = round(10 ** self.processed_points_log.Cv.x)
+            self._test_result.t100_log = np.round(self.processed_points_log.Cv.x)
             self._test_result.strain100_log = self.processed_points_log.Cv.y
 
             self._test_result.Kf_log = ModelTriaxialConsolidation.define_Kf(self._test_result.strain100_log,
@@ -888,16 +906,16 @@ class ModelTriaxialConsolidation:
             index_line_1_start, = np.where(line_1 < volume_strain[0])
             index_line_1_end, = np.where(line_1 < 1.05 * volume_strain[-1])
 
-            processed_points_log.first_line_start_point.x = time[index_line_1_start[0]]
+            processed_points_log.first_line_start_point.x = 10 ** (time[index_line_1_start[0]]) - 0.5
             processed_points_log.first_line_start_point.y = line_1[index_line_1_start[0]]
 
-            processed_points_log.first_line_end_point.x = time[index_line_1_end[0]]
+            processed_points_log.first_line_end_point.x = 10 ** (time[index_line_1_end[0]]) - 0.5
             processed_points_log.first_line_end_point.y = line_1[index_line_1_end[0]]
 
-            processed_points_log.second_line_start_point.x = time[int(len(time) / 10)]
+            processed_points_log.second_line_start_point.x = 10 ** (time[int(len(time) / 10)]) - 0.5
             processed_points_log.second_line_start_point.y = line_2[int(len(time) / 10)]
 
-            processed_points_log.second_line_end_point.x = time[-1]
+            processed_points_log.second_line_end_point.x = 10 ** (time[-1]) - 0.5
             processed_points_log.second_line_end_point.y = line_2[-1]
         except IndexError:
             index_line_1_start, = np.where(
@@ -939,21 +957,21 @@ class ModelTriaxialConsolidation:
         return Cv
 
     @staticmethod
-    def define_cv_log(time, points_consolidations):
+    def define_cv_log(time, points_consolidations, vs):
         A1 = (points_consolidations.first_line_end_point.y - points_consolidations.first_line_start_point.y) / \
-             (points_consolidations.first_line_end_point.x - points_consolidations.first_line_start_point.x)
-        B1 = points_consolidations.first_line_end_point.y - A1 * points_consolidations.first_line_end_point.x
+             (np.log10(points_consolidations.first_line_end_point.x + 0.5) - np.log10(points_consolidations.first_line_start_point.x + 0.5))
+        B1 = points_consolidations.first_line_end_point.y - A1 * np.log10(points_consolidations.first_line_end_point.x + 0.5)
         _line1 = np.array(line(A1, B1, time))
 
         A2 = (points_consolidations.second_line_end_point.y - points_consolidations.second_line_start_point.y) / \
-             (points_consolidations.second_line_end_point.x - points_consolidations.second_line_start_point.x)
-        B2 = points_consolidations.second_line_end_point.y - A2 * points_consolidations.second_line_end_point.x
+             (np.log10(points_consolidations.second_line_end_point.x + 1) - np.log10(points_consolidations.second_line_start_point.x + 0.5))
+        B2 = points_consolidations.second_line_end_point.y - A2 * np.log10(points_consolidations.second_line_end_point.x + 0.5)
         _line2 = np.array(line(A2, B2, time))
 
         xc, yc = interpolated_intercept(time, _line1, _line2)
 
         if yc and str(yc) != "nan":
-            Cv = Point(x=xc, y=yc)
+            Cv = Point(x=10**xc - 0.5, y=yc)
         else:
             Cv = None
 
@@ -1221,8 +1239,8 @@ if __name__ == '__main__':
     file = r"Z:\МДГТ - Механика\3. Трехосные испытания\1365\Test\Test.1.log"
 
     a = ModelTriaxialConsolidationSoilTest()
-    statment.load(r"C:\Users\Пользователь\YandexDisk\Work\Compression\Consolidation_Nikita3\consolidation.pickle")
-    statment.current_test = "6.1П-1"
+    statment.load(r"C:\Users\Пользователь\Desktop\test\Консолидация.pickle")
+    statment.current_test = "2-1"
     a.set_test_params()
     a.plotter()
     plt.show()

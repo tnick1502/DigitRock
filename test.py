@@ -38,5 +38,10 @@ class Person:
     def giveRaise(self, percent): # giveRaise = tracer (giveRaise)
         self.pay *= (1.0 + percent)
 
-p = Person("12", 10)
-p.giveRaise(10)
+
+
+import numpy as np
+x = 1.15
+a = np.log10(x + 1)
+print(10**a - 1)
+

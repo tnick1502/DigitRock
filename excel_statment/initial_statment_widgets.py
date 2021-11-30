@@ -442,8 +442,9 @@ class CyclicStatment(InitialStatment):
                 assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)),\
                     "Заполните K0 в ведомости"
                 assert not marker, "Проверьте " + customer
-                assert column_fullness_test(wb, columns=["AJ"], initial_columns=list(columns_marker)), \
-                    "Заполните уровень грунтовых вод в ведомости"
+                if combo_params["test_mode"] != "Демпфирование":
+                    assert column_fullness_test(wb, columns=["AJ"], initial_columns=list(columns_marker)), \
+                        "Заполните уровень грунтовых вод в ведомости"
 
                 if combo_params["test_mode"] == "Штормовое разжижение":
                     assert column_fullness_test(wb, columns=['HR', 'HS', 'HT','HU'],

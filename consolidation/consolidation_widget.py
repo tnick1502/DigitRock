@@ -15,6 +15,7 @@ from general.initial_tables import TableVertical
 from excel_statment.functions import set_cell_data
 from general.reports import report_consolidation, report_FCE, report_FC
 from consolidation.consolidation_UI import ModelTriaxialConsolidationUI
+import numpy as np
 from general.general_widgets import Float_Slider
 from configs.styles import style
 from singletons import Consolidation_models, statment
@@ -175,7 +176,7 @@ class ConsilidationSoilTestWidget(QWidget):
         if event.canvas is self.consolidation.log_canvas:
             canvas = "log"
         if event.button == 1 and event.xdata and event.ydata:
-            self.point_identificator = Consolidation_models[statment.current_test].define_click_point(float(event.xdata),
+            self.point_identificator = Consolidation_models[statment.current_test].define_click_point(float(np.log10(event.xdata+1)),
                                                                                     float(event.ydata), canvas)
 
     def _canvas_on_moove(self, event):
@@ -186,7 +187,7 @@ class ConsilidationSoilTestWidget(QWidget):
             canvas = "log"
 
         if self.point_identificator and event.xdata and event.ydata and event.button == 1:
-            Consolidation_models[statment.current_test].moove_catch_point(float(event.xdata), float(event.ydata), self.point_identificator,
+            Consolidation_models[statment.current_test].moove_catch_point(float(np.log10(event.xdata + 1)), float(event.ydata), self.point_identificator,
                                                         canvas)
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()

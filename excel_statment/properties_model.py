@@ -1029,6 +1029,7 @@ class CyclicProperties(MechanicalProperties):
                 self.frequency = float_df(data_frame.iat[string, DynamicsPropertyPosition["frequency_storm"][1]])
 
             elif test_mode == "Демпфирование":
+                physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
                 if physical_properties.depth <= physical_properties.ground_water_depth:
                     self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
                 elif physical_properties.depth > physical_properties.ground_water_depth:
