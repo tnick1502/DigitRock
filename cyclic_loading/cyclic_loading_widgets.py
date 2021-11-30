@@ -665,6 +665,8 @@ class CyclicSoilTestApp(QWidget):
                 file_name = save + "/" + "Отчет " + file_path_name + "-ШТ" + ".pdf"
             elif statment.general_parameters.test_mode == "Демпфирование":
                 file_name = save + "/" + "Отчет " + file_path_name + "-Д" + ".pdf"
+            elif statment.general_parameters.test_mode == "По заданным параметрам":
+                file_name = save + "/" + "Отчет " + file_path_name + "-Д" + ".pdf"
 
 
             test_parameter = {'sigma3': statment[statment.current_test].mechanical_properties.sigma_3,
@@ -699,7 +701,7 @@ class CyclicSoilTestApp(QWidget):
             if test_result["fail_cycle"] is None:
                 test_result["fail_cycle"] = "-"
 
-            if statment.general_parameters.test_mode == "Сейсморазжижение" or statment.general_parameters.test_mode == "Штормовое разжижение":
+            if statment.general_parameters.test_mode == "Сейсморазжижение" or statment.general_parameters.test_mode == "Штормовое разжижение" or statment.general_parameters.test_mode == "По заданным параметрам":
                 report_triaxial_cyclic(file_name, data_customer,
                                        statment[statment.current_test].physical_properties,
                                        statment.current_test,

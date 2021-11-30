@@ -438,7 +438,7 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter):
     d = test_parameter["d"]
     h = test_parameter["h"]
 
-    if test_parameter["type"] == "Сейсморазжижение" or test_parameter["type"] == "Демпфирование":
+    if test_parameter["type"] == "Сейсморазжижение" or test_parameter["type"] == "Демпфирование" or test_parameter["type"] == "По заданным параметрам":
 
         t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                    ["Режим испытания:", "", test_parameter["Rezhim"], "", "", "", "", "", ""],
@@ -1154,8 +1154,6 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8):
 
     tableData.append([Paragraph('''<p>Коэффициент демпфирования, %:</p>''', LeftStyle), "", "",
                       zap(Res["damping_ratio"], 2), "", ""])
-    tableData.append([Paragraph('''<p>Модуль упругости E, МПа:</p>''', LeftStyle), "", "",
-                      zap(Res["damping_ratio"], 2), "", ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
@@ -1167,8 +1165,8 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8):
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
                 ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("BACKGROUND", (2, -2), (2, -2), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
+                #("BACKGROUND", (2, -2), (2, -2), HexColor(0xebebeb)),
+                #("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
                 ("BACKGROUND", (0, -1), (2, -1), HexColor(0xebebeb)),
                 #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -1178,7 +1176,7 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 45 * mm)
+    t.drawOn(canvas, 25 * mm, 49 * mm)
 
 
 
@@ -1663,6 +1661,10 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     main_frame(canvas, path,  Data_customer, code, "1/2")
     if test_parameter["type"] == "Сейсморазжижение":
+        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
+                                "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/С")
+    elif test_parameter["type"] == "По заданным параметрам":
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
                                 "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/С")

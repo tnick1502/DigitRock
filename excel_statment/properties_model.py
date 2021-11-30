@@ -1041,14 +1041,35 @@ class CyclicProperties(MechanicalProperties):
 
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
 
+                self.sigma_1 = 100
+                self.sigma_3 = 100
+
+                self.E50/=7
                 self.cycles_count = 5
 
-                self.frequency = np.round(float_df(data_frame.iat[string,
-                                                         DynamicsPropertyPosition["frequency_vibration_creep"][1]]), 1)
+                self.frequency = 3.1# np.round(float_df(data_frame.iat[string,
+                                                         #DynamicsPropertyPosition["frequency_vibration_creep"][1]]), 1)
 
-                self.t = np.round(float_df(data_frame.iat[string,
-                                                          DynamicsPropertyPosition["sigma_d_vibration_creep"][1]]) / 2,
-                                  1)
+                self.t = 0.6 #np.round(float_df(data_frame.iat[string,
+                                                          #DynamicsPropertyPosition["sigma_d_vibration_creep"][1]]) / 2,
+                                  #1)
+
+            elif test_mode == "По заданным параметрам":
+
+
+                self.sigma_1 = np.round(float_df(data_frame.iat[string,
+                                        DynamicsPropertyPosition["reference_pressure"][1]]) * 1000)
+
+                self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2)
+
+                self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
+                self.cycles_count = int(float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]]))
+
+                self.frequency = np.round(float_df(data_frame.iat[string,
+                                                                  DynamicsPropertyPosition["frequency_vibration_creep"][
+                                                                      1]]), 1)
+
 
             self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
                                                        physical_properties.Ip,
@@ -1198,7 +1219,7 @@ class VibrationCreepProperties(MechanicalProperties):
                 if self.t > 25:
                     self.t = 25
             else:
-                self.t = np.round(t)
+                self.t = np.round(t/2)
 
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
             if str(Kd) == "nan":

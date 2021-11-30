@@ -1291,6 +1291,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
     def stabilization_logarithm(x, amplitude, x85, stabilization_ratio) -> np.array:
         """Стабилизированный логарифм - выходит на прямую"""
         y = logarithm(x, amplitude, x85) - logarithm(x, amplitude * stabilization_ratio, int(0.9 * x[-1]))
+        if y[-1] == 0:
+            return np.full(len(y), 0)
         y *= (amplitude / y[-1])
         return y
 
