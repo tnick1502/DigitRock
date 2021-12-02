@@ -154,7 +154,10 @@ class ModelTriaxialConsolidationUI(QWidget):
             if plots is not None:
                 # Квадратный корень
                 # Основной график
-                self.sqrt_ax.plot(plots["time_sqrt"], plots["volume_strain_approximate"], **plotter_params["static_loading_main_line"])
+                self.sqrt_ax.plot(plots["time"], plots["volume_strain"], linewidth=2, alpha=0.6)
+                self.sqrt_ax.scatter(plots["time"], plots["volume_strain"], s=15)
+
+                self.sqrt_ax.plot(plots["time_sqrt"], plots["volume_strain_approximate"], color="tomato", linewidth=1)
                 # Точки концов линий
                 self.sqrt_ax.scatter(*plots["sqrt_line_points"].line_start_point, zorder=5, color="dimgray")
                 self.sqrt_ax.scatter(*plots["sqrt_line_points"].line_end_point, zorder=5, color="dimgray")
@@ -223,6 +226,7 @@ class ModelTriaxialConsolidationUI(QWidget):
                 # Логарифм
                 # Основной график
                 self.log_ax.plot(plots["time"], plots["volume_strain"], linewidth=2, alpha=0.6)
+                self.log_ax.scatter(plots["time"], plots["volume_strain"], s=15)
                 self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"], color="tomato", linewidth=1)
 
                 # Линии обработки

@@ -96,7 +96,7 @@ def intersect(xp1, yp1, xp2, yp2, xp3, yp3, xp4, yp4):
 
 
 def function_consalidation(final_volume_strain,
-                           Cv=3,
+                           Cv:float=3,
                            max_time = np.random.uniform(800, 1200),
                            Ca=-0.001,
                            reverse=True,
@@ -114,9 +114,10 @@ def function_consalidation(final_volume_strain,
     # Расчет смещения объемной деформации на этапе приложения нагрузки
     load_stage_strain = final_volume_strain*np.random.uniform(0.1, 0.2)
     final_volume_strain -= load_stage_strain
-    deviation = abs(np.random.uniform(0.01, 0.02)*final_volume_strain)
+    deviation = abs(np.random.uniform(0.05, 0.01)*final_volume_strain)
 
-    t_90_sqrt = math.sqrt((0.848 * 7.1 * 7.1) / (4 * Cv))
+    t_90_sqrt = math.sqrt((0.848 * 2 * 2) / (4 * Cv))
+    print(f"sqrt T90 MODELING: {t_90_sqrt}")
     t_90_log = np.log10(t_90_sqrt ** 2 + 1)
 
     # Ограничения
@@ -146,7 +147,7 @@ def function_consalidation(final_volume_strain,
     min_volume_strain = Ca*t_90_log + final_volume_strain - Ca * max_time_log # последний линейный участок
 
     #volume_strain_90 = abs(max_volume_strain_90-min_volume_strain) * np.random.uniform(0.3, 0.35) + min_volume_strain
-    volume_strain_90 = abs(max_volume_strain_90 - min_volume_strain) * np.random.uniform(0.5, 0.6) + min_volume_strain
+    volume_strain_90 = abs(max_volume_strain_90 - min_volume_strain) * np.random.uniform(0.1, 0.13) + min_volume_strain
 
     yP = -np.random.uniform(0.20 * abs(volume_strain_90), 0.25 * abs(volume_strain_90))
     k1 = (volume_strain_90) / (t_90_sqrt-1)
@@ -154,7 +155,7 @@ def function_consalidation(final_volume_strain,
     k2 = k1 * 1.15
     b2 = -k2
     y2 = k2 * (time_line_sqrt) + b2  # прямая для второго участка
-    yK = volume_strain_90 + np.random.uniform(0.35 * abs(volume_strain_90), 0.40 * abs(volume_strain_90))
+    yK = volume_strain_90 + np.random.uniform(0.33 * abs(volume_strain_90), 0.35 * abs(volume_strain_90))
     xP = (yP - b2) / k2
     xK = (yK - b2) / k2
 
@@ -222,7 +223,7 @@ def function_consalidation(final_volume_strain,
     y_time += np.random.uniform(-0.0004, 0.0004, len(y_time))
     y_time = discrete_array(y_time, 0.0008)
     return x_time, y_time
-    #return x_time, y_time, np.array([t_90_log, t_creep_log, max_time_log, np.log10(xP**2+1),  np.log10(xK**2+1)]), \
+    # return x_time, y_time, np.array([t_90_log, t_creep_log, max_time_log, np.log10(xP**2+1),  np.log10(xK**2+1)]), \
     #      np.array([volume_strain_90  + load_stage_strain, volume_strain_creep  + load_stage_strain, final_volume_strain  + load_stage_strain, yP+ load_stage_strain, yK+ load_stage_strain])
     # return x_time, y_time, [t_90_sqrt, max_time_sqrt, xP, xK], \
     #        [volume_strain_90 + load_stage_strain,
@@ -321,31 +322,50 @@ def round_pmax(sigma, param=5):
         return (integer * 10 + param) / 1000
     else:
         return (integer * 10 + 10) / 1000
+def ordering(time_model, strain_model):
+    """
+                Функция пересечения двух прямых, заданных точками
+                :param path: путь до файла
+                :param time_model: время возвращаемое функцией консолидации
+                :param strain_model: деформация возвращаемая функцией консолидации
+                :param pressure: максимальное давление консолидации
+                :param report_number: имя файла
+                """
 
+    # time_model *= 60
+    t0 = np.random.uniform(low=20, high=21)
+    hours = math.floor(time_model[-1] / 3600)
+    time = [t for t in
+                      [0, 15, 30, 60, 2 * 60, 5 * 60, 10 * 60, 20 * 60, 30 * 60] + [h * 3600 for h in
+                                                                                    range(1, hours + 1)]]
+    time = np.round(np.array(time))
+    strain = np.interp(time, time_model, strain_model)
+    return time, np.array(strain)
 
 if __name__ == "__main__":
 
     finale = define_final_deformation(0.3, 10, 0.3)
     print(finale)
-    x1, y1= function_consalidation(finale, Cv=0.03,reverse=True, max_time=12000, point_time=0.001, Ca=-0.0001)
+    x1, y1, a, b= function_consalidation(finale, Cv=0.03,reverse=True, max_time=12000, point_time=0.001, Ca=-0.0001)
     #x1, y1 = function_consalidation(-0.06113427426476852, Cv=0.1, reverse=True, max_time=500, point_time=0.0025, Ca=-0.01082)
 
     # time_sqrt = np.linspace(0, x1[-1] ** 0.5, 50)
     #
     # volume_strain_approximate = pchip_interpolate(x1 ** 0.5, y1, time_sqrt)
 
-
-    fig = plt.figure(figsize=(10, 10))
+    #x, y = ordering(x1, y1)
+    #fig = plt.figure(figsize=(10, 10))
     ax1 = plt.subplot()
 
 
     #ax1.scatter(np.array(xp),np.array(yp), color=['yellow', 'green','blue', 'red', 'pink'])
     #ax1.plot(time_sqrt, volume_strain_approximate)
-    ax1.plot(np.log10(x1+1),y1)
+    ax1.plot(np.log10(x1+1), y1)
+    ax1.scatter(a,b)
+
     ax1.legend()
     save_device2('C:\\Users\\Пользователь', x1, y1, 0.3)
     plt.show()
-    #vol_test()
 
 
 

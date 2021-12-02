@@ -25,6 +25,7 @@ from scipy.interpolate import pchip_interpolate
 import scipy.ndimage as ndimage
 import math
 from datetime import timedelta
+import copy
 
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, \
     mirrow_element, \
@@ -373,6 +374,9 @@ class ModelTriaxialConsolidation:
 
                     "time_sqrt": self._test_data.time_sqrt,
                     "sqrt_line_points": self.processed_points_sqrt,
+
+                    "time": self._test_data.time_cut**0.5,
+                    "volume_strain": self._test_data.volume_strain,
 
                     "sqrt_t50_vertical_line": sqrt_t50_vertical_line,
                     "sqrt_t50_horizontal_line": sqrt_t50_horizontal_line,
@@ -751,8 +755,10 @@ class ModelTriaxialConsolidation:
                                                                                   self._test_data.volume_strain_approximate,
                                                                                   self.processed_points_sqrt)
         if self.processed_points_sqrt.Cv:
-            self._test_result.Cv_sqrt = round(((0.848 * 7.1 * 7.1) / (4 * self.processed_points_sqrt.Cv.x ** 2)), 3)
+            self._test_result.Cv_sqrt = round(((0.848 * 2 * 2) / (4 * self.processed_points_sqrt.Cv.x ** 2)), 3)
             self._test_result.t90_sqrt = self.processed_points_sqrt.Cv.x ** 2
+            print(f"sqrt T90 processing: {self.processed_points_sqrt.Cv.x}")
+            print(f"{self._test_result.Cv_sqrt}")
 
             self._test_result.t100_sqrt, self._test_result.strain100_sqrt = interpolated_intercept(
                 self._test_data.time_sqrt, np.full(len(self._test_data.time_sqrt),
@@ -817,7 +823,7 @@ class ModelTriaxialConsolidation:
 
             self._test_result.t50_log = x[0]
 
-            self._test_result.Cv_log = np.round(((7.1 * 7.1 * 0.197) / (4 * self._test_result.t50_log)), 4)
+            self._test_result.Cv_log = np.round(((2 * 2 * 0.197) / (4 * self._test_result.t50_log)), 4)
 
             self._test_result.Ca_log = np.round(((abs(self.processed_points_log.second_line_end_point.y) -
                                                abs(abs(self.processed_points_log.second_line_start_point.y)))
@@ -1014,7 +1020,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._test_params.p_max = statment[statment.current_test].mechanical_properties.p_max
         self._test_params.m = statment[statment.current_test].mechanical_properties.m
 
-        self._draw_params.max_time = (((0.848 * 7.1 * 7.1) / (4 * self._test_params.Cv))) * np.random.uniform(5, 7)
+        self._draw_params.max_time = (((0.848 * 2 * 2) / (4 * self._test_params.Cv))) * np.random.uniform(5, 7)
         self._draw_params.strain = define_final_deformation(self._test_params.p_max, self._test_params.Eoed,
                                                             self._test_params.m)
 
@@ -1063,9 +1069,9 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 
     def _test_modeling(self):
         """Функция моделирования опыта"""
-        self._test_data.time, self._test_data.volume_strain = function_consalidation(
+        self._test_data.time, self._test_data.volume_strain, *__ = function_consalidation(
             self._draw_params.strain,
-            Cv=self._draw_params.Cv,
+            Cv=self._draw_params.Cv*1.5,
             reverse=True,
             max_time=self._draw_params.max_time,
             Ca=-self._draw_params.Ca)
@@ -1078,20 +1084,28 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         for i in range(len(self._test_data.volume_strain)):
             self._test_data.volume_strain[i] = ModelTriaxialConsolidationSoilTest.round_srain(self._test_data.volume_strain[i])
 
+        _time, _volume_strain = ModelTriaxialConsolidationSoilTest.ordering(self._test_data.time, self._test_data.volume_strain)
+        self._test_data.time, self._test_data.volume_strain = copy.deepcopy(_time), copy.deepcopy(_volume_strain)
+
 
     def save_log(self, path, name):
-        ModelTriaxialConsolidationSoilTest.save_device(path=path, time_model=self._test_data.time,
+        if statment[statment.current_test].mechanical_properties.p_max >= 1:
+            ModelTriaxialConsolidationSoilTest.save_device(path=path, time_model=self._test_data.time,
                                                        strain_model=self._test_data.volume_strain,
                                                        pressure=self._test_params.p_max,
-                                                       report_number=name)
+                                                       report_number=name, device=True)
+        else:
+            ModelTriaxialConsolidationSoilTest.save_device(path=path, time_model=self._test_data.time,
+                                                           strain_model=self._test_data.volume_strain,
+                                                           pressure=self._test_params.p_max,
+                                                           report_number=name, device=False)
 
     @property
     def test_duration(self):
         return timedelta(minutes=self._test_data.time[-1])
 
     @staticmethod
-    def save_device(path: str, time_model, strain_model, pressure,
-                    report_number="-".join(['ЛАБОРАТОРНЫЙ-НОМЕР', 'НОМЕР-ОБЪЕКТА', 'КК'])):
+    def ordering(_time_model, _strain_model):
         """
                     Функция пересечения двух прямых, заданных точками
                     :param path: путь до файла
@@ -1101,31 +1115,45 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                     :param report_number: имя файла
                     """
 
-        def decimgost(time_model, strain_model):
-            """формирует массив времени  секундах по ГОСТ и деформацию для нее"""
-            time_model *= 60
-            t0 = np.random.uniform(low=20, high=21)
-            hours = math.floor(time_model[-1] / 3600)
-            time = [0] + [t + t0 for t in
-                          [0, 15, 30, 60, 2 * 60, 5 * 60, 10 * 60, 20 * 60, 30 * 60] + [h * 3600 for h in
-                                                                                      range(1, hours + 1)]]
-            time = np.round(np.array(time))
-            time += np.round(np.random.uniform(0.1, 0.8, len(time)), 6)
-            time[0] = 0
-            strain = np.interp(time, time_model, strain_model)
-            return time, np.array(strain)
+        time_model = copy.deepcopy(_time_model)
+        strain_model = copy.deepcopy(_strain_model)
 
+
+        time_model *= 60
+        t0 = np.random.uniform(low=20, high=21)
+        hours = math.floor(time_model[-1] / 3600)
+        time = [t for t in
+                [0, 15, 30, 60, 2 * 60, 5 * 60, 10 * 60, 20 * 60, 30 * 60] + [h * 3600 for h in
+                                                                              range(1, hours + 1)]]
+        time = [t/60.0 for t in time]
+        time = np.array(time)
+        strain = np.interp(time, _time_model, _strain_model)
+        return time, np.array(strain)
+
+    @staticmethod
+    def save_device(path: str, time_model, strain_model, pressure,
+                    report_number="-".join(['ЛАБОРАТОРНЫЙ-НОМЕР', 'НОМЕР-ОБЪЕКТА', 'КК']), device=False):
+        """
+                    Функция пересечения двух прямых, заданных точками
+                    :param path: путь до файла
+                    :param time_model: время возвращаемое функцией консолидации
+                    :param strain_model: деформация возвращаемая функцией консолидации
+                    :param pressure: максимальное давление консолидации
+                    :param report_number: имя файла
+                    """
 
         header1 = "SampleHeight;SampleDiameter;TaskID;TaskName;TaskTypeID;TaskTypeName;AlgorithmID;AlgorithmName;Sample"
         header2 = ';'.join(['20', '71.4', '0', '', '', '', '', 'Компрессионное сжатие', ''])
         header3 = "ID;DateTime;Press;Deformation;StabEnd;Consolidation"
 
-        time, strain = decimgost(time_model, strain_model)
-        strain = np.hstack((np.array([0]), strain[:-1]))
-
-        pressure_array = np.hstack(([0], np.full(len(time) - 1, pressure))) + \
-                         create_deviation_curve(time, 0.1 * pressure, val=(1, 1), points=np.random.uniform(4, 5),
-                                                borders="zero_diff")
+        time = time_model * 60 + np.round(np.random.uniform(0.1, 0.8, len(time_model)), 6)
+        strain = np.hstack((np.array([0]), strain_model[:-1]))
+        if device:
+            pressure_array = np.hstack((np.array([0]), np.full(len(time) - 1, pressure)))
+        else:
+            pressure_array = np.hstack(([0], np.full(len(time) - 1, pressure))) + \
+                             create_deviation_curve(time, 0.1 * pressure, val=(1, 1), points=np.random.uniform(4, 5),
+                                                    borders="zero_diff")
         stab_end = np.zeros_like(pressure_array)
         stab_end[-1] = 1
         consolidation_array = np.ones_like(stab_end)
@@ -1139,8 +1167,9 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             for i in range(len(time)):
                 f.write(';'.join([f'{i + 1}',
                                   f'{np.round(time[i], 6):.6f}',
-                                  f'{np.round(pressure_array[i], 4):.4f}',
-                                  f'{round(abs(strain[i])*20, 2):.2f}',
+                                  f'{np.round(pressure_array[i], 2):.2f}' if device
+                                  else f'{np.round(pressure_array[i], 4):.4f}',
+                                  f'{round(abs(strain[i]) * 20, 2):.2f}',
                                   f'{int(stab_end[i])}',
                                   f'{int(consolidation_array[i])}']) + '\n')
         print("{} saved".format(path))
@@ -1237,6 +1266,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 if __name__ == '__main__':
     file = r"C:\Users\Пользователь\PycharmProjects\Willie\Test.1.log"
     file = r"Z:\МДГТ - Механика\3. Трехосные испытания\1365\Test\Test.1.log"
+
 
     a = ModelTriaxialConsolidationSoilTest()
     statment.load(r"C:\Users\Пользователь\Desktop\test\Консолидация.pickle")

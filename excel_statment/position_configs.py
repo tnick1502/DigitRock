@@ -30,7 +30,8 @@ PhysicalPropertyPosition = {
     "granulometric_0002": ['N', 13],
     "granulometric_0000": ['O', 14],
     "Rc": ['ER', 147],
-    "date": ['IF', 239]
+    "date": ['IF', 239],
+    "new_laboratory_number": ["IG", 240],
 }
 
 MechanicalPropertyPosition = {

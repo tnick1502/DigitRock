@@ -20,6 +20,7 @@ from descriptors import DataTypeValidation
 class PhysicalProperties:
     """Класс, хранящий свойсва грунтов, которые считываются без обработки"""
     laboratory_number = DataTypeValidation(str)
+    new_laboratory_number = DataTypeValidation(str)
     borehole = DataTypeValidation(str)
     depth = DataTypeValidation(float, int)
     soil_name = DataTypeValidation(str)
@@ -69,7 +70,7 @@ class PhysicalProperties:
     def defineProperties(self, data_frame, string, identification_column=None) -> None:
         """Считывание строки свойств"""
         for attr_name in PhysicalPropertyPosition:
-            if attr_name in ["laboratory_number", "borehole", "soil_name", "ige", "stratigraphic_index"]:
+            if attr_name in ["laboratory_number", "borehole", "soil_name", "ige", "stratigraphic_index", "new_laboratory_number"]:
                 setattr(self, attr_name, str_df(data_frame.iat[string, PhysicalPropertyPosition[attr_name][1]]))
             elif attr_name in ["date"]:
                 setattr(self, attr_name, date_df(data_frame.iat[string, PhysicalPropertyPosition[attr_name][1]]))
@@ -108,6 +109,13 @@ class PhysicalProperties:
 
     def __repr__(self):
         return str(self.__dict__)
+
+    @property
+    def current_laboratory_number(self):
+        if self.new_laboratory_number:
+            return self.new_laboratory_number
+        else:
+            return self.laboratory_number
 
     @staticmethod
     def define_type_ground(data_gran: dict, Ip: float, Ir: float) -> int:
@@ -1041,24 +1049,32 @@ class CyclicProperties(MechanicalProperties):
 
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
 
-                self.sigma_1 = 100
-                self.sigma_3 = 100
 
-                self.E50/=7
                 self.cycles_count = 5
 
-                self.frequency = 3.1# np.round(float_df(data_frame.iat[string,
-                                                         #DynamicsPropertyPosition["frequency_vibration_creep"][1]]), 1)
+                self.frequency = np.round(float_df(data_frame.iat[string,
+                                                         DynamicsPropertyPosition["frequency_vibration_creep"][1]]), 1)
 
-                self.t = 0.6 #np.round(float_df(data_frame.iat[string,
-                                                          #DynamicsPropertyPosition["sigma_d_vibration_creep"][1]]) / 2,
-                                  #1)
+                self.t = np.round(float_df(data_frame.iat[string,
+                                                          DynamicsPropertyPosition["sigma_d_vibration_creep"][1]]) / 2,
+                                  1)
 
             elif test_mode == "По заданным параметрам":
 
+                sigma_1 = float_df(data_frame.iat[string,
+                                        DynamicsPropertyPosition["reference_pressure"][1]])
+                if sigma_1:
+                    self.sigma_1 = np.round(sigma_1 * 1000)
+                else:
+                    physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
+                    if physical_properties.depth <= physical_properties.ground_water_depth:
+                        self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
+                    elif physical_properties.depth > physical_properties.ground_water_depth:
+                        self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                                9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
 
-                self.sigma_1 = np.round(float_df(data_frame.iat[string,
-                                        DynamicsPropertyPosition["reference_pressure"][1]]) * 1000)
+                    if self.sigma_1 < 10:
+                        self.sigma_1 = 10
 
                 self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2)
 
@@ -1086,7 +1102,8 @@ class CyclicProperties(MechanicalProperties):
 
             self.CSR = np.round(self.t / self.sigma_1, 2)
 
-            self.damping_ratio = np.round(CyclicProperties.define_damping_ratio(), 2)
+            self.damping_ratio = np.random.uniform(1, 2)
+            #np.round(CyclicProperties.define_damping_ratio(), 2)
 
     @staticmethod
     def define_Ms(c, fi, Mcsr, sigma_3, sigma_1, t, cycles_count, e, Il) -> float:
@@ -1236,7 +1253,7 @@ class VibrationCreepProperties(MechanicalProperties):
 
             self.cycles_count = int(np.random.uniform(2000, 5000))
 
-            self.damping_ratio = np.round(CyclicProperties.define_damping_ratio(), 2)
+            self.damping_ratio = np.random.uniform(1, 2)
 
     @staticmethod
     def val_to_list(val) -> list:
