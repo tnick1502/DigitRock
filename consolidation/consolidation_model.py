@@ -827,8 +827,8 @@ class ModelTriaxialConsolidation:
 
             self._test_result.Ca_log = np.round(((abs(self.processed_points_log.second_line_end_point.y) -
                                                abs(abs(self.processed_points_log.second_line_start_point.y)))
-                                              / (self.processed_points_log.second_line_end_point.x -
-                                                 self.processed_points_log.second_line_start_point.x)), 4)
+                                              / (np.log10(self.processed_points_log.second_line_end_point.x + 0.5) -
+                                                 np.log10(self.processed_points_log.second_line_start_point.x + 0.5))), 4)
 
             self._test_result.t100_log = np.round(self.processed_points_log.Cv.x)
             self._test_result.strain100_log = self.processed_points_log.Cv.y

@@ -302,7 +302,7 @@ class ConsolidationSoilTestApp(QWidget):
             test_result = Consolidation_models[statment.current_test].get_test_results()
 
             report_consolidation(save + "/" + name, data_customer,
-                                 statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
+                                 statment[statment.current_test].physical_properties, statment.current_test,
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
                                  self.tab_2.consolidation.save_canvas(), "{:.2f}".format(__version__))
