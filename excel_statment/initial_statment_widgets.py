@@ -183,7 +183,7 @@ class InitialStatment(QWidget):
             statment.setTestClass(properties_type)
             statment.setGeneralParameters(general_params)
             statment.readExcelFile(self.path, None)
-            statment.dump("".join([i for i in os.path.split(self.path)[:-1]]), name=statment_name)
+            #statment.dump("".join([i for i in os.path.split(self.path)[:-1]]), name=statment_name)
             app_logger.info(f"Сгенерирован сохраненен новый файл ведомости {statment_name}")
 
         self.customer_line.set_data()
