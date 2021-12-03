@@ -700,7 +700,7 @@ class StatickSoilTestApp(QWidget):
                 E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
                 test_result = E_models[statment.current_test].get_test_results()
                 report_E(save + "/" + name, data_customer,
-                                 statment[statment.current_test].physical_properties, statment.current_test,
+                                 statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
                                  (*self.tab_2.consolidation.save_canvas(),
@@ -718,7 +718,7 @@ class StatickSoilTestApp(QWidget):
                 E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
                 test_result = E_models[statment.current_test].get_test_results()
                 report_E(save + "/" + name, data_customer,
-                                     statment[statment.current_test].physical_properties, statment.current_test,
+                                     statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
                                      os.getcwd() + "/project_data/",
                                      test_parameter, test_result,
                                      (*self.tab_2.consolidation.save_canvas(),
@@ -751,7 +751,7 @@ class StatickSoilTestApp(QWidget):
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 report_FCE(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
-                          statment.current_test, os.getcwd() + "/project_data/",
+                          statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
                             *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
@@ -786,7 +786,7 @@ class StatickSoilTestApp(QWidget):
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 report_FC(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
-                           statment.current_test, os.getcwd() + "/project_data/",
+                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                           (*self.tab_3.save_canvas(),
                            *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
@@ -816,7 +816,7 @@ class StatickSoilTestApp(QWidget):
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 report_FC_KN(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
-                           statment.current_test, os.getcwd() + "/project_data/",
+                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                           (*self.tab_3.save_canvas(),
                            *self.tab_3.save_canvas()), "{:.2f}".format(__version__))

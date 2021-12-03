@@ -342,7 +342,7 @@ class VibrationCreepSoilTestApp(QWidget):
 
             report_VibrationCreep(save + "/" + file_name, data_customer,
                                   statment[statment.current_test].physical_properties,
-                                  statment.current_test,
+                                  statment.getLaboratoryNumber(),
                                   os.getcwd() + "/project_data/",
                                   test_parameter, E_models[statment.current_test].get_test_results(),
                                   VC_models[statment.current_test].get_test_results(),

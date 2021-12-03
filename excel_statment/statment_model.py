@@ -144,6 +144,9 @@ class Statment:
     def setCurrentTest(self, lab):
         self.current_test = lab
 
+    def getLaboratoryNumber(self):
+        return self.tests[self.current_test].physical_properties.lab_number
+
     def readExcelFile(self, excel_path, identification_column):
         self.tests = {}
 

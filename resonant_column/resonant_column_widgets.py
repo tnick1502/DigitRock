@@ -481,7 +481,7 @@ class RezonantColumnSoilTestApp(QWidget):
 
             report_rc(file_name, data_customer,
                       statment[statment.current_test].physical_properties,
-                      statment.current_test,
+                      statment.getLaboratoryNumber(),
                       os.getcwd() + "/project_data/", statment[statment.current_test].mechanical_properties, results,
                       self.tab_2.test_widget.save_canvas(), __version__)
 

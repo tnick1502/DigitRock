@@ -85,9 +85,6 @@ class PhysicalProperties:
 
         self.sample_number = string
 
-        new_lab_number = float_df(data_frame.iat[string, 240])
-        if new_lab_number:
-            self.laboratory_number = new_lab_number
 
         self.type_ground = PhysicalProperties.define_type_ground(self._granulometric_to_dict(), self.Ip,
                                                                  self.Ir)
@@ -111,7 +108,7 @@ class PhysicalProperties:
         return str(self.__dict__)
 
     @property
-    def current_laboratory_number(self):
+    def lab_number(self):
         if self.new_laboratory_number:
             return self.new_laboratory_number
         else:

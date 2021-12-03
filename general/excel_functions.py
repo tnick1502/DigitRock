@@ -986,7 +986,13 @@ def form_xlsx_dictionary(wb, last_key):
         for i in generator_of_cell_with_lab_number(wb):
             # выполняем проверку, что ячейка не пустая
             if str(wb["Лист1"][str(key) + str(i)].value) != "None":
-                xlsx_dictionary[str(key)].append(wb["Лист1"][str(key) + str(i)].value)
+                if str(key) == "A":
+                    if str(wb["Лист1"]["IG" + str(i)].value) not in ["None", ""]:
+                        xlsx_dictionary[str(key)].append(wb["Лист1"]["IG" + str(i)].value)
+                    else:
+                        xlsx_dictionary[str(key)].append(wb["Лист1"]["A" + str(i)].value)
+                else:
+                    xlsx_dictionary[str(key)].append(wb["Лист1"][str(key) + str(i)].value)
             else:
                 xlsx_dictionary[str(key)].append("None")
     # переводим значения в массивы numpy.ndarray

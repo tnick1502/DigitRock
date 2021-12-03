@@ -704,13 +704,13 @@ class CyclicSoilTestApp(QWidget):
             if statment.general_parameters.test_mode == "Сейсморазжижение" or statment.general_parameters.test_mode == "Штормовое разжижение" or statment.general_parameters.test_mode == "По заданным параметрам":
                 report_triaxial_cyclic(file_name, data_customer,
                                        statment[statment.current_test].physical_properties,
-                                       statment.current_test,
+                                       statment.getLaboratoryNumber(),
                                        os.getcwd() + "/project_data/", test_parameter, results,
                                        self.tab_2.test_widget.save_canvas(), "{:.2f}".format(__version__))
             elif statment.general_parameters.test_mode == "Демпфирование":
                 report_cyclic_damping(file_name, data_customer,
                                        statment[statment.current_test].physical_properties,
-                                       statment.current_test,
+                                       statment.getLaboratoryNumber(),
                                        os.getcwd() + "/project_data/", test_parameter, results,
                                        [self.tab_2.damping.save_canvas()], "{:.2f}".format(__version__))
 
