@@ -1165,7 +1165,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         # Этап нагружения
         if self._cosine:
             self._load_stage.time, self._load_stage.strain, self._load_stage.deviator = ModelTriaxialCyclicLoadingSoilTest.dev_loading(
-                define_qf(self._test_params.sigma_3, self._test_params.c, self._test_params.fi),
+                self._test_params.qf,
                 self._test_params.E, self._test_params.qf/2, frequency=self._test_params.frequency)
             np.array(self._load_stage.time)
             #self._load_stage.deviator += self._test_params.deviator_start_value
