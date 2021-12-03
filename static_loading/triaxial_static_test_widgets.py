@@ -61,8 +61,9 @@ class StaticProcessingWidget(QWidget):
         self.layout_wiget = QVBoxLayout()
         self.layout_wiget.addWidget(self.open_log_file)
         self.layout_wiget.addLayout(self.line)
-        self.layout_wiget.addWidget(self.consolidation)
         self.layout_wiget.addWidget(self.deviator_loading)
+        self.layout_wiget.addWidget(self.consolidation)
+        #self.layout_wiget.addWidget(self.deviator_loading)
 
         self.wiget = QWidget()
         self.wiget.setLayout(self.layout_wiget)
@@ -444,7 +445,7 @@ class StaticSoilTestWidget(StaticProcessingWidget):
 
         self.refresh_test_button = QPushButton("Обновить опыт")
         self.refresh_test_button.clicked.connect(self.refresh)
-        self.layout_wiget.insertWidget(0, self.refresh_test_button)
+        self.layout_wiget.insertWidget(1, self.refresh_test_button)
 
     def refresh(self):
         try:
