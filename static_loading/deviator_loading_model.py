@@ -599,7 +599,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                       "qocr": None,
                                       "poisson": None,
                                       "dilatancy": None,
-                                      "volumetric_strain_xc": None})
+                                      "volumetric_strain_xc": None,
+                                      "Eur": None})
 
     def set_test_params(self):
         """Установка основных параметров опыта"""
@@ -647,7 +648,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 statment[statment.current_test].physical_properties.Il, statment[statment.current_test].physical_properties.type_ground,
                 self._test_params.sigma_3, self._test_params.sigma_3/statment[statment.current_test].mechanical_properties.K0)
 
-            self._test_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
+            self._draw_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
                 E50=self._test_params.E50, qf=self._test_params.qf, Il=statment[statment.current_test].physical_properties.Il,
                 initial_unloading_deviator=self.unloading_borders[0])
 
@@ -677,6 +678,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
+        Eur = {"value": self._draw_params.Eur, "borders": [self._draw_params.Eur/2, self._draw_params.Eur*5]} if self._test_params.Eur else {"value": None}
 
         params = {"fail_strain": {"value": self._draw_params.fail_strain, "borders": [0.03, 0.15]},
                   "residual_strength_param": {"value": self._draw_params.residual_strength_param, "borders": [0.05, 0.6]},
@@ -685,7 +687,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                   "qocr": {"value": self._draw_params.qocr, "borders": [0, self._test_params.qf]},
                   "poisson": {"value": self._draw_params.poisson, "borders": [0.25, 0.45]},
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
-                  "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]}}
+                  "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]},
+                  "Eur": Eur}
         return params
 
     def set_draw_params(self, params):

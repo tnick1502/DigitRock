@@ -23,6 +23,7 @@ class Float_Slider(QSlider):  # получает на входе размер о
     def __init__(self, m):
         super().__init__(m)
         self.slider_order = 1
+        self.disabled = False
 
     def order(self, x):
         return 1 / x
@@ -38,10 +39,15 @@ class Float_Slider(QSlider):  # получает на входе размер о
             self.setMaximum(maximum * self.slider_order)
 
     def current_value(self):
+        if self.disabled:
+            return None
         return float(self.value()) / self.slider_order
 
     def set_value(self, val):
-        self.setValue(val * self.slider_order)
+        if val:
+            self.setValue(val * self.slider_order)
+        else:
+            self.setDisabled(True)
 
 class RangeSlider(QSlider):
     sliderMoved = QtCore.pyqtSignal(int, int)

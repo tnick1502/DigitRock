@@ -400,7 +400,8 @@ class TriaxialStaticLoading_Sliders(QWidget):
         """становка заданых значений на слайдеры"""
         for var in params:
             current_slider = getattr(self, "{name_var}_slider".format(name_var=var))
-            current_slider.set_borders(*params[var]["borders"])
+            if params[var]["value"]:
+                current_slider.set_borders(*params[var]["borders"])
             current_slider.set_value(params[var]["value"])
 
         self._activate = True
@@ -426,7 +427,8 @@ class StaticSoilTestWidget(StaticProcessingWidget):
                   "qocr": "Значение дивиатора OCR",
                   "poisson": "Коэффициент Пуассона",
                   "dilatancy": "Угол дилатансии",
-                  "volumetric_strain_xc": "Объемн. деформ. в пике"})
+                  "volumetric_strain_xc": "Объемн. деформ. в пике",
+                  "Eur": "Модуль разгрузки"})
         self.deviator_loading_sliders.setFixedHeight(210)
 
         self.consolidation_sliders = TriaxialStaticLoading_Sliders({"max_time": "Время испытания",
