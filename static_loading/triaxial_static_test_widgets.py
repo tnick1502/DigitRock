@@ -725,7 +725,7 @@ class StatickSoilTestApp(QWidget):
                                      os.getcwd() + "/project_data/",
                                      test_parameter, test_result,
                                      (*self.tab_2.consolidation.save_canvas(),
-                                      *self.tab_2.deviator_loading.save_canvas()), "{:.2f}".format(__version__))
+                                      *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
 

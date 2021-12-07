@@ -20,7 +20,6 @@ from descriptors import DataTypeValidation
 class PhysicalProperties:
     """Класс, хранящий свойсва грунтов, которые считываются без обработки"""
     laboratory_number = DataTypeValidation(str)
-    new_laboratory_number = DataTypeValidation(str)
     borehole = DataTypeValidation(str)
     depth = DataTypeValidation(float, int)
     soil_name = DataTypeValidation(str)
@@ -56,6 +55,7 @@ class PhysicalProperties:
     Rc = DataTypeValidation(float, int)
     date = DataTypeValidation(datetime)
     sample_size = DataTypeValidation(tuple, list)
+    new_laboratory_number = DataTypeValidation(str)
 
     def __init__(self):
         self._setNone()
@@ -1078,6 +1078,7 @@ class CyclicProperties(MechanicalProperties):
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
 
                 self.cycles_count = int(float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]]))
+
 
                 self.frequency = np.round(float_df(data_frame.iat[string,
                                                                   DynamicsPropertyPosition["frequency_vibration_creep"][
