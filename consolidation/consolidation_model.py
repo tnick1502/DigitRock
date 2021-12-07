@@ -829,7 +829,7 @@ class ModelTriaxialConsolidation:
                                               / (self.processed_points_log.second_line_end_point.x -
                                                  self.processed_points_log.second_line_start_point.x)), 4)
 
-            self._test_result.t100_log = np.round(self.processed_points_log.Cv.x)
+            self._test_result.t100_log = np.round(10**self.processed_points_log.Cv.x - 1)
             self._test_result.strain100_log = self.processed_points_log.Cv.y
 
             self._test_result.Kf_log = ModelTriaxialConsolidation.define_Kf(self._test_result.strain100_log,

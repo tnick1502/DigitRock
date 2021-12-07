@@ -244,7 +244,7 @@ class ModelTriaxialConsolidationUI(QWidget):
                 # Основной график
 
                 self.log_ax.plot(np.log10(plots["time"] + 1), plots["volume_strain"], linewidth=2, alpha=0.6)
-                self.log_ax.scatter(plots["time_log"], plots["volume_strain_approximate"], s=15)
+                self.log_ax.scatter(np.log10(plots["time"] + 1), plots["volume_strain"], s=15)
 
                 self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"], color="tomato", linewidth=1)
 
