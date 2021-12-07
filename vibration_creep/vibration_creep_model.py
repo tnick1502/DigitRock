@@ -426,7 +426,7 @@ class ModelVibrationCreepSoilTest(ModelVibrationCreep):
             if i == 0:
                 statment[statment.current_test].mechanical_properties.E50 = E50_origin#*np.random.uniform(0.94, 1.06)
             else:
-                statment[statment.current_test].mechanical_properties.E50 = E50_origin *np.random.uniform(0.94, 1.06)
+                statment[statment.current_test].mechanical_properties.E50 = E50_origin * np.random.uniform(0.9, 1.1)
 
             statment[statment.current_test].mechanical_properties.Kd = Kd
             self._dynamic_tests_models[-1].set_test_params(cosine=True)
