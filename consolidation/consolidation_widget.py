@@ -145,7 +145,7 @@ class ConsilidationSoilTestWidget(QWidget):
                 self.consolidation.function_replacement_slider.set_value(8)
             elif button.text() == "Интерполяция Эрмита":
                 interpolation_type = "ermit"
-                param = 2
+                param = 1
                 self.consolidation.function_replacement_slider.set_borders(0, 5)
                 self.consolidation.function_replacement_slider.set_value(2)
 
@@ -176,7 +176,7 @@ class ConsilidationSoilTestWidget(QWidget):
         if event.canvas is self.consolidation.log_canvas:
             canvas = "log"
         if event.button == 1 and event.xdata and event.ydata:
-            self.point_identificator = Consolidation_models[statment.current_test].define_click_point(float(np.log10(event.xdata+1)),
+            self.point_identificator = Consolidation_models[statment.current_test].define_click_point(float(event.xdata),
                                                                                     float(event.ydata), canvas)
 
     def _canvas_on_moove(self, event):
@@ -187,7 +187,7 @@ class ConsilidationSoilTestWidget(QWidget):
             canvas = "log"
 
         if self.point_identificator and event.xdata and event.ydata and event.button == 1:
-            Consolidation_models[statment.current_test].moove_catch_point(float(np.log10(event.xdata + 1)), float(event.ydata), self.point_identificator,
+            Consolidation_models[statment.current_test].moove_catch_point(float(event.xdata), float(event.ydata), self.point_identificator,
                                                         canvas)
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()

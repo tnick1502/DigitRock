@@ -14,6 +14,7 @@ from io import BytesIO
 from general.general_widgets import Float_Slider, RangeSlider
 from general.general_functions import point_to_xy
 from configs.plot_params import plotter_params
+import numpy as np
 
 
 #try:
@@ -80,7 +81,7 @@ class ModelTriaxialConsolidationUI(QWidget):
         self.function_replacement_slider = Float_Slider(Qt.Horizontal)
         self.function_replacement_label.setText("Степень сглаживания:")
         self.function_replacement_slider.set_borders(0, 5)
-        self.function_replacement_slider.set_value(2)
+        self.function_replacement_slider.set_value(1)
         #self.function_replacement_slider.sliderMoved.connect(self.function_replacement_slider_move)
         #self.function_replacement_slider.sliderReleased.connect(self.function_replacement_slider_release)
 
@@ -152,6 +153,15 @@ class ModelTriaxialConsolidationUI(QWidget):
             self.sqrt_ax.set_ylabel("Относительная вертикальная\nдеформация $ε_1$, д.е.")
 
             if plots is not None:
+                """new_tick_locations = np.array([-0.1, plots["time_sqrt"][10], plots["time_sqrt"][20],
+                                               plots["time_sqrt"][30], plots["time_sqrt"][40], plots["time_sqrt"][49]])
+
+                def tick_function(x):
+                    return np.round(x**2)
+
+                self.sqrt_ax.set_xlim(self.sqrt_ax.get_xlim())
+                self.sqrt_ax.set_xticks(new_tick_locations)
+                self.sqrt_ax.set_xticklabels(tick_function(new_tick_locations))"""
                 # Квадратный корень
                 # Основной график
                 self.sqrt_ax.plot(plots["time"], plots["volume_strain"], linewidth=2, alpha=0.6)
@@ -217,17 +227,27 @@ class ModelTriaxialConsolidationUI(QWidget):
         """Построение графиков опыта"""
         try:
             self.log_ax.clear()
-            self.log_ax.set_xscale("log")
-            self.log_ax.set_xlim([0.1, plots["time_log"][-1]*1.05])
             self.log_ax.set_xlabel("Логарифм времени")
             self.log_ax.set_ylabel("Относительная вертикальная\nдеформация $ε_1$, д.е.")
 
             if plots is not None:
+                new_tick_locations = np.array([-0.1, plots["time_log"][10], plots["time_log"][20],
+                                      plots["time_log"][30], plots["time_log"][40], plots["time_log"][49]])
+
+                def tick_function(x):
+                    return np.round(10**x - 1)
+
+                self.log_ax.set_xlim(self.log_ax.get_xlim())
+                self.log_ax.set_xticks(new_tick_locations)
+                self.log_ax.set_xticklabels(tick_function(new_tick_locations))
                 # Логарифм
                 # Основной график
-                self.log_ax.plot(plots["time"], plots["volume_strain"], linewidth=2, alpha=0.6)
-                self.log_ax.scatter(plots["time"], plots["volume_strain"], s=15)
+
+                self.log_ax.plot(np.log10(plots["time"] + 1), plots["volume_strain"], linewidth=2, alpha=0.6)
+                self.log_ax.scatter(plots["time_log"], plots["volume_strain_approximate"], s=15)
+
                 self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"], color="tomato", linewidth=1)
+
 
                 # Линии обработки
                 if plots["log_line_points"]:
@@ -261,10 +281,10 @@ class ModelTriaxialConsolidationUI(QWidget):
                         # Текстовые подписи
                         self.log_ax.text(*plots["log_t100_text"], '$\lg{(t_{100})}$', horizontalalignment='center',
                                     verticalalignment='bottom')
-                        self.log_ax.text(*plots["log_strain100_text"], '$ε_{100}$', horizontalalignment='left',
+                        self.log_ax.text(*plots["log_strain100_text"], '$ε_{100}$', horizontalalignment='right',
                                     verticalalignment='center')
 
-                        self.log_ax.text(*plots["d0"], '$d_{0}$', horizontalalignment='left',
+                        self.log_ax.text(*plots["d0"], '$d_{0}$', horizontalalignment='center',
                                          verticalalignment='center')
 
 
