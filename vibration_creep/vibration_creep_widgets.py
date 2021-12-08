@@ -10,7 +10,7 @@ import os
 import threading
 
 from excel_statment.initial_statment_widgets import VibrationCreepStatment
-from general.reports import report_VibrationCreep
+from general.reports import report_VibrationCreep, report_VibrationCreep3, zap
 from general.save_widget import Save_Dir
 from vibration_creep.vibration_creep_widgets_UI import VibrationCreepUI
 from general.initial_tables import TableVertical
@@ -340,13 +340,69 @@ class VibrationCreepSoilTestApp(QWidget):
             if date:
                 data_customer.end_date = date
 
-            report_VibrationCreep(save + "/" + file_name, data_customer,
-                                  statment[statment.current_test].physical_properties,
-                                  statment.getLaboratoryNumber(),
-                                  os.getcwd() + "/project_data/",
-                                  test_parameter, E_models[statment.current_test].get_test_results(),
-                                  VC_models[statment.current_test].get_test_results(),
-                                  [pick_vc, pick_c, *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])], "{:.2f}".format(__version__))
+            res = VC_models[statment.current_test].get_test_results()
+
+            if len(res) > 1:
+                report_VibrationCreep3(save + "/" + file_name, data_customer,
+                                      statment[statment.current_test].physical_properties,
+                                      statment.getLaboratoryNumber(),
+                                      os.getcwd() + "/project_data/",
+                                      test_parameter, E_models[statment.current_test].get_test_results(),
+                                      VC_models[statment.current_test].get_test_results(),
+                                      [pick_vc, pick_c,
+                                       *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])],
+                                      "{:.2f}".format(__version__))
+
+                Kd = ""
+                Ed = ""
+                E50 = ""
+                prediction = ""
+                for i in range(len(res)):
+                    Kd += zap(res[i]["Kd"], 2) + "; "
+                    Ed += zap(res[i]["E50d"], 1) + "; "
+                    E50 += zap(res[i]["E50"], 1) + "; "
+                    prediction += zap(res[i]["prediction"]["50_years"], 3) + "; "
+
+                set_cell_data(self.tab_1.path,
+                              "IH" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              E50, sheet="Лист1",
+                              color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              "II" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              Ed, sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.path,
+                              "CB" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              Kd, sheet="Лист1",
+                              color="FF6961")
+
+            else:
+                report_VibrationCreep(save + "/" + file_name, data_customer,
+                                      statment[statment.current_test].physical_properties,
+                                      statment.getLaboratoryNumber(),
+                                      os.getcwd() + "/project_data/",
+                                      test_parameter, E_models[statment.current_test].get_test_results(),
+                                      VC_models[statment.current_test].get_test_results(),
+                                      [pick_vc, pick_c, *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])], "{:.2f}".format(__version__))
+                res = res[0]
+
+                set_cell_data(self.tab_1.path,
+                              "BU" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              res["E50"], sheet="Лист1",
+                              color="FF6961")
+                set_cell_data(self.tab_1.path,
+                              "IH" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              res["E50"], sheet="Лист1",
+                              color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              "II" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              res["E50d"], sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.path,
+                              "CB" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              res["Kd"], sheet="Лист1",
+                              color="FF6961")
+
 
             shutil.copy(save + "/" + file_name, self.tab_4.report_directory + "/" + file_name)
 
@@ -357,20 +413,6 @@ class VibrationCreepSoilTestApp(QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
-            res = VC_models[statment.current_test].get_test_results()[0]
-
-            set_cell_data(self.tab_1.path,
-                          "BU" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                          res["E50"], sheet="Лист1",
-                          color="FF6961")
-
-            set_cell_data(self.tab_1.path,
-                          "II" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                          res["E50d"], sheet="Лист1", color="FF6961")
-            set_cell_data(self.tab_1.path,
-                          "CB" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                          res["Kd"], sheet="Лист1",
-                          color="FF6961")
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

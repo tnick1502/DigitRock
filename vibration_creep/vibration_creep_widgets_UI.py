@@ -147,8 +147,9 @@ class VibrationCreepUI(QWidget):
 
             if plot_data["E50d"][i]:
                 self.vibration_creep_ax.plot(*plot_data["E50d"][i], **plotter_params["static_loading_black_dotted_line"])
-            if plot_data["E50"][i]:
-                self.vibration_creep_ax.plot(*plot_data["E50"][i], **plotter_params["static_loading_black_dotted_line"])
+            if len(plot_data["strain_dynamic"]) == 1:
+                if plot_data["E50"][i]:
+                    self.vibration_creep_ax.plot(*plot_data["E50"][i], **plotter_params["static_loading_black_dotted_line"])
 
 
 
