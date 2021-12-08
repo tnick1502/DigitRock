@@ -1272,6 +1272,103 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (42-((r-30)*4)) * mm)
 
+def result_vibration_creep3(canvas, Res, pick, test_parameter):
+
+    try:
+        a = ImageReader(pick[1])
+        canvas.drawImage(a, 32 * mm, 60 * mm,
+                         width=160 * mm, height=54 * mm)
+        b = ImageReader(pick[0])
+        canvas.drawImage(b, 32 * mm, 114 * mm,
+                         width=160 * mm, height=54 * mm)
+
+    except AttributeError:
+        print("lksdfksdfkmsdf")
+
+    #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
+
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", "", ""]]
+    r = 28
+    for i in range(r):
+        tableData.append([""])
+
+    Kd = []
+    Ed = []
+    E50 = []
+    prediction = []
+    frequency = []
+    for i in range(len(Res)):
+        Kd.append(zap(Res[i]["Kd"], 2))
+        Ed.append(zap(Res[i]["E50d"], 1))
+        E50.append(zap(Res[i]["E50"], 1))
+        prediction.append(zap(Res[i]["prediction"]["50_years"], 3))
+        frequency.append(zap(test_parameter["frequency"][i], 1))
+
+    tableData.append(
+        [Paragraph(
+            '''<p>Частота нагружения, Гц:</p>''',
+            LeftStyle), "",
+            "", "", frequency[0], frequency[1], frequency[2]])
+
+    tableData.append(
+        [Paragraph(
+            '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''',
+            LeftStyle), "",
+         "", "", E50[0], E50[1], E50[2]])
+
+    tableData.append(
+        [Paragraph('''<p>Модуль деформации после динамического нагружения E<sub rise="0.5" size="6">50d</sub>, МПа:</p>''', LeftStyle), "",
+         "", "", Ed[0], Ed[1], Ed[2]])
+
+    tableData.append(
+        [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub>, д.е.:</p>''', LeftStyle), "",
+         "", "", Kd[0], Kd[1], Kd[2]])
+    #tableData.append(
+        #[Paragraph('''<p>Дополнительная деформация виброползучести на период 50 лет, %''', LeftStyle), "",
+         #"", "", prediction, ""])
+    t = Table(tableData, colWidths=175/7 * mm, rowHeights=4 * mm)
+    t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                ('SPAN', (0, 1), (-1, r)),
+
+                ('SPAN', (0, -1), (3, -1)),
+                #('SPAN', (-2, -1), (-1, -1)),
+
+                ('SPAN', (0, -3), (3, -3)),
+                #('SPAN', (-2, -3), (-1, -3)),
+
+                ('SPAN', (0, -2), (3, -2)),
+                #('SPAN', (-2, -2), (-1, -2)),
+
+                ('SPAN', (0, -4), (3, -4)),
+
+                #('SPAN', (0, -4), (3, -4)),
+                #('SPAN', (-2, -4), (-1, -4)),
+                #('SPAN', (2, -1), (3, -1)),
+                #('SPAN', (4, -1), (5, -1)),
+                #('SPAN', (2, -2), (3, -2)),
+                #('SPAN', (4, -2), (5, -2)),
+                #('SPAN', (2, -3), (3, -3)),
+              #  ('SPAN', (4, -3), (5, -3)),
+
+                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+                #("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+
+                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                ("ALIGN", (0, r+1), (0, -1), "LEFT"),
+                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, (38-((r-30)*4)) * mm)
+
 def result_table_CF(canvas, Res, pick, scale = 0.8):
 
 
@@ -1724,7 +1821,7 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     main_frame(canvas, path, Data_customer, code, "1/1")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КОНСОЛИДАЦИИ ГРУНТОВ МЕТОДОМ",
-                             "КОМПРЕССИОННОГО СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ВК")
+                             "КОМПРЕССИОННОГО СЖАТИЯ (ГОСТ 12248.4-2020)"], "/ВК")
 
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_consolidation_1(canvas, test_parameter)
@@ -1893,6 +1990,41 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]])
 
     canvas.save()
+
+def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    canvas = Canvas(Name, pagesize=A4)
+
+    code = SaveCode(version)
+
+    main_frame(canvas, path, Data_customer, code, "1/2")
+    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
+
+    parameter_table(canvas, Data_phiz, Lab)
+    test_mode_vibration_creep(canvas, test_parameter)
+
+    result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]])
+
+    canvas.showPage()
+
+    main_frame(canvas, path, Data_customer, code, "2/2")
+    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
+
+    parameter_table(canvas, Data_phiz, Lab)
+    test_mode_vibration_creep(canvas, test_parameter)
+
+    result_vibration_creep3(canvas, res_dynamic, [picks[0], picks[1]], test_parameter)
+
+    canvas.save()
+
 
 def report_cyclic_damping(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты

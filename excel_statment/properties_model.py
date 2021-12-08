@@ -913,11 +913,11 @@ class ConsolidationProperties:
             if self.Cv > 1.5:
                 self.Cv = np.random.uniform(1, 1.5)
 
-            self.p_max = ConsolidationProperties.round_pmax(ConsolidationProperties.define_loading_pressure(
+            self.p_max = ConsolidationProperties.spec_round(ConsolidationProperties.define_loading_pressure(
                 float_df(data_frame.iat[string, MechanicalPropertyPosition["p_max"][1]]),
                 build_press=float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]]),
                 pit_depth=float_df(data_frame.iat[string, MechanicalPropertyPosition["pit_depth"][1]]),
-                depth=physical_properties.depth))
+                depth=physical_properties.depth), 3)
 
     @staticmethod
     def define_loading_pressure(pmax, build_press: float, pit_depth: float, depth: float):
@@ -933,16 +933,25 @@ class ConsolidationProperties:
             return (2 * 10 * depth) / 1000
 
     @staticmethod
-    def round_pmax(sigma, param=5):
-        sigma = round(sigma * 1000)
-        integer = sigma // 10
-        remains = sigma % 10
-        if remains == 0:
-            return (integer * 10) / 1000
-        elif remains <= param:
-            return (integer * 10 + param) / 1000
-        else:
-            return (integer * 10 + 10) / 1000
+    def spec_round(x, precision) -> float:
+        """Rounds value as this:
+            0.16 -> 0.16
+            0.14 -> 0.14
+            0.143 -> 0.145
+            0.146 -> 0.150
+        """
+        order = 10 ** precision
+
+        condition = round(x % 10 ** (-(precision - 1)) * order, 1)
+        '''digit at precision, for 0.146 and precision = 3 condition = 6'''
+
+        if 0 < condition <= 5:
+            return round(x // (10 / order) / (order / 10) + 5 / order, precision)
+        if condition > 5:
+            return round(x // (10 / order) / (order / 10) + 1 / (order / 10), precision)
+        return round(x, precision)
+
+
 
 class CyclicProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
@@ -1237,12 +1246,9 @@ class VibrationCreepProperties(MechanicalProperties):
                 self.t = np.round(t/2)
 
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
-            if str(Kd) == "nan":
-                self.Kd = [VibrationCreepProperties.define_Kd(
-                    self.qf, self.t, physical_properties.e, physical_properties.Il, frequency) for frequency
-                    in self.frequency]
-            else:
-                self.Kd = VibrationCreepProperties.val_to_list(Kd)
+            self.Kd = [VibrationCreepProperties.define_Kd(
+                self.qf, self.t, physical_properties.e, physical_properties.Il, frequency) for frequency in self.frequency]
+
 
             """self.frequency = [float(frequency)] if str(frequency).isdigit() else list(map(
                 lambda frequency: float(frequency.replace(",", ".").strip(" ")), frequency.split(";")))

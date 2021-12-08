@@ -804,7 +804,7 @@ class ModelTriaxialConsolidation:
         if self.processed_points_log.Cv:
             if self.processed_points_log.Cv.y > np.max(self._test_data.volume_strain_approximate):
                 self.processed_points_log.Cv = None
-            self._test_result.d0 = ModelTriaxialConsolidation.find_d0(self._test_data.time_log,
+            self._test_result.d0 = ModelTriaxialConsolidation.find_d0(10**self._test_data.time_log-1,
                                                                       self._test_data.volume_strain_approximate)
 
             '''strain50 = interpolated_intercept(self._test_data.time_log, np.full(len(self._test_data.time_log),
@@ -833,8 +833,7 @@ class ModelTriaxialConsolidation:
             self._test_result.strain100_log = self.processed_points_log.Cv.y
 
             self._test_result.Kf_log = ModelTriaxialConsolidation.define_Kf(self._test_result.strain100_log,
-                                                                            self._test_data.volume_strain_approximate[
-                                                                                0], self._test_params.p_max,
+                                                                            self._test_result.d0, self._test_params.p_max,
                                                                             self._test_result.Cv_log)
 
         else:
@@ -1075,11 +1074,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             max_time=self._draw_params.max_time,
             Ca=-self._draw_params.Ca)
 
-        print("eps_end", self._draw_params.strain,
-              'Cv', self._test_params.Cv,
-              'reverse', True,
-              'max_time', self._draw_params.max_time,
-              'Ca', self._test_params.Ca)
+
 
         # self._test_data.time = np.round(self._test_data.time, 3)
 
