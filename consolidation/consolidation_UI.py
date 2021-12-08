@@ -149,7 +149,7 @@ class ModelTriaxialConsolidationUI(QWidget):
         """Построение графиков опыта"""
         try:
             self.sqrt_ax.clear()
-            self.sqrt_ax.set_xlabel("Квадратный корень из времени")
+            self.sqrt_ax.set_xlabel("Квадратный корень из времени, $\sqrt{мин}$")
             self.sqrt_ax.set_ylabel("Относительная вертикальная\nдеформация $ε_1$, д.е.")
 
             if plots is not None:
@@ -227,7 +227,7 @@ class ModelTriaxialConsolidationUI(QWidget):
         """Построение графиков опыта"""
         try:
             self.log_ax.clear()
-            self.log_ax.set_xlabel("Логарифм времени")
+            self.log_ax.set_xlabel("Время, мин")
             self.log_ax.set_ylabel("Относительная вертикальная\nдеформация $ε_1$, д.е.")
 
             if plots is not None:

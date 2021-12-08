@@ -282,7 +282,7 @@ class ConsolidationSoilTestApp(QWidget):
                               "mode": "Статическая нагрузка",
                               "p_max": statment[statment.current_test].mechanical_properties.p_max,
                               "h": 20,
-                              "d": 71}
+                              "d": 71.4}
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date

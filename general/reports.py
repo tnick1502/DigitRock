@@ -438,7 +438,7 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter):
     d = test_parameter["d"]
     h = test_parameter["h"]
 
-    if test_parameter["type"] == "Сейсморазжижение" or test_parameter["type"] == "Демпфирование" or test_parameter["type"] == "По заданным параметрам":
+    if test_parameter["type"] == "Сейсморазжижение":
 
         t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                    ["Режим испытания:", "", test_parameter["Rezhim"], "", "", "", "", "", ""],
@@ -452,6 +452,25 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter):
                     [Paragraph('''<p>K<sub rise="0.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", zap(test_parameter["K0"], 2),
                     "Частота, Гц:", "", str(test_parameter["frequency"]).replace(".", ","), "I, балл:",  "", str(test_parameter["I"]).replace(".", ",") if test_parameter["I"] else "-"],
                    ["M, ед.:", "", str(test_parameter["M"]).replace(".", ",") if test_parameter["M"] else "-", "MSF, ед.:", "",str(test_parameter["MSF"]).replace(".", ",") if test_parameter["MSF"] else "-", Paragraph('''<p>r<sub rise="2.5" size="6">d</sub>, ед.:</p>''', LeftStyle), "",str(test_parameter["rd"]).replace(".", ","),]], colWidths=19.444444* mm, rowHeights=4 * mm)
+
+    elif test_parameter["type"] == "Демпфирование" or test_parameter["type"] == "По заданным параметрам":
+        t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
+                   ["Режим испытания:", "", test_parameter["Rezhim"], "", "", "", "", "", ""],
+                   ["Оборудование:", "", test_parameter["Oborudovanie"]],
+                   ["Параметры образца:", "", "Высота, мм:", zap(str(h).replace(".", ","), 2), "Диаметр, мм:",
+                    zap(str(d).replace(".", ","), 2),
+                    "", ""],
+                   # Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(str(ro).replace(".", ","), 2)],
+                   [Paragraph('''<p>σ'<sub rise="2.5" size="6">3</sub>, кПа:</p>''', LeftStyle), "",
+                    zap(test_parameter["sigma3"], 0),
+                    Paragraph('''<p>σ'<sub rise="2.5" size="6">1</sub>, кПа:</p>''', LeftStyle), "",
+                    zap(test_parameter["sigma1"], 0),
+                    Paragraph('''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''', LeftStyle), "",
+                    zap(test_parameter["tau"], 0)],
+                   [Paragraph('''<p>K<sub rise="0.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "",
+                    zap(test_parameter["K0"], 2),
+                    "Частота, Гц:", "", str(test_parameter["frequency"]).replace(".", ","), "", "", ""]],
+                  colWidths=19.444444 * mm, rowHeights=4 * mm)
 
     elif test_parameter["type"] == "Штормовое разжижение":
         t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
@@ -476,33 +495,60 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter):
                     Paragraph('''<p>ρ<sub rise="2.5" size="6">w</sub>, кН/м<sup rise="2.5" size="5">3</sup></p>''', LeftStyle), "", zap(test_parameter["rw"], 2),
                     "", "", ""]], colWidths=19.444444 * mm, rowHeights=4 * mm)
 
-    t.setStyle([('SPAN', (0, 0), (-1, 0)),
-                ('SPAN', (0, 1), (1, 1)), ('SPAN', (2, 1), (-1, 1)),
-                ('SPAN', (0, 2), (1, 2)), ('SPAN', (2, 2), (-1, 2)),
-                ('SPAN', (0, 3), (1, 3)), ('SPAN', (7, 3), (8, 3)), ('SPAN', (7, 3), (8, 3)),
-                ('SPAN', (0, 4), (1, 4)), ('SPAN', (3, 4), (4, 4)), ('SPAN', (6, 4), (7, 4)),
-                ('SPAN', (0, 5), (1, 5)), ('SPAN', (3, 5), (4, 5)), ('SPAN', (6, 5), (7, 5)),
-                ('SPAN', (0, 6), (1, 6)), ('SPAN', (3, 6), (4, 6)), ('SPAN', (6, 6), (7, 6)),
-                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("BACKGROUND", (0, 1), (1, 1), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, 2), (1, 2), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, 3), (1, 3), HexColor(0xebebeb)),
-                ("BACKGROUND", (2, 3), (2, 3), HexColor(0xebebeb)),
-                ("BACKGROUND", (4, 3), (4, 3), HexColor(0xebebeb)),
-                ("BACKGROUND", (6, 3), (6, 3), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, 4), (1, 6), HexColor(0xebebeb)),
-                ("BACKGROUND", (3, 4), (4, 6), HexColor(0xebebeb)),
-                ("BACKGROUND", (6, 4), (7, 6), HexColor(0xebebeb)),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-                ("ALIGN", (0, 1), (-1, -1), "LEFT"),
-                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+    if test_parameter["type"] == "Демпфирование" or test_parameter["type"] == "По заданным параметрам":
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                    ('SPAN', (0, 1), (1, 1)), ('SPAN', (2, 1), (-1, 1)),
+                    ('SPAN', (0, 2), (1, 2)), ('SPAN', (2, 2), (-1, 2)),
+                    ('SPAN', (0, 3), (1, 3)), ('SPAN', (7, 3), (8, 3)), ('SPAN', (7, 3), (8, 3)),
+                    ('SPAN', (0, 4), (1, 4)), ('SPAN', (3, 4), (4, 4)), ('SPAN', (6, 4), (7, 4)),
+                    ('SPAN', (0, 5), (1, 5)), ('SPAN', (3, 5), (4, 5)), ('SPAN', (6, 5), (7, 5)),
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("BACKGROUND", (0, 1), (1, 1), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, 2), (1, 2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, 3), (1, 3), HexColor(0xebebeb)),
+                    ("BACKGROUND", (2, 3), (2, 3), HexColor(0xebebeb)),
+                    ("BACKGROUND", (4, 3), (4, 3), HexColor(0xebebeb)),
+                    ("BACKGROUND", (6, 3), (6, 3), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, 4), (1, 5), HexColor(0xebebeb)),
+                    ("BACKGROUND", (3, 4), (4, 5), HexColor(0xebebeb)),
+                    ("BACKGROUND", (6, 4), (7, 5), HexColor(0xebebeb)),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                    ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+        a = 181
+    else:
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                    ('SPAN', (0, 1), (1, 1)), ('SPAN', (2, 1), (-1, 1)),
+                    ('SPAN', (0, 2), (1, 2)), ('SPAN', (2, 2), (-1, 2)),
+                    ('SPAN', (0, 3), (1, 3)), ('SPAN', (7, 3), (8, 3)), ('SPAN', (7, 3), (8, 3)),
+                    ('SPAN', (0, 4), (1, 4)), ('SPAN', (3, 4), (4, 4)), ('SPAN', (6, 4), (7, 4)),
+                    ('SPAN', (0, 5), (1, 5)), ('SPAN', (3, 5), (4, 5)), ('SPAN', (6, 5), (7, 5)),
+                    ('SPAN', (0, 6), (1, 6)), ('SPAN', (3, 6), (4, 6)), ('SPAN', (6, 6), (7, 6)),
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("BACKGROUND", (0, 1), (1, 1), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, 2), (1, 2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, 3), (1, 3), HexColor(0xebebeb)),
+                    ("BACKGROUND", (2, 3), (2, 3), HexColor(0xebebeb)),
+                    ("BACKGROUND", (4, 3), (4, 3), HexColor(0xebebeb)),
+                    ("BACKGROUND", (6, 3), (6, 3), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, 4), (1, 6), HexColor(0xebebeb)),
+                    ("BACKGROUND", (3, 4), (4, 6), HexColor(0xebebeb)),
+                    ("BACKGROUND", (6, 4), (7, 6), HexColor(0xebebeb)),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                    ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+        a = 177
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 177 * mm)
+    t.drawOn(canvas, 25 * mm, a * mm)
 
 def test_mode_vibration_creep(canvas, test_parameter):
 
@@ -603,7 +649,7 @@ def test_mode_consolidation_1(canvas, Data):
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
-               [Paragraph('''<p>Давление консолидации σ, МПа:</p>''', LeftStyle), "", "", Data["p_max"], "", "", "", "", "", ""],
+               [Paragraph('''<p>Давление консолидации σ, МПа:</p>''', LeftStyle), "", "", zap(Data["p_max"],3), "", "", "", "", "", ""],
                ["Оборудование:", "", "", Data["equipment"]],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
@@ -1763,8 +1809,8 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
                                 "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/С")
     elif test_parameter["type"] == "По заданным параметрам":
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
-                                "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/С")
+                                ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                                "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/С")
     elif test_parameter["type"] == "Штормовое разжижение":
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
@@ -1781,6 +1827,10 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
                                  "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/С")
+    elif test_parameter["type"] == "По заданным параметрам":
+        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                                "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/С")
     elif test_parameter["type"] == "Штормовое разжижение":
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
