@@ -43,6 +43,7 @@ from datetime import timedelta
 from typing import Optional, Tuple
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
+from static_loading.consolidation_functions import function_consalidation_without_Cv
 
 from loggers.logger import app_logger
 from singletons import statment
@@ -694,7 +695,7 @@ class ModelTriaxialCyclicLoading:
         time = np.linspace(0, len(x) - 1, len(x))
         return time
 
-class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
+class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
     """Модель моделирования циклического нагружения
     Наследует обработчик и структуру данных из ModelTriaxialCyclicLoading
 
@@ -771,7 +772,6 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.t = statment[statment.current_test].mechanical_properties.t
         self._test_params.K0 = statment[statment.current_test].mechanical_properties.K0
         self._test_params.qf = statment[statment.current_test].mechanical_properties.qf
-        self._test_params.qf_2 = statment[statment.current_test].mechanical_properties.qf
         self._test_params.sigma_3 = statment[statment.current_test].mechanical_properties.sigma_3
         self._test_params.physical = statment[statment.current_test].physical_properties
         self._test_params.Cv = statment[statment.current_test].mechanical_properties.Cv
@@ -784,7 +784,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.frequency = self._test_params.frequency
         self._test_params.points_in_cycle = 20
         self._test_params.deviator_start_value = self._test_params.sigma_1 - self._test_params.sigma_3
-        self._test_params.reverse = ModelTriaxialCyclicLoadingSoilTest.check_revers(self._test_params.sigma_1,
+        self._test_params.reverse = ModelTriaxialCyclicLoadingSoilTest3.check_revers(self._test_params.sigma_1,
                                                                                      self._test_params.sigma_3,
                                                                                      2*self._test_params.t)
 
@@ -847,7 +847,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         PPR_params = {
             "PPR_n_fail": self._test_params.n_fail,
-            "PPR_max": {"value": self._draw_params.PPR_max, "borders": [0.1, 1.2]},
+            "PPR_max": {"value": self._draw_params.PPR_max, "borders": [0.1, 0.8]},
             "PPR_slant": {"value": self._draw_params.PPR_slant,
                           "borders": [self._draw_params.PPR_slant/5, 0.7 * self._test_params.cycles_count]},
             "PPR_skempton": {"value": self._draw_params.PPR_skempton,
@@ -902,7 +902,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._draw_params.PPR_phase_offset = PPR_params["PPR_phase_offset"]
 
         self._modeling_PPR()
-        Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
+        Ms = ModelTriaxialCyclicLoadingSoilTest3.define_Ms(
                 self._test_params.c, self._test_params.fi, 1 / self._test_data.PPR[-1], self._test_params.sigma_3,
                 self._test_params.sigma_1, self._test_params.t, self._test_params.cycles_count,
                 self._test_params.physical.e, self._test_params.physical.Il)
@@ -938,7 +938,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.K0 = params["K0"]
 
     def generate_log_file(self, file_path, post_name=None):
-        ModelTriaxialCyclicLoadingSoilTest.generate_willie_log_file(file_path, self._test_data.deviator,
+        ModelTriaxialCyclicLoadingSoilTest3.generate_willie_log_file(file_path, self._test_data.deviator,
                                                                     self._test_data.PPR, self._test_data.strain,
                                                                     self._test_params.frequency,
                                                                     self._test_params.cycles_count,
@@ -962,7 +962,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._draw_params.deviator_filter = 0.5
         # Значение начального модуля деформации. Амплитуда деформации рассчитывется как амплитуда девиатора деленая
         # на значение модуля
-        self._draw_params.strain_E0 = ModelTriaxialCyclicLoadingSoilTest.define_E0(self._test_params.physical.Il,
+        self._draw_params.strain_E0 = ModelTriaxialCyclicLoadingSoilTest3.define_E0(self._test_params.physical.Il,
                                                 self._test_params.E, self._test_params.t*2, \
                                     define_qf(self._test_params.sigma_3, self._test_params.c , self._test_params.fi))
 
@@ -996,14 +996,14 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         else:
             self._draw_params.PPR_slant = self._test_params.cycles_count * np.random.uniform(0.7, 0.8)
         # Динамический коэффициент скемптона. Амплитуда PPR = PPR_skempton*_test_params.t/ _test_params.sigma_3
-        self._draw_params.PPR_skempton = ModelTriaxialCyclicLoadingSoilTest.dependence_skempton_Il_frequency(self._test_params.physical.Il,
+        self._draw_params.PPR_skempton = ModelTriaxialCyclicLoadingSoilTest3.dependence_skempton_Il_frequency(self._test_params.physical.Il,
                                                                           self._test_params.frequency)/3
         # Параметр, отвечающий за рост деформации после цикла разрушения
         self._draw_params.PPR_rise_after_fail = np.random.uniform(0.8, 1)
         # Погрешность и коэффициент сглаживания
         self._draw_params.PPR_deviation = 0.01
         self._draw_params.PPR_filter = 0.05
-        self._draw_params.PPR_phase_offset = ModelTriaxialCyclicLoadingSoilTest.initial_PPR_phase_offset(
+        self._draw_params.PPR_phase_offset = ModelTriaxialCyclicLoadingSoilTest3.initial_PPR_phase_offset(
             self._test_params.physical.Il, self._test_params.frequency)
         if self._test_params.n_fail:
             fail_cycle = self._test_params.n_fail
@@ -1021,7 +1021,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         """Функция моделирования девиаторного нагружения"""
         # Массив setpoint - идеальная кривая, к которой стремится пид-регулятор
         if self._cosine:
-            self._test_data.setpoint = ModelTriaxialCyclicLoadingSoilTest.create_deviator_array(self._test_data.cycles[len(self._load_stage.deviator):] - self._test_data.cycles[len(self._load_stage.deviator)],
+            self._test_data.setpoint = ModelTriaxialCyclicLoadingSoilTest3.create_deviator_array(self._test_data.cycles[len(self._load_stage.deviator):] - self._test_data.cycles[len(self._load_stage.deviator)],
                                                                                                 2 * self._test_params.t,
                                                                                                 self._test_params.deviator_start_value,
                                                                                                 fail_cycle=self._test_params.n_fail,
@@ -1032,7 +1032,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
 
         else:
-            self._test_data.setpoint = ModelTriaxialCyclicLoadingSoilTest.create_deviator_array(self._test_data.cycles,
+            self._test_data.setpoint = ModelTriaxialCyclicLoadingSoilTest3.create_deviator_array(self._test_data.cycles,
                                                                                                 2 * self._test_params.t,
                                                                                                 self._test_params.deviator_start_value,
                                                                                                 fail_cycle=self._test_params.n_fail,
@@ -1057,14 +1057,14 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
          циклов"""
         # Создадим массив моделя E. Он отвечает за рост амплитуды
         if self._cosine:
-            E_module = ModelTriaxialCyclicLoadingSoilTest.create_E_module_array(self._test_data.cycles[len(self._load_stage.strain):] - self._test_data.cycles[len(self._load_stage.strain)],
+            E_module = ModelTriaxialCyclicLoadingSoilTest3.create_E_module_array(self._test_data.cycles[len(self._load_stage.strain):] - self._test_data.cycles[len(self._load_stage.strain)],
                                                                                 self._draw_params.strain_E0,
                                                                                 (-0.3 * self._draw_params.PPR_max) + 1,
                                                                                 fail_cycle=self._test_params.n_fail,
                                                                                 reverse=self._test_params.reverse,
                                                                                 rise_after_fail=self._draw_params.strain_rise_after_fail)
             # Создадим массив вертикальной деформации
-            self._test_data.strain = ModelTriaxialCyclicLoadingSoilTest.create_strain_array(
+            self._test_data.strain = ModelTriaxialCyclicLoadingSoilTest3.create_strain_array(
                 self._test_data.cycles[len(self._load_stage.strain):] - self._test_data.cycles[len(self._load_stage.strain)],
                 2 * self._test_params.t, E_module, self._draw_params.strain_max, self._draw_params.strain_slant,
                 phase_shift=self._draw_params.strain_phase_offset -0.5*np.pi, stabilization=self._draw_params.strain_stabilization)
@@ -1083,7 +1083,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                              np.random.uniform(8, 15))
 
         else:
-            E_module = ModelTriaxialCyclicLoadingSoilTest.create_E_module_array(
+            E_module = ModelTriaxialCyclicLoadingSoilTest3.create_E_module_array(
                 self._test_data.cycles,
                 self._draw_params.strain_E0,
                 (-0.3 * self._draw_params.PPR_max) + 1,
@@ -1091,7 +1091,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                 reverse=self._test_params.reverse,
                 rise_after_fail=self._draw_params.strain_rise_after_fail)
             # Создадим массив вертикальной деформации
-            self._test_data.strain = ModelTriaxialCyclicLoadingSoilTest.create_strain_array(
+            self._test_data.strain = ModelTriaxialCyclicLoadingSoilTest3.create_strain_array(
                 self._test_data.cycles,
                 2 * self._test_params.t,
                 E_module,
@@ -1122,7 +1122,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         Массив PPR может строиться 2мя методами. В цикл разрушения, если он определен, иои с помощь ассимптоты и
         наклона"""
         if self._cosine:
-            PPR = ModelTriaxialCyclicLoadingSoilTest.create_PPR_array(
+            PPR = ModelTriaxialCyclicLoadingSoilTest3.create_PPR_array(
                 self._test_data.cycles[len(self._load_stage.deviator):] -
                 self._test_data.cycles[len(self._load_stage.deviator)],
                 self._test_params.t,
@@ -1131,7 +1131,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                 self._draw_params.PPR_slant,
                 self._draw_params.PPR_phase_offset + 0.5*np.pi,
                 self._draw_params.PPR_deviation,
-                ModelTriaxialCyclicLoadingSoilTest.check_revers(self._test_params.sigma_1,
+                ModelTriaxialCyclicLoadingSoilTest3.check_revers(self._test_params.sigma_1,
                                                                 self._test_params.sigma_3,
                                                                 2 * self._test_params.t),
                 self._test_params.n_fail,
@@ -1140,13 +1140,13 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             self._test_data.PPR = np.hstack((np.random.uniform(-0.003, 0.003, len(self._load_stage.deviator)), PPR))
 
         else:
-            self._test_data.PPR = ModelTriaxialCyclicLoadingSoilTest.create_PPR_array(
+            self._test_data.PPR = ModelTriaxialCyclicLoadingSoilTest3.create_PPR_array(
                 self._test_data.cycles, self._test_params.t,
                 self._draw_params.PPR_skempton,
                 self._test_data.cell_pressure, self._draw_params.PPR_max,
                 self._draw_params.PPR_slant,
                 self._draw_params.PPR_phase_offset, self._draw_params.PPR_deviation,
-                ModelTriaxialCyclicLoadingSoilTest.check_revers(self._test_params.sigma_1,
+                ModelTriaxialCyclicLoadingSoilTest3.check_revers(self._test_params.sigma_1,
                                                                 self._test_params.sigma_3,
                                                                 2 * self._test_params.t), self._test_params.n_fail,
                 self._draw_params.PPR_rise_after_fail)
@@ -1159,71 +1159,123 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_data.mean_effective_stress = (self._test_data.deviator + 3 * self._test_data.cell_pressure * (1 - self._test_data.PPR))/3
 
     def _test_modeling(self, Ms=None):
-        """Функция моделирования опыта"""
-        self._test_data.cycles = np.linspace(0, self._test_params.cycles_count,
-                                             self._test_params.points_in_cycle * self._test_params.cycles_count + 1)
-        #self._test_data.time = self._test_data.cycles / self._test_params.frequency
-        # Этап нагружения
-        if self._cosine:
-            self._load_stage.time, self._load_stage.strain, self._load_stage.deviator = ModelTriaxialCyclicLoadingSoilTest.dev_loading(
-                self._test_params.qf,
-                self._test_params.E, self._test_params.qf/2, frequency=self._test_params.frequency)
-            np.array(self._load_stage.time)
-            #self._load_stage.deviator += self._test_params.deviator_start_value
-            self._test_data.cycles = np.hstack((np.array(self._load_stage.time)*self._test_params.frequency,
-                                                self._test_data.cycles + self._load_stage.time[-1]*self._test_params.frequency))
 
-        self._test_data.time = self._test_data.cycles/self._test_params.frequency
+        storm = AttrDict({
+            "time": np.array([0]),
+            "cycles": np.array([0]),
+            "cell_pressure": np.array([0]),
+            "setpoint": np.array([0]),
+            "strain": np.array([0]),
+            "deviator": np.array([self._test_params.deviator_start_value]),
+            "PPR": np.array([0]),
+            "mean_effective_stress": np.array([0])})
 
+        for i in range(3):
 
-        self._test_params.len_cycles = len(self._test_data.cycles)
+            self._test_params.n_fail = int(int(np.random.uniform(5, 12)) + i * int(np.random.uniform(5, 8)))
 
 
-        #self._test_data.cell_pressure = ModelTriaxialCyclicLoadingSoilTest.create_cell_press_willie_array(self._test_params.sigma_3, self._test_data.cycles,
-                                                                #self._test_params.frequency)
 
-        self._test_data.cell_pressure = np.full(len(self._test_data.cycles), self._test_params.sigma_3)
-        self._modeling_deviator()
-        self._modeling_PPR()
+            self._test_params.cycles_count = self._test_params.n_fail + int(np.random.uniform(5, 10))
 
-        if not Ms:
-            Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
-                self._test_params.c, self._test_params.fi, 1 / self._test_data.PPR[-1], self._test_params.sigma_3,
-                self._test_params.sigma_1, self._test_params.t, self._test_params.cycles_count,
-                self._test_params.physical.e, self._test_params.physical.Il)
+            self._define_draw_params()
 
-        if self._test_params.Kd:
-            if self._test_params.Kd >= 0.9:
-                k = 1
-            else:
-                k = 1 + (1 - self._test_params.Kd) * 1.5
+            self._test_data.cycles = np.linspace(0, self._test_params.cycles_count,
+                                                 self._test_params.points_in_cycle * self._test_params.cycles_count + 1)
+            #self._test_data.time = self._test_data.cycles / self._test_params.frequency
+            # Этап нагружения
+            if self._cosine:
+                self._load_stage.time, self._load_stage.strain, self._load_stage.deviator = ModelTriaxialCyclicLoadingSoilTest3.dev_loading(
+                    self._test_params.qf,
+                    self._test_params.E, self._test_params.qf/2, frequency=self._test_params.frequency)
+                np.array(self._load_stage.time)
+                #self._load_stage.deviator += self._test_params.deviator_start_value
+                self._test_data.cycles = np.hstack((np.array(self._load_stage.time)*self._test_params.frequency,
+                                                    self._test_data.cycles + self._load_stage.time[-1]*self._test_params.frequency))
 
-            self._draw_params.strain_max = self._load_stage.strain[-1] * (1 - self._test_params.Kd) - (self._test_params.t / self._draw_params.strain_E0)
-        else:
-            self._draw_params.strain_max = np.random.uniform(0.05 / Ms, 0.06 / Ms)
+            self._test_data.time = self._test_data.cycles/self._test_params.frequency
 
-        self._modeling_strain()
 
-        """i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator/2, self.critical_line)
-        if Msf:
-            if self._test_params.Kd:
-                if self._test_params.Kd >= 0.9:
-                    k = 1
-                else:
-                    k = 1 + (1 - self._test_params.Kd) * 1.2
-                self._draw_params.strain_max = self._load_stage.strain[-1] * (1 - self._test_params.Kd) * k
+            self._test_params.len_cycles = len(self._test_data.cycles)
 
-            elif self._test_params.reverse:
-                self._draw_params.strain_max = np.random.uniform(0, 0.005)
-            else:
-                self._draw_params.strain_max = np.random.uniform(0.05 / Msf, 0.06 / Msf)
+
+            #self._test_data.cell_pressure = ModelTriaxialCyclicLoadingSoilTest.create_cell_press_willie_array(self._test_params.sigma_3, self._test_data.cycles,
+                                                                    #self._test_params.frequency)
+
+            self._test_data.cell_pressure = np.full(len(self._test_data.cycles), self._test_params.sigma_3)
+            self._modeling_deviator()
+            self._modeling_PPR()
+
+            if not Ms:
+                Ms = ModelTriaxialCyclicLoadingSoilTest3.define_Ms(
+                    self._test_params.c, self._test_params.fi, 1 / self._test_data.PPR[-1], self._test_params.sigma_3,
+                    self._test_params.sigma_1, self._test_params.t, self._test_params.cycles_count,
+                    self._test_params.physical.e, self._test_params.physical.Il)
+
+            self._draw_params.strain_max = np.random.uniform(0.005, 0.01)
+
+            self._draw_params.strain_slant *= 1.5
+
             self._modeling_strain()
-        else:
-            if self._test_params.reverse:
-                self._draw_params.strain_max = np.random.uniform(0, 0.005)
-            else:
-                self._draw_params.strain_max = np.random.uniform(0.05, 0.06)
-                self._modeling_strain()"""
+
+            storm.time = np.hstack((storm.time, self._test_data.time + storm.time[-1]))
+            storm.cycles = np.hstack((storm.cycles, self._test_data.cycles + storm.cycles[-1]))
+            storm.cell_pressure = np.hstack((storm.cell_pressure, self._test_data.cell_pressure))
+            storm.setpoint = np.hstack((storm.setpoint, self._test_data.setpoint))
+            storm.strain = np.hstack((storm.strain, self._test_data.strain + storm.strain[-1]))
+            storm.deviator = np.hstack((storm.deviator, self._test_data.deviator))
+            storm.PPR = np.hstack((storm.PPR, self._test_data.PPR + storm.PPR[-1]))
+
+            #self._test_params.Cv = 0.1
+
+            t_test = 3 * (((0.848 * 3.8 * 3.8) / (4 * self._test_params.Cv)))
+
+            time, strain = function_consalidation_without_Cv(Cv=self._test_params.Cv, Ca=-0.01765, point_time=1/60,
+                                                             volume_strain_90=-0.17770291565322646, E=96000,
+                                                             sigma_3=100, max_time=t_test)
+            #time*= 60
+            strain -= strain[0]
+            strain *= -1
+            if i ==0:
+                k = np.random.uniform(0.02, 0.03)
+            elif i == 1:
+                k = np.random.uniform(0.01, 0.02)
+            elif i == 2:
+                k = np.random.uniform(0.005, 0.01)
+
+            strain *= k/strain[-1]
+            cycles = self._test_params.frequency * time
+
+            _, PPR = function_consalidation_without_Cv(Cv=self._test_params.Cv* 1.2,
+                                                       Ca=-0.01765, point_time=1/60,
+                                                             volume_strain_90=-0.17770291565322646, E=96000,
+                                                             sigma_3=100, max_time=t_test)
+            PPR -= PPR[0]
+
+            if i ==0:
+                k = 0
+            elif i == 1:
+                k = 0.03
+            elif i == 2:
+                k = 0.05
+
+            PPR *= (storm.PPR[-1]) / -PPR[-1]
+
+            if i != 3:
+                storm.time = np.hstack((storm.time, time + storm.time[-1]))
+                storm.cycles = np.hstack((storm.cycles, cycles + storm.cycles[-1]))
+                storm.cell_pressure = np.hstack((storm.cell_pressure, np.full(len(strain), storm.cell_pressure[-1])))
+                storm.setpoint = np.hstack((storm.setpoint, np.full(len(strain), storm.cell_pressure[-1])))
+                storm.strain = np.hstack((storm.strain, strain + storm.strain[-1]))
+                storm.deviator = np.hstack((storm.deviator, np.random.uniform(self._test_params.deviator_start_value - 0.5, self._test_params.deviator_start_value + 0.5, len(strain))))
+                storm.PPR = np.hstack((storm.PPR, PPR + storm.PPR[-1]))
+
+        self._test_data = storm
+
+        self._test_data.mean_effective_stress = (self._test_data.deviator + 3 * self._test_data.cell_pressure * (1 - self._test_data.PPR))/3
+        self._test_data.mean_effective_stress[0] = self._test_data.mean_effective_stress[1]
+
+
 
     def _critical_line(self):
         """Построение линии критического разрушения Мора-Кулона в t-p осях"""
@@ -1386,7 +1438,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         strain_amplitude = deviator_amplitude / E_module
 
         return np.array(strain_amplitude * np.sin(x * 2 * np.pi + step_sin(x + phase_shift/6, np.random.uniform(0.09, 0.12)*np.pi, 5, 0.25) + phase_shift)) + \
-               ModelTriaxialCyclicLoadingSoilTest.stabilization_logarithm(x, strain_max, x_85, stabilization)
+               ModelTriaxialCyclicLoadingSoilTest3.stabilization_logarithm(x, strain_max, x_85, stabilization)
 
     @staticmethod
     def dependence_PPR_phase_offset_count_cycles(cycles_count):
@@ -1399,7 +1451,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         """Строит массив смещения фазы от количества циклов"""
         cycles_count = int(max(x))
         half_of_cycles_count = int(max(x) / 2)
-        amp = ModelTriaxialCyclicLoadingSoilTest.dependence_PPR_phase_offset_count_cycles(int(max(x))) / 2
+        amp = ModelTriaxialCyclicLoadingSoilTest3.dependence_PPR_phase_offset_count_cycles(int(max(x))) / 2
         return sigmoida(x, amp, half_of_cycles_count, phase_offset + amp, cycles_count)
 
     @staticmethod
@@ -1407,7 +1459,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                  n_fail=None, rise_after_fail=None):
         """Создаем массив PPR"""
         # Смещение фаз с числом циклов
-        phase_offset_array = ModelTriaxialCyclicLoadingSoilTest.create_PPR_phase_offset_array(x, offset)
+        phase_offset_array = ModelTriaxialCyclicLoadingSoilTest3.create_PPR_phase_offset_array(x, offset)
 
         def current_exponent_PPR(x, amplitude, x_fail):
             """Функция построения экспоненты, которая строится в точку разжижения
@@ -1751,11 +1803,11 @@ if __name__ == '__main__':
 
     #a.plotter()
 
-    a = ModelTriaxialCyclicLoadingSoilTest()
+    a = ModelTriaxialCyclicLoadingSoilTest3()
     #file = "C:/Users/Пользователь/Desktop/Опыты/264-21 П-57 11.7 Обжимающее давление = 120.txt"
     #file = "C:/Users/Пользователь/Desktop/Опыты/718-20 PL20-Skv139 0.2  Обжимающее давление = 25.txt"
-    statment.load("C:/Users/Пользователь/Desktop/test/Сейсморазжижение.pickle")
-    statment.current_test = "7а-1"
+    statment.load("C:/Users/Пользователь/Desktop/Новая папка (4)/Штормовое разжижение.pickle")
+    statment.current_test = "ПК 537+20 (Ось трассы)-1"
     a.set_test_params()
     a.plotter()
 

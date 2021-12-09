@@ -86,7 +86,7 @@ class VibrationCreepUI(QWidget):
         self.creep_figure.subplots_adjust(right=0.98, top=0.98, bottom=0.19, wspace=0.05, hspace=0, left=0.1)
         self.creep_canvas = FigureCanvas(self.creep_figure)
         self.creep_ax = self.creep_figure.add_subplot(111)
-        self.creep_ax.set_xlabel("Время")
+        self.creep_ax.set_xlabel("Время, c")
         self.creep_ax.set_ylabel("Деформация $ε_1$, д.е.")
         self.creep_ax.set_xscale("log")
         self.creep_canvas.draw()
@@ -115,7 +115,7 @@ class VibrationCreepUI(QWidget):
         #self.dyn_phase_ax.set_yticks([])
 
         self.creep_ax.clear()
-        self.creep_ax.set_xlabel("Время")
+        self.creep_ax.set_xlabel("Время, c")
         self.creep_ax.set_ylabel("Относительная деформация $ε_1$, д.е.")
         self.creep_ax.set_xscale("log")
 

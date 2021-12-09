@@ -343,11 +343,9 @@ class TriaxialStaticStatment(InitialStatment):
                 assert not marker, "Проверьте " + customer
                 #assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=list(columns_marker_cfe)), \
                     #"Заполните данные консолидации('CC', 'CF')"
-
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
             else:
-
                 self.load_statment(
                     statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
                     properties_type=MechanicalProperties,

@@ -651,6 +651,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             self._draw_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
                 E50=self._test_params.E50, qf=self._test_params.qf, Il=statment[statment.current_test].physical_properties.Il,
                 initial_unloading_deviator=self.unloading_borders[0])
+        else:
+            self._draw_params.Eur = None
 
         self._draw_params.poisson = statment[statment.current_test].mechanical_properties.poisons_ratio
         self._draw_params.dilatancy = statment[statment.current_test].mechanical_properties.dilatancy_angle
@@ -678,7 +680,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
-        Eur = {"value": self._draw_params.Eur, "borders": [self._draw_params.Eur/2, self._draw_params.Eur*5]} if self._test_params.Eur else {"value": None}
+        Eur = {"value": self._draw_params.Eur, "borders": [self._draw_params.Eur/2, self._draw_params.Eur*5]} if self._draw_params.Eur else {"value": None}
 
         params = {"fail_strain": {"value": self._draw_params.fail_strain, "borders": [0.03, 0.15]},
                   "residual_strength_param": {"value": self._draw_params.residual_strength_param, "borders": [0.05, 0.6]},
@@ -1280,8 +1282,8 @@ if __name__ == '__main__':
     a.plotter()
     plt.show()"""
     a = ModelTriaxialDeviatorLoadingSoilTest()
-    statment.load(r"C:\Users\Пользователь\Desktop\test\Трёхосное сжатие КН.pickle")
-    statment.current_test = "7а-3"
+    statment.load(r"C:\Users\Пользователь\Desktop\test\Трёхосное сжатие (F, C, E).pickle")
+    statment.current_test = "11-3"
     a.set_test_params()
     a.plotter()
     plt.show()

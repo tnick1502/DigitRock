@@ -260,4 +260,9 @@ class Statment:
 
 
 if __name__ == '__main__':
-    pass
+
+    s = Statment()
+    s.setTestClass(MechanicalProperties)
+    s.setGeneralParameters({'equipment': 'ЛИГА КЛ-1С', 'test_mode': 'Трёхосное сжатие (F, C, E)', 'K0_mode': 'K0: По ГОСТ-65353'})
+    s.readExcelFile(r"C:\Users\Пользователь\Desktop\test\981-21 Кадетская школа - мех.xlsx", None)
+    print(s)

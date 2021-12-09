@@ -42,6 +42,9 @@ class AttrDict:
     def __iter__(self):
         return iter(self.__dict__)
 
+    def __repr__(self):
+        return str(self.__dict__)
+
     def get_dict(self):
         return self.__dict__
 

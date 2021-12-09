@@ -1230,10 +1230,10 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8):
 
     try:
         a = ImageReader(pick[1])
-        canvas.drawImage(a, 32 * mm, 60 * mm,
+        canvas.drawImage(a, 32 * mm, 63 * mm,
                          width=160 * mm, height=54 * mm)
         b = ImageReader(pick[0])
-        canvas.drawImage(b, 32 * mm, 114 * mm,
+        canvas.drawImage(b, 32 * mm, 117 * mm,
                          width=160 * mm, height=54 * mm)
 
     except AttributeError:
@@ -1242,7 +1242,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8):
     #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
-    r = 28
+    r = 29
     for i in range(r):
         tableData.append([""])
 
@@ -1322,10 +1322,10 @@ def result_vibration_creep3(canvas, Res, pick, test_parameter):
 
     try:
         a = ImageReader(pick[1])
-        canvas.drawImage(a, 32 * mm, 60 * mm,
+        canvas.drawImage(a, 32 * mm, 63 * mm,
                          width=160 * mm, height=54 * mm)
         b = ImageReader(pick[0])
-        canvas.drawImage(b, 32 * mm, 114 * mm,
+        canvas.drawImage(b, 32 * mm, 117 * mm,
                          width=160 * mm, height=54 * mm)
 
     except AttributeError:

@@ -85,11 +85,17 @@ class PhysicalProperties:
 
         self.sample_number = string
 
-
         self.type_ground = PhysicalProperties.define_type_ground(self._granulometric_to_dict(), self.Ip,
                                                                  self.Ir)
 
         self.sample_size = PhysicalProperties.define_sample_size(self.granulometric_10, self.granulometric_5)
+
+        if self.laboratory_number.isdigit():
+            self.laboratory_number = str(int(self.laboratory_number))
+        try:
+            self.borehole = str(int(float(self.borehole)))
+        except:
+            pass
 
     def getDict(self):
         return self.__dict__

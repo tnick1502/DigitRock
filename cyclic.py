@@ -42,6 +42,8 @@ class App(QMainWindow):  # Окно и виджеты на нем
                 sys.exit()
 
 
+
+
     def keyPressEvent(self, event):
         if str(event.key()) == "16777216":
             if self.isFullScreen():
