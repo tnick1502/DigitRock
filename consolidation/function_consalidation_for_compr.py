@@ -113,7 +113,10 @@ def function_consalidation(final_volume_strain,
 
     # Расчет смещения объемной деформации на этапе приложения нагрузки
     load_stage_strain = final_volume_strain*np.random.uniform(0.1, 0.2)
-    final_volume_strain -= load_stage_strain
+    initial_bend = np.random.uniform(0.1*load_stage_strain, load_stage_strain)
+    delta = abs(load_stage_strain-initial_bend)
+    final_volume_strain += delta
+
     deviation = abs(np.random.uniform(0.05, 0.01)*final_volume_strain)
 
     t_90_sqrt = math.sqrt((0.848 * 2 * 2) / (4 * Cv))
@@ -127,9 +130,9 @@ def function_consalidation(final_volume_strain,
     max_time_log = np.log10(max_time_sqrt ** 2 + 1)
 
     # Ограничения
-    if -(final_volume_strain - Ca * max_time_log) / Ca >= 0:
+    if (load_stage_strain-(final_volume_strain - Ca * max_time_log)) / Ca >= 0:
         print('tut')
-        Ca = ((0 - final_volume_strain) / (0 - max_time_log))
+        Ca = ((load_stage_strain - final_volume_strain) / (0 - max_time_log))*0.90
 
 
     time_line_sqrt = np.linspace(0, max_time_sqrt, 10000)
@@ -141,35 +144,51 @@ def function_consalidation(final_volume_strain,
     volume_strain_creep = Ca*t_creep_log + final_volume_strain - Ca * max_time_log
 
     # ограничения на деформацию t90
-    max_volume_strain_90 = final_volume_strain/max_time_log * t_90_log # прямая из 0 в максимальное время
+    max_volume_strain_90 = final_volume_strain/max_time_log * t_90_log + (load_stage_strain)# прямая из 0 в максимальное время
     myb = final_volume_strain - Ca * max_time_log
     min_volume_strain = Ca*t_90_log + final_volume_strain - Ca * max_time_log # последний линейный участок
 
     #volume_strain_90 = abs(max_volume_strain_90-min_volume_strain) * np.random.uniform(0.3, 0.35) + min_volume_strain
     volume_strain_90 = abs(max_volume_strain_90 - min_volume_strain) * np.random.uniform(0.1, 0.13) + min_volume_strain
+    # volume_strain_90 = max_volume_strain_90
 
-    yP = -np.random.uniform(0.5 * abs(volume_strain_90), 0.5 * abs(volume_strain_90))
-    k1 = (volume_strain_90) / (t_90_sqrt-1)
-    b1 = -k1
+    yP = np.random.uniform(load_stage_strain - 0.3 * abs(volume_strain_90 - load_stage_strain),
+                            load_stage_strain - 0.3 * abs(volume_strain_90 - load_stage_strain))
+
+    k1 = (volume_strain_90) / (t_90_sqrt)
+    b1 = 0
     k2 = k1 * 1.15
-    b2 = -k2
+    b2 = 0
     y2 = k2 * (time_line_sqrt) + b2  # прямая для второго участка
-    yK = volume_strain_90 + np.random.uniform(0.33 * abs(volume_strain_90), 0.33 * abs(volume_strain_90))
+    yK = volume_strain_90 + np.random.uniform(0.55 * abs(yP-volume_strain_90), 0.55 * abs(yP-volume_strain_90))
     xP = (yP - b2) / k2
     xK = (yK - b2) / k2
+
+
 
     '''интерполяция первого участка (0, xP)'''
     x_for_part1 = [0, xP]
     y_for_part1 = [0, yP]
+
+
+    print(f"{initial_bend}")
+
     if reverse:
-        y_part1 = bezier_curve([0,0], [xP,0], [xP,yP], [-b2/k2,0], [0,0], [xP, yP], time_line_sqrt)
+         y_part1 = bezier_curve([0,initial_bend], [xP,initial_bend], [xP,yP], [xK, yK], [0,initial_bend], [xP, yP], time_line_sqrt)
+        #y_part1 = spline([0, xP], [-0.2*final_volume_strain, yP], time_line_sqrt, k2/100, k2, k=3)
     else:
         y_part1 = spline(x_for_part1, y_for_part1, time_line_sqrt, -3 * abs(k2), -abs(k2), k=3)
 
     '''интерполяция третьего участка (xK, t90)'''
+
+    print(f"xK = {xK}; t_90_sqrt = {t_90_sqrt}")
+    print(f"yK = {yK}; volume_strain_90 = {volume_strain_90}")
+
     x_for_part3 = [xK, t_90_sqrt]
     y_for_part3 = [yK, volume_strain_90]
     y_part3 = spline(x_for_part3, y_for_part3, time_line_sqrt, -abs(k2), -abs(k2/2), k=3)
+    # y_part1 = bezier_curve([xK, yK], [xP, yP], [t_90_sqrt, volume_strain_90], [xK, yK], [0, initial_bend], [xP, yP],
+    #                        time_line_sqrt)
 
     y_0_xc = np.zeros_like(time_line_sqrt)
     for i in range(len(time_line_sqrt)):
@@ -213,18 +232,18 @@ def function_consalidation(final_volume_strain,
     x_time = x_for_time
     y_time = y_for_time
 
-    y_time += load_stage_strain
+    y_time -= delta
 
     # plt.plot(np.log(x_time+1), y_time,np.log(x_time+1), y_time-consolidation_deviation(x_time, t_90_sqrt, deviation) )
     # plt.show()
 
-
+    print(y_time[-1])
     #return x_time, y_time
-    # return x_time, y_time, np.array([t_90_log, t_creep_log, max_time_log, np.log10(xP**2+1),  np.log10(xK**2+1)]), \
-    #      np.array([volume_strain_90  + load_stage_strain, volume_strain_creep  + load_stage_strain, final_volume_strain  + load_stage_strain, yP+ load_stage_strain, yK+ load_stage_strain])
-    return x_time, y_time, [t_90_sqrt, max_time_sqrt, xP, xK], \
-           [volume_strain_90 + load_stage_strain,
-                     final_volume_strain + load_stage_strain, yP + load_stage_strain, yK + load_stage_strain]
+    return x_time, y_time, np.array([t_90_log, t_creep_log, max_time_log, np.log10(xP**2+1),  np.log10(xK**2+1)]), \
+         np.array([volume_strain_90, volume_strain_creep, final_volume_strain, yP, yK])
+    # return x_time, y_time, [t_90_sqrt, max_time_sqrt, xP, xK], \
+    #        [volume_strain_90,
+    #                  final_volume_strain, yP, yK]
 
 
 
@@ -254,6 +273,7 @@ def vol_test():
             for l in range(len(M_TEST)):
                 for m in range(len(Cv_TEST)):
                     for n in range(len(Ca_TEST)):
+                        print(f"FINALE DEFORMATION = {define_final_deformation(P_TEST[i], Eref_TEST[k], M_TEST[l])}")
                         x1, y1, xp, yp = function_consalidation(define_final_deformation(P_TEST[i], Eref_TEST[k], M_TEST[l]), Cv=Cv_TEST[m], Ca=Ca_TEST[n],
                                                                 reverse=True, max_time=1200,
                                                                 point_time=0.001)
@@ -340,29 +360,32 @@ def ordering(time_model, strain_model):
     return time, np.array(strain)
 
 if __name__ == "__main__":
-
-    x1, y1, a, b= function_consalidation(-0.05784411856648709, Cv=0.068*1.5, reverse=True, max_time=130.3552717734859, point_time=0.001, Ca=-0.002581)
+    # e=define_final_deformation(0.3, 1, 0.3)
+    # x1, y1, a, b= function_consalidation(e, Cv=1, reverse=True, max_time=1300.3552717734859, point_time=0.001, Ca=-0.1)
+    vol_test()
     #x1, y1 = function_consalidation(-0.06113427426476852, Cv=0.1, reverse=True, max_time=500, point_time=0.0025, Ca=-0.01082)
 
     # time_sqrt = np.linspace(0, x1[-1] ** 0.5, 50)
     #
-    # volume_strain_approximate = pchip_interpolate(x1 ** 0.5, y1, time_sqrt)
+    #volume_strain_approximate = pchip_interpolate(x1 ** 0.5, y1, time_sqrt)
 
     #x, y = ordering(x1, y1)
     #fig = plt.figure(figsize=(10, 10))
-    ax1 = plt.subplot()
+    # ax1 = plt.subplot()
+    # ax2 = plt.subplot()
 
-
-    #ax1.scatter(np.array(xp),np.array(yp), color=['yellow', 'green','blue', 'red', 'pink'])
-    #ax1.plot(time_sqrt, volume_strain_approximate)
-    ax1.plot(x1**0.5, y1)
-    ax1.scatter(a, b)
-    ax1.scatter(a[-2], b[-2], color='red')
-
-
-    ax1.legend()
-    save_device2('C:\\Users\\Пользователь', x1, y1, 0.3)
-    plt.show()
+    # plt.figure()
+    # #
+    # # #ax1.scatter(np.array(xp),np.array(yp), color=['yellow', 'green','blue', 'red', 'pink'])
+    # # #ax1.plot(time_sqrt, volume_strain_approximate)
+    # # # plt.plot(x1**0.5, y1)
+    # # # plt.figure()
+    # plt.plot(np.log10(x1+1), y1)
+    # plt.scatter(a, b, color=['yellow', 'green','blue', 'red', 'pink'])
+    #
+    # # ax1.legend()
+    # # save_device2('C:\\Users\\Пользователь', x1, y1, 0.3)
+    # plt.show()
 
 
 

@@ -34,6 +34,22 @@ from intersect import intersection
 from singletons import statment
 import copy
 
+from dataclasses import dataclass
+
+@dataclass
+class test_params:
+    qf = None,
+    sigma_3 = None
+    E50 = None
+    c = None
+    K0 = None
+    fi = None
+    unloading_borders = None
+    data_phiz = None
+    u = 0
+    delta_h_consolidation = 0
+    velocity = 1
+
 class ModelTriaxialDeviatorLoading:
     """Модель обработки девиаторного нагружения
 
@@ -605,6 +621,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
     def set_test_params(self):
         """Установка основных параметров опыта"""
         self._test_params.qf = statment[statment.current_test].mechanical_properties.qf
+
         self._test_params.sigma_3 = statment[statment.current_test].mechanical_properties.sigma_3
 
         if statment.general_parameters.test_mode == "Виброползучесть":
@@ -660,7 +677,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.volumetric_strain_xc = (0.006 - self._draw_params.dilatancy * 0.0002) * np.random.uniform(0.9, 1.1)
         #alpha = np.deg2rad(test_params.dilatancy_angle)
         #self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(alpha) / (1 - np.sin(alpha))))
-
+        #print(statment[statment.current_test].physical_properties.laboratory_number)
         self._test_modeling()
 
     def set_velocity_delta_h(self, velocity, delta_h_consolidation):
@@ -681,6 +698,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
         Eur = {"value": self._draw_params.Eur, "borders": [self._draw_params.Eur/2, self._draw_params.Eur*5]} if self._draw_params.Eur else {"value": None}
+        #print(self._test_params.__dict__)
 
         params = {"fail_strain": {"value": self._draw_params.fail_strain, "borders": [0.03, 0.15]},
                   "residual_strength_param": {"value": self._draw_params.residual_strength_param, "borders": [0.05, 0.6]},
@@ -702,6 +720,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.poisson = params["poisson"]
         self._draw_params.dilatancy = params["dilatancy"]
         self._draw_params.volumetric_strain_xc = params["volumetric_strain_xc"]
+        self._draw_params.Eur = params["Eur"]
         """self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(params["dilatancy"])) /
                                                            (1 - np.sin(np.deg2rad(params["dilatancy"])))))"""
 
@@ -710,6 +729,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
     def _test_modeling(self):
         """Функция моделирования опыта"""
         # Время проведения опыта
+
         if self._test_params.velocity is None:
             print("Ошибка в обработки консолидации")
         max_time = int((0.15 * (76 - self._test_params.delta_h_consolidation))/self._test_params.velocity)
@@ -729,7 +749,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                     m_given=self._draw_params.poisson,
                                                                     amount_points=max_time*6,
                                                                     angle_of_dilatacy=dilatancy,
-                                                                    Eur=self._test_params.Eur,
+                                                                    Eur=self._draw_params.Eur,
                                                                     y_rel_p=self.unloading_borders[0],
                                                                     point2_y=self.unloading_borders[1],
                                                                     v_d_xc=-self._draw_params.volumetric_strain_xc,
@@ -779,7 +799,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                 m_given=self._draw_params.poisson,
                                                 amount_points=max_time*6,
                                                 angle_of_dilatacy=dilatancy,
-                                                Eur=self._test_params.Eur*k,
+                                                Eur=self._draw_params.Eur*k,
                                                 y_rel_p=self.unloading_borders[0]*k,
                                                 point2_y=self.unloading_borders[1]*k)
             else:
@@ -829,12 +849,14 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 76 - self._test_params.delta_h_consolidation)), 6)
 
         self._test_data.volume_strain = self._test_data.pore_volume_strain
-
         #i_end, = np.where(self._test_data.strain > self._draw_params.fail_strain + np.random.uniform(0.03, 0.04))
         #if len(i_end):
             #self.change_borders(begin, i_end[0])
         #else:
         self.change_borders(begin, len(self._test_data.volume_strain))
+        #print(statment[statment.current_test].physical_properties.laboratory_number, self._test_result["E50"])
+        #print(self._test_params.__dict__)
+
 
     def get_duration(self):
         return int((self._test_data.strain[-1] * (76 - self._test_params.delta_h_consolidation)) / self._test_params.velocity)

@@ -1069,7 +1069,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         """Функция моделирования опыта"""
         self._test_data.time, self._test_data.volume_strain, *__ = function_consalidation(
             self._draw_params.strain,
-            Cv=self._draw_params.Cv*1.5,
+            Cv=self._draw_params.Cv,
             reverse=True,
             max_time=self._draw_params.max_time,
             Ca=-self._draw_params.Ca)
@@ -1086,7 +1086,6 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 
         _time, _volume_strain = ModelTriaxialConsolidationSoilTest.ordering(self._test_data.time, self._test_data.volume_strain)
         self._test_data.time, self._test_data.volume_strain = copy.deepcopy(_time), copy.deepcopy(_volume_strain)
-
 
     def save_log(self, path, name):
         if statment[statment.current_test].mechanical_properties.p_max >= 1:

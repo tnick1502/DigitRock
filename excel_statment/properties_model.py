@@ -407,8 +407,8 @@ class MechanicalProperties:
 
         if Cv > 0.8:
             return np.round(np.random.uniform(0.5, 0.8), 4)
-        elif Cv <= 0.02:
-            return np.round(np.random.uniform(0.01, 0.02), 4)
+        elif Cv <= 0.01:
+            return np.round(np.random.uniform(0.005, 0.01), 4)
 
         return np.round(Cv, 4)
 

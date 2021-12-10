@@ -293,10 +293,15 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
             poisons_ratio_global = statment[statment.current_test].mechanical_properties.poisons_ratio
             iteration = 0
 
-            while (poisons_ratio > poisons_ratio_global + 0.2 or poisons_ratio < poisons_ratio_global - 0.2) and iteration < 10:
+            while (poisons_ratio > poisons_ratio_global + 0.03 or poisons_ratio < poisons_ratio_global - 0.03):
                 self.deviator_loading.set_test_params()
                 iteration += 1
                 poisons_ratio = self.deviator_loading.get_test_results()["poissons_ratio"]
+                if iteration == 5:
+                    break
+
+            if iteration == 0:
+                self.deviator_loading.set_test_params()
 
         else:
             self.reconsolidation = None
