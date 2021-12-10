@@ -52,7 +52,8 @@ class ConsilidationSoilTestWidget(QWidget):
             "Cv": "Коэфициент Cv",
             "Ca": "Коэфициент Ca",
             "max_time": "Время испытания",
-            "strain": "Значение деформации"})
+            "strain": "Значение деформации",
+            "initial_bend_coff": "Изгиб"})
         self.consolidation_sliders.setFixedHeight(150)
 
         self.consolidation.graph_layout.addWidget(self.consolidation_sliders)

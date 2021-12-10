@@ -1648,6 +1648,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                     s += wille_number_format(data[key][i]) + '\t'
                 except ValueError:
                     s += data[key][i] + '\t'
+                except IndexError:
+                    pass
             s += '\n'
             return (s)
 

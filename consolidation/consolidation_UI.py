@@ -279,7 +279,7 @@ class ModelTriaxialConsolidationUI(QWidget):
                                          **plotter_params["consolidation_black_dotted_line"])
 
                         # Текстовые подписи
-                        self.log_ax.text(*plots["log_t100_text"], '$\lg{(t_{100})}$', horizontalalignment='center',
+                        self.log_ax.text(*plots["log_t100_text"], '$t_{100}$', horizontalalignment='center',
                                     verticalalignment='bottom')
                         self.log_ax.text(*plots["log_strain100_text"], '$ε_{100}$', horizontalalignment='right',
                                     verticalalignment='center')

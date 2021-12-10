@@ -1227,7 +1227,6 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
             storm.PPR = np.hstack((storm.PPR, self._test_data.PPR + storm.PPR[-1]))
 
             #self._test_params.Cv = 0.1
-
             t_test = 3 * (((0.848 * 3.8 * 3.8) / (4 * self._test_params.Cv)))
 
             time, strain = function_consalidation_without_Cv(Cv=self._test_params.Cv, Ca=-0.01765, point_time=1/60,

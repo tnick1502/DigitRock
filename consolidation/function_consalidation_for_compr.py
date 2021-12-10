@@ -100,7 +100,8 @@ def function_consalidation(final_volume_strain,
                            max_time = np.random.uniform(800, 1200),
                            Ca=-0.001,
                            reverse=True,
-                           point_time=0.25):
+                           point_time=0.25,
+                           initial_bend_coff=np.random.uniform(0, 1)):
     '''
     Создание кривой консолидации
     Входные параметры:  Cv - коэффициент консолидации,
@@ -113,7 +114,9 @@ def function_consalidation(final_volume_strain,
 
     # Расчет смещения объемной деформации на этапе приложения нагрузки
     load_stage_strain = final_volume_strain*np.random.uniform(0.1, 0.2)
-    initial_bend = np.random.uniform(0.1*load_stage_strain, load_stage_strain)
+    initial_bend = initial_bend_coff*load_stage_strain
+
+    print(f"initial_bend_coff = {initial_bend_coff}")
     delta = abs(load_stage_strain-initial_bend)
     final_volume_strain += delta
 
@@ -170,9 +173,6 @@ def function_consalidation(final_volume_strain,
     x_for_part1 = [0, xP]
     y_for_part1 = [0, yP]
 
-
-    print(f"{initial_bend}")
-
     if reverse:
          y_part1 = bezier_curve([0,initial_bend], [xP,initial_bend], [xP,yP], [xK, yK], [0,initial_bend], [xP, yP], time_line_sqrt)
         #y_part1 = spline([0, xP], [-0.2*final_volume_strain, yP], time_line_sqrt, k2/100, k2, k=3)
@@ -181,8 +181,8 @@ def function_consalidation(final_volume_strain,
 
     '''интерполяция третьего участка (xK, t90)'''
 
-    print(f"xK = {xK}; t_90_sqrt = {t_90_sqrt}")
-    print(f"yK = {yK}; volume_strain_90 = {volume_strain_90}")
+    # print(f"xK = {xK}; t_90_sqrt = {t_90_sqrt}")
+    # print(f"yK = {yK}; volume_strain_90 = {volume_strain_90}")
 
     x_for_part3 = [xK, t_90_sqrt]
     y_for_part3 = [yK, volume_strain_90]
@@ -237,7 +237,7 @@ def function_consalidation(final_volume_strain,
     # plt.plot(np.log(x_time+1), y_time,np.log(x_time+1), y_time-consolidation_deviation(x_time, t_90_sqrt, deviation) )
     # plt.show()
 
-    print(y_time[-1])
+    # print(y_time[-1])
     #return x_time, y_time
     return x_time, y_time, np.array([t_90_log, t_creep_log, max_time_log, np.log10(xP**2+1),  np.log10(xK**2+1)]), \
          np.array([volume_strain_90, volume_strain_creep, final_volume_strain, yP, yK])

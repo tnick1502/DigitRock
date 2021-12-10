@@ -963,19 +963,19 @@ class ModelTriaxialConsolidation:
     @staticmethod
     def define_cv_log(time, points_consolidations, vs):
         A1 = (points_consolidations.first_line_end_point.y - points_consolidations.first_line_start_point.y) / \
-             (np.log10(points_consolidations.first_line_end_point.x + 0.5) - np.log10(points_consolidations.first_line_start_point.x + 0.5))
-        B1 = points_consolidations.first_line_end_point.y - A1 * np.log10(points_consolidations.first_line_end_point.x + 0.5)
+             (points_consolidations.first_line_end_point.x - points_consolidations.first_line_start_point.x)
+        B1 = points_consolidations.first_line_end_point.y - A1 * points_consolidations.first_line_end_point.x
         _line1 = np.array(line(A1, B1, time))
 
         A2 = (points_consolidations.second_line_end_point.y - points_consolidations.second_line_start_point.y) / \
-             (np.log10(points_consolidations.second_line_end_point.x + 1) - np.log10(points_consolidations.second_line_start_point.x + 0.5))
-        B2 = points_consolidations.second_line_end_point.y - A2 * np.log10(points_consolidations.second_line_end_point.x + 0.5)
+             (points_consolidations.second_line_end_point.x - points_consolidations.second_line_start_point.x)
+        B2 = points_consolidations.second_line_end_point.y - A2 * points_consolidations.second_line_end_point.x
         _line2 = np.array(line(A2, B2, time))
 
         xc, yc = interpolated_intercept(time, _line1, _line2)
 
         if yc and str(yc) != "nan":
-            Cv = Point(x=10**xc - 0.5, y=yc)
+            Cv = Point(x=xc, y=yc)
         else:
             Cv = None
 
@@ -1018,6 +1018,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._test_params.p_max = statment[statment.current_test].mechanical_properties.p_max
         self._test_params.m = statment[statment.current_test].mechanical_properties.m
 
+        self._draw_params.initial_bend_coff = np.random.uniform(0.0, 1.0)
         self._draw_params.max_time = (((0.848 * 2 * 2) / (4 * self._test_params.Cv))) *2*2* np.random.uniform(5, 7)
         self._draw_params.strain = define_final_deformation(self._test_params.p_max, self._test_params.Eoed,
                                                             self._test_params.m)
@@ -1052,7 +1053,10 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                  "borders": [self._test_params.Cv / 5, self._draw_params.Cv * 5]},
             "Ca":
                 {"value": self._test_params.Ca,
-                 "borders": [self._test_params.Ca / 5, self._draw_params.Ca * 5]}
+                 "borders": [self._test_params.Ca / 5, self._draw_params.Ca * 5]},
+            "initial_bend_coff":
+                {"value": self._draw_params.initial_bend_coff,
+                 "borders": [0.0, 1.0]}
         }
         return params
 
@@ -1062,6 +1066,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._draw_params.strain = - params["strain"]
         self._draw_params.Cv = params["Cv"]
         self._draw_params.Ca = params["Ca"]
+        self._draw_params.initial_bend_coff = params["initial_bend_coff"]
         self._test_modeling()
         self.change_borders(0, len(self._test_data.time))
 
@@ -1072,7 +1077,8 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             Cv=self._draw_params.Cv,
             reverse=True,
             max_time=self._draw_params.max_time,
-            Ca=-self._draw_params.Ca)
+            Ca=-self._draw_params.Ca,
+            initial_bend_coff = self._draw_params.initial_bend_coff)
 
 
 
