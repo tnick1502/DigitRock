@@ -1317,8 +1317,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             amplitude_first_area = np.linspace(amplitude, amplitude, fail_cycle * points)
             center_sigmoida_second_area = ((x[-1] - x[fail_cycle * points]) / 2) + x[fail_cycle * points]
 
-            amplitude_second_area = sigmoida(x[fail_cycle * points:], amplitude * 0.1, center_sigmoida_second_area,
-                                             amplitude * 0.1 / 2, (x[-1] - center_sigmoida_second_area) * 2)
+            amplitude_second_area = sigmoida(x[fail_cycle * points:], amplitude * 0.03, center_sigmoida_second_area,
+                                             amplitude * 0.03 / 2, (x[-1] - center_sigmoida_second_area) * 2)
 
             amplitude_second_area -= [amplitude_second_area[0] - amplitude]
 

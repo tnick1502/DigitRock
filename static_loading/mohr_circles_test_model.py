@@ -122,9 +122,11 @@ class ModelMohrCircles:
             self._test_result.c = np.round(np.arctan(c), 3)
             self._test_result.fi = np.round(np.rad2deg(np.arctan(fi)), 1)# round(np.rad2deg(np.arctan(fi)), 1)
 
+            self.plot_data_m = None, None
+
             if self._test_reference_params.p_ref and self._test_reference_params.Eref:
                 E50 = self.get_E50()
-                self._test_result.m = ModelMohrCircles.calculate_m(
+                self._test_result.m, self.plot_data_m, self.plot_data_m_line = ModelMohrCircles.calculate_m(
                     sigma_3, E50, self._test_reference_params.Eref/1000,
                     self._test_reference_params.p_ref/1000,
                     statment[statment.current_test].mechanical_properties.c,
@@ -159,7 +161,9 @@ class ModelMohrCircles:
                     "mohr_line_x": line_x,
                     "mohr_line_y": line_y,
                     "x_lims": x_lims,
-                    "y_lims": y_lims}
+                    "y_lims": y_lims,
+                    "plot_data_m": self.plot_data_m,
+                    "plot_data_m_line": self.plot_data_m_line}
         else:
             return None
 
@@ -289,7 +293,18 @@ class ModelMohrCircles:
 
         popt, pcov = curve_fit(E50_from_sigma_3, sigma_3, E50)
         m = popt
-        return np.round(m[0], 2)
+
+        m = np.round(m[0], 2)
+
+        plot_data_y = [np.log(E50i/Eref) for E50i in E50]
+        plot_data_x = [np.log((c*(1/np.tan(fi)) + sigma_3i) / (c*(1/np.tan(fi)) + p_ref)) for sigma_3i in sigma_3]
+
+        plot_data_x_line = [np.log((c * (1 / np.tan(fi)) + sigma_3i) / (c * (1 / np.tan(fi)) + p_ref)) for sigma_3i in
+                       [sigma_3[0]*0.9, sigma_3[-1]*1.1]]
+
+        plot_data_y_line = [m * x for x in plot_data_x_line]
+
+        return m, [plot_data_x, plot_data_y], [plot_data_x_line, plot_data_y_line]
 
 class ModelMohrCirclesSoilTest(ModelMohrCircles):
     """Класс моделирования опыта FCE"""
@@ -364,7 +379,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                     statment[statment.current_test].mechanical_properties.fi,
                     sigma_3_array[i],
                     statment[statment.current_test].mechanical_properties.sigma_3,
-                    statment[statment.current_test].mechanical_properties.m) * np.random.uniform(0.9, 1.1))
+                    statment[statment.current_test].mechanical_properties.m) * np.random.uniform(0.95, 1.05))
 
 
             c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab(

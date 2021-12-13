@@ -146,7 +146,9 @@ class ModelTriaxialCyclicLoading:
                     "strain_lim": strain_lim,
                     "PPR_lim": PPR_lim,
                     "damping_deviator": self._damping_deviator,
-                    "damping_strain": self._damping_strain}
+                    "damping_strain": self._damping_strain,
+                    "index": self.i_cycles,
+                    "index_new": self.i_cycles_new}
 
     def plotter(self, save_path=None):
         """Построение графиков опыта. Если передать параметр save_path, то графики сохраняться туда"""
@@ -183,13 +185,23 @@ class ModelTriaxialCyclicLoading:
             ax_PPR.plot(plot_data["cycles"], plot_data["PPR"], **plotter_params["main_line"])
             ax_stresses.plot(plot_data["mean_effective_stress"], plot_data["deviator"] / 2, **plotter_params["main_line"])
 
+            ax_strain.set_xlim(ax_strain.get_xlim())
+            ax_strain.set_xticks(plot_data["index"])
+            ax_strain.set_xticklabels(plot_data["index_new"])
+            ax_PPR.set_xlim(ax_strain.get_xlim())
+            ax_PPR.set_xticks(plot_data["index"])
+            ax_PPR.set_xticklabels(plot_data["index_new"])
+            ax_deviator.set_xlim(ax_strain.get_xlim())
+            ax_deviator.set_xticks(plot_data["index"])
+            ax_deviator.set_xticklabels(plot_data["index_new"])
+
             try:
                 xlims = ax_stresses.get_xlim()
                 ylims = ax_stresses.get_ylim()
                 ax_stresses.plot(self._test_data.mean_effective_stress, self.critical_line, label="CSL",
                                  **plotter_params["dotted_line"])
 
-                i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator / 2,
+                i, Msf = ModelTriaxialCyclicLoadingSoilTest3.intercept_CSL(self._test_data.deviator / 2,
                                                                            self.critical_line, **plotter_params["dotted_line"])
                 if i:
                     ax_stresses.scatter(self._test_data.mean_effective_stress[i], self._test_data.deviator[i] / 2,
@@ -1170,11 +1182,12 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
             "PPR": np.array([0]),
             "mean_effective_stress": np.array([0])})
 
+        self.i_cycles = [0]
+        self.i_cycles_new = [0]
+
         for i in range(3):
 
             self._test_params.n_fail = int(int(np.random.uniform(5, 12)) + i * int(np.random.uniform(5, 8)))
-
-
 
             self._test_params.cycles_count = self._test_params.n_fail + int(np.random.uniform(5, 10))
 
@@ -1199,9 +1212,6 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
             self._test_params.len_cycles = len(self._test_data.cycles)
 
 
-            #self._test_data.cell_pressure = ModelTriaxialCyclicLoadingSoilTest.create_cell_press_willie_array(self._test_params.sigma_3, self._test_data.cycles,
-                                                                    #self._test_params.frequency)
-
             self._test_data.cell_pressure = np.full(len(self._test_data.cycles), self._test_params.sigma_3)
             self._modeling_deviator()
             self._modeling_PPR()
@@ -1218,6 +1228,7 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
 
             self._modeling_strain()
 
+
             storm.time = np.hstack((storm.time, self._test_data.time + storm.time[-1]))
             storm.cycles = np.hstack((storm.cycles, self._test_data.cycles + storm.cycles[-1]))
             storm.cell_pressure = np.hstack((storm.cell_pressure, self._test_data.cell_pressure))
@@ -1226,12 +1237,17 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
             storm.deviator = np.hstack((storm.deviator, self._test_data.deviator))
             storm.PPR = np.hstack((storm.PPR, self._test_data.PPR + storm.PPR[-1]))
 
-            #self._test_params.Cv = 0.1
+            self.i_cycles.append(storm.cycles[-1])
+            self.i_cycles_new.append(np.round(storm.cycles[-1] + self.i_cycles_new[-1], 1))
+
+            self._test_params.Cv = np.random.uniform(0.001, 0.002)
+
             t_test = 3 * (((0.848 * 3.8 * 3.8) / (4 * self._test_params.Cv)))
 
             time, strain = function_consalidation_without_Cv(Cv=self._test_params.Cv, Ca=-0.01765, point_time=1/60,
                                                              volume_strain_90=-0.17770291565322646, E=96000,
                                                              sigma_3=100, max_time=t_test)
+            time /= 100
             #time*= 60
             strain -= strain[0]
             strain *= -1
@@ -1249,6 +1265,8 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
                                                        Ca=-0.01765, point_time=1/60,
                                                              volume_strain_90=-0.17770291565322646, E=96000,
                                                              sigma_3=100, max_time=t_test)
+
+            PPR /= 100
             PPR -= PPR[0]
 
             if i ==0:
@@ -1260,6 +1278,8 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
 
             PPR *= (storm.PPR[-1]) / -PPR[-1]
 
+            self.i_cycles_new.append(np.round(storm.cycles[-1] + cycles[-1] * 100 + self.i_cycles_new[-1], 1))
+
             if i != 3:
                 storm.time = np.hstack((storm.time, time + storm.time[-1]))
                 storm.cycles = np.hstack((storm.cycles, cycles + storm.cycles[-1]))
@@ -1269,10 +1289,14 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
                 storm.deviator = np.hstack((storm.deviator, np.random.uniform(self._test_params.deviator_start_value - 0.5, self._test_params.deviator_start_value + 0.5, len(strain))))
                 storm.PPR = np.hstack((storm.PPR, PPR + storm.PPR[-1]))
 
+            self.i_cycles.append(storm.cycles[-1])
+
         self._test_data = storm
 
         self._test_data.mean_effective_stress = (self._test_data.deviator + 3 * self._test_data.cell_pressure * (1 - self._test_data.PPR))/3
         self._test_data.mean_effective_stress[0] = self._test_data.mean_effective_stress[1]
+
+        print(self.i_cycles)
 
 
 
@@ -1368,8 +1392,8 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
             amplitude_first_area = np.linspace(amplitude, amplitude, fail_cycle * points)
             center_sigmoida_second_area = ((x[-1] - x[fail_cycle * points]) / 2) + x[fail_cycle * points]
 
-            amplitude_second_area = sigmoida(x[fail_cycle * points:], amplitude * 0.1, center_sigmoida_second_area,
-                                             amplitude * 0.1 / 2, (x[-1] - center_sigmoida_second_area) * 2)
+            amplitude_second_area = sigmoida(x[fail_cycle * points:], amplitude * 0.03, center_sigmoida_second_area,
+                                             amplitude * 0.03 / 2, (x[-1] - center_sigmoida_second_area) * 2)
 
             amplitude_second_area -= [amplitude_second_area[0] - amplitude]
 

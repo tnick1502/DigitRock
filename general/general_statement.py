@@ -189,6 +189,8 @@ class StatementGenerator(QDialog):
                     # Сами данные (подробнее см. Report.py)
                     customer_data = [self.customer[i] for i in ["customer", "object_name"]]
 
+                    statement_title += f" №{self.customer['object_number']}"
+
                     try:
                         if save_file_pass:
                             save_report(titles, data, scales, data_report, customer_data_info, customer_data,

@@ -183,9 +183,10 @@ class TableVertical(QTableWidget):
     Входные параметры:
         headlines - список заголовков, идущих в левом столбце
         fill_keys - список ключей, по порядку которых данные будут писаться в таблицу(соответствие заголовок-ключ)"""
-    def __init__(self, fill_keys):
+    def __init__(self, fill_keys, size=None):
         super().__init__()
         self._fill_keys = fill_keys
+        self._size = size
         self._clear_table()
 
     def _clear_table(self):
@@ -203,6 +204,11 @@ class TableVertical(QTableWidget):
         for i, key in enumerate(self._fill_keys):
             self.setItem(i, 0, QTableWidgetItem(self._fill_keys[key]))
         self.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        if self._size is not None:
+            self.horizontalHeader().setMinimumSectionSize(self._size["size"])
+            for i in self._size["size_fixed_index"]:
+                self.horizontalHeader().setSectionResizeMode(i, QHeaderView.Fixed)
 
     def set_data(self):
         """Получение данных, Заполнение таблицы параметрами"""

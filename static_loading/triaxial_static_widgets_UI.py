@@ -793,4 +793,4 @@ class ModelTriaxialItemUI(TableVertical):
             "OCR": "OCR",
             "m": "Показатель степени жесткости"
         }
-        super().__init__(fill_keys=fill_keys)
+        super().__init__(fill_keys=fill_keys, size={"size": 100, "size_fixed_index": [1]})

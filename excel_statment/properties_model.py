@@ -957,8 +957,6 @@ class ConsolidationProperties:
             return round(x // (10 / order) / (order / 10) + 1 / (order / 10), precision)
         return round(x, precision)
 
-
-
 class CyclicProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
     CSR = DataTypeValidation(float, int, np.int32)
@@ -1038,7 +1036,12 @@ class CyclicProperties(MechanicalProperties):
 
                 self.t = np.round((0.5 * self.Hw * self.rw) / 2)
 
-                self.sigma_1 = np.round((2 - (self.rw / 10)) * 9.81 * physical_properties.depth)
+                sigma_1 = float_df(data_frame.iat[string,
+                                                  DynamicsPropertyPosition["reference_pressure"][1]])
+                if sigma_1:
+                    self.sigma_1 = np.round(sigma_1 * 1000)
+                else:
+                    self.sigma_1 = np.round((2 - (self.rw / 10)) * 9.81 * physical_properties.depth)
                 if self.sigma_1 < 10:
                     self.sigma_1 = 10
 

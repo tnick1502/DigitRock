@@ -82,7 +82,7 @@ class MohrTable(QWidget):
         self.dell_button = QPushButton("Удалить опыт")
         self.dell_button.setFixedHeight(50)
         self.dell_button.setFixedWidth(120)
-        self.layout_box.addWidget(self.dell_button)
+        #self.layout_box.addWidget(self.dell_button)
 
         self.layout.addWidget(self.box)
 
@@ -141,9 +141,10 @@ class MohrWidget(QWidget):
 
         self.item_identification = ModelTriaxialItemUI()
         self.item_identification.setFixedHeight(330)
-        self.item_identification.setFixedWidth(450)
+        self.item_identification.setFixedWidth(350)
         self.mohr_test_manager = MohrTestManager()
         self.mohr_test_manager.setFixedHeight(330)
+        self.m_widget = MWidgetUI()
         self._create_UI()
 
         self.mohr_test_manager.add_test_button.clicked.connect(self._add_test)
@@ -155,6 +156,7 @@ class MohrWidget(QWidget):
         self.line_1_layout = QHBoxLayout()
         self.line_1_layout.addWidget(self.item_identification)
         self.line_1_layout.addWidget(self.mohr_test_manager)
+        self.line_1_layout.addWidget(self.m_widget)
         self.layout_wiget.addLayout(self.line_1_layout)
         self.line_2_layout = QHBoxLayout()
 
@@ -290,8 +292,6 @@ class MohrWidget(QWidget):
 
             self.mohr_ax.plot([], [], label="c" + ", МПа = " + str(res["c"]), color="#eeeeee")
             self.mohr_ax.plot([], [], label="fi" + ", град. = " + str(res["fi"]), color="#eeeeee")
-            if res["m"]:
-                self.mohr_ax.plot([], [], label="m" + ", МПа$^{-1}$ = " + str(res["m"]), color="#eeeeee")
 
             self.mohr_ax.set_xlim(*plots["x_lims"])
             self.mohr_ax.set_ylim(*plots["y_lims"])
@@ -300,6 +300,8 @@ class MohrWidget(QWidget):
 
         self.deviator_canvas.draw()
         self.mohr_canvas.draw()
+
+        self.m_widget.plot()
 
     def save_canvas(self):
         """Сохранение графиков для передачи в отчет"""
@@ -552,6 +554,75 @@ class ReconsolidationRadio(QGroupBox):
     def get_checked(self):
         return self._checked
 
+class MWidgetUI(QGroupBox):
+    """Класс для табличного отображения параметров кругов Мора"""
+
+    def __init__(self):
+        super().__init__()
+        self.setTitle('Обработка параметра m')
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+        self.setFixedWidth(300)
+        #self.setFixedHeight(120)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.2, "wspace": 0.12, "hspace": 0.07, "left": 0.2}
+
+        self.frame = QFrame()
+        self.frame.setFrameShape(QFrame.StyledPanel)
+        self.frame.setStyleSheet('background: #ffffff')
+        self.frame_layout = QVBoxLayout()
+        self.figure = plt.figure()
+        self.figure.subplots_adjust(**self.plot_params)
+        self.canvas = FigureCanvas(self.figure)
+        self.ax = self.figure.add_subplot(111)
+        self.ax.grid(axis='both', linewidth='0.4')
+        self.ax.set_xlabel(r"$ln(\frac{c*ctg(\varphi) + \sigma_3^{'}}{c*ctg(\varphi) + p_{ref}})$")
+        self.ax.set_ylabel(r"$ln(\frac{E_{50}}{E_{50}^{ref}})$")
+        self.canvas.draw()
+        self.frame_layout.setSpacing(0)
+        self.frame_layout.addWidget(self.canvas)
+        self.toolbar = NavigationToolbar(self.canvas, self)
+        self.frame_layout.addWidget(self.toolbar)
+        self.frame.setLayout(self.frame_layout)
+
+        self.layout.addWidget(self.frame)
+
+    def plot(self):
+        self.ax.clear()
+        self.ax.set_xlabel(r"$ln(\frac{c*ctg(\varphi) + \sigma_3^{'}}{c*ctg(\varphi) + p_{ref}})$")
+        self.ax.set_ylabel(r"$ln(\frac{E_{50}}{E_{50}^{ref}})$")
+
+        plots = FC_models[statment.current_test].get_plot_data()
+        res = FC_models[statment.current_test].get_test_results()
+
+        if plots is not None:
+            if res["m"]:
+                self.ax.scatter(*plots["plot_data_m"], color="tomato")
+                self.ax.plot(*plots["plot_data_m_line"], **plotter_params["main_line"])
+                self.ax.plot([], [], label="m" + ", МПа$^{-1}$ = " + str(res["m"]), color="#eeeeee")
+            self.ax.legend()
+        self.canvas.draw()
+
+    def save_canvas(self):
+        """Сохранение графиков для передачи в отчет"""
+        if (self.ax.get_legend()):
+            self.ax.get_legend().remove()
+        self.canvas.draw()
+
+        path = BytesIO()
+        size = self.figure.get_size_inches()
+        self.figure.set_size_inches([6, 2.4])
+        self.figure.savefig(path, format='svg', transparent=True)
+
+        path.seek(0)
+        self.figure.set_size_inches(size)
+        self.ax.get_legend()
+        self.ax.legend()
+        self.canvas.draw()
+        return path
+
+
 
 class TriaxialStaticLoading_Sliders(QWidget):
     """Виджет с ползунками для регулирования значений переменных.
@@ -777,6 +848,6 @@ if __name__ == '__main__':
     # Now use a palette to switch to dark colors:
     app.setStyle('Fusion')
     # app.setStyleSheet("QLabel{font-size: 14pt;}")
-    ex = MohrWidget()
+    ex = MWidgetUI()
     ex.show()
     sys.exit(app.exec_())
