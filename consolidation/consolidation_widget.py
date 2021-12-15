@@ -52,8 +52,7 @@ class ConsilidationSoilTestWidget(QWidget):
             "Cv": "Коэфициент Cv",
             "Ca": "Коэфициент Ca",
             "max_time": "Время испытания",
-            "strain": "Значение деформации",
-            "initial_bend_coff": "Изгиб"})
+            "strain": "Значение деформации"})
         self.consolidation_sliders.setFixedHeight(150)
 
         self.consolidation.graph_layout.addWidget(self.consolidation_sliders)
@@ -143,12 +142,12 @@ class ConsilidationSoilTestWidget(QWidget):
                 interpolation_type = "poly"
                 param = 8
                 self.consolidation.function_replacement_slider.set_borders(5, 15)
-                self.consolidation.function_replacement_slider.set_value(8)
+                self.consolidation.function_replacement_slider.set_value(param)
             elif button.text() == "Интерполяция Эрмита":
                 interpolation_type = "ermit"
-                param = 1
+                param = 0.5
                 self.consolidation.function_replacement_slider.set_borders(0, 5)
-                self.consolidation.function_replacement_slider.set_value(2)
+                self.consolidation.function_replacement_slider.set_value(param)
 
             Consolidation_models[statment.current_test].set_interpolation_param(param)
             Consolidation_models[statment.current_test].set_interpolation_type(interpolation_type)
@@ -267,6 +266,7 @@ class ConsolidationSoilTestApp(QWidget):
     def set_test_parameters(self, params):
         self.tab_2.item_identification.set_data()
         self.tab_2.set_params()
+        self.tab_2._consolidation_interpolation_type(self.tab_2.consolidation.function_replacement_button_group.checkedButton())
 
     def save_report(self):
         try:

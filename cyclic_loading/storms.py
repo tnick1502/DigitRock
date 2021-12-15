@@ -148,7 +148,8 @@ class ModelTriaxialCyclicLoading:
                     "damping_deviator": self._damping_deviator,
                     "damping_strain": self._damping_strain,
                     "index": self.i_cycles,
-                    "index_new": self.i_cycles_new}
+                    "index_new": self.i_cycles_new,
+                    "cycles_right": self._test_data_2.cycles}
 
     def plotter(self, save_path=None):
         """Построение графиков опыта. Если передать параметр save_path, то графики сохраняться туда"""
@@ -950,13 +951,13 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
         self._test_params.K0 = params["K0"]
 
     def generate_log_file(self, file_path, post_name=None):
-        ModelTriaxialCyclicLoadingSoilTest3.generate_willie_log_file(file_path, self._test_data.deviator,
-                                                                    self._test_data.PPR, self._test_data.strain,
+        ModelTriaxialCyclicLoadingSoilTest3.generate_willie_log_file(file_path, self._test_data_2.deviator,
+                                                                    self._test_data_2.PPR, self._test_data_2.strain,
                                                                     self._test_params.frequency,
                                                                     self._test_params.cycles_count,
                                                                     self._test_params.points_in_cycle,
-                                                                    self._test_data.setpoint,
-                                                                    self._test_data.cell_pressure,
+                                                                    self._test_data_2.setpoint,
+                                                                    self._test_data_2.cell_pressure,
                                                                     self._test_params.reconsolidation_time,
                                                                     post_name)
         #print(self.get_processing_parameters())
@@ -1182,6 +1183,16 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
             "PPR": np.array([0]),
             "mean_effective_stress": np.array([0])})
 
+        storm_2 = AttrDict({
+            "time": np.array([0]),
+            "cycles": np.array([0]),
+            "cell_pressure": np.array([0]),
+            "setpoint": np.array([0]),
+            "strain": np.array([0]),
+            "deviator": np.array([self._test_params.deviator_start_value]),
+            "PPR": np.array([0]),
+            "mean_effective_stress": np.array([0])})
+
         self.i_cycles = [0]
         self.i_cycles_new = [0]
 
@@ -1237,6 +1248,14 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
             storm.deviator = np.hstack((storm.deviator, self._test_data.deviator))
             storm.PPR = np.hstack((storm.PPR, self._test_data.PPR + storm.PPR[-1]))
 
+            storm_2.time = np.hstack((storm_2.time, self._test_data.time + storm_2.time[-1]))
+            storm_2.cycles = np.hstack((storm_2.cycles, self._test_data.cycles + storm_2.cycles[-1]))
+            storm_2.cell_pressure = np.hstack((storm_2.cell_pressure, self._test_data.cell_pressure))
+            storm_2.setpoint = np.hstack((storm_2.setpoint, self._test_data.setpoint))
+            storm_2.strain = np.hstack((storm_2.strain, self._test_data.strain + storm_2.strain[-1]))
+            storm_2.deviator = np.hstack((storm_2.deviator, self._test_data.deviator))
+            storm_2.PPR = np.hstack((storm_2.PPR, self._test_data.PPR + storm_2.PPR[-1]))
+
             self.i_cycles.append(storm.cycles[-1])
             self.i_cycles_new.append(np.round(storm.cycles[-1] + self.i_cycles_new[-1], 1))
 
@@ -1289,16 +1308,25 @@ class ModelTriaxialCyclicLoadingSoilTest3(ModelTriaxialCyclicLoading):
                 storm.deviator = np.hstack((storm.deviator, np.random.uniform(self._test_params.deviator_start_value - 0.5, self._test_params.deviator_start_value + 0.5, len(strain))))
                 storm.PPR = np.hstack((storm.PPR, PPR + storm.PPR[-1]))
 
+                storm_2.time = np.hstack((storm_2.time, time * 100 + storm_2.time[-1]))
+                storm_2.cycles = np.hstack((storm_2.cycles, cycles * 100 + storm_2.cycles[-1]))
+                storm_2.cell_pressure = np.hstack((storm_2.cell_pressure, np.full(len(strain), storm_2.cell_pressure[-1])))
+                storm_2.setpoint = np.hstack((storm_2.setpoint, np.full(len(strain), storm_2.cell_pressure[-1])))
+                storm_2.strain = np.hstack((storm_2.strain, strain + storm_2.strain[-1]))
+                storm_2.deviator = np.hstack((storm_2.deviator,
+                                            np.random.uniform(self._test_params.deviator_start_value - 0.5,
+                                                              self._test_params.deviator_start_value + 0.5,
+                                                              len(strain))))
+                storm_2.PPR = np.hstack((storm_2.PPR, PPR + storm_2.PPR[-1]))
+
             self.i_cycles.append(storm.cycles[-1])
 
         self._test_data = storm
 
+        self._test_data_2 = storm_2
+
         self._test_data.mean_effective_stress = (self._test_data.deviator + 3 * self._test_data.cell_pressure * (1 - self._test_data.PPR))/3
         self._test_data.mean_effective_stress[0] = self._test_data.mean_effective_stress[1]
-
-        print(self.i_cycles)
-
-
 
     def _critical_line(self):
         """Построение линии критического разрушения Мора-Кулона в t-p осях"""

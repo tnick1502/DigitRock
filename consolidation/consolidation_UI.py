@@ -81,7 +81,7 @@ class ModelTriaxialConsolidationUI(QWidget):
         self.function_replacement_slider = Float_Slider(Qt.Horizontal)
         self.function_replacement_label.setText("Степень сглаживания:")
         self.function_replacement_slider.set_borders(0, 5)
-        self.function_replacement_slider.set_value(1)
+        self.function_replacement_slider.set_value(0.5)
         #self.function_replacement_slider.sliderMoved.connect(self.function_replacement_slider_move)
         #self.function_replacement_slider.sliderReleased.connect(self.function_replacement_slider_release)
 
@@ -231,20 +231,32 @@ class ModelTriaxialConsolidationUI(QWidget):
             self.log_ax.set_ylabel("Относительная вертикальная\nдеформация $ε_1$, д.е.")
 
             if plots is not None:
-                new_tick_locations = np.array([-0.1, plots["time_log"][10], plots["time_log"][20],
-                                      plots["time_log"][30], plots["time_log"][40], plots["time_log"][49]])
+                new_tick_locations = np.array([-1, plots["time_log"][10], plots["time_log"][20],
+                                       plots["time_log"][30], plots["time_log"][40], plots["time_log"][49]])
+                #new_tick_locations = np.array([-1, 0, 1, 2])
+
+                # plots["time"][0] = plots["time"][0] + 0.001
 
                 def tick_function(x):
-                    return np.round(10**x - 1)
+                    # if x == -0.1:
+                    #     return 0
+                    return np.round(10**x,2)
 
-                self.log_ax.set_xlim(self.log_ax.get_xlim())
+                #self.log_ax.set_xlim(self.log_ax.get_xlim())
                 self.log_ax.set_xticks(new_tick_locations)
+                new_tick_locations[0] = -1 #???????????????
                 self.log_ax.set_xticklabels(tick_function(new_tick_locations))
+                #self.log_ax.set_xticklabels([tick_function(t) for t in new_tick_locations])
+
+                #self.log_ax.set_xticklabels([0.1,1,10,100,1000,10000])
+
+                print(new_tick_locations)
+
                 # Логарифм
                 # Основной график
 
-                self.log_ax.plot(np.log10(plots["time"] + 1), plots["volume_strain"], linewidth=2, alpha=0.6)
-                self.log_ax.scatter(np.log10(plots["time"] + 1), plots["volume_strain"], s=15)
+                self.log_ax.plot(np.log10(plots["time"] ), plots["volume_strain"], linewidth=2, alpha=0.6)
+                self.log_ax.scatter(np.log10(plots["time"] ), plots["volume_strain"], s=15)
 
                 self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"], color="tomato", linewidth=1)
 

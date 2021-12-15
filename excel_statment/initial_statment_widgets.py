@@ -448,7 +448,7 @@ class CyclicStatment(InitialStatment):
                 if combo_params["test_mode"] == "Штормовое разжижение":
                     assert column_fullness_test(wb, columns=['HR', 'HS', 'HT','HU'],
                                                 initial_columns=list(columns_marker)), "Заполните данные по шторму в ведомости"
-                elif combo_params["test_mode"] == "Штормовое разжижение":
+                elif combo_params["test_mode"] == "Сейсморазжижение":
                     assert column_fullness_test(wb, columns=["AM", "AQ"], initial_columns=list(columns_marker)), \
                         "Заполните магнитуду и бальность"
                 elif combo_params["test_mode"] == "Демпфирование":

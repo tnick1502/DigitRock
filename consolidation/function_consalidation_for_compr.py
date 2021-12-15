@@ -101,7 +101,7 @@ def function_consalidation(final_volume_strain,
                            Ca=-0.001,
                            reverse=True,
                            point_time=0.25,
-                           initial_bend_coff=np.random.uniform(0, 1)):
+                           initial_bend_coff=0.):
     '''
     Создание кривой консолидации
     Входные параметры:  Cv - коэффициент консолидации,
@@ -113,37 +113,39 @@ def function_consalidation(final_volume_strain,
                         '''
 
     # Расчет смещения объемной деформации на этапе приложения нагрузки
-    load_stage_strain = final_volume_strain*np.random.uniform(0.1, 0.2)
-    initial_bend = initial_bend_coff*load_stage_strain
 
-    print(f"initial_bend_coff = {initial_bend_coff}")
+    load_stage_strain = final_volume_strain*np.random.uniform(0.1, 0.2)
+
+    initial_bend = 0#initial_bend_coff*load_stage_strain
+
+    #print(f"initial_bend_coff = {initial_bend_coff}")
     delta = abs(load_stage_strain-initial_bend)
     final_volume_strain += delta
 
     deviation = abs(np.random.uniform(0.05, 0.01)*final_volume_strain)
 
     t_90_sqrt = math.sqrt((0.848 * 2 * 2) / (4 * Cv))
-    t_90_log = np.log10(t_90_sqrt ** 2 + 1)
+    t_90_log = np.log10(t_90_sqrt ** 2 )
 
     # Ограничения
     if max_time < (t_90_sqrt)**2:
         max_time = np.random.uniform(4, 5)*t_90_sqrt**2
 
     max_time_sqrt = max_time ** 0.5
-    max_time_log = np.log10(max_time_sqrt ** 2 + 1)
+    max_time_log = np.log10(max_time_sqrt ** 2)
 
     # Ограничения
     if (load_stage_strain-(final_volume_strain - Ca * max_time_log)) / Ca >= 0:
         print('tut')
         Ca = ((load_stage_strain - final_volume_strain) / (0 - max_time_log))*0.90
 
-
-    time_line_sqrt = np.linspace(0, max_time_sqrt, 10000)
-    time_line_log = np.log10(time_line_sqrt ** 2 + 1)
+    time_line = np.linspace(0.1, max_time_sqrt**2, 10000)
+    time_line_sqrt = np.array([t**0.5 for t in time_line])#np.linspace(1, max_time_sqrt, 10000)
+    time_line_log = np.log10(time_line_sqrt ** 2)
 
     # Расчет t_creep_sqrt, volume_strain_creep
     t_creep_log = t_90_log + abs(max_time_log - t_90_log)*np.random.uniform(0.3, 0.35) # 0.4 0.6
-    t_creep_sqrt = (10**t_creep_log-1)**0.5
+    t_creep_sqrt = (10**t_creep_log)**0.5
     volume_strain_creep = Ca*t_creep_log + final_volume_strain - Ca * max_time_log
 
     # ограничения на деформацию t90
@@ -201,17 +203,17 @@ def function_consalidation(final_volume_strain,
 
     volume_strain_line = np.zeros_like(time_line_sqrt)
     index_xca_log, = np.where(time_line_log >= t_90_log)
-    pr_xc = (y_0_xc[index_xca_log[0] - 1] - y_0_xc[index_xca_log[0] - 2]) / (
-            time_line_log[index_xca_log[0] - 1] - time_line_log[index_xca_log[0] - 2])
+    pr_xc = (y_0_xc[index_xca_log[0]] - y_0_xc[index_xca_log[0] - 2]) / (
+            time_line_log[index_xca_log[0]] - time_line_log[index_xca_log[0] - 2])
 
     b4 = volume_strain_creep - Ca * t_creep_log
     y4 = Ca * time_line_log + b4
 
-    x_for_part5 = [np.log10(t_90_sqrt ** 2 + 1), t_creep_log]
+    x_for_part5 = [np.log10(t_90_sqrt ** 2), t_creep_log]
     y_for_part5 = [volume_strain_90, volume_strain_creep]
     y_part5 = spline(x_for_part5, y_for_part5, time_line_log, pr_xc, Ca, k=3)  # интерполяция пятого участка
 
-    y_part5 = bezier_curve([t_90_log, volume_strain_90], [np.log10(xK**2 + 1), yK], [t_creep_log, volume_strain_creep], [max_time_log, final_volume_strain],
+    y_part5 = bezier_curve([t_90_log, volume_strain_90], [np.log10(xK**2), yK], [t_creep_log, volume_strain_creep], [max_time_log, final_volume_strain],
                            [t_90_log, volume_strain_90], [t_creep_log, volume_strain_creep], time_line_log)
 
     for i in range(len(time_line_log)):
@@ -223,11 +225,11 @@ def function_consalidation(final_volume_strain,
             volume_strain_line[i] = y4[i]
 
     '''переход в обычный масштаб с заданным количеством точек по х'''
-    x_time = np.arange(0, round(max_time), point_time)
-    x_for_time = time_line_sqrt ** 2
-    y_for_time = volume_strain_line
-    spl = interpolate.make_interp_spline(x_for_time, y_for_time, k=3)
-    y_time = spl(x_time)
+    #x_time = np.arange(0, round(max_time), point_time)
+    x_for_time = np.array([t**2 for t in time_line_sqrt])#time_line_sqrt ** 2
+    y_for_time = np.array([strain for strain in volume_strain_line])#volume_strain_line
+    #spl = interpolate.make_interp_spline(x_for_time, y_for_time, k=3)
+    #y_time = spl(x_time)
 
     x_time = x_for_time
     y_time = y_for_time
@@ -236,10 +238,15 @@ def function_consalidation(final_volume_strain,
 
     # plt.plot(np.log(x_time+1), y_time,np.log(x_time+1), y_time-consolidation_deviation(x_time, t_90_sqrt, deviation) )
     # plt.show()
-
-    # print(y_time[-1])
+    # print(f"load_stage_strain : {load_stage_strain}; result : {y_time[0]}")
+    # print(f"final_volume_strain : {final_volume_strain - delta}; result : {y_time[-1]}")
+    # print(f"max_time : {max_time_sqrt**2}; result : {x_time[-1]}")
+    # print(f"x_time : {x_time[0]}")
+    y_time -= consolidation_deviation(x_time, t_90_sqrt, deviation)
+    y_time += np.random.uniform(-0.0004, 0.0004, len(y_time))
+    y_time = discrete_array(y_time, 0.0008)
     #return x_time, y_time
-    return x_time, y_time, np.array([t_90_log, t_creep_log, max_time_log, np.log10(xP**2+1),  np.log10(xK**2+1)]), \
+    return x_time, y_time, np.array([10**t_90_log, 10**t_creep_log, 10**max_time_log, (xP**2),  (xK**2)]), \
          np.array([volume_strain_90, volume_strain_creep, final_volume_strain, yP, yK])
     # return x_time, y_time, [t_90_sqrt, max_time_sqrt, xP, xK], \
     #        [volume_strain_90,
@@ -360,9 +367,51 @@ def ordering(time_model, strain_model):
     return time, np.array(strain)
 
 if __name__ == "__main__":
-    # e=define_final_deformation(0.3, 1, 0.3)
-    # x1, y1, a, b= function_consalidation(e, Cv=1, reverse=True, max_time=1300.3552717734859, point_time=0.001, Ca=-0.1)
-    vol_test()
+    e = define_final_deformation(0.3, 1, 0.3)
+
+    x1, y1, a, b = function_consalidation(e, Cv=0.1, reverse=True, max_time=130.3552717734859, point_time=0.001,
+                                          Ca=-0.0001)
+    xsqrt = np.array([x**0.5 for x in x1])
+    xnormal = np.array([x ** 2 for x in xsqrt])
+    # vol_test()
+    # x1, y1 = function_consalidation(-0.06113427426476852, Cv=0.1, reverse=True, max_time=500, point_time=0.0025, Ca=-0.01082)
+
+    # time_sqrt = np.linspace(0, x1[-1]  0.5, 50)
+    #
+    # volume_strain_approximate = pchip_interpolate(x1  0.5, y1, time_sqrt)
+
+    # x, y = ordering(x1, y1)
+    # fig = plt.figure(figsize=(10, 10))
+    # ax1 = plt.subplot()
+    # ax2 = plt.subplot()
+
+    # plt.figure()
+    # #
+    # # #ax1.scatter(np.array(xp),np.array(yp), color=['yellow', 'green','blue', 'red', 'pink'])
+    # # #ax1.plot(time_sqrt, volume_strain_approximate)
+    # # # plt.plot(x1**0.5, y1)
+    # plt.figure()
+    # plt.plot(np.log10(x1+1), y1)
+    # plt.scatter(a, b, color=['yellow', 'green','blue', 'red', 'pink'])
+
+    # ax1.legend()
+    # save_device2('C:\\Users\\Пользователь', x1, y1, 0.3)
+
+    fig, axes = plt.subplots(2, 1)
+
+    axes[1].plot((x1), y1)
+    axes[1].set_xscale("log")
+    #axes[1].scatter(a, b, color=['yellow', 'green', 'blue', 'red', 'pink'])
+
+    axes[0].plot(xsqrt, y1)
+    plt.show()
+
+    # for i in range(len(x1)):
+    #     print(f"{x1[i] ** 0.5}\t{y1[i]}".replace(".",","))
+
+'''    e=define_final_deformation(0.3, 1, 0.3)
+    x1, y1, a, b= function_consalidation(e, Cv=0.1, reverse=True, max_time=130.3552717734859, point_time=0.001, Ca=-0.1)
+    #vol_test()
     #x1, y1 = function_consalidation(-0.06113427426476852, Cv=0.1, reverse=True, max_time=500, point_time=0.0025, Ca=-0.01082)
 
     # time_sqrt = np.linspace(0, x1[-1] ** 0.5, 50)
@@ -379,13 +428,23 @@ if __name__ == "__main__":
     # # #ax1.scatter(np.array(xp),np.array(yp), color=['yellow', 'green','blue', 'red', 'pink'])
     # # #ax1.plot(time_sqrt, volume_strain_approximate)
     # # # plt.plot(x1**0.5, y1)
-    # # # plt.figure()
+    # plt.figure()
     # plt.plot(np.log10(x1+1), y1)
     # plt.scatter(a, b, color=['yellow', 'green','blue', 'red', 'pink'])
-    #
-    # # ax1.legend()
-    # # save_device2('C:\\Users\\Пользователь', x1, y1, 0.3)
-    # plt.show()
+
+    # ax1.legend()
+    # save_device2('C:\\Users\\Пользователь', x1, y1, 0.3)
 
 
+    x1 = np.array([1,2,3,4,5,6,7,8,9,10,11])
+    x1 = x1*x1
+    y1 = [-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11]
 
+    fig, axes = plt.subplots(2, 1)
+
+    axes[0].plot(x1**0.5, y1)
+
+    axes[1].plot(np.log10(x1+1), y1)
+    #axes[1].set_xscale("log")
+    #axes[2].plot(x1, y1)
+    plt.show()'''

@@ -60,7 +60,7 @@ class ModelTriaxialConsolidation:
     def __init__(self):
         self._reset_data()
         self._interpolation_type = "ermit"
-        self._interpolation_param = 1
+        self._interpolation_param = 0.5
         self.points_count = 50
         self.catch_point_identificator = None
 
@@ -142,7 +142,7 @@ class ModelTriaxialConsolidation:
             return {"volume_strain": self._test_data.volume_strain,
                     "time": self._test_data.time,
                     "time_sqrt_origin": self._test_data.time ** 0.5,
-                    "time_log_origin": np.log10(self._test_data.time + 1),
+                    "time_log_origin": np.log10(self._test_data.time),
                     "time_sqrt": self._test_data.time_sqrt,
                     "time_log": self._test_data.time_log,
                     "volume_strain_approximate": self._test_data.volume_strain_approximate}
@@ -230,14 +230,14 @@ class ModelTriaxialConsolidation:
                          * 3 / 100
 
                 log_t100_vertical_line = point_to_xy(
-                    Point(x=10**(self.processed_points_log.Cv.x + 1),
+                    Point(x=10**(self.processed_points_log.Cv.x),
                           y=self._test_data.volume_strain_approximate[0] - 4 * mooveY),
-                    Point(x=10**(self.processed_points_log.Cv.x + 1), y=self.processed_points_log.Cv.y))
+                    Point(x=10**(self.processed_points_log.Cv.x), y=self.processed_points_log.Cv.y))
                 log_t100_horizontal_line = point_to_xy(Point(x=5 * mooveX, y=self.processed_points_log.Cv.y),
-                                                       Point(x=10**(self.processed_points_log.Cv.x + 1),
+                                                       Point(x=10**(self.processed_points_log.Cv.x),
                                                              y=self.processed_points_log.Cv.y))
 
-                log_t100_text = Point(x=10**(self.processed_points_log.Cv.x + 1),
+                log_t100_text = Point(x=10**(self.processed_points_log.Cv.x),
                                       y=self._test_data.volume_strain_approximate[0] - 4 * mooveY)
                 log_strain100_text = Point(x=5 * mooveX, y=self.processed_points_log.Cv.y)
                 d0 = Point(x=self._test_data.time_log[0], y=self._test_result.d0)
@@ -711,9 +711,9 @@ class ModelTriaxialConsolidation:
         """Интерполяция объемной деформации для удобства обработки"""
 
         # Сделаем чтобы на осях кв.корня и логарифма шаг по оси был постоянным
-        self._test_data.time_sqrt = np.linspace(0, self._test_data.time_cut[-1] ** 0.5, self.points_count)
-        self._test_data.time_log = np.log10(np.linspace(0, self._test_data.time_cut[-1] ** 0.5, self.points_count) + 1)
-
+        self._test_data.time_sqrt = np.linspace(self._test_data.time_cut[0] ** 0.5, self._test_data.time_cut[-1] ** 0.5, self.points_count)
+        #self._test_data.time_log = np.log10(np.linspace(0., self._test_data.time_cut[-1] ** 0.5, self.points_count))
+        print(f"self._test_data.time_cut[0] ** 0.5 : {self._test_data.time_cut[0] ** 0.5}")
         if type == "poly":
             # Аппроксимация полиномом
             poly_pow = param
@@ -725,7 +725,7 @@ class ModelTriaxialConsolidation:
             # Интерполяция Эрмита
             self._test_data.time_sqrt, self._test_data.volume_strain_cut = make_increas(self._test_data.time_sqrt,
                                                                                         self._test_data.volume_strain_cut)
-            self._test_data.time_log = np.log10(self._test_data.time_sqrt ** 2 + 1)
+            self._test_data.time_log = np.log10(self._test_data.time_sqrt ** 2)
 
             self._test_data.volume_strain_approximate = pchip_interpolate(self._test_data.time_cut ** 0.5,
                                                                           self._test_data.volume_strain_cut,
@@ -736,8 +736,8 @@ class ModelTriaxialConsolidation:
     def _cut(self):
         """Создание новых обрезанных массивов"""
         self._test_data.time_cut = self._test_data.time[
-                                   self._test_cut_position.left:self._test_cut_position.right] - \
-                                   self._test_data.time[self._test_cut_position.left]
+                                   self._test_cut_position.left:self._test_cut_position.right] # - \
+                                   #self._test_data.time[self._test_cut_position.left]
         self._test_data.volume_strain_cut = self._test_data.volume_strain[
                                             self._test_cut_position.left:self._test_cut_position.right]
 
@@ -756,8 +756,8 @@ class ModelTriaxialConsolidation:
         if self.processed_points_sqrt.Cv:
             self._test_result.Cv_sqrt = round(((0.848 * 2 * 2) / (4 * self.processed_points_sqrt.Cv.x ** 2)), 3)
             self._test_result.t90_sqrt = self.processed_points_sqrt.Cv.x ** 2
-            print(f"sqrt T90 processing: {self.processed_points_sqrt.Cv.x}")
-            print(f"{self._test_result.Cv_sqrt}")
+            # print(f"sqrt T90 processing: {self.processed_points_sqrt.Cv.x}")
+            # print(f"{self._test_result.Cv_sqrt}")
 
             self._test_result.t100_sqrt, self._test_result.strain100_sqrt = interpolated_intercept(
                 self._test_data.time_sqrt, np.full(len(self._test_data.time_sqrt),
@@ -804,7 +804,7 @@ class ModelTriaxialConsolidation:
         if self.processed_points_log.Cv:
             if self.processed_points_log.Cv.y > np.max(self._test_data.volume_strain_approximate):
                 self.processed_points_log.Cv = None
-            self._test_result.d0 = ModelTriaxialConsolidation.find_d0(10**self._test_data.time_log-1,
+            self._test_result.d0 = ModelTriaxialConsolidation.find_d0(10**self._test_data.time_log,
                                                                       self._test_data.volume_strain_approximate)
 
             '''strain50 = interpolated_intercept(self._test_data.time_log, np.full(len(self._test_data.time_log),
@@ -820,7 +820,7 @@ class ModelTriaxialConsolidation:
                 y2=self._test_data.volume_strain_approximate,
             )
 
-            self._test_result.t50_log = 10**x[0] - 1
+            self._test_result.t50_log = 10**x[0]
 
             self._test_result.Cv_log = np.round(((2 * 2 * 0.197) / (4 * self._test_result.t50_log)), 4)
 
@@ -829,7 +829,7 @@ class ModelTriaxialConsolidation:
                                               / (self.processed_points_log.second_line_end_point.x -
                                                  self.processed_points_log.second_line_start_point.x)), 4)
 
-            self._test_result.t100_log = np.round(10**self.processed_points_log.Cv.x - 1)
+            self._test_result.t100_log = np.round(10**self.processed_points_log.Cv.x )
             self._test_result.strain100_log = self.processed_points_log.Cv.y
 
             self._test_result.Kf_log = ModelTriaxialConsolidation.define_Kf(self._test_result.strain100_log,
@@ -1018,7 +1018,6 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._test_params.p_max = statment[statment.current_test].mechanical_properties.p_max
         self._test_params.m = statment[statment.current_test].mechanical_properties.m
 
-        self._draw_params.initial_bend_coff = np.random.uniform(0.0, 1.0)
         self._draw_params.max_time = (((0.848 * 2 * 2) / (4 * self._test_params.Cv))) *2*2* np.random.uniform(5, 7)
         self._draw_params.strain = define_final_deformation(self._test_params.p_max, self._test_params.Eoed,
                                                             self._test_params.m)
@@ -1053,11 +1052,9 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                  "borders": [self._test_params.Cv / 5, self._draw_params.Cv * 5]},
             "Ca":
                 {"value": self._test_params.Ca,
-                 "borders": [self._test_params.Ca / 5, self._draw_params.Ca * 5]},
-            "initial_bend_coff":
-                {"value": self._draw_params.initial_bend_coff,
-                 "borders": [0.0, 1.0]}
+                 "borders": [self._test_params.Ca / 5, self._draw_params.Ca * 5]}
         }
+
         return params
 
     def set_draw_params(self, params):
@@ -1066,7 +1063,6 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._draw_params.strain = - params["strain"]
         self._draw_params.Cv = params["Cv"]
         self._draw_params.Ca = params["Ca"]
-        self._draw_params.initial_bend_coff = params["initial_bend_coff"]
         self._test_modeling()
         self.change_borders(0, len(self._test_data.time))
 
@@ -1077,8 +1073,8 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             Cv=self._draw_params.Cv,
             reverse=True,
             max_time=self._draw_params.max_time,
-            Ca=-self._draw_params.Ca,
-            initial_bend_coff = self._draw_params.initial_bend_coff)
+            Ca=-self._draw_params.Ca)
+
 
 
 
@@ -1128,7 +1124,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         t0 = np.random.uniform(low=20, high=21)
         hours = math.floor(time_model[-1] / 3600)
         time = [t for t in
-                [0, 15, 30, 60, 2 * 60, 5 * 60, 10 * 60, 20 * 60, 30 * 60] + [h * 3600 for h in
+                [6, 15, 30, 60, 2 * 60, 5 * 60, 10 * 60, 20 * 60, 30 * 60] + [h * 3600 for h in
                                                                               range(1, hours + 1)]]
         time = [t/60.0 for t in time]
         time = np.array(time)
