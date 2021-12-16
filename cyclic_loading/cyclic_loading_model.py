@@ -1756,8 +1756,8 @@ if __name__ == '__main__':
     a = ModelTriaxialCyclicLoadingSoilTest()
     #file = "C:/Users/Пользователь/Desktop/Опыты/264-21 П-57 11.7 Обжимающее давление = 120.txt"
     #file = "C:/Users/Пользователь/Desktop/Опыты/718-20 PL20-Skv139 0.2  Обжимающее давление = 25.txt"
-    statment.load("C:/Users/Пользователь/Desktop/test/Сейсморазжижение.pickle")
-    statment.current_test = "7а-1"
+    statment.load("C:/Users/Пользователь/Desktop/Новая папка (4)/statment.pickle")
+    statment.current_test = "SBT21-SGMM B-1-1-2"
     a.set_test_params()
     a.plotter()
 

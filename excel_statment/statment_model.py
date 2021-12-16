@@ -5,7 +5,7 @@ import os
 import pyexcel as p
 import pickle
 
-from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, PropertiesDict, ConsolidationProperties
+from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, PropertiesDict, ConsolidationProperties, CyclicProperties
 from descriptors import DataTypeValidation
 from excel_statment.position_configs import PhysicalPropertyPosition, MechanicalPropertyPosition, c_fi_E_PropertyPosition, \
     DynamicsPropertyPosition, IdentificationColumns
@@ -262,7 +262,8 @@ class Statment:
 if __name__ == '__main__':
 
     s = Statment()
-    s.setTestClass(MechanicalProperties)
-    s.setGeneralParameters({'equipment': 'ЛИГА КЛ-1С', 'test_mode': 'Трёхосное сжатие (F, C, E)', 'K0_mode': 'K0: По ГОСТ-65353'})
-    s.readExcelFile(r"C:\Users\Пользователь\Desktop\test\981-21 Кадетская школа - мех.xlsx", None)
+    s.setTestClass(CyclicProperties)
+    s.setGeneralParameters({'equipment': 'ЛИГА КЛ-1С', 'test_mode': 'Штормовое разжижение', 'K0_mode': 'K0: По ГОСТ-65353'})
+    s.readExcelFile(r"C:\Users\Пользователь\Desktop\Новая папка (4)\987-21 Карское море - шторм.xlsx", None)
+    s.dump(r"C:\Users\Пользователь\Desktop\Новая папка (4)")
     print(s)

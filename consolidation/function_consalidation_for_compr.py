@@ -144,7 +144,7 @@ def function_consalidation(final_volume_strain,
     time_line_log = np.log10(time_line_sqrt ** 2)
 
     # Расчет t_creep_sqrt, volume_strain_creep
-    t_creep_log = t_90_log + abs(max_time_log - t_90_log)*np.random.uniform(0.3, 0.35) # 0.4 0.6
+    t_creep_log = t_90_log + abs(max_time_log - t_90_log)*np.random.uniform(0.7, 0.7) # 0.4 0.6
     t_creep_sqrt = (10**t_creep_log)**0.5
     volume_strain_creep = Ca*t_creep_log + final_volume_strain - Ca * max_time_log
 
@@ -370,7 +370,7 @@ if __name__ == "__main__":
     e = define_final_deformation(0.3, 1, 0.3)
 
     x1, y1, a, b = function_consalidation(e, Cv=0.1, reverse=True, max_time=130.3552717734859, point_time=0.001,
-                                          Ca=-0.0001)
+                                          Ca=-0.01)
     xsqrt = np.array([x**0.5 for x in x1])
     xnormal = np.array([x ** 2 for x in xsqrt])
     # vol_test()

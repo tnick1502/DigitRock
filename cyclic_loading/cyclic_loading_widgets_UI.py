@@ -24,7 +24,8 @@ from general.general_functions import read_json_file, create_json_file
 from configs.styles import style
 from singletons import Cyclic_models, statment
 from general.report_general_statment import save_report
-
+import matplotlib as mpl
+mpl.rcParams['agg.path.chunksize'] = 10000
 try:
     plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
 except FileNotFoundError:

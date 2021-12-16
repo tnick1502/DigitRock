@@ -231,6 +231,26 @@ class ModelTriaxialConsolidationUI(QWidget):
             self.log_ax.set_ylabel("Относительная вертикальная\nдеформация $ε_1$, д.е.")
 
             if plots is not None:
+
+                def define_sticks(x):
+                    sticks = []
+                    text = []
+                    for i, k in zip([1, 10, 100, 1000, 10000, 100000, 1000000],
+                                    ["$10^{-1}$", "$10^{0}$", "$10^{1}$", "$10^{2}$", "$10^{3}$", "$10^{4}$",
+                                     "$10^{5}$", "$10^{6}$"]):
+                        sticks += [i * val for val in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]]
+                        text += [k] + ["" for i in range(8)]
+
+                    values = np.hstack((np.log10(sticks)))
+                    """values = np.array([1, 10, 100, 1000, 10000, 100000, 1000000])
+                    values = np.hstack((np.array([-1, -0.9, -0.8,]), np.log10(values)))
+                    text = ["$10^{-1}$", "$10^{0}$", "$10^{1}$", "$10^{2}$", "$10^{3}$", "$10^{4}$",
+                            "$10^{5}$", "$10^{6}$"]"""
+                    for i in range(len(values)):
+                        if values[i] > x:
+                            break
+                    return values[:i + 1], text[:i + 1]
+
                 new_tick_locations = np.array([-1, plots["time_log"][10], plots["time_log"][20],
                                        plots["time_log"][30], plots["time_log"][40], plots["time_log"][49]])
                 #new_tick_locations = np.array([-1, 0, 1, 2])
@@ -243,9 +263,13 @@ class ModelTriaxialConsolidationUI(QWidget):
                     return np.round(10**x,2)
 
                 #self.log_ax.set_xlim(self.log_ax.get_xlim())
-                self.log_ax.set_xticks(new_tick_locations)
+                """self.log_ax.set_xticks(new_tick_locations)
                 new_tick_locations[0] = -1 #???????????????
-                self.log_ax.set_xticklabels(tick_function(new_tick_locations))
+                self.log_ax.set_xticklabels(tick_function(new_tick_locations))"""
+                stick, text = define_sticks(plots["time_log"][-1])
+                #stick[0] = -1
+                self.log_ax.set_xticks(stick)
+                self.log_ax.set_xticklabels(text)
                 #self.log_ax.set_xticklabels([tick_function(t) for t in new_tick_locations])
 
                 #self.log_ax.set_xticklabels([0.1,1,10,100,1000,10000])
@@ -283,6 +307,11 @@ class ModelTriaxialConsolidationUI(QWidget):
                         #self.log_ax.scatter(*plots["d0"], zorder=5, color="tomato")
 
                         # Пунктирные линии
+                        self.log_ax.plot(*plots["log_t50_vertical_line"],
+                                         **plotter_params["consolidation_black_dotted_line"])
+                        self.log_ax.plot(*plots["log_t50_horizontal_line"],
+                                         **plotter_params["consolidation_black_dotted_line"])
+
                         self.log_ax.plot(*plots["log_t100_vertical_line"],
                                          **plotter_params["consolidation_black_dotted_line"])
                         self.log_ax.plot(*plots["log_t100_horizontal_line"],
@@ -295,6 +324,11 @@ class ModelTriaxialConsolidationUI(QWidget):
                                     verticalalignment='bottom')
                         self.log_ax.text(*plots["log_strain100_text"], '$ε_{100}$', horizontalalignment='right',
                                     verticalalignment='center')
+
+                        self.log_ax.text(*plots["log_t50_text"], '$t_{50}$', horizontalalignment='center',
+                                         verticalalignment='bottom')
+                        self.log_ax.text(*plots["log_strain50_text"], '$ε_{50}$', horizontalalignment='right',
+                                         verticalalignment='center')
 
                         self.log_ax.text(*plots["d0"], '$d_{0}$', horizontalalignment='center',
                                          verticalalignment='center')

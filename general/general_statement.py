@@ -189,7 +189,7 @@ class StatementGenerator(QDialog):
                     # Сами данные (подробнее см. Report.py)
                     customer_data = [self.customer[i] for i in ["customer", "object_name"]]
 
-                    statement_title += f" №{self.customer['object_number']}"
+                    statement_title += f" №{self.customer['object_number']}СВД"
 
                     try:
                         if save_file_pass:

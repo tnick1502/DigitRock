@@ -1149,7 +1149,10 @@ class CyclicProperties(MechanicalProperties):
         CSR_dependence = sigmoida(mirrow_element(t/sigma_1, 0.5), 2, 0.9, 2.1, 1.5)
         e_dependence = sigmoida(mirrow_element(e, 0.5), 0.7, 0.5, 0.9, 1.5)
         Il_dependence = sigmoida(mirrow_element(Il, 0.5), 0.7, 0.5, 1, 1.5)
-        cycles_count_dependence = sigmoida(mirrow_element(cycles_count, 100), 0.3, 100, 1.1, 250)
+        if cycles_count <= 10000:
+            cycles_count_dependence = sigmoida(mirrow_element(cycles_count, 100), 0.3, 100, 1.1, 250)
+        else:
+            cycles_count_dependence = 0.5
 
         Ms *= (CSR_dependence * e_dependence * Il_dependence * cycles_count_dependence)
 
