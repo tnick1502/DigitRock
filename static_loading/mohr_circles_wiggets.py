@@ -351,6 +351,11 @@ class MohrWidgetSoilTest(MohrWidget):
         self.add_parameters_layout.addWidget(self.reference_pressure_array_box)
         self.reconsolidation = ReconsolidationRadio()
         self.add_parameters_layout.addWidget(self.reconsolidation)
+
+        self.m_sliders = TriaxialStaticLoading_Sliders({"m": "Предполагаемое значение m"})
+        self.m_sliders.signal[object].connect(self._m_sliders_moove)
+        self.add_parameters_layout.addWidget(self.m_sliders)
+
         self.add_parameters_layout.addStretch(-1)
         self.layout_wiget.addLayout(self.add_parameters_layout)
 
@@ -405,7 +410,20 @@ class MohrWidgetSoilTest(MohrWidget):
         self.reference_pressure_array_box.set_data()
         self.reconsolidation.set_data()
         self._create_test_tables()
+        self.m_sliders.set_sliders_params(
+            {"m": {
+                "value": statment[statment.current_test].mechanical_properties.m, "borders": [0.3, 1]
+                }
+            })
         self._plot()
+
+    def _m_sliders_moove(self, param):
+        try:
+            statment[statment.current_test].mechanical_properties.m = param["m"]
+            FC_models[statment.current_test].set_test_params()
+            self._plot()
+        except KeyError:
+            pass
 
     #@log_this(app_logger, "debug")
     def refresh(self):
