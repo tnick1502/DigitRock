@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QGroupBox, \
-    QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel
+    QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton
 import sys
 import os
 
@@ -13,15 +13,16 @@ class Save_Dir(QWidget):
      после чего в этой директории создаются соответствующие папки.
      Название папки отчета передается в класс через коструктор mode"""
 
-    def __init__(self):
+    def __init__(self, report_type=None):
         super().__init__()
 
         self._save_directory = "C:/"
 
-        self.create_UI()
-
         self.postfix = ""
         self.mode = ""
+        self._report_types = report_type
+
+        self.create_UI()
 
         self.save_directory_text.setText(self._save_directory)
         self.tree.setRootIndex(self.model.index(self._save_directory))
@@ -63,6 +64,13 @@ class Save_Dir(QWidget):
         self.advanced_box_layout.addStretch(-1)
 
         self.savebox_layout.addLayout(self.savebox_layout_line_1)
+
+        if self._report_types is not None:
+            self._report_types_widget = ReportType(self._report_types)
+            self.savebox_layout.addWidget(self._report_types_widget)
+        else:
+            self._report_types_widget = None
+
         self.savebox_layout.addWidget(self.advanced_box)
 
         self.model_box = QGroupBox("Проводник")
@@ -100,6 +108,13 @@ class Save_Dir(QWidget):
     @property
     def directory(self):
         return self._save_directory
+
+    @property
+    def report_type(self):
+        if self._report_types_widget is not None:
+            return self._report_types_widget.checked
+        else:
+            return None
 
     def _create_save_directory(self, path, mode=""):
         """Создание папки и подпапок для сохранения отчета"""
@@ -143,6 +158,38 @@ class Save_Dir(QWidget):
     def general_statment(self):
         statment = StatementGenerator(self)
         statment.show()
+
+class ReportType(QGroupBox):
+
+    def __init__(self, report_types: dict = {"имя переменной": "имя отчета для отображения"}):
+        super().__init__()
+        self.setTitle('Тип отчета')
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+        #self.setFixedHeight(60)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+        self.report_types = report_types
+
+        for key in self.report_types:
+            setattr(self, key, QRadioButton(self.report_types[key]))
+            rb = getattr(self, key)
+            rb.value = key
+            rb.toggled.connect(self._onClicked)
+            self.layout.addWidget(rb)
+
+        rb = getattr(self, list(self.report_types.keys())[0])
+        rb.setChecked(True)
+
+        self.layout.addStretch(-1)
+
+    def _onClicked(self):
+        radioButton = self.sender()
+        if radioButton.isChecked():
+            self._checked = radioButton.value
+
+    @property
+    def checked(self):
+        return self._checked
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

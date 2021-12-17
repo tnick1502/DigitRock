@@ -610,7 +610,12 @@ class StatickSoilTestApp(QWidget):
         self.tab_1 = TriaxialStaticStatment()
         self.tab_2 = StaticSoilTestWidget()
         self.tab_3 = MohrWidgetSoilTest()
-        self.tab_4 = Save_Dir()
+        self.tab_4 = Save_Dir(
+            {
+                "standart": "Стандардный",
+                "plaxis": "Plaxis/Midas",
+                "user_define_1": "Пользовательский с ε50"
+            })
         # self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
@@ -707,7 +712,7 @@ class StatickSoilTestApp(QWidget):
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
                                  (*self.tab_2.consolidation.save_canvas(),
-                                  *self.tab_2.deviator_loading.save_canvas()), "{:.2f}".format(__version__))
+                                  *self.tab_2.deviator_loading.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
 
@@ -725,7 +730,7 @@ class StatickSoilTestApp(QWidget):
                                      os.getcwd() + "/project_data/",
                                      test_parameter, test_result,
                                      (*self.tab_2.consolidation.save_canvas(),
-                                      *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), "{:.2f}".format(__version__))
+                                      *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), self.tab_4.report_type, "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
 
@@ -757,7 +762,7 @@ class StatickSoilTestApp(QWidget):
                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
-                            *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+                            *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
 

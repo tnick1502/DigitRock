@@ -950,7 +950,7 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (48-((r-30)*4) - 4) * mm)
 
-def result_table_deviator1(canvas, Res, pick, scale = 0.8):
+def result_table_deviator_standart(canvas, Res, pick, scale = 0.8):
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
     r = 28
@@ -961,9 +961,6 @@ def result_table_deviator1(canvas, Res, pick, scale = 0.8):
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
         renderPDF.draw(a, canvas, 36 * mm, 66 * mm)
-        tableData.append(
-            [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
-             Res["qf"], ""])
         tableData.append(
             [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
              Res["E50"], ""])
@@ -987,8 +984,6 @@ def result_table_deviator1(canvas, Res, pick, scale = 0.8):
                  ('SPAN', (0, -3), (3, -3)),
                  ('SPAN', (-2, -3), (-1, -3)),
 
-                 ('SPAN', (0, -4), (3, -4)),
-                 ('SPAN', (-2, -4), (-1, -4)),
                  # ('SPAN', (2, -3), (3, -3)),
                  #  ('SPAN', (4, -3), (5, -3)),
 
@@ -1008,9 +1003,9 @@ def result_table_deviator1(canvas, Res, pick, scale = 0.8):
                  ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
     else:
         E = Res["E"][0] if Res["E"][0] > Res["E50"] else "-"
-        tableData.append(
-            [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
-             Res["qf"], ""])
+        #tableData.append(
+            #[Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
+             #Res["qf"], ""])
         tableData.append(
             [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
              Res["E50"], ""])
@@ -1044,8 +1039,8 @@ def result_table_deviator1(canvas, Res, pick, scale = 0.8):
              ('SPAN', (-2, -2), (-1, -2)),
              # ('SPAN', (2, -2), (3, -2)),
              # ('SPAN', (4, -2), (5, -2)),
-             ('SPAN', (0, -3), (3, -3)),
-             ('SPAN', (-2, -3), (-1, -3)),
+             #('SPAN', (0, -3), (3, -3)),
+             #('SPAN', (-2, -3), (-1, -3)),
 
              #('SPAN', (0, -4), (3, -4)),
              #('SPAN', (-2, -4), (-1, -4)),
@@ -1054,7 +1049,7 @@ def result_table_deviator1(canvas, Res, pick, scale = 0.8):
 
              ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
              ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-             ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+             #("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
              #("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
 
              ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
@@ -1071,7 +1066,154 @@ def result_table_deviator1(canvas, Res, pick, scale = 0.8):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (42-((r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (46-((r-30)*4)) * mm)
+
+def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8):
+
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    r = 28
+    for i in range(r):
+        tableData.append([""])
+
+    if Res["Eur"]:
+        a = svg2rlg(pick[0])
+        a.scale(scale, scale)
+        renderPDF.draw(a, canvas, 36 * mm, 66 * mm)
+        tableData.append(
+            [Paragraph('''<p>Девиатор напряжений при разрушении образца q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
+             Res["qf"], ""])
+        tableData.append(
+            [Paragraph('''<p>Девиатор напряжений при 50% прочности q<sub rise="0.5" size="6">50</sub>, МПа:</p>''',
+                       LeftStyle), "", "", "",
+             zap(Res["qf"]/2, 1), ""])
+        tableData.append(
+            [Paragraph('''<p>Вертикальная деформация при 50% прочности ε<sub rise="0.5" size="6">50</sub>, МПа:</p>''',
+                       LeftStyle), "", "", "",
+             zap(Res["qf"] / 2, 1), ""])
+        tableData.append(
+            [Paragraph('''<p>Секущий модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
+             Res["E50"], ""])
+        tableData.append(
+            [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+        tableData.append(
+            [Paragraph('''<p>Разгрузочный модуль E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "",
+             "", Res["Eur"], ""])
+
+        style = [('SPAN', (0, 0), (-1, 0)),
+                 ('SPAN', (0, 1), (-1, r)),
+
+                 ('SPAN', (0, -1), (3, -1)),
+                 ('SPAN', (-2, -1), (-1, -1)),
+                 # ('SPAN', (2, -1), (3, -1)),
+                 # ('SPAN', (4, -1), (5, -1)),
+                 ('SPAN', (0, -2), (3, -2)),
+                 ('SPAN', (-2, -2), (-1, -2)),
+                 # ('SPAN', (2, -2), (3, -2)),
+                 # ('SPAN', (4, -2), (5, -2)),
+                 ('SPAN', (0, -3), (3, -3)),
+                 ('SPAN', (-2, -3), (-1, -3)),
+
+                 ('SPAN', (0, -4), (3, -4)),
+                 ('SPAN', (-2, -4), (-1, -4)),
+                 ('SPAN', (0, -5), (3, -5)),
+                 ('SPAN', (-2, -5), (-1, -5)),
+                 ('SPAN', (0, -6), (3, -6)),
+                 ('SPAN', (-2, -6), (-1, -6)),
+                 # ('SPAN', (2, -3), (3, -3)),
+                 #  ('SPAN', (4, -3), (5, -3)),
+
+                 ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, -5), (3, -5), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, -6), (3, -6), HexColor(0xebebeb)),
+
+                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                 ("FONTSIZE", (0, 0), (-1, -1), 8),
+                 # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                 ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                 ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+    else:
+        E = Res["E"][0] if Res["E"][0] > Res["E50"] else "-"
+        tableData.append(
+            [Paragraph('''<p>Девиатор напряжений при разрушении образца q<sub rise="0.5" size="6">f</sub>, МПа:</p>''',
+                       LeftStyle), "", "", "",
+             zap(Res["qf"], 3), ""])
+        tableData.append(
+            [Paragraph('''<p>Девиатор напряжений при 50% прочности q<sub rise="0.5" size="6">50</sub>, МПа:</p>''',
+                       LeftStyle), "", "", "",
+             zap(Res["qf"] / 2, 4), ""])
+        tableData.append(
+            [Paragraph('''<p>Вертикальная деформация при 50% прочности ε<sub rise="0.5" size="6">50</sub>, МПа:</p>''',
+                       LeftStyle), "", "", "",
+             zap((Res["qf"]/2) / Res["E50"], 5), ""])
+        tableData.append(
+            [Paragraph('''<p>Секущий модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "",
+             "", "",
+             Res["E50"], ""])
+        tableData.append(
+            [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+
+        try:
+            a = svg2rlg(pick[0])
+            a.scale(scale, scale)
+            renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+            b = svg2rlg(pick[1])
+            b.scale(scale, scale)
+            renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
+        except AttributeError:
+            a = ImageReader(pick[1])
+            canvas.drawImage(a, 32 * mm, 60 * mm,
+                             width=160 * mm, height=54 * mm)
+            b = ImageReader(pick[0])
+            canvas.drawImage(b, 32 * mm, 114 * mm,
+                             width=160 * mm, height=54 * mm)
+
+        style = [('SPAN', (0, 0), (-1, 0)),
+             ('SPAN', (0, 1), (-1, r)),
+
+             ('SPAN', (0, -1), (3, -1)),
+             ('SPAN', (-2, -1), (-1, -1)),
+             ('SPAN', (0, -2), (3, -2)),
+             ('SPAN', (-2, -2), (-1, -2)),
+             ('SPAN', (0, -3), (3, -3)),
+             ('SPAN', (-2, -3), (-1, -3)),
+             ('SPAN', (0, -4), (3, -4)),
+             ('SPAN', (-2, -4), (-1, -4)),
+             ('SPAN', (0, -5), (3, -5)),
+             ('SPAN', (-2, -5), (-1, -5)),
+
+
+             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -5), (3, -5), HexColor(0xebebeb)),
+             #("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+             #("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+
+             ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+             ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+             ("FONTSIZE", (0, 0), (-1, -1), 8),
+             # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+             ("ALIGN", (0, 0), (-1, r), "CENTER"),
+             ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+             ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+             ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+    t.setStyle(style)
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, 44 * mm)
+
+
 
 def result_table_deviator_vc(canvas, Res, pick, scale = 0.8):
 
@@ -1505,6 +1647,48 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
 
+def result_table_m(canvas, Res, pick, scale = 0.8):
+
+    a = svg2rlg(pick)
+    a.scale(scale, scale)
+    renderPDF.draw(a, canvas, 25 * mm, 70 * mm)
+
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    r = 28
+    for i in range(r):
+        tableData.append([""])
+
+    tableData.append(
+        [Paragraph('''<p>Показатель степени жесткости m, д.е.:</p>''', LeftStyle), "", "", "",
+         Res["m"], ""])
+
+    style = [('SPAN', (0, 0), (-1, 0)),
+             ('SPAN', (0, 1), (-1, r)),
+
+             ('SPAN', (0, -1), (3, -1)),
+             ('SPAN', (-2, -1), (-1, -1)),
+
+             # ('SPAN', (2, -3), (3, -3)),
+             #  ('SPAN', (4, -3), (5, -3)),
+
+             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+
+             ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+             ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+             ("FONTSIZE", (0, 0), (-1, -1), 8),
+             # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+             ("ALIGN", (0, 0), (-1, r), "CENTER"),
+             ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+             ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+             ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+    t = Table(tableData, colWidths=175 / 6 * mm, rowHeights=4 * mm)
+    t.setStyle(style)
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, (54 - ((r - 30) * 4)) * mm)
+
 def result_table_CF_KN(canvas, Res, pick, scale = 0.8):
 
 
@@ -1587,9 +1771,6 @@ def result_table_CF_KN(canvas, Res, pick, scale = 0.8):
 
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
-
-
-
 
 
 def result_table_statment_cyclic(canvas, Data):
@@ -1882,7 +2063,8 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
 
     canvas.save()
 
-def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+
+def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type=None, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -1910,15 +2092,18 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
     test_parameter["K0"] = K0[0]
 
     test_mode_consolidation(canvas, test_parameter)
-
-    result_table_deviator1(canvas, res, [picks[2], picks[3]])
+    if report_type == "standart":
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]])
+    elif report_type == "user_define_1":
+        result_table_deviator_user_1(canvas, res, [picks[2], picks[3]])
+    else:
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]])
 
     canvas.showPage()
 
     canvas.save()
 
-
-def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type=None, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -1930,7 +2115,10 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
 
     code = SaveCode(version)
 
-    main_frame(canvas, path, Data_customer, code, "1/2")
+    if report_type == "plaxis":
+        main_frame(canvas, path, Data_customer, code, "1/3")
+    else:
+        main_frame(canvas, path, Data_customer, code, "2/2")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
@@ -1939,11 +2127,18 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     test_parameter["K0"] = K0[0]
     test_mode_consolidation(canvas, test_parameter)
 
-    result_table_deviator1(canvas, res, [picks[0], picks[1]])
+    if report_type == "standart":
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]])
+    elif report_type == "user_define_1":
+        result_table_deviator_user_1(canvas, res, [picks[0], picks[1]])
+    else:
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]])
 
     canvas.showPage()
-
-    main_frame(canvas, path, Data_customer, code, "2/2")
+    if report_type == "plaxis":
+        main_frame(canvas, path, Data_customer, code, "2/3")
+    else:
+        main_frame(canvas, path, Data_customer, code, "2/2")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
@@ -1954,6 +2149,22 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     test_mode_consolidation(canvas, test_parameter)
 
     result_table_CF(canvas, res, [picks[2], picks[3]])
+
+    if report_type == "plaxis":
+        canvas.showPage()
+
+        main_frame(canvas, path, Data_customer, code, "3/3")
+        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
+                                 "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
+
+        parameter_table(canvas, Data_phiz, Lab)
+        test_parameter["K0"] = K0[1]
+        test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(
+            res["sigma_3_mohr"][2], 3)
+        test_mode_consolidation(canvas, test_parameter)
+
+        result_table_m(canvas, res, picks[4])
 
     canvas.save()
 
@@ -1980,6 +2191,7 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     result_table_CF(canvas, res, [picks[0],picks[1]])
 
     canvas.save()
+
 
 def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты

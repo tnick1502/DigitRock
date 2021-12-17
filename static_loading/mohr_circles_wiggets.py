@@ -326,10 +326,13 @@ class MohrWidget(QWidget):
             canvas.draw()
             return path
 
-        return [save(fig, can, size, ax, "svg") for fig, can, size, ax in zip([self.deviator_figure,
+        c = [save(fig, can, size, ax, "svg") for fig, can, size, ax in zip([self.deviator_figure,
                                                                             self.mohr_figure],
                                                    [self.deviator_canvas, self.mohr_canvas], [[6, 2.4], [3, 1.5]],
                                                                               [self.deviator_ax, self.mohr_ax])]
+        c.append(self.m_widget.save_canvas())
+
+        return c
 
 class MohrWidgetSoilTest(MohrWidget):
     """Класс для табличного отображения параметров кругов Мора"""
@@ -612,7 +615,7 @@ class MWidgetUI(QGroupBox):
 
         path = BytesIO()
         size = self.figure.get_size_inches()
-        self.figure.set_size_inches([6, 2.4])
+        self.figure.set_size_inches([6, 4])
         self.figure.savefig(path, format='svg', transparent=True)
 
         path.seek(0)

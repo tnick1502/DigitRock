@@ -92,8 +92,14 @@ class PhysicalProperties:
 
         if self.laboratory_number.isdigit():
             self.laboratory_number = str(int(self.laboratory_number))
+
         try:
-            self.borehole = str(int(float(self.borehole)))
+            borehole = float(self.borehole)
+
+            if borehole % 1 < 0.001:
+                self.borehole = str(borehole)
+            else:
+                self.borehole = str(int(borehole))
         except:
             pass
 
