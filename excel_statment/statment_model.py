@@ -260,9 +260,6 @@ class Statment:
 
 
 if __name__ == '__main__':
-
-    s = Statment()
-    s.setTestClass(CyclicProperties)
     s.setGeneralParameters({'equipment': 'ЛИГА КЛ-1С', 'test_mode': 'Штормовое разжижение', 'K0_mode': 'K0: По ГОСТ-65353'})
     s.readExcelFile(r"C:\Users\Пользователь\Desktop\Новая папка (4)\987-21 Карское море - шторм.xlsx", None)
     s.dump(r"C:\Users\Пользователь\Desktop\Новая папка (4)")

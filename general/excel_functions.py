@@ -122,6 +122,21 @@ def cfe_test_type_columns(test_type):
     elif test_type == "Резонансная колонка":
         return ["BC", "BD", "BE"]
 
+    elif test_type == "Срез природное":
+        return ["AV", "AW"]
+
+    elif test_type == "Срез водонасыщенное":
+        return ["AS", "AT"]
+
+    elif test_type == "Срез плашка по плашке":
+        return ["AY", "AZ"]
+
+    elif test_type == "Срез НН":
+        return ["BA", "BB"]
+
+    elif test_type == "Срез дилатансия":
+        return ["HB", "HC"]
+
 def k0_test_type_column(test_type):
     """Функция возвращает столбцы для считывания K0 по типу испытания"""
     if test_type == "K0: K0nc из ведомости":
