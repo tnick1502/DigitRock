@@ -1103,7 +1103,6 @@ class CyclicProperties(MechanicalProperties):
 
                 self.cycles_count = int(float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]]))
 
-
                 self.frequency = np.round(float_df(data_frame.iat[string,
                                                                   DynamicsPropertyPosition["frequency_vibration_creep"][
                                                                       1]]), 1)
@@ -1305,12 +1304,376 @@ class VibrationCreepProperties(MechanicalProperties):
 
         return np.round(Kd, 2)
 
+class ShearProperties(MechanicalProperties):
+    """Расширенный класс с дополнительными обработанными свойствами"""
+    SHEAR_NATURAL = 11
+    '''Срез природное'''
+    SHEAR_SATURATED = 12
+    '''Срез водонасыщенное'''
+    SHEAR_DD = 13
+    '''Срез плашка по плашке'''
+    SHEAR_NN = 14
+    '''Срез НН'''
+    SHEAR_DILATANCY = 2
+    '''Срез дилатансия'''
+
+    pref_warning: bool = False
+
+    tau_max = DataTypeValidation(float, int)
+    sigma = DataTypeValidation(float, int, np.int32)
+
+    def __init__(self):
+        self._setNone()
+
+    def _setNone(self):
+        """Поставим изначально везде None"""
+        for key in ShearProperties.__dict__:
+            if isinstance(getattr(ShearProperties, key), DataTypeValidation):
+                object.__setattr__(self, key, None)
+
+    def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode) -> None:
+
+        is_dilatancy = ShearProperties.is_dilatancy_type(test_mode)
+
+        if not is_dilatancy:
+            self.c, self.fi = ShearProperties.define_c_fi_E(data_frame, test_mode, string)
+        elif is_dilatancy:
+            self.c, self.fi, dilatancy_angle = ShearProperties.define_c_fi_E(data_frame, test_mode, string)
+            self.dilatancy_angle = dilatancy_angle if dilatancy_angle else MechanicalProperties.define_dilatancy(
+                physical_properties.type_ground, physical_properties.e, physical_properties.Il, physical_properties.Ip) * np.random.uniform(0.9, 1.1)
+
+        if self.c and self.fi:
+            self.c = self.c
+            self.E50 = ShearProperties.define_E50(physical_properties.type_ground,
+                                                  physical_properties.Ir,
+                                                  physical_properties.Ip, physical_properties.e,
+                                                  physical_properties.stratigraphic_index)*0.8
+
+            if test_mode == ShearProperties.SHEAR_NN:
+                self.E50 = self.E50 * np.random.uniform(1.5, 2.0)
+
+            self.E50 = self.E50 * 1000
+
+            # print(f"E50 чтоб его: {self.E50}")
+
+            self.build_press = float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]])
+            if self.build_press:
+                self.build_press *= 1000
+
+            self.pit_depth = float_df(data_frame.iat[string, MechanicalPropertyPosition["pit_depth"][1]])
+
+            if is_dilatancy:
+                self.sigma = ShearProperties.round_sigma(
+                    float_df(data_frame.iat[string, MechanicalPropertyPosition["Pref"][1]]))
+
+                if self.sigma:
+                    self.sigma = self.sigma*1000
+
+                if not self.sigma:
+                    self.pref_warning = True
+                    self.sigma = ShearProperties.round_sigma(ShearProperties.define_sigma(physical_properties.depth))
+
+            else:
+                self.sigma = ShearProperties.round_sigma(ShearProperties.define_sigma(physical_properties.depth))
+
+
+            if self.sigma < 100:
+                self.sigma = 100
+
+            self.tau_max = np.round(float(ShearProperties.define_tau_max(self.sigma, self.c * 1000, self.fi)), 1) * np.random.uniform(0.95, 1.05)
+
+            self.poisons_ratio = ShearProperties.define_poissons_ratio(
+                physical_properties.Rc,
+                physical_properties.Ip,
+                physical_properties.Il,
+                physical_properties.Ir,
+                physical_properties.granulometric_10,
+                physical_properties.granulometric_5,
+                physical_properties.granulometric_2)
+
+            self.m = MechanicalProperties.define_m(physical_properties.e, physical_properties.Il)
+
+            if not self.dilatancy_angle:
+                self.dilatancy_angle = ShearProperties.define_dilatancy(
+                    physical_properties.type_ground, physical_properties.e, physical_properties.Il, physical_properties.Ip) * np.random.uniform(0.9, 1.1)
+
+            self.pressure_array = {
+                "set_by_user": ShearProperties.define_reference_pressure_array_set_by_user(
+                    float_df(data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]])),
+
+                "calculated_by_pressure": ShearProperties.define_reference_pressure_array_calculated_by_pressure(
+                    self.build_press, self.pit_depth, physical_properties.depth),
+
+                "state_standard": ShearProperties.define_reference_pressure_array_state_standard(
+                    physical_properties.e, physical_properties.Il, physical_properties.type_ground)
+            }
+
+            if self.pressure_array["set_by_user"] is not None:
+                self.pressure_array["current"] = self.pressure_array["set_by_user"]
+            elif self.pressure_array["calculated_by_pressure"] is not None:
+                self.pressure_array["current"] = self.pressure_array["calculated_by_pressure"]
+            elif self.pressure_array["state_standard"] is not None:
+                self.pressure_array["current"] = self.pressure_array["state_standard"]
+
+            if self.pressure_array["calculated_by_pressure"] is None:
+                self.pressure_array["calculated_by_pressure"] = \
+                    ShearProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma)
+
+    @staticmethod
+    def define_sigma(depth: float) -> float:
+        """Функция определяет нормальное напряжение"""
+        """Функция определяет обжимающее давление"""
+        return round((2 * 9.81 * depth), 1)
+
+    @staticmethod
+    def define_tau_max(sigma: float, c: float, fi: float) -> float:
+        """Функция определяет максимальное касательное напряжение"""
+        return sigma * np.tan(np.deg2rad(fi)) + c
+
+    @staticmethod
+    def round_sigma(sigma, param=5):
+        return sigma
+
+    @staticmethod
+    def shear_type(test_mode: str) -> int:
+        if test_mode == "Срез природное":
+            return ShearProperties.SHEAR_NATURAL
+        elif test_mode == "Срез водонасыщенное":
+            return ShearProperties.SHEAR_SATURATED
+        elif test_mode == "Срез плашка по плашке":
+            return ShearProperties.SHEAR_DD
+        elif test_mode == "Срез НН":
+            return ShearProperties.SHEAR_NN
+        elif test_mode == "Срез дилатансия":
+            return ShearProperties.SHEAR_DILATANCY
+        else:
+            return 0
+
+    @staticmethod
+    def is_dilatancy_type(test_mode: str) -> bool:
+        if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DILATANCY:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def define_E50(type_ground, Ir, Il, e, stratigraphic_index):
+
+        def define_E50_for_sand(e50_array, e):
+            """Функция расчета угла дилатнсии для песков"""
+            if len(e50_array) == 3:
+                e_array = np.array([0.45, 0.55, 0.65])
+            elif len(e50_array) == 4:
+                e_array = np.array([0.45, 0.55, 0.65, 0.75])
+            if e is None:
+                e = np.random.uniform(0.45, 0.65)
+            if e < e_array[0]:
+                e = e_array[0]
+            if e > e_array[-1]:
+                e = e_array[-1]
+
+            return np.interp(e, e_array, e50_array)
+
+        def define_E50_for_clay(Il, e, stratigraphic_index, type_ground):
+            """Функция расчета угла дилатнсии для глин"""
+
+            if e is None:
+                e = np.random.uniform(0.45, 0.75)
+
+            if Il is None:
+                Il = np.random.uniform(0.25, 0.5)
+
+            if e < 0.35:
+                e = 0.35
+            if e > 1.6:
+                e = 1.6
+
+            if stratigraphic_index == "f":
+
+                if Il < 0:
+                    Il = 0
+                if Il > 0.75:
+                    Il = 0.75
+
+                if type_ground == 6:
+                    if 0 <= Il <= 0.75:
+                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85]),
+                                         np.array([33, 24, 17, 11, 7]))
+                if type_ground == 7:
+                    if 0 <= Il <= 0.25:
+                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75]),
+                                         np.array([40, 33, 27, 21]))
+                    elif 0.25 < Il <= 0.5:
+                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85, 0.95]),
+                                         np.array([35, 28, 22, 17, 14]))
+                    elif 0.5 < Il <= 0.75:
+                        return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+                                         np.array([15, 12, 9, 7]))
+            elif stratigraphic_index == "J":
+
+                if Il < -0.25:
+                    Il = -0.25
+                if Il > 0.5:
+                    Il = 0.5
+
+                if type_ground == 8:
+                    if -0.25 <= Il <= 0:
+                        return np.interp(e, np.array([0.95, 1.05, 1.2]),
+                                         np.array([27, 25, 22]))
+                    elif 0 < Il <= 0.25:
+                        return np.interp(e, np.array([0.95, 1.05, 1.2, 1.4]),
+                                         np.array([24, 22, 19, 15]))
+                    elif 0.25 < Il <= 0.5:
+                        return np.interp(e, np.array([1.2, 1.4, 1.6]),
+                                         np.array([16, 12, 10]))
+            else:  # stratigraphic_index == "a" or stratigraphic_index == "d":
+
+                if Il < 0:
+                    Il = 0
+                if Il > 0.75:
+                    Il = 0.75
+
+                if type_ground == 6:
+                    if 0 <= Il <= 0.75:
+                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85]),
+                                         np.array([32, 24, 16, 10, 7]))
+                if type_ground == 7:
+                    if 0 <= Il <= 0.25:
+                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85, 0.95]),
+                                         np.array([34, 27, 22, 17, 14, 11]))
+                    elif 0.25 < Il <= 0.5:
+                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85, 0.95]),
+                                         np.array([32, 25, 19, 14, 11, 8]))
+                    elif 0.5 < Il <= 0.75:
+                        return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05]),
+                                         np.array([17, 12, 8, 6, 5]))
+                if type_ground == 8:
+                    if 0 <= Il <= 0.25:
+                        return np.interp(e, np.array([0.55, 0.65, 0.75, 0.85, 0.95, 1.05]),
+                                         np.array([28, 24, 21, 18, 15, 12]))
+                    elif 0.25 < Il <= 0.5:
+                        return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05]),
+                                         np.array([21, 18, 15, 14, 12, 9]))
+                    elif 0.5 < Il <= 0.75:
+                        return np.interp(e, np.array([0.75, 0.85, 0.95, 1.05]),
+                                         np.array([15, 12, 9, 7]))
+
+        def define_E50_for_peat(Il, Ir, e):
+
+            if Ir is None:
+                return None
+
+            if Ir < 0:
+                Ir = 0
+            if Ir > 0.25:
+                Ir = 0.25
+
+            if e < 0.65:
+                e = 0.65
+            if e > 1.35:
+                e = 1.35
+
+            if 0 <= Il <= 0.25:
+                if 0.05 <= Ir <= 0.1:
+                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+                                     np.array([13, 12, 11, 10]))
+                elif 0.1 < Ir <= 0.25:
+                    return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
+                                     np.array([8.5, 8, 7, 5]))
+            elif 0.25 < Il <= 0.5:
+                if 0.05 <= Ir <= 0.1:
+                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+                                     np.array([11, 10, 8.5, 7.5]))
+                elif 0.1 < Ir <= 0.25:
+                    return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
+                                     np.array([7, 6, 5.5, 5]))
+            elif 0.5 < Il <= 0.75:
+                if 0.05 <= Ir <= 0.1:
+                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+                                     np.array([8, 7, 6, 5.5]))
+                elif 0.1 < Ir <= 0.25:
+                    return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
+                                     np.array([5, 5, 4.5, 4]))
+            elif 0.75 < Il <= 1:
+                if 0.05 <= Ir <= 0.1:
+                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+                                     np.array([6, 5, 4.5, 4]))
+                elif 0.1 < Ir <= 0.25:
+                    return np.interp(e, np.array([1.05, 1.05, 1.25]),
+                                     np.array([3.5, 3, 2.5]))
+
+        dependence_E50_on_type_ground = {
+            1: define_E50_for_sand(np.array([50, 40, 30*0.5]), e),  # Песок гравелистый
+            2: define_E50_for_sand(np.array([50, 40, 30*0.5]), e),  # Песок крупный
+            3: define_E50_for_sand(np.array([50, 30, 30*0.5]), e),  # Песок средней крупности
+            4: define_E50_for_sand(np.array([48, 38, 28, 18*0.5]), e),  # Песок мелкий
+            5: define_E50_for_sand(np.array([39, 28, 18, 11*0.5]), e),  # Песок пылеватый
+            6: define_E50_for_clay(Il, e, stratigraphic_index, type_ground),  # Супесь
+            7: define_E50_for_clay(Il, e, stratigraphic_index, type_ground),  # Суглинок
+            8: define_E50_for_clay(Il, e, stratigraphic_index, type_ground),  # Глина
+            9: define_E50_for_peat(Il, Ir, e),  # Торф
+        }
+
+        return dependence_E50_on_type_ground[type_ground]
+
+    @staticmethod
+    def define_reference_pressure_array_calculated_by_referense_pressure(sigma: float) -> list:
+        """Функция рассчета обжимающих давлений для среза"""
+
+        sigma_max = sigma
+
+        sigma_max_1 = MechanicalProperties.round_sigma_3(sigma_max)
+        sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * 0.5)
+        sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * 0.25)
+
+        return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+
+    @staticmethod
+    def define_reference_pressure_array_calculated_by_pressure(build_press: float, pit_depth: float, depth: float) -> list:
+        """Функция рассчета обжимающих давлений для кругов мора"""
+        if build_press:
+            if not pit_depth:
+                pit_depth = 0
+            sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10 * depth
+
+            sigma_max_1 = MechanicalProperties.round_sigma_3(sigma_max)
+            sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * 0.5)
+            sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * 0.25)
+
+            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+        else:
+            return None
+
+    @staticmethod
+    def define_reference_pressure_array_state_standard(e: float, Il: float, type_ground: int) -> list:
+        """Функция рассчета обжимающих давлений для кругов мора"""
+        e = e if e else 0.65
+        Il = Il if Il else 0.5
+
+        if (type_ground == 1) or (type_ground == 2) or (type_ground == 3) or (
+                type_ground == 8 and Il <= 0.25):
+            return [100, 300, 500]
+
+        elif (type_ground == 4) or (type_ground == 5) or\
+                ((type_ground == 6 or type_ground == 7 or type_ground == 9) and Il <= 0.5) or \
+                (type_ground == 8 and Il <= 0.5):
+            return [100, 200, 300]
+
+        elif (type_ground == 6 or type_ground == 7 or
+              type_ground == 8 or type_ground == 9) and (0.5 < Il <= 1.0):
+            return [100, 150, 200]
+
+        elif (type_ground == 6 or type_ground == 7 or
+              type_ground == 8 or type_ground == 9) and (Il > 1.0):
+            return [25, 75, 125]
+
 PropertiesDict = {
     "PhysicalProperties": PhysicalProperties,
     "MechanicalProperties": MechanicalProperties,
     "CyclicProperties": CyclicProperties,
     "RCProperties": RCProperties,
-    "VibrationCreepProperties": VibrationCreepProperties
+    "VibrationCreepProperties": VibrationCreepProperties,
+    "ShearProperties": ShearProperties
 }
 
 

@@ -12,16 +12,19 @@ from general.excel_functions import cfe_test_type_columns, k0_test_type_column, 
 from excel_statment.initial_tables import TableCastomer, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, CyclicProperties, \
-    DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties
+    DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties, ShearProperties
 from excel_statment.position_configs import IdentificationColumns
 from loggers.logger import app_logger, log_this
-from singletons import statment, models, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models
+from singletons import statment, models, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, Shear_models, Shear_Dilatancy_models
+
 from resonant_column.rezonant_column_hss_model import ModelRezonantColumnSoilTest
 from consolidation.consolidation_model import ModelTriaxialConsolidationSoilTest
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTest
 from static_loading.triaxial_static_loading_test_model import ModelTriaxialStaticLoadSoilTest
 from static_loading.mohr_circles_test_model import ModelMohrCirclesSoilTest
 from vibration_creep.vibration_creep_model import ModelVibrationCreepSoilTest
+from shear_test.shear_test_model import ModelShearSoilTest
+from shear_test.shear_dilatancy_test_model import ModelShearDilatancySoilTest
 from excel_statment.params import accreditation
 
 from transliterate import translit
@@ -620,6 +623,189 @@ class ConsolidationStatment(InitialStatment):
 
                     self.load_models(models_name="consolidation_models.pickle",
                                      models=Consolidation_models, models_type=ModelTriaxialConsolidationSoilTest)
+
+class ShearStatment(InitialStatment):
+    """Класс обработки файла задания для трехосника"""
+    SHEAR_NATURAL = ShearProperties.SHEAR_NATURAL
+    '''Срез природное'''
+    SHEAR_SATURATED = ShearProperties.SHEAR_SATURATED
+    '''Срез водонасыщенное'''
+    SHEAR_DD = ShearProperties.SHEAR_DD
+    '''Срез плашка по плашке'''
+    SHEAR_NN = ShearProperties.SHEAR_NN
+    '''Срез НН'''
+    SHEAR_DILATANCY = ShearProperties.SHEAR_DILATANCY
+    '''Срез дилатансия'''
+    def __init__(self):
+        data_test_parameters = {
+            "equipment": [
+                "Выберите прибор",
+                "АСИС ГТ.2.0.5",
+                "GIESA UP-25a",
+
+            ],
+
+            "test_mode": [
+                "Выберите тип испытания",
+                "Срез природное",
+                "Срез водонасыщенное",
+                "Срез плашка по плашке",
+                "Срез НН",
+                "Срез дилатансия"],
+
+            "optional": [
+                "Состояние не задано",
+                "Природное",
+                "Водонасщенное"],
+
+            }
+
+        fill_keys = {
+            "laboratory_number": "Лаб. ном.",
+            "c": "Сцепление с, МПа",
+            "fi": "Угол внутреннего трения, град",
+            "tau_max": "Максимальное касательное напряжение τ, кПа",
+            "sigma": "Нормальное напряжение 𝜎, кПа",
+            "poisons_ratio": "Коэффициент Пуассона",
+            "build_press": "Давление от здания, кПа",
+            "pit_depth": "Глубина котлована, м",
+            "dilatancy_angle": "Угол дилатансии, град"
+        }
+
+        super().__init__(data_test_parameters, fill_keys)
+
+    @log_this(app_logger, "debug")
+    def file_open(self):
+        """Открытие и проверка заполненности всего файла веддомости"""
+        if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
+            wb = load_workbook(self.path, data_only=True)
+
+            combo_params = self.open_line.get_data()
+
+            columns_marker = cfe_test_type_columns(combo_params["test_mode"])
+            marker, customer = read_customer(wb)
+
+            try:
+                # assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)), \
+                #     "Заполните K0 в ведомости"
+                assert not marker, "Проверьте " + customer
+                #assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=list(columns_marker_cfe)), \
+                    #"Заполните данные консолидации('CC', 'CF')"
+
+            except AssertionError as error:
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+            else:
+
+                self.load_statment(
+                    statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
+                    properties_type=ShearProperties,
+                    general_params=combo_params)
+
+                statment.general_parameters.reconsolidation = False
+
+                keys = list(statment.tests.keys())
+                for test in keys:
+                    if not statment[test].mechanical_properties.c or not statment[test].mechanical_properties.fi:
+                        del statment.tests[test]
+
+                pref_warning = False
+                keys = list(statment.tests.keys())
+                for test in keys:
+                    if statment[test].mechanical_properties.pref_warning:
+                        pref_warning = True
+
+                if pref_warning:
+                    QMessageBox.warning(QWidget(),
+                                        "Внимание!",
+                                        f"Референтное давление на задано. Используется расчётное")
+
+                if len(statment) < 1:
+                    QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
+                                        + str(columns_marker), QMessageBox.Ok)
+                    self.table_vertical.clear()
+                    self.table_physical_properties.clear()
+                else:
+                    self.table_physical_properties.set_data()
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
+
+                    # if ShearStatment.shear_type(statment.general_parameters.test_mode) == self.SHEAR_NATURAL:
+                    #     self.load_models(models_name="Shear_natural_models.pickle",
+                    #                      models=Shear_models, models_type=ModelShearSoilTest)
+                    # elif ShearStatment.shear_type(statment.general_parameters.test_mode) == self.SHEAR_SATURATED:
+                    #     self.load_models(models_name="Shear_saturated_models.pickle",
+                    #                      models=Shear_models, models_type=ModelShearSoilTest)
+                    # elif ShearStatment.shear_type(statment.general_parameters.test_mode) == self.SHEAR_DD:
+                    #     self.load_models(models_name="Shear_dd_models.pickle",
+                    #                      models=Shear_models, models_type=ModelShearSoilTest)
+                    # elif ShearStatment.shear_type(statment.general_parameters.test_mode) == self.SHEAR_NN:
+                    #     self.load_models(models_name="Shear_nn_models.pickle",
+                    #                      models=Shear_models, models_type=ModelShearSoilTest)
+                    # elif ShearStatment.shear_type(statment.general_parameters.test_mode) == self.SHEAR_DILATANCY:
+                    #     self.load_models(models_name="Shear_dilatancy_models.pickle",
+                    #                      models=Shear_Dilatancy_models, models_type=ModelShearDilatancySoilTest)
+
+                    _test_mode = statment.general_parameters.test_mode
+                    if not ShearStatment.is_dilatancy_type(_test_mode):
+                        self.load_models(models_name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)),
+                                         models=Shear_models, models_type=ModelShearSoilTest)
+                    elif ShearStatment.is_dilatancy_type(_test_mode):
+                        self.load_models(models_name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)),
+                                         models=Shear_Dilatancy_models, models_type=ModelShearDilatancySoilTest)
+
+    def button_open_click(self):
+        combo_params = self.open_line.get_data()
+
+        test = True
+        for key in self.test_parameters:
+            if key == "optional":
+                continue
+            if combo_params[key] == self.test_parameters[key][0]:
+                test = False
+                QMessageBox.critical(self, "Предупреждение", "Проверьте заполнение {}".format(key),
+                                           QMessageBox.Ok)
+                break
+
+        if test:
+            self.path = QFileDialog.getOpenFileName(self, 'Open file')[0]
+            if self.path != "":
+                self.file_open()
+
+    def set_optional_parameter(self, test_mode):
+        obj = getattr(self.open_line, "combo_optional")
+        if ShearStatment.shear_type(test_mode) == ShearStatment.SHEAR_NATURAL:
+            obj.setCurrentIndex(1)
+        elif ShearStatment.shear_type(test_mode) == ShearStatment.SHEAR_SATURATED:
+            obj.setCurrentIndex(2)
+        else:
+            obj.setCurrentIndex(0)
+
+    def shear_test_type_from_open_line(self) -> int:
+        test_mode = self.open_line.get_data()["test_mode"]
+        return ShearProperties.shear_type(test_mode)
+
+    @staticmethod
+    def shear_type(test_mode) -> int:
+        return ShearProperties.shear_type(test_mode)
+
+    @staticmethod
+    def is_dilatancy_type(test_mode) -> bool:
+        return ShearProperties.is_dilatancy_type(test_mode)
+
+    @staticmethod
+    def models_name(shear_type: int) -> str:
+        if shear_type == ShearStatment.SHEAR_NATURAL:
+            return "Shear_natural_models.pickle"
+        elif shear_type == ShearStatment.SHEAR_SATURATED:
+            return "Shear_saturated_models.pickle"
+        elif shear_type == ShearStatment.SHEAR_NN:
+            return "Shear_nn_models.pickle"
+        elif shear_type == ShearStatment.SHEAR_DD:
+            return "Shear_dd_models.pickle"
+        elif shear_type == ShearStatment.SHEAR_DILATANCY:
+            return "Shear_dilatancy_models.pickle"
+
+        return "models.pickle"
 
 
 if __name__ == "__main__":

@@ -1061,6 +1061,9 @@ def define_sigma_3(K0, z):
     """Функция определяет обжимающее давление"""
     return round(K0 * (2 * 9.81 * z), 1)
 
+def define_tau_max(sigma, c, fi):
+    return sigma * np.tan(np.deg2rad(fi)) + c
+
 def define_E50(E50ref, c, fi, sigma_3, p_ref, m, deviation=0.1):
     """Расчет E50 через параметр умрочнения"""
     fi = np.deg2rad(fi)

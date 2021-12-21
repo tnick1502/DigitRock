@@ -34,7 +34,6 @@ class Models:
                 self.tests[test_name].set_test_params()
             except:
                 app_logger.exception(f"Ошибка моделирования опыта {test_name}")
-        #print([list(self.tests.keys())])
 
     def dump(self, directory, name="models.pickle"):
         with open(directory + "/" + name, "wb") as file:
@@ -83,6 +82,13 @@ class ModelsCyclic(Models):
 class ModelsConsolidation(Models):
     pass
 
+@singleton
+class ModelsShear(Models):
+    pass
+
+@singleton
+class ModelsShearDilatancy(Models):
+    pass
 
 statment = Statment()
 
@@ -98,7 +104,9 @@ RC_models = ModelsRC()
 
 Consolidation_models = ModelsConsolidation()
 
+Shear_models = ModelsShear()
 
+Shear_Dilatancy_models = ModelsShearDilatancy()
 
 
 
