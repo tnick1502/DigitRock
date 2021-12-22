@@ -1344,17 +1344,6 @@ class ShearProperties(MechanicalProperties):
 
         if self.c and self.fi:
             self.c = self.c
-            self.E50 = ShearProperties.define_E50(physical_properties.type_ground,
-                                                  physical_properties.Ir,
-                                                  physical_properties.Ip, physical_properties.e,
-                                                  physical_properties.stratigraphic_index)*0.8
-
-            if test_mode == ShearProperties.SHEAR_NN:
-                self.E50 = self.E50 * np.random.uniform(1.5, 2.0)
-
-            self.E50 = self.E50 * 1000
-
-            # print(f"E50 чтоб его: {self.E50}")
 
             self.build_press = float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]])
             if self.build_press:
@@ -1381,6 +1370,22 @@ class ShearProperties(MechanicalProperties):
                 self.sigma = 100
 
             self.tau_max = np.round(float(ShearProperties.define_tau_max(self.sigma, self.c * 1000, self.fi)), 1) * np.random.uniform(0.95, 1.05)
+
+            self.E50 = ShearProperties.define_E50(physical_properties.type_ground,
+                                                  physical_properties.Ir,
+                                                  physical_properties.Ip, physical_properties.e,
+                                                  physical_properties.stratigraphic_index)*0.7
+
+            self.E50 = self.E50 * 1000
+
+            if self.tau_max <= 40:
+                _E50 = self.tau_max / 0.15
+                self.E50 = _E50 * np.random.uniform(2.0, 3.0)
+
+            if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_NN:
+                self.E50 = self.E50 * np.random.uniform(1.5, 2.0) / 0.7
+
+            # print(f"E50 чтоб его: {self.E50}")
 
             self.poisons_ratio = ShearProperties.define_poissons_ratio(
                 physical_properties.Rc,
