@@ -91,12 +91,16 @@ class RezonantColumnSoilTestWidget(QWidget):
 
     def _create_Ui(self):
         self.layout = QVBoxLayout(self)
+        self.line_1 = QHBoxLayout()
         self.identification_widget = RezonantColumnIdentificationUI()
         self.test_widget = RezonantColumnSoilTestUI()
         self.refresh_button = QPushButton("Обновить")
+        self.refresh_button.setFixedHeight(120)
+        self.line_1.addWidget(self.identification_widget)
+        self.line_1.addWidget(self.refresh_button)
+
         self.refresh_button.clicked.connect(self._refresh)
-        self.layout.addWidget(self.refresh_button)
-        self.layout.addWidget(self.identification_widget)
+        self.layout.addLayout(self.line_1)
         self.layout.addWidget(self.test_widget)
         self.save_widget = Save_Dir()
         self.layout.addWidget(self.save_widget)
@@ -432,7 +436,7 @@ class RezonantColumnSoilTestApp(QWidget):
         self.tab_1.statment_directory[str].connect(lambda x:
                                                    self.tab_2.save_widget.set_directory(x, "Резонансная колонка"))
         self.tab_1.signal[bool].connect(self.tab_2.set_test_params)
-        self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_params)
+        self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_data)
         self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
         self.tab_2.save_widget.save_all_button.clicked.connect(self.save_all_reports)
 

@@ -11,7 +11,7 @@ import os
 import sys
 from io import BytesIO
 
-from general.initial_tables import Table
+from general.initial_tables import Table, TableVertical
 from general.general_widgets import Float_Slider, RangeSlider
 from general.general_functions import read_json_file
 from configs.styles import style
@@ -120,7 +120,7 @@ class RezonantColumnUI(QWidget):
 
         return path
 
-class RezonantColumnIdentificationUI(QWidget):
+class RezonantColumnIdentificationUI_old(QWidget):
     """Интерфейс обработчика Резонансной колонки"""
     def __init__(self):
         """Определяем основную структуру данных"""
@@ -233,6 +233,19 @@ class RezonantColumnIdentificationUI(QWidget):
         self.p_ref_text.setText(str(statment[statment.current_test].mechanical_properties.reference_pressure))
         self.e_text.setText(str(statment[statment.current_test].physical_properties.e))
         self.E_text.setText(str(statment[statment.current_test].mechanical_properties.E50))
+
+class RezonantColumnIdentificationUI(TableVertical):
+
+    def __init__(self):
+        """Определяем основную структуру данных"""
+        super().__init__({
+        "laboratory_number": "Лаб. ном.",
+        "E50": "Модуль деформации E50, МПа",
+        "c": "Сцепление с, МПа",
+        "fi": "Угол внутреннего трения, град",
+        "e": "Коэффициент пористости, е",
+        "reference_pressure": "Референтное давление, МПа",
+        "K0": "K0"})
 
 class RezonantColumnOpenTestUI(QWidget):
     """Виджет для открытия файла прибора и определения параметров опыта"""

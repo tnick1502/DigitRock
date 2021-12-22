@@ -337,9 +337,9 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
             ModelRezonantColumnSoilTest.generate_resonant_curves(self._test_data.shear_strain, self._test_data.G_array,
                                                                  frequency_step=self._draw_params.frequency_step,
                                                                  ro=self._test_params.physical.r * 1000)
+        #print(len(self._test_data.G_array), len(self._test_data.frequency[0]))
+        #print([len(i) for i in self._test_data.frequency])
         self._test_processing()
-        #self.plotter()
-        #plt.plot(self._test_data.frequency[0], self._test_data.resonant_curves[0])
 
     def save_log_file(self, director):
         G = self._test_data.G_array
@@ -418,10 +418,16 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         resonant_frequency_array = np.round((Vs_array / (H * (ro * H / (Vs_array * Io)) ** (-0.5))) / (4 * np.pi))
 
         # Массив частот испытания
-        min_test_frequency = np.round(0.8 * np.min(resonant_frequency_array))
-        max_test_frequency = np.round(1.1 * np.max(resonant_frequency_array)) + frequency_step
-        frequency_array = np.arange(min_test_frequency - min_test_frequency % frequency_step,
+        frequency_array = []
+        i = 0
+        while len(frequency_array) < len(G):
+            min_test_frequency = np.round((0.8 - i/10) * np.min(resonant_frequency_array))
+            max_test_frequency = np.round((1.2 + i/10) * np.max(resonant_frequency_array)) + frequency_step
+            frequency_array = np.arange(min_test_frequency - min_test_frequency % frequency_step,
                                     max_test_frequency - min_test_frequency % frequency_step, frequency_step)
+            i += 1
+
+        #print(len(G), len(frequency_array))
 
         len_array = len(resonant_frequency_array)
         resonant_curves = [list() for _ in range(len_array)]

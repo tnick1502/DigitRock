@@ -1252,6 +1252,7 @@ class RCProperties(MechanicalProperties):
         if self.c and self.fi and self.E50:
             self.reference_pressure = float_df(data_frame.iat[string,
                                                           DynamicsPropertyPosition["reference_pressure"][1]])
+            print(self.reference_pressure)
             self.G0, self.threshold_shear_strain = define_G0_threshold_shear_strain(
                 self.reference_pressure, self.E50, self.c, self.fi, self.K0, physical_properties.type_ground,
                 physical_properties.Ip, physical_properties.e)
