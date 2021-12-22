@@ -1003,13 +1003,17 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         return Esec * dependence_Eur_on_Il(Il)
 
     @staticmethod
-    def xc_from_qf_e_if_is(sigma_3, type_ground, e, Ip, Il):
+    def xc_from_qf_e_if_is(sigma_3, type_ground, e, Ip, Il, Ir=None):
         """Функция находит деформацию пика девиаорного нагружения в зависимости от qf и E50, если по параметрам материала
         пик есть, если нет, возвращает xc = 0.15. Обжимающее напряжение должно быть в кПа"""
         none_to_zero = lambda x: 0 if not x else x
         Ip = Ip if Ip else 0
         Il = Il if Il else 0.5
         e0 = e if e else 0.65
+        Ir = Ir if Ir else 0
+
+        if Il > 0.35 and Ir >= 50:
+            return 0
 
         if e0 == 0:
             dens_sand = 2  # средней плотности
@@ -1038,9 +1042,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             dens_sand = 0
 
         sigma3mor = sigma_3 / 1000  # так как дается в КПа, а необходимо в МПа
-        if type_ground == 3 or type_ground == 4:  # Процентное содержание гранул размером 10 и 5 мм больше половины
-            kr_fgs = 1
-        elif none_to_zero(Ip) == 0:  # число пластичности. Пески (и торф?)
+        # if type_ground == 3 or type_ground == 4:  # Процентное содержание гранул размером 10 и 5 мм больше половины
+        #     kr_fgs = 1
+        if none_to_zero(Ip) == 0:  # число пластичности. Пески (и торф?)
             if dens_sand == 1 or type_ground == 1:  # любой плотный или гравелистый песок
                 kr_fgs = 1
             elif type_ground == 2:  # крупный песок
@@ -1094,7 +1098,6 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 kr_fgs = 1
         else:
             kr_fgs = 0
-
         return kr_fgs
 
     @staticmethod
