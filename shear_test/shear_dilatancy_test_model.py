@@ -294,29 +294,25 @@ class ModelShearDilatancy:
         """Аппроксимация объемной деформации для удобства обработки"""
         while True:
             try:
-                self._test_data.volume_strain_approximate = np.polyval(
-                    np.polyfit(self._test_data.strain_cut,
-                               self._test_data.volume_strain_cut, 15),
-                    self._test_data.strain_cut)
+                deg = 15
+                if deg > len(self._test_data.strain_cut) - 5:
+                    deg = len(self._test_data.strain_cut) - 5
+                self._test_data.volume_strain_approximate = np.polyval(np.polyfit(self._test_data.strain_cut,
+                                                                                  self._test_data.volume_strain_cut,
+                                                                                  deg), self._test_data.strain_cut)
                 break
             except:
                 continue
 
     def _cut(self):
         """Создание новых обрезанных массивов"""
-        self._test_data.strain_cut = self._test_data.strain[
-                                     self._test_cut_position.left:self._test_cut_position.right] - \
-                                     self._test_data.strain[self._test_cut_position.left]
-        self._test_data.volume_strain_cut = self._test_data.volume_strain[
-                                            self._test_cut_position.left:self._test_cut_position.right] - \
-                                            self._test_data.volume_strain[self._test_cut_position.left]
-        self._test_data.deviator_cut = self._test_data.deviator[
-                                       self._test_cut_position.left:self._test_cut_position.right] - \
-                                       self._test_data.deviator[self._test_cut_position.left]
+        self._test_data.strain_cut = self._test_data.strain - self._test_data.strain[0]
 
-        self._test_data.pore_pressure_cut = self._test_data.pore_pressure[
-                                       self._test_cut_position.left:self._test_cut_position.right] - \
-                                       self._test_data.pore_pressure[self._test_cut_position.left]
+        self._test_data.volume_strain_cut = self._test_data.volume_strain - self._test_data.volume_strain[0]
+
+        self._test_data.deviator_cut = self._test_data.deviator - self._test_data.deviator[0]
+
+        self._test_data.pore_pressure_cut = self._test_data.pore_pressure - self._test_data.pore_pressure[0]
 
         if self._test_data.reload_points:
             self._test_data.reload_points_cut = [self._test_data.reload_points[0] - self._test_cut_position.left,
@@ -482,37 +478,39 @@ class ModelShearDilatancy:
         # Найдкм угол дилатансии
         i_top = np.argmax(deviator)
 
-        if strain[i_top] >= 0.14/0.15*7.14:
-            dilatancy = None
-        else:
-            x_area = 0.0005/0.15*7.14
-            if x_area <= (strain[i_top + 1] - strain[i_top - 1]):
-                x_area = (strain[i_top + 1] - strain[i_top - 1])
+        if i_top >= len(strain) - 2:
+            i_top = len(strain) - 2
 
-            i_begin, = np.where(strain >= strain[i_top] - x_area)
-            i_end, = np.where(strain >= strain[i_top] + x_area)
+        x_area = (strain[i_top + 1] - strain[i_top])
 
-            A1, B1 = line_approximate(strain[i_begin[0]:i_end[0]], volume_strain[i_begin[0]:i_end[0]])
-            B1 = volume_strain[i_top] - A1 * strain[i_top]
+        i_begin = i_top  # np.where(strain >= strain[i_top])
+        i_end, = np.where(strain >= strain[i_top] + x_area)
+        i_end = i_end[0]
 
-            delta_EpsV = line(A1, B1, strain[i_end[0]]) - line(A1, B1, strain[i_begin[0]])
-            delta_Eps1 = (strain[i_end[0]] - strain[i_begin[0]])
+        A1, B1 = line_approximate(strain[i_begin:i_end + 1], volume_strain[i_begin:i_end + 1])
+        B1 = volume_strain[i_top] - A1 * strain[i_top]
 
-            #dilatancy_value = np.rad2deg(np.arcsin(delta_EpsV / (delta_EpsV + 2 * delta_Eps1)))
-            dilatancy_value = np.rad2deg(np.arctan(delta_EpsV/delta_Eps1))
+        delta_EpsV = line(A1, B1, strain[i_end]) - line(A1, B1, strain[i_begin])
+        delta_Eps1 = (strain[i_end] - strain[i_begin])
 
-            dilatancy_plot_param = int(len(volume_strain)/10)
-            begin = i_top - dilatancy_plot_param
-            if begin < 0:
-                begin = 0
-            end = i_top + dilatancy_plot_param
+        # dilatancy_value = np.rad2deg(np.arcsin(delta_EpsV / (delta_EpsV + 2 * delta_Eps1)))
+        dilatancy_value = np.rad2deg(np.arctan(delta_EpsV / delta_Eps1))
 
-            if end >= len(volume_strain):
-                end = len(volume_strain) - 1
+        dilatancy_plot_param = int(len(volume_strain) / 10)
 
-            dilatancy = (
-                round(dilatancy_value, 2), [strain[begin], strain[end]],
-                [line(A1, B1, strain[begin]), line(A1, B1, strain[end])])
+        if dilatancy_plot_param == 0:
+            dilatancy_plot_param = 1
+
+        begin = i_top - dilatancy_plot_param
+        if begin < 0:
+            begin = 0
+        end = i_top + dilatancy_plot_param
+
+        if end >= len(volume_strain):
+            end = - 1
+
+        dilatancy = (round(dilatancy_value, 2), [strain[begin], strain[end]],
+                     [line(A1, B1, strain[begin]), line(A1, B1, strain[end])])
 
         return dilatancy
 
@@ -671,7 +669,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
 
-        params = {"E50": {"value": self._test_params.E50, "borders": [5000, 100000]},
+        params = {"E50": {"value": self._test_params.E50, "borders": [100, 100000]},
                   "fail_strain": {"value": self._draw_params.fail_strain, "borders": [0.03, 0.15]},
                   "residual_strength_param": {"value": self._draw_params.residual_strength_param, "borders": [0.05, 0.6]},
                   "residual_strength": {"value": self._draw_params.residual_strength,
@@ -712,10 +710,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         #                      (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
         dilatancy = self._draw_params.dilatancy
 
-        # print(f"TEST MODELLING FAIL STRAIN: {self._draw_params.fail_strain}")
-
         if self._test_params.tau_max >= 150:
-            print(self._test_params.tau_max, self._test_params.E50)
 
             self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
             self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve_shear_dilatancy(
@@ -727,11 +722,6 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                 amount_points=amount_point*20,
                 angle_of_dilatacy=dilatancy,
                 v_d_xc=-self._draw_params.volumetric_strain_xc)
-
-            # print(f"E50 : {self._test_params.E50}")
-            # for i in range(len(self._test_data.strain)):
-            #     print(f"{self._test_data.strain[i]}\t{self._test_data.deviator[i]}".replace(".", ","))
-            # print("--------------------------------------------")
 
             # self._test_data.strain = (self._test_data.strain/0.15)*0.1*71.4
             # self._test_data.pore_volume_strain = self._test_data.pore_volume_strain/((((1-2*self._draw_params.poisson)/(self._draw_params.poisson*(71.4/35))))/71.4/0.1*0.15)
@@ -753,12 +743,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             amount_points=amount_point*20,
             angle_of_dilatacy=dilatancy)
 
-            # for i in range(len(self._test_data.strain)):
-            #     print(f"{self._test_data.strain[i]}\t{self._test_data.deviator[i]}".replace(".", ","))
-            # print("--------------------------------------------")
-
             self._test_data.deviator /= k
-
 
 
         _strain = np.array([self._test_data.strain[i] for i in range(0, len(self._test_data.strain), 20)])
@@ -772,38 +757,25 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         self._test_data.deviator = np.round(self._test_data.deviator, 3)
         self._test_data.strain = np.round(self._test_data.strain, 6)
 
-        # i_end = ModelShearDilatancySoilTest.define_final_loading_point(self._test_data.deviator, 0.08 + np.random.uniform(0.01, 0.03))
-        # self._test_data.strain = self._test_data.strain[:i_end]
-        # self._test_data.deviator = self._test_data.deviator[:i_end]
-        # self._test_data.pore_volume_strain = self._test_data.pore_volume_strain[:i_end]
-        # self._test_data.cell_volume_strain = self._test_data.cell_volume_strain[:i_end]
+        i_end = ModelShearDilatancySoilTest.define_final_loading_point(self._test_data.deviator, 0.08 + np.random.uniform(0.01, 0.03))
+        self._test_data.strain = self._test_data.strain[:i_end]
+        self._test_data.deviator = self._test_data.deviator[:i_end]
+        self._test_data.pore_volume_strain = self._test_data.pore_volume_strain[:i_end]
+        self._test_data.cell_volume_strain = self._test_data.cell_volume_strain[:i_end]
 
         self._test_data.pore_pressure = np.random.uniform(-1, 1, len(self._test_data.strain))
-
-        #plt.plot(self._test_data.strain, self._test_data.pore_pressure)
-       # plt.plot(self._test_data.strain, self._test_data.deviator)
-        #plt.show()
 
         # Действия для того, чтобы полученный массив данных записывался в словарь для последующей обработки
 
         k = np.max(np.round(self._test_data.deviator[begin:] - self._test_data.deviator[begin], 3)) / self._test_params.tau_max
         self._test_data.deviator = np.round(self._test_data.deviator/k, 3)
 
-        # for i in range(len(self._test_data.strain)):
-        #     print(f"{self._test_data.strain[i]}\t{self._test_data.deviator[i]}".replace(".", ","))
-        #
-        # print("--------------------------------------------")
-
         self._test_data.strain = (self._test_data.strain / 0.15) * 0.1 * 71.4
         self._test_data.pore_volume_strain = self._test_data.pore_volume_strain / (((
                     (1 - 2 * self._draw_params.poisson) / (
                         self._draw_params.poisson * (71.4 / 35)))) / 71.4 / 0.1 * 0.15)
 
-        # for i in range(len(self._test_data.strain)):
-        #     print(f"{self._test_data.strain[i]}\t{self._test_data.deviator[i]}".replace(".", ","))
-
         self._test_data.strain = np.round(self._test_data.strain, 6)
-
         self._test_data.pore_volume_strain = np.round(self._test_data.pore_volume_strain,6)
         self._test_data.cell_volume_strain = np.round(self._test_data.cell_volume_strain,6)
 
@@ -960,13 +932,17 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         return Esec * dependence_Eur_on_Il(Il)
 
     @staticmethod
-    def xc_from_qf_e_if_is(sigma_3, type_ground, e, Ip, Il):
+    def xc_from_qf_e_if_is(sigma_3, type_ground, e, Ip, Il, Ir):
         """Функция находит деформацию пика девиаорного нагружения в зависимости от qf и E50, если по параметрам материала
         пик есть, если нет, возвращает xc = 0.15. Обжимающее напряжение должно быть в кПа"""
         none_to_zero = lambda x: 0 if not x else x
         Ip = Ip if Ip else 0
         Il = Il if Il else 0.5
         e0 = e if e else 0.65
+        Ir = Ir if Ir else 0
+
+        if Il > 0.35 and Ir >= 50:
+            return 0
 
         if e0 == 0:
             dens_sand = 2  # средней плотности
@@ -995,9 +971,9 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             dens_sand = 0
 
         sigma3mor = sigma_3 / 1000  # так как дается в КПа, а необходимо в МПа
-        if type_ground == 3 or type_ground == 4:  # Процентное содержание гранул размером 10 и 5 мм больше половины
-            kr_fgs = 1
-        elif none_to_zero(Ip) == 0:  # число пластичности. Пески (и торф?)
+        # if type_ground == 3 or type_ground == 4:  # Процентное содержание гранул размером 10 и 5 мм больше половины
+        #     kr_fgs = 1
+        if none_to_zero(Ip) == 0:  # число пластичности. Пески (и торф?)
             if dens_sand == 1 or type_ground == 1:  # любой плотный или гравелистый песок
                 kr_fgs = 1
             elif type_ground == 2:  # крупный песок
@@ -1051,7 +1027,6 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                 kr_fgs = 1
         else:
             kr_fgs = 0
-
         return kr_fgs
 
     @staticmethod
@@ -1087,7 +1062,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
     def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E):
 
         xc = ModelShearDilatancySoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
-                                                            data_phiz.Ip, data_phiz.Il)
+                                                            data_phiz.Ip, data_phiz.Il, data_phiz.Ir)
 
         if xc:
             xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
@@ -1100,7 +1075,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         else:
             residual_strength = 0.95
 
-        if xc <= 0.025:
+        if xc <= 0.03:
             xc = np.random.uniform(0.025, 0.03)
 
         return xc, residual_strength

@@ -631,18 +631,17 @@ class ShearSoilTestApp(QWidget):
                                                            ShearStatment.SHEAR_NN, ShearStatment.SHEAR_DD]:
             self.tab_widget.setTabEnabled(1, False)
             self.tab_widget.setTabEnabled(2, True)
-
-            if self.tab_1.open_line.get_data()["test_mode"] != self.previous_test_type:
-                test_mode = self.tab_1.open_line.get_data()["test_mode"]
-                self.tab_1.set_optional_parameter(test_mode)
-            self.previous_test_type = self.tab_1.open_line.get_data()["test_mode"]
-
         elif self.tab_1.shear_test_type_from_open_line() == ShearStatment.SHEAR_DILATANCY:
             self.tab_widget.setTabEnabled(1, True)
             self.tab_widget.setTabEnabled(2, False)
         else:
             self.tab_widget.setTabEnabled(1, True)
             self.tab_widget.setTabEnabled(2, True)
+
+        if self.tab_1.open_line.get_data()["test_mode"] != self.previous_test_type:
+            test_mode = self.tab_1.open_line.get_data()["test_mode"]
+            self.tab_1.set_optional_parameter(test_mode)
+        self.previous_test_type = self.tab_1.open_line.get_data()["test_mode"]
 
 
 if __name__ == '__main__':
