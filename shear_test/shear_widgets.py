@@ -438,7 +438,7 @@ class PressureArray(QGroupBox):
         self.setFixedHeight(120)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
-        self.radiobutton_state_standard = QRadioButton("ГОСТ 12248.3-2020")
+        self.radiobutton_state_standard = QRadioButton("ГОСТ 12248-2010")
         self.line_state_standard = QLineEdit()
         self.line_state_standard.setDisabled(True)
         self.radiobutton_state_standard.value = "state_standard"
