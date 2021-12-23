@@ -106,6 +106,10 @@ class Save_Dir(QWidget):
         return self._save_directory + f"/Архив {self.mode}{self.postfix}/"
 
     @property
+    def cvi_directory(self):
+        return self._save_directory + "/ЦВИ/"
+
+    @property
     def directory(self):
         return self._save_directory
 
@@ -122,7 +126,7 @@ class Save_Dir(QWidget):
 
         create_path(self._save_directory)
 
-        for path in [self.report_directory, self.arhive_directory]:
+        for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
             create_path(path)
 
         self.save_directory_text.setText(self._save_directory)

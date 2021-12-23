@@ -739,8 +739,6 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(self._draw_params.dilatancy)) /
                              (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
 
-
-
         if self._test_params.qf >= 150:
 
             if self._test_params.Eur:
@@ -861,6 +859,21 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         #print(statment[statment.current_test].physical_properties.laboratory_number, self._test_result["E50"])
         #print(self._test_params.__dict__)
 
+    def get_cvi_data(self, points: int = 10):
+        """Возвращает параметры отрисовки для установки на ползунки"""
+        strain_array = []
+        main_stress_array = []
+        volume_strain_array = []
+        argmax = np.argmax(self._test_data.deviator_cut)
+
+        index = [int(i) for i in range(0, argmax, int(argmax/(points-2)))] + [argmax]
+
+        for i in index:
+            strain_array.append(np.round(self._test_data.strain_cut[i], 3))
+            main_stress_array.append(np.round((self._test_data.deviator_cut[i] / 1000) + self._test_params.sigma_3/1000, 3))
+            volume_strain_array.append(np.round(self._test_data.volume_strain_cut[i], 3))
+
+        return np.array(strain_array), np.array(main_stress_array), np.array(volume_strain_array)
 
     def get_duration(self):
         return int((self._test_data.strain[-1] * (76 - self._test_params.delta_h_consolidation)) / self._test_params.velocity)

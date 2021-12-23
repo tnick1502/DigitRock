@@ -27,6 +27,7 @@ from general.general_functions import sigmoida, make_increas, line_approximate, 
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, define_qf, define_E50
 from configs.plot_params import plotter_params
 from singletons import statment, E_models, FC_models
+from cvi.cvi_writer import save_cvi_FC
 
 class ModelMohrCircles:
     """Класс моделирования опыта FCE"""
@@ -412,17 +413,50 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
     def set_test_params(self):
         self._test_modeling()
 
-    def save_log_files(self, directory):
+    def save_log_files(self, directory, name):
         """Метод генерирует файлы испытания для всех кругов"""
+
+        data = {
+            "laboratory_number": statment[statment.current_test].physical_properties.laboratory_number,
+            "borehole": statment[statment.current_test].physical_properties.borehole,
+            "ige": statment[statment.current_test].physical_properties.ige,
+            "depth": statment[statment.current_test].physical_properties.depth,
+            "sample_composition": "Н" if statment[statment.current_test].physical_properties.type_ground in [1,
+                                                                                                             2,
+                                                                                                             3,
+                                                                                                             4,
+                                                                                                             5] else "С",
+            "b": np.round(np.random.uniform(0.95, 0.98), 2),
+
+            "test_data": {
+            }
+        }
+
         if len(self._tests) >= 3:
+            i = 1
             for test in self._tests:
                 results = test.deviator_loading.get_test_results()
                 path = os.path.join(directory, str(results["sigma_3"]))
 
                 if not os.path.isdir(path):
                     os.mkdir(path)
-                file_name = os.path.join(path, "Test.1.log")
+                file_name = os.path.join(path, f"{name}.log")
                 test.save_log_file(file_name)
+
+
+                strain, main_stress, volume_strain = test.deviator_loading.get_cvi_data()
+
+                data["test_data"][str(i)] = {
+                    "main_stress": main_stress,
+                    "strain": strain,
+                    "volume_strain": volume_strain,
+                    "sigma_3": np.round(test.deviator_loading._test_params.sigma_3 / 1000, 3)
+                }
+
+                i += 1
+
+            save_cvi_FC(file_path=os.path.join(directory, f"{name} FC ЦВИ.xls"), data=data)
+
 
     @staticmethod
     def noise_for_mohrs_circles(sigma3, sigma1, fi, c):
