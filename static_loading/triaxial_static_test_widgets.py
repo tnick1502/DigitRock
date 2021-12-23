@@ -822,16 +822,19 @@ class StatickSoilTestApp(QWidget):
                 shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
 
                 set_cell_data(self.tab_1.path,
-                              "BE" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              'GI' + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              test_result["Eur"], sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.path,
+                              "BN" + str(statment[statment.current_test].physical_properties.sample_number + 7),
                               test_result["E50"], sheet="Лист1", color="FF6961")
 
                 set_cell_data(self.tab_1.path,
-                              "BC" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                              test_result["c"], sheet="Лист1", color="FF6961")
+                              "BG" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              test_result["fi"], sheet="Лист1", color="FF6961")
 
                 set_cell_data(self.tab_1.path,
-                              "BD" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                              test_result["fi"], sheet="Лист1", color="FF6961")
+                              "BF" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              test_result["c"], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)':
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
