@@ -374,7 +374,7 @@ class ModelShearSoilTest(ModelShear):
             for i in range(len(tau)):
                 tau_array[i] = round(tau[i], 3)
                 # sigma_1_array[i] = round(qf_array[i] + sigma_3_array[i], 3)
-                print(statment[statment.current_test].mechanical_properties.c)
+
                 E50_array.append(define_E50(
                     statment[statment.current_test].mechanical_properties.E50,
                     statment[statment.current_test].mechanical_properties.c*1000,

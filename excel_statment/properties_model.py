@@ -1374,13 +1374,13 @@ class ShearProperties(MechanicalProperties):
             self.E50 = ShearProperties.define_E50(physical_properties.type_ground,
                                                   physical_properties.Ir,
                                                   physical_properties.Ip, physical_properties.e,
-                                                  physical_properties.stratigraphic_index)*0.7
+                                                  physical_properties.stratigraphic_index, self.tau_max)*0.7
 
             self.E50 = self.E50 * 1000
 
-            if self.tau_max <= 40:
-                _E50 = self.tau_max / 0.15
-                self.E50 = _E50 * np.random.uniform(2.0, 3.0)
+            # if self.tau_max <= 40:
+            #     _E50 = self.tau_max / 0.15
+            #     self.E50 = _E50 * np.random.uniform(2.0, 3.0)
 
             if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_NN:
                 self.E50 = self.E50 * np.random.uniform(1.5, 2.0) / 0.7
@@ -1462,7 +1462,7 @@ class ShearProperties(MechanicalProperties):
             return False
 
     @staticmethod
-    def define_E50(type_ground, Ir, Il, e, stratigraphic_index):
+    def define_E50(type_ground, Ir, Il, e, stratigraphic_index, tau_max):
 
         def define_E50_for_sand(e50_array, e):
             """Функция расчета угла дилатнсии для песков"""
@@ -1475,7 +1475,9 @@ class ShearProperties(MechanicalProperties):
             if e < e_array[0]:
                 e = e_array[0]
             if e > e_array[-1]:
-                e = e_array[-1]
+                # e = e_array[-1]
+                return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
+
 
             return np.interp(e, e_array, e50_array)
 
@@ -1498,7 +1500,8 @@ class ShearProperties(MechanicalProperties):
                 if Il < 0:
                     Il = 0
                 if Il > 0.75:
-                    Il = 0.75
+                    #Il = 0.75
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
 
                 if type_ground == 6:
                     if 0 <= Il <= 0.75:
@@ -1519,7 +1522,8 @@ class ShearProperties(MechanicalProperties):
                 if Il < -0.25:
                     Il = -0.25
                 if Il > 0.5:
-                    Il = 0.5
+                    #Il = 0.5
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
 
                 if type_ground == 8:
                     if -0.25 <= Il <= 0:
@@ -1536,7 +1540,8 @@ class ShearProperties(MechanicalProperties):
                 if Il < 0:
                     Il = 0
                 if Il > 0.75:
-                    Il = 0.75
+                    #Il = 0.75
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
 
                 if type_ground == 6:
                     if 0 <= Il <= 0.75:
@@ -1577,6 +1582,12 @@ class ShearProperties(MechanicalProperties):
                 e = 0.65
             if e > 1.35:
                 e = 1.35
+
+            if Il < 0:
+                Il = 0
+            if Il > 0.75:
+                # Il = 0.75
+                return (tau_max / 0.15) * np.random.uniform(3.0, 4.0)/1000
 
             if 0 <= Il <= 0.25:
                 if 0.05 <= Ir <= 0.1:

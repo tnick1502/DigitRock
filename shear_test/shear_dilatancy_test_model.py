@@ -719,7 +719,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                 qf2=self._draw_params.residual_strength,
                 qocr=self._draw_params.qocr,
                 m_given=self._draw_params.poisson,
-                amount_points=amount_point*20,
+                amount_points=amount_point*20+1,
                 angle_of_dilatacy=dilatancy,
                 v_d_xc=-self._draw_params.volumetric_strain_xc)
 
@@ -740,7 +740,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             qf2=self._draw_params.residual_strength * k,
             qocr=self._draw_params.qocr,
             m_given=self._draw_params.poisson,
-            amount_points=amount_point*20,
+            amount_points=amount_point*20+1,
             angle_of_dilatacy=dilatancy)
 
             self._test_data.deviator /= k

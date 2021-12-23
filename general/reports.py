@@ -2544,10 +2544,10 @@ def result_table_shear(canvas, Res, pick, scale = 0.8):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Эффективное сцепление с', МПа:</p>''', LeftStyle), "", "", "",
+        [Paragraph('''<p>Сцепление с, МПа:</p>''', LeftStyle), "", "", "",
          zap(Res["c"], 3), ""])
     tableData.append(
-        [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "", "",
+        [Paragraph('''<p>Угол внутреннего трения φ, град:</p>''', LeftStyle), "", "", "",
          zap(Res["fi"], 1), ""])
 
     #tableData.append(
