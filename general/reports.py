@@ -1087,7 +1087,6 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8):
                  ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
                  ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
                  ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
-                 ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
 
                  ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                  ("FONTNAME", (0, 1), (-1, -1), 'Times'),

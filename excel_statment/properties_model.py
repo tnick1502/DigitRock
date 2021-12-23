@@ -316,7 +316,7 @@ class MechanicalProperties:
             if not self.OCR:
                 self.OCR = 1
 
-            self.Eur = True if test_mode == "Трёхосное сжатие с разгрузкой" else None
+            self.Eur = True if test_mode == "Трёхосное сжатие с разгрузкой" or "Трёхосное сжатие (F, C, Eur)" else None
 
             self.pressure_array = {
                 "set_by_user": MechanicalProperties.define_reference_pressure_array_set_by_user(
@@ -1252,7 +1252,6 @@ class RCProperties(MechanicalProperties):
         if self.c and self.fi and self.E50:
             self.reference_pressure = float_df(data_frame.iat[string,
                                                           DynamicsPropertyPosition["reference_pressure"][1]])
-            print(self.reference_pressure)
             self.G0, self.threshold_shear_strain = define_G0_threshold_shear_strain(
                 self.reference_pressure, self.E50, self.c, self.fi, self.K0, physical_properties.type_ground,
                 physical_properties.Ip, physical_properties.e)

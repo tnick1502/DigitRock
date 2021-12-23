@@ -653,7 +653,7 @@ class StatickSoilTestApp(QWidget):
                     self.set_test_parameters(True)
 
     def set_test_parameters(self, params):
-        if statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C, E)':
+        if statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C, E)' or statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C, Eur)':
             self.tab_2.item_identification.set_data()
             self.tab_3.item_identification.set_data()
             self.tab_2.set_params()
@@ -775,6 +775,48 @@ class StatickSoilTestApp(QWidget):
                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
+                            *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
+
+                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+
+                set_cell_data(self.tab_1.path,
+                              "BE" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              test_result["E50"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              "BC" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              test_result["c"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              "BD" + str(statment[statment.current_test].physical_properties.sample_number + 7),
+                              test_result["fi"], sheet="Лист1", color="FF6961")
+
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, Eur)":
+                name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
+
+                E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
+                FC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="FC_models.pickle")
+                FC_models[statment.current_test].save_log_files(save, file_path_name)
+                shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
+                            self.tab_4.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
+                E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log")
+                E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
+                shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
+                            self.tab_4.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
+
+                test_result = E_models[statment.current_test].get_test_results()
+                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[statment.current_test].get_sigma_3_1()
+                test_result["c"], test_result["fi"], test_result["m"] = \
+                FC_models[statment.current_test].get_test_results()["c"], \
+                FC_models[statment.current_test].get_test_results()["fi"], \
+                FC_models[statment.current_test].get_test_results()["m"]
+
+                test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
+
+                report_FCE(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
+                          statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
+                           test_parameter, test_result,
+                           (*self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]]),
                             *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)

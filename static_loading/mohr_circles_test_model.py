@@ -345,6 +345,8 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         sigma_1_origin = statment[statment.current_test].mechanical_properties.sigma_1
         E50_origin = statment[statment.current_test].mechanical_properties.E50
         u_origin = statment[statment.current_test].mechanical_properties.u
+        Eur_origin = statment[statment.current_test].mechanical_properties.Eur
+        statment[statment.current_test].mechanical_properties.Eur = None
 
         for num, sigma_3 in enumerate(self._reference_pressure_array):
             sigma_3_array.append(sigma_3 - u_array[num])
@@ -407,6 +409,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         statment[statment.current_test].mechanical_properties.sigma_1 = sigma_1_origin
         statment[statment.current_test].mechanical_properties.E50 = E50_origin
         statment[statment.current_test].mechanical_properties.u = u_origin
+        statment[statment.current_test].mechanical_properties.Eur = Eur_origin
 
         self._test_processing()
 
