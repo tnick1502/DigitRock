@@ -49,6 +49,47 @@ class Float_Slider(QSlider):  # получает на входе размер о
         else:
             self.setDisabled(True)
 
+
+class Slider(QSlider):  # получает на входе размер окна. Если передать 0 то размер автоматический
+    def __init__(self, m):
+        super().__init__(m)
+        self.slider_order = 1
+        self.disabled = False
+        self.delta = 0
+
+    def order(self, x):
+        return 1 / x
+
+    def set_borders(self, minimum, maximum):
+        if minimum == 0:
+            if maximum < 0:
+                self.delta = maximum
+                maximum = maximum + self.delta
+            self.setMinimum(0)
+            self.slider_order = 100 / (maximum)
+            self.setMaximum(maximum * self.slider_order)
+        else:
+            if minimum < 0:
+                self.delta = minimum + 1
+            minimum = minimum + self.delta
+            maximum = maximum + self.delta
+            self.slider_order = max([self.order(minimum), 100 / (maximum - minimum)])
+            self.setMinimum(minimum * self.slider_order)
+            self.setMaximum(maximum * self.slider_order)
+
+    def current_value(self):
+        if self.disabled:
+            return None
+        return float(self.value()) / self.slider_order - self.delta
+
+    def set_value(self, val):
+        val = val + self.delta
+        if val:
+            self.setValue(val * self.slider_order)
+        else:
+            self.setDisabled(True)
+
+
 class RangeSlider(QSlider):
     sliderMoved = QtCore.pyqtSignal(int, int)
 
@@ -302,25 +343,29 @@ class Progressbar(QWidget):
         self.progressBar.setProperty("value", round(val*100/self.count))
         self.label.setText("Процесс выполнения: {} из {}".format(val, self.count))
 
-"""
+
 if __name__ == "__main__":
     main = QApplication(sys.argv)
-    window = Progressbar(5)
+    window = Slider(Qt.Horizontal)
+    window.set_borders(-10, 10)
+    window.set_value(0)
 
-
-    timer = QtCore.QTimer()
-
-    def h():
-        [i*i for i in range(1000000)]
-
-
-    def onTimer():
-        for i in range(6):
-            h()
-            window.set_params(i)
-
-    timer.singleShot(1000, onTimer)
-    timer.start(1000)
+    def on_move():
+        print(window.current_value())
+    window.sliderMoved.connect(on_move)
+    # timer = QtCore.QTimer()
+    #
+    # def h():
+    #     [i*i for i in range(1000000)]
+    #
+    #
+    # def onTimer():
+    #     for i in range(6):
+    #         h()
+    #         window.set_params(i)
+    #
+    # timer.singleShot(1000, onTimer)
+    # timer.start(1000)
 
     window.show()
-    sys.exit(main.exec_())"""
+    sys.exit(main.exec_())

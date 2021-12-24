@@ -1406,16 +1406,16 @@ class ShearProperties(MechanicalProperties):
             self.E50 = ShearProperties.define_E50(physical_properties.type_ground,
                                                   physical_properties.Ir,
                                                   physical_properties.Ip, physical_properties.e,
-                                                  physical_properties.stratigraphic_index)*0.7
+                                                  physical_properties.stratigraphic_index, self.tau_max)
 
             self.E50 = self.E50 * 1000
 
-            if self.tau_max <= 40:
-                _E50 = self.tau_max / 0.15
-                self.E50 = _E50 * np.random.uniform(2.0, 3.0)
+            # if self.tau_max <= 40:
+            #     _E50 = self.tau_max / 0.15
+            #     self.E50 = _E50 * np.random.uniform(2.0, 3.0)
 
             if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_NN:
-                self.E50 = self.E50 * np.random.uniform(1.5, 2.0) / 0.7
+                self.E50 = self.E50 * np.random.uniform(1.5, 2.0)
 
             # print(f"E50 чтоб его: {self.E50}")
 
@@ -1494,7 +1494,7 @@ class ShearProperties(MechanicalProperties):
             return False
 
     @staticmethod
-    def define_E50(type_ground, Ir, Il, e, stratigraphic_index):
+    def define_E50(type_ground, Ir, Il, e, stratigraphic_index, tau_max):
 
         def define_E50_for_sand(e50_array, e):
             """Функция расчета угла дилатнсии для песков"""
@@ -1507,7 +1507,8 @@ class ShearProperties(MechanicalProperties):
             if e < e_array[0]:
                 e = e_array[0]
             if e > e_array[-1]:
-                e = e_array[-1]
+                # e = e_array[-1]
+                return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
 
             return np.interp(e, e_array, e50_array)
 
@@ -1530,7 +1531,8 @@ class ShearProperties(MechanicalProperties):
                 if Il < 0:
                     Il = 0
                 if Il > 0.75:
-                    Il = 0.75
+                    #Il = 0.75
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
 
                 if type_ground == 6:
                     if 0 <= Il <= 0.75:
@@ -1551,7 +1553,8 @@ class ShearProperties(MechanicalProperties):
                 if Il < -0.25:
                     Il = -0.25
                 if Il > 0.5:
-                    Il = 0.5
+                    #Il = 0.5
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
 
                 if type_ground == 8:
                     if -0.25 <= Il <= 0:
@@ -1568,7 +1571,8 @@ class ShearProperties(MechanicalProperties):
                 if Il < 0:
                     Il = 0
                 if Il > 0.75:
-                    Il = 0.75
+                    #Il = 0.75
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
 
                 if type_ground == 6:
                     if 0 <= Il <= 0.75:
@@ -1610,6 +1614,12 @@ class ShearProperties(MechanicalProperties):
             if e > 1.35:
                 e = 1.35
 
+            if Il < 0:
+                Il = 0
+            if Il > 0.75:
+                # Il = 0.75
+                return (tau_max / 0.15) * np.random.uniform(3.0, 4.0)/1000
+
             if 0 <= Il <= 0.25:
                 if 0.05 <= Ir <= 0.1:
                     return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
@@ -1643,8 +1653,8 @@ class ShearProperties(MechanicalProperties):
             1: define_E50_for_sand(np.array([50, 40, 30*0.5]), e),  # Песок гравелистый
             2: define_E50_for_sand(np.array([50, 40, 30*0.5]), e),  # Песок крупный
             3: define_E50_for_sand(np.array([50, 30, 30*0.5]), e),  # Песок средней крупности
-            4: define_E50_for_sand(np.array([48, 38, 28, 18*0.5]), e),  # Песок мелкий
-            5: define_E50_for_sand(np.array([39, 28, 18, 11*0.5]), e),  # Песок пылеватый
+            4: define_E50_for_sand(np.array([48*0.5, 38*0.5, 28*0.5, 18*0.5]), e),  # Песок мелкий
+            5: define_E50_for_sand(np.array([39*0.5, 28*0.5, 18*0.5, 11*0.5]), e),  # Песок пылеватый
             6: define_E50_for_clay(Il, e, stratigraphic_index, type_ground),  # Супесь
             7: define_E50_for_clay(Il, e, stratigraphic_index, type_ground),  # Суглинок
             8: define_E50_for_clay(Il, e, stratigraphic_index, type_ground),  # Глина

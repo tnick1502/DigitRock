@@ -20,7 +20,7 @@ from shear_test.shear_test_model import ModelShear, ModelShearSoilTest
 from shear_test.shear_dilatancy_widgets_UI import ModelShearItemUI
 from configs.styles import style
 from general.initial_tables import Table
-from general.general_widgets import Float_Slider
+from general.general_widgets import Slider
 from configs.plot_params import plotter_params
 from general.general_functions import read_json_file, AttrDict
 from singletons import Shear_models, Shear_Dilatancy_models, statment
@@ -438,7 +438,7 @@ class PressureArray(QGroupBox):
         self.setFixedHeight(120)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
-        self.radiobutton_state_standard = QRadioButton("ГОСТ 12248.3-2020")
+        self.radiobutton_state_standard = QRadioButton("ГОСТ 12248-2010")
         self.line_state_standard = QLineEdit()
         self.line_state_standard.setDisabled(True)
         self.radiobutton_state_standard.value = "state_standard"
@@ -526,7 +526,7 @@ class TriaxialStaticLoading_Sliders(QWidget):
 
                 # Создадим слайдер
                 setattr(self, "{name_var}_slider".format(name_var=var),
-                        Float_Slider(Qt.Horizontal))
+                        Slider(Qt.Horizontal))
                 slider = getattr(self, "{name_var}_slider".format(name_var=var))
 
                 # Создадим строку со значнием

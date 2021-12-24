@@ -294,9 +294,9 @@ class ModelShearDilatancy:
         """Аппроксимация объемной деформации для удобства обработки"""
         while True:
             try:
-                deg = 15
-                if deg > len(self._test_data.strain_cut) - 5:
-                    deg = len(self._test_data.strain_cut) - 5
+                deg = 10
+                if deg > len(self._test_data.strain_cut):
+                    deg = len(self._test_data.strain_cut)
                 self._test_data.volume_strain_approximate = np.polyval(np.polyfit(self._test_data.strain_cut,
                                                                                   self._test_data.volume_strain_cut,
                                                                                   deg), self._test_data.strain_cut)
@@ -645,12 +645,20 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
 
-        self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.tau_max*residual_strength
+        self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.tau_max*residual_strength*1.2
         self._draw_params.qocr = 0
 
         self._draw_params.poisson = statment[statment.current_test].mechanical_properties.poisons_ratio
         self._draw_params.volumetric_strain_xc = (0.006 - self._draw_params.dilatancy * 0.0002) * np.random.uniform(0.9, 1.1)
+
+        count = 0
         self._test_modeling()
+        dilatancy_angle = self._test_result.dilatancy_angle[0]
+        while abs(dilatancy_angle - self._draw_params.dilatancy) > 1. and count < 20:
+            self._test_modeling()
+            dilatancy_angle = self._test_result.dilatancy_angle[0]
+            count = count + 1
+
 
     def set_velocity_delta_h(self, velocity, delta_h_consolidation):
         """Передача в модель скорости нагружения и уменьшения образца на предыдущих этапах
@@ -676,7 +684,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                                         "borders": [self._test_params.tau_max*0.5, self._test_params.tau_max]},
                   "qocr": {"value": self._draw_params.qocr, "borders": [0, self._test_params.tau_max]},
                   "poisson": {"value": self._draw_params.poisson, "borders": [0.25, 0.45]},
-                  "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
+                  "dilatancy": {"value": self._draw_params.dilatancy, "borders": [-20, 25]},
                   "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]}}
         return params
 
@@ -719,7 +727,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                 qf2=self._draw_params.residual_strength,
                 qocr=self._draw_params.qocr,
                 m_given=self._draw_params.poisson,
-                amount_points=amount_point*20,
+                amount_points=amount_point*20+1,
                 angle_of_dilatacy=dilatancy,
                 v_d_xc=-self._draw_params.volumetric_strain_xc)
 
@@ -740,7 +748,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             qf2=self._draw_params.residual_strength * k,
             qocr=self._draw_params.qocr,
             m_given=self._draw_params.poisson,
-            amount_points=amount_point*20,
+            amount_points=amount_point*20+1,
             angle_of_dilatacy=dilatancy)
 
             self._test_data.deviator /= k
