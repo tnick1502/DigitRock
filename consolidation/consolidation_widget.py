@@ -301,6 +301,7 @@ class ConsolidationSoilTestApp(QWidget):
             Consolidation_models.dump(''.join(os.path.split(self.tab_2.save_wigdet.directory)[:-1]), name="consolidation_models.pickle")
             #models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
             test_result = Consolidation_models[statment.current_test].get_test_results()
+            Consolidation_models[statment.current_test].save_cvi_file(save, self.tab_2.save_wigdet.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
 
             report_consolidation(save + "/" + name, data_customer,
                                  statment[statment.current_test].physical_properties, statment.current_test,

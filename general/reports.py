@@ -2781,7 +2781,7 @@ def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ УГЛА ДИЛАТАНСИИ МЕТОДОМ",
-                             "ОДНОПЛОСКОСТНОГО СРЕЗА (ГОСТ 12248-2010)"], "/" + name)
+                             "ОДНОПЛОСКОСТНОГО СРЕЗА (12248.1-2020)"], "/" + name)
 
     parameter_table(canvas, Data_phiz, Lab)
 
@@ -2809,7 +2809,7 @@ def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     main_frame(canvas, path, Data_customer, code, "1/1")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЕ ГРУНТОВ МЕТОДОМ ОДНОПЛОСКОСТНОГО",
-                             "СРЕЗА (ГОСТ 12248-2010)"], "/" + name)
+                             "СРЕЗА (ГОСТ 12248.1-2020)"], "/" + name)
 
     parameter_table(canvas, Data_phiz, Lab)
     test_parameter["sigma"] = zap(res["sigma_shear"][0], 3) + "/" + zap(res["sigma_shear"][1], 3) + "/" + zap(res["sigma_shear"][2], 3)
