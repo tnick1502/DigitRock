@@ -97,10 +97,11 @@ class PhysicalProperties:
 
         try:
             borehole = float(self.borehole)
+
             if borehole % 1 < 0.001:
-                self.borehole = str(int(borehole))
-            else:
                 self.borehole = str(borehole)
+            else:
+                self.borehole = str(int(borehole))
         except:
             pass
 
@@ -315,12 +316,7 @@ class MechanicalProperties:
             if not self.OCR:
                 self.OCR = 1
 
-            if test_mode == "Трёхосное сжатие с разгрузкой":
-                self.Eur = True
-            elif test_mode == "Трёхосное сжатие (F, C, Eur)":
-                self.Eur = True
-            else:
-                self.Eur = None
+            self.Eur = True if test_mode == "Трёхосное сжатие с разгрузкой" or "Трёхосное сжатие (F, C, Eur)" else None
 
             self.pressure_array = {
                 "set_by_user": MechanicalProperties.define_reference_pressure_array_set_by_user(
@@ -1526,26 +1522,35 @@ class ShearProperties(MechanicalProperties):
                     physical_properties.type_ground, physical_properties.e, physical_properties.Il, physical_properties.Ip) * np.random.uniform(0.9, 1.1)
 
             self.pressure_array = {
-                "set_by_user": ShearProperties.define_reference_pressure_array_set_by_user(
-                    float_df(data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]])),
+                "set_by_user": (ShearProperties.define_reference_pressure_array_set_by_user(
+                    float_df(data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]]))),
 
-                "calculated_by_pressure": ShearProperties.define_reference_pressure_array_calculated_by_pressure(
-                    self.build_press, self.pit_depth, physical_properties.depth),
+                "calculated_by_pressure": (ShearProperties.define_reference_pressure_array_calculated_by_pressure(
+                    self.build_press, self.pit_depth, physical_properties.depth)),
 
-                "state_standard": ShearProperties.define_reference_pressure_array_state_standard(
-                    physical_properties.e, physical_properties.Il, physical_properties.type_ground)
+                "state_standard": (ShearProperties.define_reference_pressure_array_state_standard(
+                    physical_properties.e, physical_properties.Il, physical_properties.type_ground))
             }
 
+
             if self.pressure_array["set_by_user"] is not None:
+                self.pressure_array["set_by_user"] = [ShearProperties.round_sigma(val) for
+                                                      val in self.pressure_array["set_by_user"]]
                 self.pressure_array["current"] = self.pressure_array["set_by_user"]
             elif self.pressure_array["calculated_by_pressure"] is not None:
+                self.pressure_array["calculated_by_pressure"] = [ShearProperties.round_sigma(val) for
+                                                      val in self.pressure_array["calculated_by_pressure"]]
                 self.pressure_array["current"] = self.pressure_array["calculated_by_pressure"]
             elif self.pressure_array["state_standard"] is not None:
+                self.pressure_array["state_standard"] = [ShearProperties.round_sigma(val) for
+                                                      val in self.pressure_array["state_standard"]]
                 self.pressure_array["current"] = self.pressure_array["state_standard"]
 
             if self.pressure_array["calculated_by_pressure"] is None:
                 self.pressure_array["calculated_by_pressure"] = \
                     ShearProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma)
+                self.pressure_array["calculated_by_pressure"] = [ShearProperties.round_sigma(val) for
+                                                      val in self.pressure_array["calculated_by_pressure"]]
 
     @staticmethod
     def define_sigma(depth: float) -> float:
@@ -1559,8 +1564,26 @@ class ShearProperties(MechanicalProperties):
         return sigma * np.tan(np.deg2rad(fi)) + c
 
     @staticmethod
-    def round_sigma(sigma, param=5):
-        return sigma
+    def round_sigma(sigma, param = 3):
+        """Rounds value as this:
+            0.16 -> 0.16
+            0.14 -> 0.14
+            0.143 -> 0.145
+            0.146 -> 0.150
+        """
+        if sigma is None:
+            return sigma
+
+        order = 10 ** param
+
+        condition = round(sigma % 10 ** (-(param - 1)) * order, 1)
+        '''digit at param, for 0.146 and param = 3 condition = 6'''
+
+        if 0 < condition <= 5:
+            return round(sigma // (10 / order) / (order / 10) + 5 / order, param)
+        if condition > 5:
+            return round(sigma // (10 / order) / (order / 10) + 1 / (order / 10), param)
+        return round(sigma, param)
 
     @staticmethod
     def shear_type(test_mode: str) -> int:

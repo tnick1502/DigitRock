@@ -1174,11 +1174,11 @@ def curve_shear_dilatancy(qf, e50, **kwargs):
     if kwargs["angle_of_dilatacy"] < 0:
         m_given = kwargs["m_given"]
         angle_of_dilatacy = kwargs["angle_of_dilatacy"]
-        v_d_xc = (-x_given * (1 - 2 * m_given)) * 2
+        v_d_xc = (-x_given * (1 - 2 * m_given)) * 1.3
 
         while x_given*angle_of_dilatacy+(v_d_xc-angle_of_dilatacy*xc) > 1.1*(-x_given * (1 - 2 * m_given)):
             m_given = m_given - 0.00001
-            v_d_xc = (-x_given * (1 - 2 * m_given)) * 2
+            v_d_xc = (-x_given * (1 - 2 * m_given)) * 1.3
 
         y1 = bezier_curve([0, 0], [x_given, (-x_given * (1 - 2 * m_given))],
                           [xc, v_d_xc], [xc*1.1, xc*1.1*angle_of_dilatacy+(v_d_xc-angle_of_dilatacy*xc)],

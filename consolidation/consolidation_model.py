@@ -26,6 +26,7 @@ import scipy.ndimage as ndimage
 import math
 from datetime import timedelta
 import copy
+import os
 
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, \
     mirrow_element, \
@@ -35,6 +36,7 @@ from consolidation.function_consalidation_for_compr import function_consalidatio
 from configs.plot_params import plotter_params
 from singletons import statment
 from intersect import intersection
+from cvi.cvi_writer import save_cvi_Cons
 
 class ModelTriaxialConsolidation:
     """Модель обработки консолидации
@@ -1137,6 +1139,35 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                                            strain_model=self._test_data.volume_strain,
                                                            pressure=self._test_params.p_max,
                                                            report_number=name, device=False)
+
+    def get_cvi_data(self):
+        """Возвращает параметры отрисовки для установки на ползунки"""
+        vertical_pressure = np.array(self._test_params.p_max)
+        vertical_stress = self._test_data.volume_strain
+
+        return vertical_pressure, vertical_stress
+
+    def save_cvi_file(self, file_path, file_name):
+        data = {
+            "laboratory_number": statment[statment.current_test].physical_properties.laboratory_number,
+            "borehole": statment[statment.current_test].physical_properties.borehole,
+            "ige": statment[statment.current_test].physical_properties.ige,
+            "depth": statment[statment.current_test].physical_properties.depth,
+            "sample_composition": "Н" if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4, 5] else "С",
+            "b": np.round(np.random.uniform(0.95, 0.98), 2),
+
+            "test_data": {
+            }
+        }
+
+        vertical_pressure, vertical_stress = self.get_cvi_data()
+
+        data["test_data"]["1"] = {
+            "vertical_pressure": vertical_pressure,
+            "vertical_stress": vertical_stress,
+        }
+
+        save_cvi_Cons(file_path=os.path.join(file_path, file_name), data=data)
 
     @property
     def test_duration(self):
