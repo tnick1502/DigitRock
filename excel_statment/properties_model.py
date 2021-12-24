@@ -97,11 +97,10 @@ class PhysicalProperties:
 
         try:
             borehole = float(self.borehole)
-
             if borehole % 1 < 0.001:
-                self.borehole = str(borehole)
-            else:
                 self.borehole = str(int(borehole))
+            else:
+                self.borehole = str(borehole)
         except:
             pass
 
@@ -316,7 +315,12 @@ class MechanicalProperties:
             if not self.OCR:
                 self.OCR = 1
 
-            self.Eur = True if test_mode == "Трёхосное сжатие с разгрузкой" or "Трёхосное сжатие (F, C, Eur)" else None
+            if test_mode == "Трёхосное сжатие с разгрузкой":
+                self.Eur = True
+            elif test_mode == "Трёхосное сжатие (F, C, Eur)":
+                self.Eur = True
+            else:
+                self.Eur = None
 
             self.pressure_array = {
                 "set_by_user": MechanicalProperties.define_reference_pressure_array_set_by_user(
