@@ -66,13 +66,13 @@ class PhysicalProperties:
             if isinstance(getattr(PhysicalProperties, key), DataTypeValidation):
                 object.__setattr__(self, key, None)
 
-    @log_this(app_logger, "debug")
+    #@log_this(app_logger, "debug")
     def defineProperties(self, data_frame, string, identification_column=None) -> None:
         """Считывание строки свойств"""
         for attr_name in PhysicalPropertyPosition:
             if attr_name in ["laboratory_number", "borehole", "soil_name", "ige", "stratigraphic_index", "new_laboratory_number"]:
                 setattr(self, attr_name, str_df(data_frame.iat[string, PhysicalPropertyPosition[attr_name][1]]))
-            elif attr_name in ["date"]:
+            elif attr_name == "date":
                 setattr(self, attr_name, date_df(data_frame.iat[string, PhysicalPropertyPosition[attr_name][1]]))
             else:
                 setattr(self, attr_name, float_df(data_frame.iat[string, PhysicalPropertyPosition[attr_name][1]]))
@@ -87,6 +87,8 @@ class PhysicalProperties:
 
         self.type_ground = PhysicalProperties.define_type_ground(self._granulometric_to_dict(), self.Ip,
                                                                  self.Ir)
+        if not self.type_ground:
+            self.type_ground = PhysicalProperties.define_type_ground_by_name(self.soil_name)
 
         self.sample_size = PhysicalProperties.define_sample_size(self.granulometric_10, self.granulometric_5)
 
@@ -135,6 +137,8 @@ class PhysicalProperties:
         for i in range(10):
             accumulate_gran.append(accumulate_gran[i] + none_to_zero(data_gran[gran_struct[i + 1]]))
 
+        type_ground = None
+
         if none_to_zero(Ir) >= 50:  # содержание органического вещества Iom=hg10=Ir
             type_ground = 9  # Торф
         elif none_to_zero(Ip) < 1:  # число пластичности
@@ -153,6 +157,34 @@ class PhysicalProperties:
         elif 7 <= Ip < 17:
             type_ground = 7  # Суглинок
         else:  # data['Ip'] >= 17:
+            type_ground = 8  # Глина
+
+        return type_ground
+
+    @staticmethod
+    def define_type_ground_by_name(name) -> int:
+        """Функция определения типа грунта через грансостав"""
+
+        ground_name = name.upper()
+        print(ground_name)
+
+        if "ТОРФ" in ground_name:
+            type_ground = 9
+        elif "ПЕСОК ГРАВЕЛИСТЫЙ" in ground_name:
+            type_ground = 1  # Песок гравелистый
+        elif "ПЕСОК КРУПНЫЙ" in ground_name:
+            type_ground = 2  # Песок крупный
+        elif "ПЕСОК СРЕДНЕЙ КРУПНОСТИ" in ground_name:
+            type_ground = 3  # Песок средней крупности
+        elif "ПЕСОК МЕЛКИЙ" in ground_name:
+            type_ground = 4  # Песок мелкий
+        elif "ПЕСОК ПЫЛЕВАТЫЙ" in ground_name:
+            type_ground = 5  # Песок пылеватый
+        elif "СУПЕСЬ" in ground_name:
+            type_ground = 6  # Супесь
+        elif "СУГЛИНОК" in ground_name:
+            type_ground = 7  # Суглинок
+        elif "ГЛИНА" in ground_name:  # data['Ip'] >= 17:
             type_ground = 8  # Глина
 
         return type_ground
@@ -284,7 +316,7 @@ class MechanicalProperties:
             if not self.OCR:
                 self.OCR = 1
 
-            self.Eur = True if test_mode == "Трёхосное сжатие с разгрузкой" else None
+            self.Eur = True if test_mode == "Трёхосное сжатие с разгрузкой" or "Трёхосное сжатие (F, C, Eur)" else None
 
             self.pressure_array = {
                 "set_by_user": MechanicalProperties.define_reference_pressure_array_set_by_user(

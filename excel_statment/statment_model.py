@@ -260,7 +260,9 @@ class Statment:
 
 
 if __name__ == '__main__':
-    s.setGeneralParameters({'equipment': 'ЛИГА КЛ-1С', 'test_mode': 'Штормовое разжижение', 'K0_mode': 'K0: По ГОСТ-65353'})
-    s.readExcelFile(r"C:\Users\Пользователь\Desktop\Новая папка (4)\987-21 Карское море - шторм.xlsx", None)
-    s.dump(r"C:\Users\Пользователь\Desktop\Новая папка (4)")
-    print(s)
+   """ from excel_statment.properties_model import RCProperties
+    s = Statment()
+    s.setTestClass(RCProperties)
+    s.setGeneralParameters({'test_mode': "Резонансная колонка", 'K0_mode': 'K0: По ГОСТ-65353'})
+    s.readExcelFile(r"Z:\МДГТ - (Заказчики)\ЦГИ ООО\2021\762-21 Ильменский, 4\2. в работе\G0\762-21 Ильменский, 4 -G0.xlsx", None)
+    print(s)"""

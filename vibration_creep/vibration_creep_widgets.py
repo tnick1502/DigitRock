@@ -13,7 +13,7 @@ from excel_statment.initial_statment_widgets import VibrationCreepStatment
 from general.reports import report_VibrationCreep, report_VibrationCreep3, zap
 from general.save_widget import Save_Dir
 from vibration_creep.vibration_creep_widgets_UI import VibrationCreepUI
-from general.initial_tables import TableVertical
+from excel_statment.initial_tables import TableVertical
 from static_loading.triaxial_static_test_widgets import StaticSoilTestWidget
 from general.initial_tables import TableCastomer
 from general.excel_functions import create_json_file, read_json_file
@@ -56,7 +56,7 @@ class VibrationCreepSoilTestWidget(QWidget):
             "OCR": "OCR",
             "m": "Показатель степени жесткости"
         }
-        self.identification = TableVertical(fill_keys)
+        self.identification = TableVertical(fill_keys, size={"size": 100, "size_fixed_index": [1]})
         self.identification.setFixedWidth(350)
         self.identification.setFixedHeight(700)
         self.layout.addWidget(self.dynamic_widget)
@@ -330,8 +330,6 @@ class VibrationCreepSoilTestApp(QWidget):
 
             file_name = "/" + "Отчет " + file_path_name + "-ВП" + ".pdf"
 
-            pick_vc, pick_c = self.tab_3.dynamic_widget.save_canvas()
-
             E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
             VC_models[statment.current_test].save_log(save)
 
@@ -343,13 +341,31 @@ class VibrationCreepSoilTestApp(QWidget):
             res = VC_models[statment.current_test].get_test_results()
 
             if len(res) > 1:
+                pick_vc_array, pick_c_array = [], []
+                plots = VC_models[statment.current_test].get_plot_data()
+                res = VC_models[statment.current_test].get_test_results()
+                for i in range(len(res)):
+                    actual_plots = dict(plots)
+                    for key in plots:
+                        actual_plots[key] = [plots[key][i]]
+                    self.tab_3.dynamic_widget.plot(actual_plots, [res[i]])
+                    pick_vc, pick_c = self.tab_3.dynamic_widget.save_canvas()
+                    pick_vc_array.append(pick_vc)
+                    pick_c_array.append(pick_c)
+
+                self.tab_3.dynamic_widget.plot(plots, res)
+                pick_vc, pick_c = self.tab_3.dynamic_widget.save_canvas()
+                pick_vc_array.append(pick_vc)
+                pick_c_array.append(pick_c)
+
+
                 report_VibrationCreep3(save + "/" + file_name, data_customer,
                                       statment[statment.current_test].physical_properties,
                                       statment.getLaboratoryNumber(),
                                       os.getcwd() + "/project_data/",
                                       test_parameter, E_models[statment.current_test].get_test_results(),
                                       VC_models[statment.current_test].get_test_results(),
-                                      [pick_vc, pick_c,
+                                      [pick_vc_array, pick_c_array,
                                        *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])],
                                       "{:.2f}".format(__version__))
 
@@ -377,6 +393,7 @@ class VibrationCreepSoilTestApp(QWidget):
                               color="FF6961")
 
             else:
+                pick_vc, pick_c = self.tab_3.dynamic_widget.save_canvas()
                 report_VibrationCreep(save + "/" + file_name, data_customer,
                                       statment[statment.current_test].physical_properties,
                                       statment.getLaboratoryNumber(),

@@ -30,6 +30,7 @@ from general.general_functions import read_json_file, create_json_file
 from loggers.logger import app_logger
 from datetime import timedelta
 from singletons import E_models, statment
+from cvi.cvi_writer import save_cvi_E
 
 class ModelTriaxialStaticLoad:
     """Класс моделирования опыта трехосного сжатия
@@ -367,9 +368,35 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
         plaxis = self.deviator_loading.get_plaxis_dictionary()
         with open('/'.join(os.path.split(file_path)[:-1]) + "/plaxis_log.txt", "w") as file:
-            file.write("strain\tdeviator\n")
             for i in range(len(plaxis["strain"])):
                 file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
+
+    def save_cvi_file(self, file_path, file_name):
+        data = {
+            "laboratory_number": statment[statment.current_test].physical_properties.laboratory_number,
+            "borehole": statment[statment.current_test].physical_properties.borehole,
+            "ige": statment[statment.current_test].physical_properties.ige,
+            "depth": statment[statment.current_test].physical_properties.depth,
+            "sample_composition": "Н" if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4, 5] else "С",
+            "b": np.round(np.random.uniform(0.95, 0.98), 2),
+
+            "test_data": {
+            }
+        }
+
+        strain, main_stress, volume_strain = self.deviator_loading.get_cvi_data(points=20)
+
+        data["test_data"]["1"] = {
+            "main_stress": main_stress,
+            "strain": strain,
+            "volume_strain": volume_strain,
+            "sigma_3": np.round(E_models[statment.current_test].deviator_loading._test_params.sigma_3 / 1000, 3)
+        }
+
+        save_cvi_E(file_path=os.path.join(file_path,file_name), data=data)
+
+
+
 
     @property
     def test_duration(self):

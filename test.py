@@ -33,12 +33,7 @@ axes[1].plot(x, y)
 axes[1].set_xscale("log")
 
 plt.show()"""
-sticks = []
-text = []
-for i, k in zip([1, 10, 100, 1000, 10000, 100000, 1000000], ["$10^{-1}$", "$10^{0}$", "$10^{1}$", "$10^{2}$", "$10^{3}$", "$10^{4}$",
-                            "$10^{5}$", "$10^{6}$"]):
-    sticks += [i * val for val in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]]
-    text += [k] + ["" for i in range(8)]
-
-print(sticks)
-print(text)
+import numpy as np
+s = [0, 5, 6,8 ,7,5,9,9,8,1]
+m = [int(i) for i in range(0, len(s), int(len(s)/(5-2)))] + [len(s)]
+print(m)

@@ -104,6 +104,9 @@ def cfe_test_type_columns(test_type):
     elif test_type == "Трёхосное сжатие (F, C, E)":
         return ["BC", "BD", "BE"]
 
+    elif test_type == "Трёхосное сжатие (F, C, Eur)":
+        return ["BF", "BG", "BN"]
+
     elif test_type == "Трёхосное сжатие с разгрузкой":
         return ["BL", "BM", "BN"]
 

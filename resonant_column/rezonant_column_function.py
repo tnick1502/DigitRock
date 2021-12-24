@@ -290,21 +290,10 @@ def define_G0_threshold_shear_strain(p_ref, E50, c, fi, K0, type_ground, Ip, e) 
     G0 = G0_plaxis * 0.7 + G0 * 0.3
     gam07 = define_threshold_shear_strain(E50/1000, G0, p_ref, c, fi, K0, PI)
 
-    return (np.round(G0, 2), np.round(gam07, 2))
+    G0 *= np.random.uniform(0.85, 1.15)
+    gam07 *= np.random.uniform(0.85, 1.15)
 
-p_ref=0.2
-e=0.5
-#print(define_G0_Hardin_and_Black_1968(p_ref, e))
-#print(define_G0_Marcuson_andWahls_1972(p_ref, e))
-#print(define_G0_Kim_and_Novac_1981(p_ref, e))
-#print(define_G0_Kokusho_et_al_1982_Alluvial_clays(p_ref, e))
-#print(define_G0_Jamiolkowski_et_al_1995(p_ref, e))
-#print(define_G0_Shibuya_and_Tanaka_1996(p_ref, e))
-#print(define_G0_DElia_and_Lanzo_1996_sandy_silt_silty_sand(p_ref, e))
-#print(define_G0_DElia_and_Lanzo_1996_clayey_silts(p_ref, e))
-#print(define_G0_Vrettos_andSavidis_1999(p_ref, e))
-#print(define_G0_Kallioglou_et_al_2008(p_ref, 1, e))
-#print(define_G0_Sas_et_al_2017(0.1))
+    return (np.round(G0, 2), np.round(gam07, 2))
 
 if __name__ == "__main__":
     e = 0.55
