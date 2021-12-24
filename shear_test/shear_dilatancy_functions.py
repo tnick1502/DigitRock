@@ -1169,10 +1169,45 @@ def curve_shear_dilatancy(qf, e50, **kwargs):
         #print(is_no_peak)
         xc = np.random.uniform(0.2, 0.3)
         # old: xc =  x_old[-1] - len_x_dilatacy - 5 * (x_old[-1] - x_old[-2]) - len_line_end
+
     #для отрицательного угла дилатансии
     if kwargs["angle_of_dilatacy"] < 0:
-        xc = np.random.uniform(0.2, 0.3)
-        kwargs["angle_of_dilatacy"] = np.tan(30 * np.pi / 180)
+        m_given = kwargs["m_given"]
+        angle_of_dilatacy = kwargs["angle_of_dilatacy"]
+        v_d_xc = (-x_given * (1 - 2 * m_given)) * 2
+
+        while x_given*angle_of_dilatacy+(v_d_xc-angle_of_dilatacy*xc) > 1.1*(-x_given * (1 - 2 * m_given)):
+            m_given = m_given - 0.00001
+            v_d_xc = (-x_given * (1 - 2 * m_given)) * 2
+
+        y1 = bezier_curve([0, 0], [x_given, (-x_given * (1 - 2 * m_given))],
+                          [xc, v_d_xc], [xc*1.1, xc*1.1*angle_of_dilatacy+(v_d_xc-angle_of_dilatacy*xc)],
+                          [x_given, (-x_given * (1 - 2 * m_given))], [xc, v_d_xc], x_old)
+
+        index_x2, = np.where(x >= 0.15)
+        y1 = y1[:index_x2[0]]
+        x = x[:index_x2[0]]
+        y = y[:index_x2[0]]
+        y2 = copy.deepcopy(y1)
+        indexs_loop = [0, 0, 0]
+
+        try:
+            y1 += deviation_volume_strain(x, x_given, x[np.argmax(y)], 0.001, 0.0001)
+            y2 += deviation_volume_strain(x, x_given, 0.15, 0.005, 0.0001)
+        except:
+            pass
+
+        y1[0] = 0.
+        y2[0] = 0.
+
+        random_param = np.random.uniform(-0.018*v_d_xc, 0.018*v_d_xc, len(y1))
+        y1 = y1 + random_param
+        y2 = y2 + random_param
+
+        return x, y, y1, y2, indexs_loop, 0
+
+    # xc = np.random.uniform(0.2, 0.3)
+        # kwargs["angle_of_dilatacy"] = np.tan(30 * np.pi / 180)
 
     if xc > x_end - len_x_dilatacy / 2 - 5 * (x_old[-1] - x_old[-2]):  # если xc>чем точка начала
         # последнего линейного участка -5 шагов, то сдвигаем х_end за область 0.15
@@ -1308,7 +1343,7 @@ def curve_shear_dilatancy(qf, e50, **kwargs):
     y2 = y2[:index_x2[0]]
     if not Eur:
         try:
-            y1 += deviation_volume_strain(x, x_given, x[np.argmax(y)], 0.008, 0.0001)
+            y1 += deviation_volume_strain(x, x_given, x[np.argmax(y)], 0.001, 0.0001)
             y2 += deviation_volume_strain(x, x_given, 0.15, 0.005, 0.0001)
         except:
             pass
@@ -1350,7 +1385,7 @@ def curve_shear_dilatancy(qf, e50, **kwargs):
     y1[0] = 0.  # искусственное зануление первой точки
     y2[0] = 0.
 
-    random_param = np.random.uniform(-0.00125 / 8., 0.00125 / 8., len(y1))
+    random_param = np.random.uniform(-0.012*v_d_xc, 0.012*v_d_xc, len(y1))
     y1 = y1 + random_param
     #y1 = discrete_array(y1, 0.00125 / 2.)  # дискретизация по уровню функции обьемной деформации
     y2 = y2 + random_param
@@ -1610,7 +1645,7 @@ if __name__ == '__main__':
     rcParams['font.family'] = 'Times New Roman'
     rcParams['font.size'] = '12'
     rcParams['axes.edgecolor'] = 'black'
-    plt.grid(axis='both', linewidth='0.6')
+    # plt.grid(axis='both', linewidth='0.6')
     # plt.xlabel("Относительная вертикальная деформация $ε_1$, д.е")
     # plt.ylabel("Девиатор q, кПа")
     #    x1, y1, x_log1, y_0_xca1, point_time1 = function_consalidation(Cv=0.379, point_time=1, reverse=1, last_point=250)
@@ -1625,11 +1660,17 @@ if __name__ == '__main__':
     #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
     # (596.48, 382.8)
 
-    x, y, y1, y2, indexs_loop, a= curve_shear_dilatancy(500, 25886.414460418484, xc=0.049434126090814004, x2=0.14443569063527106, qf2=250.83346917699112, qocr=0, m_given=0.29,
-                                                        amount_points=580, angle_of_dilatacy=1.4060628108718536, v_d_xc=0.005636079818141735)
-    print(dictionary_deviator_loading(x, y, y1, 100, 0.1))
+    x, y, y1, y2, indexs_loop, a = curve_shear_dilatancy(500, 25886.414460418484, xc=0.049434126090814004, x2=0.14443569063527106, qf2=250.83346917699112, qocr=0, m_given=0.29,
+                                                        amount_points=580, angle_of_dilatacy=-0.5, v_d_xc=-0.005636079818141735)
+
+
+    plt.figure()
+    plt.plot(x, y)
+    plt.figure()
+    plt.plot(x, y1)
+    plt.show()
     #
-    # i, = np.where(x >= max(x) - 0.15)
+    #
     # x = x[i[0]:] - x[i[0]]
     # z = z[i[0]:] - z[i[0]]
     # z1 = z1[i[0]:] - z1[i[0]]

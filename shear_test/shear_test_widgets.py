@@ -15,7 +15,7 @@ from general.save_widget import Save_Dir
 from excel_statment.functions import set_cell_data
 from general.reports import report_consolidation, report_FCE, report_Shear, report_Shear_Dilatancy
 from shear_test.shear_dilatancy_widgets_UI import ModelShearItemUI, ModelShearFileOpenUI, ModelShearDilatancyUI
-from general.general_widgets import Float_Slider
+from general.general_widgets import Slider
 from configs.styles import style
 from singletons import Shear_Dilatancy_models, Shear_models, statment
 from loggers.logger import app_logger, log_this, handler
@@ -180,7 +180,7 @@ class Shear_Sliders(QWidget):
 
                 # Создадим слайдер
                 setattr(self, "{name_var}_slider".format(name_var=var),
-                        Float_Slider(Qt.Horizontal))
+                        Slider(Qt.Horizontal))
                 slider = getattr(self, "{name_var}_slider".format(name_var=var))
 
                 # Создадим строку со значнием
@@ -492,7 +492,7 @@ class ShearSoilTestApp(QWidget):
             #     h, d = 300, 150
             # else:
             #     d, h = statment[statment.current_test].physical_properties.sample_size
-            h = 20.0
+            h = 35.0
             d = 71.4
 
             moisture_type = self.tab_1.open_line.get_data()["optional"]
