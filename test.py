@@ -33,7 +33,20 @@ axes[1].plot(x, y)
 axes[1].set_xscale("log")
 
 plt.show()"""
+
+def define_Kd_sand():
+
+    frequency = np.array([2, 5, 10, 30, 40, 61.5, 100])
+
+    def type_1(e):
+
+
+
+
+
 import numpy as np
-s = [0, 5, 6,8 ,7,5,9,9,8,1]
-m = [int(i) for i in range(0, len(s), int(len(s)/(5-2)))] + [len(s)]
-print(m)
+from scipy.interpolate import interp1d
+x1 = np.array([2, 5, 10, 30, 40, 61.5, 100])
+y1 = np.array([0.9, 0.87, 0.84, 0.8, 0.79, 0.78, 0.76])
+Ainter = interp1d(x1, y1, kind='cubic')
+print(float(Ainter(55)))
