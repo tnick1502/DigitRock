@@ -97,11 +97,10 @@ class PhysicalProperties:
 
         try:
             borehole = float(self.borehole)
-
             if borehole % 1 < 0.001:
-                self.borehole = str(borehole)
-            else:
                 self.borehole = str(int(borehole))
+            else:
+                self.borehole = str(borehole)
         except:
             pass
 
