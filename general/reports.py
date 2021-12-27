@@ -2366,6 +2366,7 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+    test_parameter = dict(test_parameter)
     test_parameter["K0"] = test_parameter["K0"][1]
     name = "ТД"
     canvas = Canvas(Name, pagesize=A4)

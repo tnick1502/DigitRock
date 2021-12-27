@@ -1280,7 +1280,7 @@ class VibrationCreepProperties(MechanicalProperties):
         super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
         if self.c and self.fi and self.E50:
             frequency = data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]]
-            Kd = data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]]
+            #Kd = data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]]
 
             t = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])
             if not t:
@@ -1295,9 +1295,13 @@ class VibrationCreepProperties(MechanicalProperties):
                 self.t = np.round(t/2)
 
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
-            self.Kd = [VibrationCreepProperties.define_Kd(
-                self.qf, self.t, physical_properties.e, physical_properties.Il, frequency) for frequency in self.frequency]
-
+            if physical_properties.type_ground in [1, 2, 3, 4, 5]:
+                self.Kd = [VibrationCreepProperties.define_Kd_sand(
+                    physical_properties.type_ground, physical_properties.e, frequency) for frequency in
+                    self.frequency]
+            else:
+                self.Kd = [VibrationCreepProperties.define_Kd(
+                    self.qf, self.t, physical_properties.e, physical_properties.Il, frequency) for frequency in self.frequency]
 
             """self.frequency = [float(frequency)] if str(frequency).isdigit() else list(map(
                 lambda frequency: float(frequency.replace(",", ".").strip(" ")), frequency.split(";")))
@@ -1306,7 +1310,12 @@ class VibrationCreepProperties(MechanicalProperties):
 
             self.cycles_count = int(np.random.uniform(2000, 5000))
 
-            self.damping_ratio = np.random.uniform(1, 2)
+            if self.Kd[-1] >= 0.9:
+                self.damping_ratio = np.random.uniform(1, 2)
+            elif self.Kd[-1] >= 0.8:
+                self.damping_ratio = np.random.uniform(3, 5)
+            else:
+                self.damping_ratio = np.random.uniform(5, 10)
 
     @staticmethod
     def val_to_list(val) -> list:
@@ -1335,6 +1344,84 @@ class VibrationCreepProperties(MechanicalProperties):
         Kd *= load_dependence * e_dependence * Il_dependence * frequency_dependence * np.random.uniform(0.98, 1.02)
 
         return np.round(Kd, 2)
+
+    @staticmethod
+    def define_Kd_sand(type, e, frequency):
+        FREQUENCY = np.array([2, 5, 10, 30, 40, 61.5, 100])
+
+        def type_1_2(e, frequency, frequency_array=FREQUENCY):
+            if e <= 0.55:
+                Kd_low = np.array([0.96, 0.95, 0.95, 0.95, 0.93, 0.93, 0.92])
+                Kd_hight = np.array([0.99, 0.98, 0.98, 0.97, 0.97, 0.96, 0.96])
+            elif e > 0.7:
+                Kd_low = np.array([0.80, 0.78, 0.77, 0.76, 0.76, 0.75, 0.74])
+                Kd_hight = np.array([0.84, 0.83, 0.82, 0.80, 0.80, 0.79, 0.78])
+            else:  # (0.55 <= e) and (e <= 0.7):
+                Kd_low = np.array([0.82, 0.80, 0.79, 0.77, 0.77, 0.76, 0.75])
+                Kd_hight = np.array([0.85, 0.84, 0.83, 0.81, 0.81, 0.80, 0.79])
+
+            spline_low = interp1d(frequency_array, Kd_low, kind='cubic')
+            spline_hight = interp1d(frequency_array, Kd_hight, kind='cubic')
+
+            return np.random.uniform(float(spline_low(frequency)), float(spline_hight(frequency)))
+
+        def type_3(e, frequency, frequency_array=FREQUENCY):
+            if e < 0.55:
+                Kd_low = np.array([0.93, 0.91, 0.90, 0.88, 0.87, 0.85, 0.84])
+                Kd_hight = np.array([0.97, 0.95, 0.94, 0.94, 0.93, 0.93, 0.92])
+            elif e > 0.7:
+                Kd_low = np.array([0.77, 0.76, 0.74, 0.72, 0.71, 0.70, 0.70])
+                Kd_hight = np.array([0.82, 0.80, 0.78, 0.77, 0.76, 0.75, 0.74])
+            else:  # (0.55 <= e) and (e <= 0.7):
+                Kd_low = np.array([0.8, 0.78, 0.77, 0.74, 0.73, 0.71, 0.70])
+                Kd_hight = np.array([0.84, 0.82, 0.80, 0.77, 0.77, 0.76, 0.75])
+
+            spline_low = interp1d(frequency_array, Kd_low, kind='cubic')
+            spline_hight = interp1d(frequency_array, Kd_hight, kind='cubic')
+
+            return np.random.uniform(float(spline_low(frequency)), float(spline_hight(frequency)))
+
+        def type_4(e, frequency, frequency_array=FREQUENCY):
+            if e < 0.6:
+                Kd_low = np.array([0.92, 0.89, 0.87, 0.85, 0.84, 0.82, 0.81])
+                Kd_hight = np.array([0.96, 0.93, 0.91, 0.88, 0.88, 0.86, 0.85])
+            elif e > 0.75:
+                Kd_low = np.array([0.77, 0.74, 0.72, 0.68, 0.66, 0.64, 0.61])
+                Kd_hight = np.array([0.81, 0.78, 0.77, 0.73, 0.72, 0.71, 0.70])
+            else:  # (0.55 <= e) and (e <= 0.7):
+                Kd_low = np.array([0.79, 0.76, 0.75, 0.70, 0.70, 0.68, 0.65])
+                Kd_hight = np.array([0.83, 0.80, 0.79, 0.75, 0.74, 0.72, 0.71])
+
+            spline_low = interp1d(frequency_array, Kd_low, kind='cubic')
+            spline_hight = interp1d(frequency_array, Kd_hight, kind='cubic')
+
+            return np.random.uniform(float(spline_low(frequency)), float(spline_hight(frequency)))
+
+        def type_5(e, frequency, frequency_array=FREQUENCY):
+            if e < 0.6:
+                Kd_low = np.array([0.90, 0.87, 0.84, 0.80, 0.79, 0.78, 0.76])
+                Kd_hight = np.array([0.95, 0.92, 0.89, 0.85, 0.84, 0.83, 0.81])
+            elif e > 0.8:
+                Kd_low = np.array([0.74, 0.70, 0.68, 0.64, 0.62, 0.61, 0.58])
+                Kd_hight = np.array([0.78, 0.75, 0.72, 0.68, 0.66, 0.65, 0.63])
+            else:  # (0.55 <= e) and (e <= 0.7):
+                Kd_low = np.array([0.77, 0.74, 0.70, 0.68, 0.67, 0.64, 0.63])
+                Kd_hight = np.array([0.82, 0.78, 0.75, 0.72, 0.71, 0.69, 0.67])
+
+            spline_low = interp1d(frequency_array, Kd_low, kind='cubic')
+            spline_hight = interp1d(frequency_array, Kd_hight, kind='cubic')
+
+            return np.random.uniform(float(spline_low(frequency)), float(spline_hight(frequency)))
+
+        Kd_dict = {
+            1: type_1_2(e, frequency),
+            2: type_1_2(e, frequency),
+            3: type_3(e, frequency),
+            4: type_4(e, frequency),
+            5: type_5(e, frequency),
+        }
+
+        return Kd_dict[type]
 
 class ShearProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""

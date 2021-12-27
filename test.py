@@ -34,12 +34,6 @@ axes[1].set_xscale("log")
 
 plt.show()"""
 
-def define_Kd_sand():
-
-    frequency = np.array([2, 5, 10, 30, 40, 61.5, 100])
-
-    def type_1(e):
-
 
 
 
