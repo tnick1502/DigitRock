@@ -25,6 +25,7 @@ import os
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
 
+from cvi.cvi_writer import save_cvi_shear_dilatancy
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, mirrow_element, \
     define_dilatancy, define_type_ground, AttrDict, find_line_area, interpolated_intercept, Point, point_to_xy, \
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, exponent, create_json_file
@@ -801,6 +802,40 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
     def get_duration(self):
         return int((self._test_data.strain[-1] * (76 - self._test_params.delta_h_consolidation)) / self._test_params.velocity)
+
+    def get_cvi_data(self):
+        """Возвращает параметры отрисовки для установки на ползунки"""
+        tau = self._test_data.deviator
+        absolute_deformation = self._test_data.strain
+        tau_fail = self._test_result.tau_max
+
+        return np.array(tau), np.array(absolute_deformation), np.array(tau_fail)
+
+    def save_cvi_file(self, file_path, file_name):
+
+        data = {
+            "laboratory_number": statment[statment.current_test].physical_properties.laboratory_number,
+            "borehole": statment[statment.current_test].physical_properties.borehole,
+            "ige": statment[statment.current_test].physical_properties.ige,
+            "depth": statment[statment.current_test].physical_properties.depth,
+            "sample_composition": "Н" if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4,
+                                                                                                             5] else "С",
+            "b": np.round(np.random.uniform(0.95, 0.98), 2),
+
+            "test_data": {
+            }
+        }
+
+        tau, absolute_deformation, tau_fail = self.get_cvi_data()
+
+        data["test_data"][1] = {
+            "tau": tau,
+            "absolute_deformation": absolute_deformation,
+            "sigma": np.round(self._test_params.sigma / 1000, 3)
+        }
+
+        save_cvi_shear_dilatancy(file_path=os.path.join(file_path, file_name), data=data)
+
 
     @staticmethod
     def define_pore_pressure_array(strain, start, pore_pressure, amplitude):

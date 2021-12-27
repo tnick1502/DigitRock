@@ -251,4 +251,166 @@ def save_cvi_Cons(file_path: str, data: dict):
     _out_Book.save(file_path)
 
 
+def save_cvi_shear(file_path: str, data: dict):
+    assert file_path.endswith('.xls'), 'File should be .xls file format'
+    assert data.keys() is not None
+
+    XLS_TEMPLATE = r"cvi/cvi_shear.xls"
+    _in_Book = xlrd.open_workbook(XLS_TEMPLATE, formatting_info=True)
+    _out_Book = xlutils.copy.copy(_in_Book)
+    _out_Sheet = _out_Book.get_sheet(0)
+    _col_formats: dict = {0: None}
+
+    def set_cell(real_col: int, real_row: int, value, cache_col_format: bool = True):
+        """ Change cell value without changing formatting. """
+        assert real_col > 0, "Col number should be greater than 1"
+        assert real_row > 0, "Col number should be greater than 1"
+        col = real_col - 1
+        row = real_row - 1
+        previousCell = _get_cell(col, row)
+        _out_Sheet.write(row, col, value)
+        if previousCell:
+            newCell = _get_cell(col, row)
+            if newCell:
+                newCell.xf_idx = previousCell.xf_idx
+                if cache_col_format:
+                    _col_formats[col] = previousCell.xf_idx
+
+    def set_cell_f(real_col: int, real_row: int, value):
+        """ Change cell value without changing formatting. """
+        assert real_col > 0, "Col number should be greater than 1"
+        assert real_row > 0, "Col number should be greater than 1"
+        col = real_col - 1
+        row = real_row - 1
+        _out_Sheet.write(row, col, value)
+        newCell = _get_cell(col, row)
+        if newCell:
+            newCell.xf_idx = _col_formats[col]
+
+    def _get_cell(colIndex, rowIndex):
+        row = _out_Sheet._Worksheet__rows.get(rowIndex)
+        if not row:
+            return None
+        cell = row._Row__cells.get(colIndex)
+        return cell
+
+    COL = {'laboratory_number': 1, 'borehole': 2, 'ige': 3, 'depth': 4, "sample_composition": 6,
+           'b': 9, 'sigma': 12, 'tau': 13, 'absolute_deformation': 14, 'tau_fail': 16}
+    FIRST_ROW = 8
+
+    set_cell(COL['laboratory_number'], FIRST_ROW, data['laboratory_number'])
+    set_cell(COL['borehole'], FIRST_ROW, data['borehole'])
+    set_cell(COL['sample_composition'], FIRST_ROW, data['sample_composition'])
+    set_cell(COL['b'], FIRST_ROW, data['b'])
+
+    set_cell(COL['depth'], FIRST_ROW, data['depth'])
+    set_cell(COL['depth'] + 1, FIRST_ROW, data['depth'] + 0.2)
+
+    # L - sigma, M - tau N - absolute_deformation, О - sigma, P - tau_fail
+
+    row = FIRST_ROW
+    for test in data['test_data'].keys():
+        if row == FIRST_ROW:
+            set_cell(COL['sigma'], row, float(data['test_data'][test]['sigma']))
+            set_cell(15, row, float(data['test_data'][test]['sigma']))
+            set_cell(COL['tau_fail'], row, float(data['test_data'][test]['tau_fail']))
+
+        else:
+            set_cell_f(COL['sigma'], row, float(data['test_data'][test]['sigma']))
+            set_cell_f(15, row, float(data['test_data'][test]['sigma']))
+            set_cell_f(COL['tau_fail'], row, float(data['test_data'][test]['tau_fail']))
+
+        for i in range(len(data['test_data'][test]['tau'])):
+            if row == FIRST_ROW:
+                set_cell(COL['tau'], row, float(data['test_data'][test]['tau'][i]))
+                set_cell(COL['absolute_deformation'], row, float(data['test_data'][test]['absolute_deformation'][i]))
+
+            else:
+                set_cell_f(COL['tau'], row, float(data['test_data'][test]['tau'][i]))
+                set_cell_f(COL['absolute_deformation'], row, float(data['test_data'][test]['absolute_deformation'][i]))
+
+            # next row in xls
+            row = row + 1
+
+    _out_Book.save(file_path)
+
+
+def save_cvi_shear_dilatancy(file_path: str, data: dict):
+    assert file_path.endswith('.xls'), 'File should be .xls file format'
+    assert data.keys() is not None
+
+    XLS_TEMPLATE = r"cvi/cvi_shear_dilatancy.xls"
+    _in_Book = xlrd.open_workbook(XLS_TEMPLATE, formatting_info=True)
+    _out_Book = xlutils.copy.copy(_in_Book)
+    _out_Sheet = _out_Book.get_sheet(0)
+    _col_formats: dict = {0: None}
+
+    def set_cell(real_col: int, real_row: int, value, cache_col_format: bool = True):
+        """ Change cell value without changing formatting. """
+        assert real_col > 0, "Col number should be greater than 1"
+        assert real_row > 0, "Col number should be greater than 1"
+        col = real_col - 1
+        row = real_row - 1
+        previousCell = _get_cell(col, row)
+        _out_Sheet.write(row, col, value)
+        if previousCell:
+            newCell = _get_cell(col, row)
+            if newCell:
+                newCell.xf_idx = previousCell.xf_idx
+                if cache_col_format:
+                    _col_formats[col] = previousCell.xf_idx
+
+    def set_cell_f(real_col: int, real_row: int, value):
+        """ Change cell value without changing formatting. """
+        assert real_col > 0, "Col number should be greater than 1"
+        assert real_row > 0, "Col number should be greater than 1"
+        col = real_col - 1
+        row = real_row - 1
+        _out_Sheet.write(row, col, value)
+        newCell = _get_cell(col, row)
+        if newCell:
+            newCell.xf_idx = _col_formats[col]
+
+    def _get_cell(colIndex, rowIndex):
+        row = _out_Sheet._Worksheet__rows.get(rowIndex)
+        if not row:
+            return None
+        cell = row._Row__cells.get(colIndex)
+        return cell
+
+    COL = {'laboratory_number': 1, 'borehole': 2, 'ige': 3, 'depth': 4, "sample_composition": 6,
+           'b': 9, 'sigma': 12, 'tau': 13, 'absolute_deformation': 14}
+    FIRST_ROW = 8
+
+    set_cell(COL['laboratory_number'], FIRST_ROW, data['laboratory_number'])
+    set_cell(COL['borehole'], FIRST_ROW, data['borehole'])
+    set_cell(COL['sample_composition'], FIRST_ROW, data['sample_composition'])
+    set_cell(COL['b'], FIRST_ROW, data['b'])
+
+    set_cell(COL['depth'], FIRST_ROW, data['depth'])
+    set_cell(COL['depth'] + 1, FIRST_ROW, data['depth'] + 0.2)
+
+    # L - sigma, M - tau N - absolute_deformation, О - sigma, P - tau_fail
+
+    row = FIRST_ROW
+    for test in data['test_data'].keys():
+        if row == FIRST_ROW:
+            set_cell(COL['sigma'], row, float(data['test_data'][test]['sigma']))
+        else:
+            set_cell_f(COL['sigma'], row, float(data['test_data'][test]['sigma']))
+
+        for i in range(len(data['test_data'][test]['tau'])):
+            if row == FIRST_ROW:
+                set_cell(COL['tau'], row, float(data['test_data'][test]['tau'][i]))
+                set_cell(COL['absolute_deformation'], row, float(data['test_data'][test]['absolute_deformation'][i]))
+
+            else:
+                set_cell_f(COL['tau'], row, float(data['test_data'][test]['tau'][i]))
+                set_cell_f(COL['absolute_deformation'], row, float(data['test_data'][test]['absolute_deformation'][i]))
+
+            # next row in xls
+            row = row + 1
+
+    _out_Book.save(file_path)
+
 #save_cvi(r"labNo ЦВИ.xls", data)

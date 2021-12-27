@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 from typing import List
 from scipy.optimize import fsolve, curve_fit
 
+from cvi.cvi_writer import save_cvi_shear
 from shear_test.shear_dilatancy_test_model import ModelShearDilatancy, ModelShearDilatancySoilTest
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, \
     mirrow_element, \
@@ -28,7 +29,7 @@ from general.general_functions import sigmoida, make_increas, line_approximate, 
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, define_qf, define_tau_max, \
     define_E50, create_json_file
 from configs.plot_params import plotter_params
-from singletons import statment
+from singletons import statment, Shear_models
 
 class ModelShear:
     """Класс моделирования опыта FCE"""
@@ -287,7 +288,7 @@ class ModelShear:
         _matrix_A = np.vstack([sigma, np.ones(len(sigma))]).T
         # определяем новые фи и с
         fi, c = np.linalg.lstsq(_matrix_A, tau, rcond=None)[0]
-        
+
     @staticmethod
     def calculate_m(sigma: List, E50: List, Eref: float, p_ref: float, c: float, fi: float) -> float:
         """Функция поиска степенного параметра упрочнения из нескольких опытов
@@ -425,6 +426,39 @@ class ModelShearSoilTest(ModelShear):
                 file_name = os.path.join(path, "Test.1.log")
                 test.save_log_file(file_name)
 
+    def save_cvi_file(self, file_path, file_name, isNaturalShear: bool = False):
+        if isNaturalShear:
+            b = statment[statment.current_test].physical_properties.Sr
+        else:
+            b = np.round(np.random.uniform(0.95, 0.98), 2)
+
+        data = {
+            "laboratory_number": statment[statment.current_test].physical_properties.laboratory_number,
+            "borehole": statment[statment.current_test].physical_properties.borehole,
+            "ige": statment[statment.current_test].physical_properties.ige,
+            "depth": statment[statment.current_test].physical_properties.depth,
+            "sample_composition": "Н" if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4,
+                                                                                                             5] else "С",
+            "b": b,
+
+            "test_data": {
+            }
+        }
+        if len(self._tests) >= 3:
+            i = 1
+            for test in self._tests:
+                tau, absolute_deformation, tau_fail = test.get_cvi_data()
+
+                data["test_data"][str(i)] = {
+                    "tau": tau,
+                    "absolute_deformation": absolute_deformation,
+                    "tau_fail": tau_fail,
+                    "sigma": np.round(test._test_params.sigma / 1000, 3)
+                }
+
+                i += 1
+
+        save_cvi_shear(file_path=os.path.join(file_path, file_name), data=data)
 
     @staticmethod
     def lse_faker(sigma: np.array, tau: np.array, fi: float, c: float):
