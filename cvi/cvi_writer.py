@@ -379,7 +379,7 @@ def save_cvi_shear_dilatancy(file_path: str, data: dict):
         return cell
 
     COL = {'laboratory_number': 1, 'borehole': 2, 'ige': 3, 'depth': 4, "sample_composition": 6,
-           'b': 9, 'sigma': 12, 'tau': 13, 'absolute_deformation': 14}
+           'b': 9, 'sigma': 12, 'tau': 13, 'absolute_deformation': 14, 'tau_fail': 16}
     FIRST_ROW = 8
 
     set_cell(COL['laboratory_number'], FIRST_ROW, data['laboratory_number'])
@@ -390,14 +390,17 @@ def save_cvi_shear_dilatancy(file_path: str, data: dict):
     set_cell(COL['depth'], FIRST_ROW, data['depth'])
     set_cell(COL['depth'] + 1, FIRST_ROW, data['depth'] + 0.2)
 
-    # L - sigma, M - tau N - absolute_deformation, О - sigma, P - tau_fail
-
     row = FIRST_ROW
     for test in data['test_data'].keys():
         if row == FIRST_ROW:
             set_cell(COL['sigma'], row, float(data['test_data'][test]['sigma']))
+            set_cell(15, row, float(data['test_data'][test]['sigma']))
+            set_cell(COL['tau_fail'], row, float(data['test_data'][test]['tau_fail']))
+
         else:
             set_cell_f(COL['sigma'], row, float(data['test_data'][test]['sigma']))
+            set_cell_f(15, row, float(data['test_data'][test]['sigma']))
+            set_cell_f(COL['tau_fail'], row, float(data['test_data'][test]['tau_fail']))
 
         for i in range(len(data['test_data'][test]['tau'])):
             if row == FIRST_ROW:

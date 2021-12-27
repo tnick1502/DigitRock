@@ -831,6 +831,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         data["test_data"][1] = {
             "tau": tau,
             "absolute_deformation": absolute_deformation,
+            "tau_fail": tau_fail,
             "sigma": np.round(self._test_params.sigma / 1000, 3)
         }
 

@@ -6,7 +6,7 @@ import sys
 from collections import Counter
 import pickle
 
-from general.initial_tables import TableCastomer
+from excel_statment.initial_tables import TableCastomer
 from datetime import datetime, timedelta
 from general.excel_functions import read_customer, resave_xls_to_xlsx
 from openpyxl import load_workbook
@@ -228,7 +228,7 @@ class TestsLogWidget(QWidget):
         self.box_test_equipment_spin_lable.setFixedWidth(50)
         self.box_test_equipment_spin_layout = QHBoxLayout()
         self.box_test_equipment_spin_layout.addWidget(self.box_test_equipment_spin)
-        self.box_test_equipment_spin_layout.addWidget(self.box_test_equipment_spin_lable)
+        #self.box_test_equipment_spin_layout.addWidget(self.box_test_equipment_spin_lable)
         self.box_test_equipment_layout.addWidget(self.box_test_equipment_text)
         self.box_test_equipment_layout.addLayout(self.box_test_equipment_spin_layout)
 
@@ -434,13 +434,11 @@ class TestsLogWidget(QWidget):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
+    statment.load("C:/Users/Пользователь/Desktop/test/Трёхосное сжатие (F, C, E).pickle")
+
     # Now use a palette to switch to dark colors:
     app.setStyle('Fusion')
     #ex = TestsLogWidget({"ЛИГА КЛ-1С": 20, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic)
-    ex = TestsLogWidget(
-        {
-            "Wille Geotechnik 13-HG/020:001": 1,
-            "Камера трехосного сжатия динамическая ГТ 2.3.20": 1
-        }, TestsLogTriaxialStatic)
+    ex = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic, "C:/Users/Пользователь/Desktop/test/818-20 Атомфлот - мех.xlsx")
     ex.show()
     sys.exit(app.exec_())
