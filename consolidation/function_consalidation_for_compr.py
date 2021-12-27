@@ -122,7 +122,7 @@ def function_consalidation(final_volume_strain,
     delta = abs(load_stage_strain-initial_bend)
     final_volume_strain += delta
 
-    deviation = abs(np.random.uniform(0.05, 0.01)*final_volume_strain)
+    deviation = abs(np.random.uniform(0.0005, 0.0001)*final_volume_strain)
 
     t_90_sqrt = math.sqrt((0.848 * 2 * 2) / (4 * Cv))
     t_90_log = np.log10(t_90_sqrt ** 2 )
@@ -244,7 +244,7 @@ def function_consalidation(final_volume_strain,
     # print(f"x_time : {x_time[0]}")
     y_time -= consolidation_deviation(x_time, t_90_sqrt, deviation)
     y_time += np.random.uniform(-0.0004, 0.0004, len(y_time))
-    y_time = discrete_array(y_time, 0.0008)
+    # y_time = discrete_array(y_time, 0.0008)
     #return x_time, y_time
     return x_time, y_time, np.array([10**t_90_log, 10**t_creep_log, 10**max_time_log, (xP**2),  (xK**2)]), \
          np.array([volume_strain_90, volume_strain_creep, final_volume_strain, yP, yK])
