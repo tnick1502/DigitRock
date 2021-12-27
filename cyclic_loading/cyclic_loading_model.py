@@ -1204,6 +1204,14 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         self._modeling_strain()
 
+        if self._test_params.Kd:
+            strain_cyclic = self._test_data.strain[len(self._load_stage.strain):]
+            strain_cyclic -= strain_cyclic[0]
+            strain_cyclic *= ((self._load_stage.strain[-1] * self._test_params.Kd)/np.max(strain_cyclic))
+            self._test_data.strain = np.hstack((self._load_stage.strain, strain_cyclic + self._load_stage.strain[-1]))
+
+            #self._test_data.strain *= ((self._load_stage.strain[-1] * self._test_params.Kd)/np.max(self._test_data.strain - self._load_stage.strain[-1])) - self._load_stage.strain[-1]
+
         """i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator/2, self.critical_line)
         if Msf:
             if self._test_params.Kd:

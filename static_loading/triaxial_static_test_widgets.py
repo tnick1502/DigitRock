@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import shutil
 import threading
 
+from general.general_functions import create_path
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from excel_statment.initial_statment_widgets import TriaxialStaticStatment
 from general.save_widget import Save_Dir
@@ -792,6 +793,14 @@ class StatickSoilTestApp(QWidget):
                               test_result["fi"], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, Eur)":
+
+                report_directory_FC = self.tab_4.report_directory + "/Трёхосное сжатие (F, C)"
+                report_directory_Eur = self.tab_4.report_directory + "/Трёхосное сжатие с разгрузкой"
+
+                create_path(report_directory_FC)
+                create_path(report_directory_Eur)
+
+
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
 
                 E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
@@ -813,13 +822,29 @@ class StatickSoilTestApp(QWidget):
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
-                report_FCE(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
+                report_FC(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
-                           test_parameter, test_result,
-                           (*self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]]),
-                            *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
+                          test_parameter, test_result,
+                          (*self.tab_3.save_canvas(),
+                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
 
-                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+                shutil.copy(save + "/" + name, report_directory_FC + "/" + name)
+
+                test_parameter["K0"] = [statment[statment.current_test].mechanical_properties.K0,
+                                        "-" if self.tab_3.reference_pressure_array_box.get_checked() == "set_by_user" or
+                                               self.tab_3.reference_pressure_array_box.get_checked() == "state_standard"
+                                        else statment[statment.current_test].mechanical_properties.K0]
+
+                report_E(save + "/" + name[:-4] + " Р.pdf", data_customer,
+                         statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
+                         os.getcwd() + "/project_data/",
+                         test_parameter, test_result,
+                         (*self.tab_2.consolidation.save_canvas(),
+                          *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), self.tab_4.report_type,
+                         "{:.2f}".format(__version__))
+
+                shutil.copy(save + "/" + name[:-4] + " Р.pdf", report_directory_Eur + "/" + name[:-4] + " Р.pdf")
+
 
                 set_cell_data(self.tab_1.path,
                               'GI' + str(statment[statment.current_test].physical_properties.sample_number + 7),
