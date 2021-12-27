@@ -538,6 +538,10 @@ class ShearSoilTestApp(QWidget):
                 Shear_Dilatancy_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
                                             name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)))
                 Shear_Dilatancy_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
+                Shear_Dilatancy_models[statment.current_test].save_cvi_file(save,
+                                                                            self.tab_4.cvi_directory +
+                                                                            "/" + f"{file_path_name} ЦВИ.xls")
+
                 test_result = Shear_Dilatancy_models[statment.current_test].get_test_results()
                 report_Shear_Dilatancy(save + "/" + name, data_customer,
                                        statment[statment.current_test].physical_properties, statment.current_test,
@@ -549,6 +553,10 @@ class ShearSoilTestApp(QWidget):
             elif not ShearStatment.is_dilatancy_type(_test_mode):
                 name = file_path_name + " " + statment.general_data.object_number + " Сп" + ".pdf"
                 Shear_models[statment.current_test].save_log_files(save)
+                Shear_models[statment.current_test].save_cvi_file(save,
+                                                                  self.tab_4.cvi_directory +
+                                                                  "/" + f"{file_path_name} ЦВИ.xls",
+                                                                  ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_NATURAL)
                 Shear_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
                                   name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)))
                 test_result = {}

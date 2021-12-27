@@ -18,7 +18,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.setWindowTitle(self.title)
         #self.setWindowIcon(QIcon(icons + "ST.png"))
         self.setGeometry(self.left, self.top, 1500, 1000)
-        if test_version(actual_version):
+        if 1:#test_version(actual_version):
             self.table_widget = ConsolidationSoilTestApp()
             self.setCentralWidget(self.table_widget)
             self.show()
