@@ -189,6 +189,8 @@ class ModelShear:
             for i in range(len(plots["strain"])):
                 ax_deviator.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
                 #ax_cycles.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
+            lim = ax_deviator.get_xlim()
+            ax_deviator.set_xlim([lim[0], 7.25])
             ax_cycles.scatter(plots["sigma"],plots["tau_max"],color=['r', 'r', 'r'])
             ax_cycles.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
 
