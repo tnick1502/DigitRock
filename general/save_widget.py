@@ -135,6 +135,11 @@ class Save_Dir(QWidget):
 
         app_logger.info(f"Папка сохранения опытов {self._save_directory}")
 
+    def check_dirs(self):
+        create_path(self._save_directory)
+        for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
+            create_path(path)
+
     def set_directory(self, signal, mode):
         """Получение пути к файлу ведомости excel"""
         self.mode = mode

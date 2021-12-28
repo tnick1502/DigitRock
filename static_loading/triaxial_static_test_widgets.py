@@ -21,6 +21,7 @@ from configs.styles import style
 from singletons import E_models, FC_models, statment
 from loggers.logger import app_logger, log_this, handler
 from tests_log.widget import TestsLogWidget
+from tests_log.equipment import static
 from tests_log.test_classes import TestsLogTriaxialStatic
 import os
 from version_control.configs import actual_version
@@ -703,6 +704,8 @@ class StatickSoilTestApp(QWidget):
             else:
                 os.mkdir(save)
 
+            self.tab_4.check_dirs()
+
             if statment.general_parameters.test_mode == "Трёхосное сжатие (E)":
                 name = file_path_name + " " + statment.general_data.object_number + " ТС" + ".pdf"
 
@@ -973,7 +976,7 @@ class StatickSoilTestApp(QWidget):
         t.start()
 
     def jornal(self):
-        self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic, self.tab_1.path)
+        self.dialog = TestsLogWidget(static, TestsLogTriaxialStatic, self.tab_1.path)
         self.dialog.show()
 
 

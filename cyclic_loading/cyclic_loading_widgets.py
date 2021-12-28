@@ -23,6 +23,7 @@ from excel_statment.functions import write_to_excel
 from excel_statment.initial_tables import TableVertical
 from loggers.logger import app_logger, log_this, handler
 from singletons import Cyclic_models, statment
+from tests_log.equipment import dynamic
 
 from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogCyclic
@@ -783,7 +784,7 @@ class CyclicSoilTestApp(QWidget):
         t.start()
 
     def jornal(self):
-        self.dialog = TestsLogWidget({"Wille Geotechnik 13-HG/020:001": 1, "Камера трехосного сжатия динамическая ГТ 2.3.20": 1}, TestsLogCyclic, self.tab_1.path)
+        self.dialog = TestsLogWidget(dynamic, TestsLogCyclic, self.tab_1.path)
         self.dialog.show()
 
 

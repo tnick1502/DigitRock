@@ -306,6 +306,9 @@ class MechanicalProperties:
             self.dilatancy_angle = MechanicalProperties.define_dilatancy(
                 physical_properties.type_ground, physical_properties.e, physical_properties.Il, physical_properties.Ip) * np.random.uniform(0.9, 1.1)
 
+            if self.dilatancy_angle <= 0:
+                self.dilatancy_angle = np.random.uniform(1, 3)
+
             self.build_press = float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]])
             if self.build_press:
                 self.build_press *= 1000
