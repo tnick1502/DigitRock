@@ -470,7 +470,7 @@ class ModelShearDilatancy:
     def define_poissons(strain, deviator, volume_strain):
         # Коэффициент Пуассона
         qf = np.max(deviator)
-        strain50 = (np.interp(qf / 2, deviator, strain))
+        strain50 = (np.interp(qf / 5, deviator, strain))
         puasson = (np.interp(strain50, strain, volume_strain) / strain50)/(71.4/35)
         return -np.round(puasson, 2)
 
@@ -650,7 +650,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         self._draw_params.qocr = 0
 
         self._draw_params.poisson = statment[statment.current_test].mechanical_properties.poisons_ratio
-        self._draw_params.volumetric_strain_xc = (0.006 - self._draw_params.dilatancy * 0.0002) * np.random.uniform(0.9, 1.1)
+        self._draw_params.volumetric_strain_xc = (0.002 - self._draw_params.dilatancy * 0.0002) * np.random.uniform(0.9, 1.1)
 
         count = 0
         self._test_modeling()
@@ -750,7 +750,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             qocr=self._draw_params.qocr,
             m_given=self._draw_params.poisson,
             amount_points=amount_point*20+1,
-            angle_of_dilatacy=dilatancy)
+            angle_of_dilatacy=dilatancy,
+            v_d_xc=-self._draw_params.volumetric_strain_xc)
 
             self._test_data.deviator /= k
 
@@ -1151,13 +1152,14 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         action = [''] * 2 + ['Start'] * 2 + ['LoadStage'] * 2 + \
                  ['Wait'] * 2 + ['WaitLimit'] * (len(time) - 10) + ['Unload'] * 2
         action_changed = ['', 'True'] * 4 + [''] * (len(time) - 8)
+        action_changed[-3] = "True"
 
         vertical_press = np.hstack((np.full(5, 0),
                                     np.full(len(time) - 7,
                                             sigma + np.random.uniform(-2, 0.1, len(time)-7))))
         vertical_press = np.hstack((vertical_press, np.array([vertical_press[-1], np.random.uniform(1, 2)])))
         vertical_deformation = np.hstack((np.full(5, 0),
-                                          np.repeat(np.random.uniform(0.3, 0.7, 2), 2), vertical_strain[1:]))
+                                          np.repeat(np.random.uniform(0.3, 0.7, 2), 2), -vertical_strain[1:]))
         vertical_deformation = np.hstack((vertical_deformation, np.array([vertical_deformation[-1], np.random.uniform(-0.5, -0.1)])))
 
         shear_deformation = np.hstack((np.full(5, 0),
