@@ -738,6 +738,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(self._draw_params.dilatancy)) /
                              (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
+        if dilatancy<= 0:
+            dilatancy = np.random.uniform(1,3)
 
         if self._test_params.qf >= 150:
 
@@ -756,7 +758,6 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                     v_d_xc=-self._draw_params.volumetric_strain_xc,
                                                                     U=self._test_params.u)
             else:
-
                 self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
                 self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
                     self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
@@ -1326,8 +1327,8 @@ if __name__ == '__main__':
     a.plotter()
     plt.show()"""
     a = ModelTriaxialDeviatorLoadingSoilTest()
-    statment.load(r"C:\Users\Пользователь\Desktop\test\Трёхосное сжатие (F, C, E).pickle")
-    statment.current_test = "11-3"
+    statment.load(r"C:\Users\Пользователь\Desktop\test\Трёхосное сжатие (E).pickle")
+    statment.current_test = "21-21-20"
     a.set_test_params()
     a.plotter()
     plt.show()
