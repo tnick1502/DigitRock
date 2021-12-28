@@ -450,8 +450,8 @@ class MechanicalProperties:
 
         if Cv > 0.8:
             return np.round(np.random.uniform(0.5, 0.8), 4)
-        elif Cv <= 0.01:
-            return np.round(np.random.uniform(0.005, 0.01), 4)
+        elif Cv <= 0.02:
+            return np.round(np.random.uniform(0.02, 0.03), 4)
 
         return np.round(Cv, 4)
 
@@ -1792,7 +1792,7 @@ class ShearProperties(MechanicalProperties):
         sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * 0.5)
         sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * 0.25)
 
-        return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+        return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [25, 50, 100]
 
     @staticmethod
     def define_reference_pressure_array_calculated_by_pressure(build_press: float, pit_depth: float, depth: float) -> list:
@@ -1806,7 +1806,7 @@ class ShearProperties(MechanicalProperties):
             sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * 0.5)
             sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * 0.25)
 
-            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 25 else [25, 50, 100]
         else:
             return None
 

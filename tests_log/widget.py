@@ -6,6 +6,8 @@ import sys
 from collections import Counter
 import pickle
 
+from PyQt5.QtCore import Qt
+
 from excel_statment.initial_tables import TableCastomer
 from datetime import datetime, timedelta
 from general.excel_functions import read_customer, resave_xls_to_xlsx
@@ -15,6 +17,9 @@ from tests_log.test_classes import TestsLogCyclic, timedelta_to_dhms, TestsLogTr
 from general.general_functions import unique_number
 from general.report_general_statment import save_report
 from singletons import statment
+from transliterate import translit
+from loggers.logger import log_this, app_logger
+
 
 class ValueDial(QWidget):
     _dialProperties = ('minimum', 'maximum', 'value', 'singleStep', 'pageStep',
@@ -151,9 +156,12 @@ class TestsLogWidget(QWidget):
         self.setFixedHeight(900)
         self.setFixedWidth(700)
 
-        self._equipment = []
-        for i in equipment:
-            self._equipment += [i] * equipment[i]
+        self._equipment = {
+            "прибор_1": ["kpodfv", "kgbdb", "kkofob"],
+            "прибор_2": ["kpodfv", "kgbdb", "kkofob"],
+            "прибор_3": ["kpodfv", "kgbdb", "kkofob"],
+
+        }
 
         self._model = model()
 
@@ -222,7 +230,30 @@ class TestsLogWidget(QWidget):
         self.box_test_equipment_layout = QHBoxLayout()
         self.box_test_equipment.setLayout(self.box_test_equipment_layout)
         self.box_test_equipment_text = QTextEdit()
-        self.box_test_equipment_spin = ValueDial()
+        self.box_test_equipment_text.setFixedWidth(200)
+        self.box_test_equipment_layout.addWidget(self.box_test_equipment_text)
+
+        for key in self._equipment:
+            name = translit(key, language_code='ru', reversed=True)
+
+            setattr(self, f"layout_{name}", QVBoxLayout())
+            layout = getattr(self, f"layout_{name}")
+            setattr(self, f"spin_{name}", ValueDial())
+            spin = getattr(self, f"spin_{name}")
+
+
+            label = QLabel(key)
+            label.setAlignment(Qt.AlignCenter)
+            layout.addWidget(label)
+            layout.addWidget(spin)
+
+            spin.valueChanged.connect(self._spinMoved)
+            spin.setValue(1)
+            spin.setMinimum(0)
+            spin.setMaximum(len(self._equipment[key]))
+            self.box_test_equipment_layout.addLayout(layout)
+
+        """self.box_test_equipment_spin = ValueDial()
         #self.box_test_equipment_spin.setNotchesVisible(True)
         self.box_test_equipment_spin_lable = QLabel()
         self.box_test_equipment_spin_lable.setFixedWidth(50)
@@ -230,7 +261,8 @@ class TestsLogWidget(QWidget):
         self.box_test_equipment_spin_layout.addWidget(self.box_test_equipment_spin)
         #self.box_test_equipment_spin_layout.addWidget(self.box_test_equipment_spin_lable)
         self.box_test_equipment_layout.addWidget(self.box_test_equipment_text)
-        self.box_test_equipment_layout.addLayout(self.box_test_equipment_spin_layout)
+        self.box_test_equipment_layout.addLayout(self.box_test_equipment_spin_layout)"""
+
 
         self.table = QTableWidget()
         self._clearTable()
@@ -257,11 +289,6 @@ class TestsLogWidget(QWidget):
         self.layout.addWidget(self.box_save)
 
     def _retranslateUI(self):
-        self.box_test_equipment_spin.valueChanged.connect(self._spinMoved)
-        self.box_test_equipment_spin.setValue(1)
-        self.box_test_equipment_spin.setMinimum(1)
-        self.box_test_equipment_spin.setMaximum(len(self._equipment))
-
         #self.box_statment_open_button.clicked.connect(self._openStatment)
         self.box_test_path_open_button.clicked.connect(self._openDirectory)
         self.box_test_date_processing.clicked.connect(self._processing)
@@ -271,11 +298,26 @@ class TestsLogWidget(QWidget):
         self.box_load_pickle_button.clicked.connect(self._loadPICKLE)
 
     def _spinMoved(self):
-        self.box_test_equipment_spin_lable.setText("Value: %i" % (self.box_test_equipment_spin.value()))
-        c = Counter(self._equipment[:int(self.box_test_equipment_spin.value())])
-        text = "\n\n".join(f"{key}: {c[key]}" for key in c)
-        self.box_test_equipment_text.setText(text)
-        self._model.equipment_names = self._equipment[:int(self.box_test_equipment_spin.value())]
+        self.sender()
+        val = {}
+        equipment = []
+        print(self.sender())
+        for key in self._equipment:
+            name = translit(key, language_code='ru', reversed=True)
+            spin = self.sender()#getattr(self, f"spin_{name}")
+            #print(self.sender().value())
+            #val[key] = spin.value()
+            #equipment += self._equipment[key][:spin.value()]
+
+        #text = "\n\n".join(f"{key}: {val[key]}" for key in self._equipment)
+        #self.box_test_equipment_text.setText(text)
+        #self._model.equipment_names = equipment
+
+        #self.box_test_equipment_spin_lable.setText("Value: %i" % (self.box_test_equipment_spin.value()))
+        #c = Counter(self._equipment[:int(self.box_test_equipment_spin.value())])
+        #text = "\n\n".join(f"{key}: {c[key]}" for key in c)
+        #self.box_test_equipment_text.setText(text)
+        #self._model.equipment_names = self._equipment[:int(self.box_test_equipment_spin.value())]
 
     def _clearTable(self):
         while (self.table.rowCount() > 0):
@@ -439,6 +481,6 @@ if __name__ == '__main__':
     # Now use a palette to switch to dark colors:
     app.setStyle('Fusion')
     #ex = TestsLogWidget({"ЛИГА КЛ-1С": 20, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic)
-    ex = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic, "C:/Users/Пользователь/Desktop/test/818-20 Атомфлот - мех.xlsx")
+    ex = TestsLogWidget({"ЛИГА КЛ-1С": 5, "АСИС ГТ.2.0.5": 0}, TestsLogTriaxialStatic, "C:/Users/Пользователь/Desktop/test/818-20 Атомфлот - мех.xlsx")
     ex.show()
     sys.exit(app.exec_())

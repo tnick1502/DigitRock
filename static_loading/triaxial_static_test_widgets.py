@@ -926,8 +926,8 @@ class StatickSoilTestApp(QWidget):
                               "BF" + str(statment[statment.current_test].physical_properties.sample_number+ 7),
                               test_result["c"], sheet="Лист1", color="FF6961")
 
-            statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
-                          name=statment.general_parameters.test_mode + ".pickle")
+            #statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
+                          #name=statment.general_parameters.test_mode + ".pickle")
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
