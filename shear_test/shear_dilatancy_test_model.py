@@ -1152,13 +1152,14 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         action = [''] * 2 + ['Start'] * 2 + ['LoadStage'] * 2 + \
                  ['Wait'] * 2 + ['WaitLimit'] * (len(time) - 10) + ['Unload'] * 2
         action_changed = ['', 'True'] * 4 + [''] * (len(time) - 8)
+        action_changed[-3] = "True"
 
         vertical_press = np.hstack((np.full(5, 0),
                                     np.full(len(time) - 7,
                                             sigma + np.random.uniform(-2, 0.1, len(time)-7))))
         vertical_press = np.hstack((vertical_press, np.array([vertical_press[-1], np.random.uniform(1, 2)])))
         vertical_deformation = np.hstack((np.full(5, 0),
-                                          np.repeat(np.random.uniform(0.3, 0.7, 2), 2), vertical_strain[1:]))
+                                          np.repeat(np.random.uniform(0.3, 0.7, 2), 2), -vertical_strain[1:]))
         vertical_deformation = np.hstack((vertical_deformation, np.array([vertical_deformation[-1], np.random.uniform(-0.5, -0.1)])))
 
         shear_deformation = np.hstack((np.full(5, 0),
