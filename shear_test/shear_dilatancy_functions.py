@@ -1121,7 +1121,7 @@ def curve_shear_dilatancy(qf, e50, **kwargs):
     xc = x_old[index_xc[0]]
 
     # x_given определяется на 20 процентах нагружения
-    index_02qf, = np.where(y >= 0.5 * qf)
+    index_02qf, = np.where(y >= 0.2 * qf)
     x_given = x_old[index_02qf[0]]
     x_end = 0.15  # последняя точка обьемной деформации
     # обрезаем массив до x_end
