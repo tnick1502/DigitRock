@@ -163,42 +163,6 @@ class ModelShearDilatancy:
 
     def get_plot_data(self):
         """Получение данных для построения графиков"""
-        # if self._test_result.E50:
-        #     E50 = point_to_xy(Point(x=0, y=0), Point(
-        #             x=0.9 * self._test_result.qf * 1000/ (self._test_result.E50*1000),
-        #             y=0.9 * self._test_result.qf))
-        #     E = {"x": self._test_result.E[1],
-        #          "y": np.array(self._test_result.E[2]) / 1000}
-        #
-        # else:
-        #     E50 = None
-        #
-        # if self._test_result.Eur:
-        #
-        #     b = self._test_data.deviator_cut[self._test_data.reload_points_cut[1]] - \
-        #         self._test_result.Eur*1000*self._test_data.strain_cut[self._test_data.reload_points_cut[1]]
-        #
-        #     line_ = line(self._test_result.Eur*1000, b, self._test_data.strain_cut)
-        #     _begin, = np.where(line_ >= self._test_data.deviator_cut[self._test_data.reload_points_cut[1]])
-        #     _end, = np.where(line_ >= self._test_data.deviator_cut[self._test_data.reload_points_cut[2]])
-        #
-        #     Eur = point_to_xy(Point(x=self._test_data.strain_cut[_begin[0]],
-        #                             y=line_[_begin[0]] / 1000),
-        #                       Point(x=self._test_data.strain_cut[_end[0]],
-        #                             y=line_[_end[0]] / 1000))
-        #
-        #     _begin, = np.where(self._test_data.deviator_cut >=
-        #                        self._test_data.deviator_cut[self._test_data.reload_points_cut[1] - 5])
-        #     _end, = np.where(self._test_data.deviator_cut >=
-        #                        self._test_data.deviator_cut[self._test_data.reload_points_cut[2] + 5])
-        #
-        #     strain_Eur = self._test_data.strain_cut[:_end[0]]
-        #     deviator_Eur = self._test_data.deviator_cut[:_end[0]]/1000
-        #
-        # else:
-        #     Eur = None
-        #     strain_Eur = None
-        #     deviator_Eur = None
 
         if self._test_result.dilatancy_angle:
             dilatancy = {"x": self._test_result.dilatancy_angle[1],
@@ -250,6 +214,8 @@ class ModelShearDilatancy:
         if plots["strain"] is not None:
             ax_deviator.plot(plots["strain"], plots["deviator"], **plotter_params["static_loading_main_line"])
             ax_deviator.plot(plots["strain_cut"], plots["deviator_cut"], **plotter_params["static_loading_main_line"])
+            lim = ax_deviator.get_xlim()
+            ax_deviator.set_xlim([lim[0], 7.25])
             # if plots["E50"]:
             #     ax_deviator.plot(*plots["E50"], **plotter_params["static_loading_sandybrown_dotted_line"])
             #     ax_deviator.plot(plots["E"]["x"], plots["E"]["y"], **plotter_params["static_loading_sandybrown_dotted_line"])
@@ -275,7 +241,7 @@ class ModelShearDilatancy:
                 ax_volume_strain.plot([], [], label="Dilatancy angle" + ", град. = " + str(res["dilatancy_angle"][0]),
                                       color="#eeeeee")
 
-            ax_volume_strain.set_xlim(ax_deviator.get_xlim())
+            ax_volume_strain.set_xlim([lim[0], 7.25])
 
             ax_deviator.legend()
             ax_volume_strain.legend()
