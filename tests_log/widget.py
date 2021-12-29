@@ -14,7 +14,7 @@ from general.excel_functions import read_customer, resave_xls_to_xlsx
 from openpyxl import load_workbook
 from tests_log.test_classes import TestsLogCyclic, timedelta_to_dhms, TestsLogTriaxialStatic
 
-from general.general_functions import unique_number
+from general.general_functions import unique_number, number_format
 from general.report_general_statment import save_report
 from singletons import statment
 from transliterate import translit
@@ -293,7 +293,6 @@ class TestsLogWidget(QWidget):
         self.box_load_pickle_button.clicked.connect(self._loadPICKLE)
 
     def _spinMoved(self):
-        val = {}
         for key in self._equipment:
             name = translit(key, language_code='ru', reversed=True)
             if self.sender().objectName() == f"spin_{name}":
@@ -368,6 +367,13 @@ class TestsLogWidget(QWidget):
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
     def _writePDF(self):
+
+        def get_name(name):
+            if "№" in name:
+                return name[:name.index("№")-1]
+            else:
+                return name
+
         try:
             assert self._statment_path, "Выберите ведомость"
             assert self._model, "Не обработано ни одного опыта"
@@ -375,25 +381,40 @@ class TestsLogWidget(QWidget):
             save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
            # save_file_name = f'Журнал опытов {self._data_customer["object_name"]}.pdf'
-            save_file_name = f'Журнал опытов.pdf'
-            statement_title = "Журнал опытов"
+            save_file_name = f'Журнал испытаний {statment.general_data.object_number}.pdf'
+            statement_title = f"Журнал испытаний {statment.general_data.object_number}"
 
-            titles = ["Лабораторный номер", "Дата начала опыта", "Дата окончания опыта", "Продолжительность опыта", "Прибор"]
+            titles = ["№ п\п", "Дата привоза", "Номер Объекта", "Лабораторный номер", "Наименование выработки",
+                      "Глубина отбора, м", "Схема испытания", "Режим нагружения", "Высоты образца, мм", "Диаметр образца, мм", "Дата начала испытания", "Дата окончания испытания", "Прибор"]
             data = []
+            # timedelta_to_dhms(self._model[test].duration, ["д", "ч", "мин"]), - Продолжительность
+            i = 1
             for test in self._model:
                 line = [
+                    i,
+                    statment.general_data.start_date.strftime("%d.%m.%Y"),
+                    statment.general_data.object_number,
                     test,
-                    self._model[test].start_datetime.strftime("%H:%M %d.%m.%Y"),
-                    self._model[test].end_datetime.strftime("%H:%M %d.%m.%Y"),
-                    timedelta_to_dhms(self._model[test].duration, ["д", "ч", "мин"]),
-                    self._model[test].equipment
+                    statment[get_name(test)].physical_properties.borehole,
+                    number_format(statment[get_name(test)].physical_properties.depth, characters_number=1, split=','),
+                    "КД",
+                    "к",
+                    number_format(statment[get_name(test)].physical_properties.sample_size[1], characters_number=int(1), split=','),
+                    number_format(statment[get_name(test)].physical_properties.sample_size[0],
+                                  characters_number=int(1), split=','),
+                    self._model[get_name(test)].start_datetime.strftime("%H:%M %d.%m.%Y"),
+                    self._model[get_name(test)].end_datetime.strftime("%H:%M %d.%m.%Y"),
+                    self._model[get_name(test)].equipment
                 ]
                 data.append(line)
+                i += 1
 
             data.append([f"Дата начала опытов: {self._model.start_datetime.strftime('%d.%m.%Y')}"])
             data.append([f"Дата окончания опытов: {self._model.end_datetime.strftime('%d.%m.%Y')}"])
 
-            scales = ["*", "*", "*", "*", "*"]
+            scales = [20, "*", "*", "*", "*", "*", "*", "*", "*", "*", 100, 100, 105]
+
+
 
             data_report = statment.general_data.end_date
             customer_data_info = ['Заказчик:', 'Объект:']
@@ -470,7 +491,7 @@ class TestsLogWidget(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    from tests_log.equipment import static
+    """from tests_log.equipment import static
 
     statment.load("C:/Users/Пользователь/Desktop/test/Трёхосное сжатие (F, C, E).pickle")
 
@@ -479,4 +500,4 @@ if __name__ == '__main__':
     #ex = TestsLogWidget({"ЛИГА КЛ-1С": 20, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic)
     ex = TestsLogWidget(static, TestsLogTriaxialStatic, "C:/Users/Пользователь/Desktop/test/818-20 Атомфлот - мех.xlsx")
     ex.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec_())"""
