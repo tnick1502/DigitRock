@@ -64,13 +64,15 @@ class MohrTable(QWidget):
 
         self.table_widget.horizontalHeader().setVisible(False)
         delegate = AlignDelegate(self.table_widget)
+        self.table_widget.setItemDelegateForColumn(2, delegate)
         self.table_widget.setItemDelegateForColumn(1, delegate)
         self.table_widget.setItemDelegateForColumn(0, delegate)
 
         self.layout_box.addWidget(self.table_widget)
 
         self.set_param({"sigma": "",
-                        "tau_max": ""})
+                        "tau_max": "",
+                        "dilatancy_angle": ""})
 
         self.plot_button = QPushButton("Обработчик опыта")
         self.plot_button.setFixedHeight(50)
@@ -85,10 +87,11 @@ class MohrTable(QWidget):
         self.layout.addWidget(self.box)
 
     def set_param(self, param):
-        self.table_widget.set_data([["", ""],
+        self.table_widget.set_data([["", "", ""],
                                     ["σ, МПа",
-                                     "τ, МПа"],
-                                    [param["sigma"], param["tau_max"]]], "Stretch")
+                                     "τ, МПа",
+                                     "ψ, град"],
+                                    [param["sigma"], param["tau_max"], param["dilatancy_angle"]]], "Stretch")
 
 class MohrTestManager(QWidget):
     """Класс для табличного отображения параметров кругов Мора"""
@@ -240,9 +243,11 @@ class ShearWidget(QWidget):
             res = test.get_test_results()
 
             _format = "{:.3f}"
-            for key in ["tau_max", "sigma"]:
+            for key in ["tau_max", "sigma", "dilatancy_angle"]:
                 if key == "tau_max":
                     res[key] = _format.format(round(res[key]/1000, 3))
+                elif key == "dilatancy_angle":
+                    res[key] = _format.format(res[key][0])
                 else:
                     res[key] = _format.format(res[key])
 
@@ -282,6 +287,8 @@ class ShearWidget(QWidget):
                 self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
                 self.deviator_ax.scatter(plots["strain"][i], plots["deviator"][i], s=20)
                 #self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
+            lim = self.deviator_ax.get_xlim()
+            self.deviator_ax.set_xlim([lim[0], 7.25])
             self.mohr_ax.scatter(plots["sigma"],plots["tau_max"], color=['r', 'r', 'r'])
             self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
 

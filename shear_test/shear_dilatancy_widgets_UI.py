@@ -154,29 +154,9 @@ class ModelShearDilatancyUI(QWidget):
                 self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"],
                                       **plotter_params["static_loading_gray_line"])
                 self.deviator_ax.scatter(plots["strain"], plots["deviator"], s=50)
-# _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
-                #     res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0])
 
-                # self.deviator_ax.plot(*plots["E50"],
-                #                       label=_label,
-                #                       **plotter_params["static_loading_black_dotted_line"])
-
-                # lim = self.deviator_ax.get_xlim()
-                # self.deviator_ax2.set_xlim([lim[0], lim[1]])
-                # self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', МПa", fontsize=8)
-                # self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
-                # self.deviator_ax2.plot(plots["strain"], plots["deviator"] + plots["sigma"],
-                #                        **plotter_params["static_loading_main_line"])
-                # if res["E50"] < res["E"][0]:
-                # self.deviator_ax2.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"],
-                # **plotter_params["static_loading_black_dotted_line"])
-                # label="$E$" + ", MПа = " + str(res["E"][0]) + "\n" + "$E$" + ", MПа = " + str(res["E"][0]))
-
-                # self.deviator_ax2.set_xticklabels(self.deviator_ax2.get_xticks(), size=8)
-                # self.deviator_ax2.set_yticklabels(self.deviator_ax2.get_yticks(), size=8)
-
-                #self.deviator_ax.plot([], [], label="$E_{50}$" + ", MПа = " + str(res["E50"]), color="#eeeeee")
-                #self.deviator_ax.plot([], [], label="$E$" + ", MПа = " + str(res["E"][0]), color="#eeeeee")
+                lim = self.deviator_ax.get_xlim()
+                self.deviator_ax.set_xlim([lim[0], 7.25])
 
                 self.volume_strain_ax.plot(plots["strain"], plots["volume_strain"], **plotter_params["static_loading_main_line"])
                 self.volume_strain_ax.plot(plots["strain"], plots["volume_strain_approximate"],
@@ -186,7 +166,7 @@ class ModelShearDilatancyUI(QWidget):
                     self.volume_strain_ax.plot(plots["dilatancy"]["x"], plots["dilatancy"]["y"],
                                           **plotter_params["static_loading_black_dotted_line"])
 
-                self.volume_strain_ax.set_xlim(self.deviator_ax.get_xlim())
+                self.volume_strain_ax.set_xlim([lim[0], 7.25])
 
                 self.volume_strain_ax.plot([], [], label="Poissons ratio" + ", д.е. = " + str(res["poissons_ratio"]),
                                       color="#eeeeee")
