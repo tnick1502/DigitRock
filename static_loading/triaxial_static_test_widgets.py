@@ -976,8 +976,11 @@ class StatickSoilTestApp(QWidget):
         t.start()
 
     def jornal(self):
-        self.dialog = TestsLogWidget(static, TestsLogTriaxialStatic, self.tab_1.path)
-        self.dialog.show()
+        if statment.tests == {}:
+            QMessageBox.critical(self, "Ошибка", "Загрузите объект", QMessageBox.Ok)
+        else:
+            self.dialog = TestsLogWidget(static, TestsLogTriaxialStatic, self.tab_1.path)
+            self.dialog.show()
 
 
 

@@ -384,8 +384,8 @@ class TestsLogWidget(QWidget):
             save_file_name = f'Журнал испытаний {statment.general_data.object_number}.pdf'
             statement_title = f"Журнал испытаний {statment.general_data.object_number}"
 
-            titles = ["№ п\п", "Дата привоза", "Номер Объекта", "Лабораторный номер", "Наименование выработки",
-                      "Глубина отбора, м", "Схема испытания", "Режим нагружения", "Высоты образца, мм", "Диаметр образца, мм", "Дата начала испытания", "Дата окончания испытания", "Прибор"]
+            titles = ["№ п\п", "Дата привоза", "Номер объекта", "Лабораторный номер", "Наименование выработки",
+                      "Глубина отбора, м", "Схема испытания", "Режим нагружения", "Высота образца, мм", "Диаметр образца, мм", "Дата начала испытания", "Дата окончания испытания", "Прибор"]
             data = []
             # timedelta_to_dhms(self._model[test].duration, ["д", "ч", "мин"]), - Продолжительность
             i = 1
@@ -409,10 +409,10 @@ class TestsLogWidget(QWidget):
                 data.append(line)
                 i += 1
 
-            data.append([f"Дата начала опытов: {self._model.start_datetime.strftime('%d.%m.%Y')}"])
-            data.append([f"Дата окончания опытов: {self._model.end_datetime.strftime('%d.%m.%Y')}"])
+            data.append([f"Дата начала испытаний: {self._model.start_datetime.strftime('%d.%m.%Y')}"])
+            data.append([f"Дата окончания испытаний: {self._model.end_datetime.strftime('%d.%m.%Y')}"])
 
-            scales = [20, "*", "*", "*", "*", "*", "*", "*", "*", "*", 100, 100, 105]
+            scales = [25, "*", "*", "*", "*", "*", "*", "*", "*", "*", 80, 80, 105]
 
 
 
