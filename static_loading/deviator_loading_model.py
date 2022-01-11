@@ -358,7 +358,7 @@ class ModelTriaxialDeviatorLoading:
                                     self._test_data.volume_strain_approximate)
 
         self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
-                                  self._test_data.deviator_cut, self._test_params.sigma_3)
+                                  self._test_data.deviator_cut, self._test_params.sigma_3, self._test_params.K0)
 
         self._test_result.max_pore_pressure = np.round(np.max(self._test_data.pore_pressure_cut))
 
@@ -423,18 +423,26 @@ class ModelTriaxialDeviatorLoading:
         return np.round(E50 / 1000, 1), np.round(qf / 1000, 3)
 
     @staticmethod
-    def define_E(strain, deviator, sigma_3):
+    def define_E(strain, deviator, sigma_3, K0):
         """Определение параметров qf и E50"""
-        i_start_E = 0 #i_start_E, = np.where(deviator >= sigma_3)
-        i_end_E, = np.where(deviator >= 0.6*sigma_3)
+        q_c = sigma_3 * ((1 / K0) - 1)
+
+        if K0 == 1:
+            i_start_E = 0
+        else:
+            i_start_E, = np.where(deviator >= q_c)
+            i_start_E = i_start_E[0]
+
+        i_end_E, = np.where(deviator >= (1.6 * q_c) + (0.6 * sigma_3))
 
         if len(i_end_E):
             i_end_E = i_end_E[0]
         else:
             i_end_E = len(deviator) - 1
 
-        E = (deviator[i_end_E] - deviator[0])/(strain[i_end_E] - strain[0])
-        i_end_for_plot, = np.where(line(E, 0, strain) >= 0.9 * np.max(deviator))
+        E = (deviator[i_end_E] - deviator[i_start_E])/(strain[i_end_E] - strain[i_start_E])
+        b = q_c - strain[i_start_E] * E
+        i_end_for_plot, = np.where(line(E, b, strain) >= 0.9 * np.max(deviator))
 
         #A1, B1 = line_approximate(strain[i_start_E:i_end_E], deviator[i_start_E:i_end_E])
 
@@ -447,8 +455,8 @@ class ModelTriaxialDeviatorLoading:
 
         #return (round(E / 1000, 1), [strain[i_start_E], strain[i_end_for_plot[0]]],
                     #[line(A1, B1, strain[i_start_E]), line(A1, B1, strain[i_end_for_plot[0]])])
-        return (round(E / 1000, 1), [0, strain[i_end_for_plot[0]]],
-                [0, line(E, 0, strain[i_end_for_plot[0]])])
+        return (round(E / 1000, 1), [strain[i_start_E], strain[i_end_for_plot[0]]],
+                [deviator[i_start_E], line(E, b, strain[i_end_for_plot[0]])])
 
     @staticmethod
     def define_Eur(strain, deviator, reload):
