@@ -1,46 +1,80 @@
-"""import numpy as np
-import matplotlib
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, List
+import pickle
 
-x = -np.linspace(0.1, 1000,  1000)
-y = -np.linspace(0.1, 1000,  1000)
+@dataclass
+class ReportUnit:
+    """Класс хранит одну строчку с выданными протоколами и ведомостями по объекту"""
+    program: str = "unknown" # [plaxis/midas, TRM, mathCAD, dynamic, compression, triaxial]
+    count: int = 0
 
-x = x*x
+    def __repr__(self):
+        return f"[Количество: {self.count}, Программа: {self.program}]"
 
-import matplotlib.pyplot as plt
+@dataclass
+class Unit:
+    """Класс хранит одну строчку с выданными протоколами и ведомостями по объекту"""
+    object_number: str = None
+    engineer: str = "unknown"
+    report: ReportUnit = ReportUnit()
+    statement: ReportUnit = ReportUnit()
+    mechanics_statement: ReportUnit = ReportUnit()
 
-fig, axes = plt.subplots(2, 1)
+    def __repr__(self):
+        return f"Объект: {self.object_number}, Исполнитель: {self.engineer}, Протоколы: {self.report}, Ведомости: {self.statement}, Ведомости по механике: {self.mechanics_statement}"
 
-axes[0].plot(np.log10(x + 1), y)
+class Statment:
+    """Класс хранит всю ведомость выданных протоколов"""
+    data: Dict[datetime, List[Unit]] = {}
+
+    def __init__(self):
+        self.data = {
+            datetime(year=2019, month=1, day=1): [
+                Unit(object_number="705-32", engineer="Михайлов А.И.",
+                     report=ReportUnit(program="triaxial", count=5),
+                     statement=ReportUnit(program="triaxial", count=5),
+                     mechanics_statement=ReportUnit(program="TRM", count=5)),
+                Unit(object_number="356-46", engineer="Жмылев Д.А.",
+                     report=ReportUnit(program="triaxial", count=5),
+                     statement=ReportUnit(program="triaxial", count=5),
+                     mechanics_statement=ReportUnit(program="TRM", count=5))],
+            datetime(year=2019, month=2, day=1): [
+                Unit(object_number="705-32", engineer="Михайлов А.И.",
+                     report=ReportUnit(program="triaxial", count=5),
+                     statement=ReportUnit(program="triaxial", count=5),
+                     mechanics_statement=ReportUnit(program="TRM", count=5)),
+                Unit(object_number="356-46", engineer="Жмылев Д.А.",
+                     report=ReportUnit(program="triaxial", count=5),
+                     statement=ReportUnit(program="triaxial", count=5),
+                     mechanics_statement=ReportUnit(program="TRM", count=5))]
+        }
+
+    def load_file(self, path: str):
+        """Подгрузка файла ведомости"""
+        self.data = Statment.read_excel_statment(path)
+
+    def update(self):
+        pass
+
+    def dump(self, directory, name="statment.pickle"):
+        with open(directory + "/" + name, "wb") as file:
+            pickle.dump(self.data, file)
+
+    def load(self, file):
+        with open(file, 'rb') as f:
+            self.data = pickle.load(f)
+
+    @staticmethod
+    def read_excel_statment(path: str):
+        return {}
+
+    def __repr__(self):
+        return "\n".join(list(map(lambda key: f"{key.strftime('%d.%m.%Y')}: {repr(self.data[key])}", self.data)))
 
 
-def define_sticks(x):
-    values = np.array([1, 10, 100, 1000, 10000, 100000, 1000000])
-    values = np.hstack((np.array([-1]), np.log10(values)))
-    text = ["$10^{-1}$", "$10^{0}$", "$10^{1}$", "$10^{2}$", "$10^{3}$", "$10^{4}$",
-            "$10^{5}$", "$10^{6}$"]
-    for i in range(len(values)):
-        if values[i] > x:
-            break
-    return values[:i+1], text[:i+1]
 
-stick, text = define_sticks(x[-1])
-stick[0] = -1
-axes[0].set_xticks(stick)
-axes[0].set_xticklabels(text)
+if __name__ == "__main__":
+    x = Statment()
+    print(x)
 
-
-axes[1].plot(x, y)
-axes[1].set_xscale("log")
-
-plt.show()"""
-
-
-
-
-
-import numpy as np
-from scipy.interpolate import interp1d
-x1 = np.array([2, 5, 10, 30, 40, 61.5, 100])
-y1 = np.array([0.9, 0.87, 0.84, 0.8, 0.79, 0.78, 0.76])
-Ainter = interp1d(x1, y1, kind='cubic')
-print(float(Ainter(55)))

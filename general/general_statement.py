@@ -168,7 +168,7 @@ class StatementGenerator(QDialog):
                     # file = QFileDialog.getOpenFileName(self, 'Open file')[0]
                     save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
-                    save_file_name = 'Отчет.pdf'
+                    save_file_name = 'Общая ведомость.pdf'
                     # считывание параметра "Заголовок"
 
                     statement_title = self.StatementStructure.get_structure().get("statement_title", '')
@@ -187,14 +187,14 @@ class StatementGenerator(QDialog):
                     data_report = self.customer["data"]
                     customer_data_info = ['Заказчик:', 'Объект:']
                     # Сами данные (подробнее см. Report.py)
-                    customer_data = [self.customer[i] for i in ["customer", "object_name"]]
+                    customer_data = [self.customer[i] + "              " for i in ["customer", "object_name"]]
 
                     statement_title += f" №{self.customer['object_number']}СВД"
 
                     try:
                         if save_file_pass:
                             save_report(titles, data, scales, data_report, customer_data_info, customer_data,
-                                        statement_title, save_file_pass, unique_number(length=7, postfix="-ОВ"),
+                                        statement_title, save_file_pass, unique_number(length=7, postfix="-СВД"),
                                         save_file_name)
                             QMessageBox.about(self, "Сообщение", "Успешно сохранено")
                     except PermissionError:

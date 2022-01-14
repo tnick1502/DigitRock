@@ -442,7 +442,7 @@ class ModelTriaxialDeviatorLoading:
 
         E = (deviator[i_end_E] - deviator[i_start_E])/(strain[i_end_E] - strain[i_start_E])
         b = q_c - strain[i_start_E] * E
-        i_end_for_plot, = np.where(line(E, b, strain) >= 0.9 * np.max(deviator))
+        i_end_for_plot, = np.where(line(E, b, strain) >= 0.8 * np.max(deviator))
 
         #A1, B1 = line_approximate(strain[i_start_E:i_end_E], deviator[i_start_E:i_end_E])
 
