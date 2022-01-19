@@ -8,7 +8,7 @@ import sys
 import os
 
 from openpyxl import load_workbook
-from general.excel_functions import cfe_test_type_columns, k0_test_type_column, column_fullness_test, read_customer
+from general.excel_functions import k0_test_type_column, column_fullness_test, read_customer
 from excel_statment.initial_tables import TableCastomer, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, CyclicProperties, \
@@ -26,6 +26,7 @@ from vibration_creep.vibration_creep_model import ModelVibrationCreepSoilTest
 from shear_test.shear_test_model import ModelShearSoilTest
 from shear_test.shear_dilatancy_test_model import ModelShearDilatancySoilTest
 from excel_statment.params import accreditation
+from excel_statment.position_configs import c_fi_E_PropertyPosition
 
 from transliterate import translit
 
@@ -333,18 +334,18 @@ class TriaxialStaticStatment(InitialStatment):
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
-            wb = load_workbook(self.path, data_only=True)
+            #wb = load_workbook(self.path, data_only=True)
 
             combo_params = self.open_line.get_data()
-
-            columns_marker = cfe_test_type_columns(combo_params["test_mode"])
-            columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
-            marker, customer = read_customer(wb)
+            columns_marker = c_fi_E_PropertyPosition[combo_params["test_mode"]][0]
+            #columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
+            #marker, customer = read_customer(wb)
 
             try:
-                assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)), \
-                    "Заполните K0 в ведомости"
-                assert not marker, "Проверьте " + customer
+                #assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)), \
+                    #"Заполните K0 в ведомости"
+                #assert not marker, "Проверьте " + customer
+                True
                 #assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=list(columns_marker_cfe)), \
                     #"Заполните данные консолидации('CC', 'CF')"
             except AssertionError as error:
@@ -438,7 +439,7 @@ class CyclicStatment(InitialStatment):
 
             combo_params = self.open_line.get_data()
 
-            columns_marker = cfe_test_type_columns(combo_params["test_mode"])
+            columns_marker = c_fi_E_PropertyPosition[combo_params["test_mode"]][0]
             columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
             marker, customer = read_customer(wb)
 
@@ -527,7 +528,7 @@ class VibrationCreepStatment(InitialStatment):
 
             combo_params = self.open_line.get_data()
 
-            columns_marker_cfe = cfe_test_type_columns("Виброползучесть")
+            columns_marker_cfe = c_fi_E_PropertyPosition["Виброползучесть"][0]
             columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
             marker, customer = read_customer(wb)
 
@@ -553,7 +554,7 @@ class VibrationCreepStatment(InitialStatment):
 
                 if len(statment) < 1:
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта"
-                                        + str(cfe_test_type_columns("Виброползучесть")), QMessageBox.Ok)
+                                        + str(c_fi_E_PropertyPosition["Виброползучесть"][0]), QMessageBox.Ok)
                 keys = list(statment.tests.keys())
                 for test in keys:
                     if not statment[test].mechanical_properties.E50:
@@ -684,7 +685,7 @@ class ShearStatment(InitialStatment):
 
             combo_params = self.open_line.get_data()
 
-            columns_marker = cfe_test_type_columns(combo_params["test_mode"])
+            columns_marker = c_fi_E_PropertyPosition[combo_params["test_mode"]][0]
             marker, customer = read_customer(wb)
 
             try:
