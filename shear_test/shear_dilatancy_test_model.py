@@ -856,7 +856,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         clay_il_red_min = 0  # размах приведенного показателя текучести для сигмоиды
         clay_il_red_max = 1
-        clay_k_q_min = 0.6  # значения k_q соотв. минимальному ILприведенн
+        clay_k_q_min = 0.9  # значения k_q соотв. минимальному ILприведенн
         clay_k_q_max = 0.95  # значения k_q соотв. максимальному ILприведенн
 
         if not il or il == 0:  # Пески
@@ -1083,6 +1083,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         if xc != 0.15:
             residual_strength = ModelShearDilatancySoilTest.define_k_q(data_phiz.Il, data_phiz.e, sigma_3)
+
         else:
             residual_strength = 0.95
 

@@ -982,7 +982,10 @@ class ConsolidationProperties:
             sigma_max = (2 * (depth - pit_depth) * 10) / 1000 + build_press if (depth - pit_depth) > 0 else (2 * 10 * depth) / 1000
             return sigma_max
         else:
-            return (2 * 10 * depth) / 1000
+            if depth == 0.0:
+                return 25 / 1000
+            else:
+                return (2 * 10 * depth) / 1000
 
     @staticmethod
     def spec_round(x, precision) -> float:
