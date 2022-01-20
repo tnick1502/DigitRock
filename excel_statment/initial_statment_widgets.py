@@ -8,7 +8,8 @@ import sys
 import os
 
 from openpyxl import load_workbook
-from general.excel_functions import k0_test_type_column, column_fullness_test, read_customer
+from general.excel_functions import k0_test_type_column, column_fullness_test
+from excel_statment.functions import read_general_prameters
 from excel_statment.initial_tables import TableCastomer, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, CyclicProperties, \
@@ -244,7 +245,7 @@ class RezonantColumnStatment(InitialStatment):
             columns_marker = ["FV"]
 
             columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
-            marker, customer = read_customer(wb)
+            marker, customer = read_general_prameters(self.path)
 
             try:
                 assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=columns_marker),\
@@ -339,13 +340,12 @@ class TriaxialStaticStatment(InitialStatment):
             combo_params = self.open_line.get_data()
             columns_marker = c_fi_E_PropertyPosition[combo_params["test_mode"]][0]
             #columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
-            #marker, customer = read_customer(wb)
+            marker, error = read_general_prameters(self.path)
 
             try:
                 #assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)), \
                     #"Заполните K0 в ведомости"
-                #assert not marker, "Проверьте " + customer
-                True
+                assert not marker, "Проверьте " + error
                 #assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=list(columns_marker_cfe)), \
                     #"Заполните данные консолидации('CC', 'CF')"
             except AssertionError as error:
@@ -441,7 +441,7 @@ class CyclicStatment(InitialStatment):
 
             columns_marker = c_fi_E_PropertyPosition[combo_params["test_mode"]][0]
             columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
-            marker, customer = read_customer(wb)
+            marker, customer = read_general_prameters(self.path)
 
             try:
                 assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)),\
@@ -530,7 +530,7 @@ class VibrationCreepStatment(InitialStatment):
 
             columns_marker_cfe = c_fi_E_PropertyPosition["Виброползучесть"][0]
             columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
-            marker, customer = read_customer(wb)
+            marker, customer = read_general_prameters(self.path)
 
             try:
                 assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker_cfe)),\
@@ -599,7 +599,7 @@ class ConsolidationStatment(InitialStatment):
 
             combo_params = self.open_line.get_data()
 
-            marker, customer = read_customer(wb)
+            marker, customer = read_general_prameters(self.path)
 
             try:
                 assert not marker, "Проверьте " + customer
@@ -686,7 +686,7 @@ class ShearStatment(InitialStatment):
             combo_params = self.open_line.get_data()
 
             columns_marker = c_fi_E_PropertyPosition[combo_params["test_mode"]][0]
-            marker, customer = read_customer(wb)
+            marker, customer = read_general_prameters(self.path)
 
             try:
                 # assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)), \

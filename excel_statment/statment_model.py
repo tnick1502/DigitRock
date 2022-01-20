@@ -9,7 +9,7 @@ import xlrd
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, PropertiesDict, ConsolidationProperties, CyclicProperties
 from descriptors import DataTypeValidation
 from excel_statment.position_configs import PhysicalPropertyPosition, MechanicalPropertyPosition, c_fi_E_PropertyPosition, \
-    DynamicsPropertyPosition, IdentificationColumns
+    DynamicsPropertyPosition, IdentificationColumns, GeneralDataColumns
 from excel_statment.functions import str_df, float_df
 from general.general_functions import read_json_file, create_json_file
 import shelve
@@ -28,22 +28,22 @@ class StatmentData:
     def __init__(self, statment_path):
         if statment_path.endswith("xlsx"):
             wb = load_workbook(statment_path, data_only=True)
-            object_name = str(wb["Лист1"]["A2"].value)
-            customer = str(wb["Лист1"]["A1"].value)
-            accreditation = str(wb["Лист1"]["I2"].value)
-            object_number = str(wb["Лист1"]["AI1"].value)
-            start_date = wb["Лист1"]["U1"].value
-            end_date = wb["Лист1"]["Q1"].value
+            object_name = str(wb["Лист1"][GeneralDataColumns["object_name"][0]].value)
+            customer = str(wb["Лист1"][GeneralDataColumns["customer"][0]].value)
+            accreditation = str(wb["Лист1"][GeneralDataColumns["accreditation"][0]].value)
+            object_number = str(wb["Лист1"][GeneralDataColumns["object_number"][0]].value)
+            start_date = wb["Лист1"][GeneralDataColumns["start_date"][0]].value
+            end_date = wb["Лист1"][GeneralDataColumns["end_date"][0]].value
             wb.close()
         else:
             wb = xlrd.open_workbook(statment_path, formatting_info=True)
             sheet = wb.sheet_by_index(0)
-            object_name = str(sheet.row_values(1)[0])
-            customer = str(sheet.row_values(0)[0])
-            accreditation = str(sheet.row_values(1)[8])
-            object_number = str(sheet.row_values(0)[34])
-            start_date = datetime(*xlrd.xldate_as_tuple(sheet.row_values(0)[20], wb.datemode))
-            end_date = datetime(*xlrd.xldate_as_tuple(sheet.row_values(0)[16], wb.datemode))
+            object_name = str(sheet.cell(*GeneralDataColumns["object_name"][1]).value)
+            customer = str(sheet.cell(*GeneralDataColumns["customer"][1]).value)
+            accreditation = str(sheet.cell(*GeneralDataColumns["accreditation"][1]).value)
+            object_number = str(sheet.cell(*GeneralDataColumns["object_number"][1]).value)
+            start_date = datetime(*xlrd.xldate_as_tuple(sheet.cell(*GeneralDataColumns["start_date"][1]).value, wb.datemode))
+            end_date = datetime(*xlrd.xldate_as_tuple(sheet.cell(*GeneralDataColumns["end_date"][1]).value, wb.datemode))
 
         if accreditation in ["OAO", "ОАО"]:
             accreditation = "АО"

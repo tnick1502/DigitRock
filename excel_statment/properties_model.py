@@ -279,6 +279,8 @@ class MechanicalProperties:
 
             self.K0 = MechanicalProperties.define_K0(data_frame, K0_mode, string, physical_properties.Il,
                                                      self.fi)
+            if not self.K0:
+                raise ValueError(f"Ошибка определения K0 в пробе {physical_properties.laboratory_number}")
 
             self.sigma_3 = MechanicalProperties.round_sigma_3(
                 MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))

@@ -1,6 +1,8 @@
-import datetime
+from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import Font
+from excel_statment.position_configs import GeneralDataColumns
+import xlrd
 
 def float_df(x):
     if str(x) != "nan" and str(x) != "NaT":
@@ -49,54 +51,53 @@ def column_fullness_test(wb, columns=[], initial_columns=[]):
 
     return True
 
-# Соответствие ячеек типу испытания
-def cfe_test_type_columns(test_type):
-    """Функция возвращает столбцы для считывания fi c E по типу испытания"""
-    if test_type == "Трёхосное сжатие (E)":
-        return ["BI", "BJ", "BK"]
-
-    elif test_type == "Трёхосное сжатие (F, C)":
-        return ["BF", "BG", "BH"]
-
-    elif test_type == "Трёхосное сжатие (F, C, E)":
-        return ["BC", "BD", "BE"]
-
-    elif test_type == "Трёхосное сжатие с разгрузкой":
-        return ["BL", "BM", "BN"]
-
-    elif test_type == "Сейсморазжижение" or test_type == "Штормовое разжижение":
-        return ["BZ", "BY", "CA"]
-
-    elif test_type == "Виброползучесть":
-        return ["BS", "BT", "BU"]
-
-    elif test_type == "Резонансная колонка":
-        return ["BC", "BD", "BE"]
-
 def k0_test_type_column(test_type):
     """Функция возвращает столбцы для считывания K0 по типу испытания"""
     if test_type == "K0: K0nc из ведомости":
-        return ["GZ"]
+        return ["GZ", 207]
     elif test_type == "K0: K0 из ведомости":
-        return ["GY"]
-    else: return ["A"]
+        return ["GY", 206]
+    else:
+        return ["A", 0]
 
-def read_customer(wb):
+def read_general_prameters(path):
     """Чтение данных заказчика, даты
         Передается документ excel, возвращает маркер False и данные, либо маркер True и имя ошибки"""
 
-    data = {"customer" : str(wb["Лист1"]["A1"].value),
-            "object_name" : str(wb["Лист1"]["A2"].value),
-            "data": wb["Лист1"]["Q1"].value,
-            "start_date": wb["Лист1"]["U1"].value,
-            "accreditation" : str(wb["Лист1"]["I2"].value),
-            "object_number" : str(wb["Лист1"]["AI1"].value)}
+    if path.endswith("xlsx"):
+        wb = load_workbook(path, data_only=True)
+        data = {
+            "object_name": str(wb["Лист1"][GeneralDataColumns["object_name"][0]].value),
+            "customer": str(wb["Лист1"][GeneralDataColumns["customer"][0]].value),
+            "accreditation": str(wb["Лист1"][GeneralDataColumns["accreditation"][0]].value),
+            "object_number": str(wb["Лист1"][GeneralDataColumns["object_number"][0]].value),
+            "start_date": wb["Лист1"][GeneralDataColumns["start_date"][0]].value,
+            "end_date": wb["Лист1"][GeneralDataColumns["end_date"][0]].value,
+        }
+        wb.close()
+    else:
+        wb = xlrd.open_workbook(path, formatting_info=True)
+        sheet = wb.sheet_by_index(0)
+        data = {
+            "object_name": str(sheet.cell(*GeneralDataColumns["object_name"][1]).value),
+            "customer": str(sheet.cell(*GeneralDataColumns["customer"][1]).value),
+            "accreditation": str(sheet.cell(*GeneralDataColumns["accreditation"][1]).value),
+            "object_number": str(sheet.cell(*GeneralDataColumns["object_number"][1]).value),
+            "start_date": sheet.cell(*GeneralDataColumns["start_date"][1]).value,
+            "end_date": sheet.cell(*GeneralDataColumns["end_date"][1]).value,
+        }
+        try:
+            data["start_date"]: datetime(*xlrd.xldate_as_tuple(data["start_date"], wb.datemode))
+            data["end_date"]: datetime(*xlrd.xldate_as_tuple(data["start_date"], wb.datemode))
+        except:
+            pass
+
 
     for i in data:
         if data[i] == "None":
             return True, i
 
-    if not isinstance(data["data"], datetime):
+    if not isinstance(data["end_date"], datetime):
         return True, "Дата окончания опытов"
 
     if not isinstance(data["start_date"], datetime):
@@ -147,13 +148,13 @@ def set_cell_data(path: str, cell: str, value, sheet: str="Лист1", color=Non
     :argument color: цвет шрифта записи
 
     :return None"""
-
-    wb = load_workbook(path)
-    wb[sheet][cell] = value
-    if color:
-        cell = wb[sheet][cell]
-        cell.font = Font(color=color)
-    wb.save(path)
+    if path.endswith("xlsx"):
+        wb = load_workbook(path)
+        wb[sheet][cell] = value
+        if color:
+            cell = wb[sheet][cell]
+            cell.font = Font(color=color)
+        wb.save(path)
 
 
 
