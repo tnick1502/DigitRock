@@ -99,11 +99,12 @@ class Test:
             self.physical_properties = PhysicalProperties()
             for attr in physical_properties_dict:
                 if attr == "date":
-                    if physical_properties_dict[attr] is None:
-                        setattr(self.physical_properties, attr, physical_properties_dict[attr])
-                    else:
+                    if isinstance(physical_properties_dict[attr], datetime)  is None:
                         setattr(self.physical_properties, attr,
                                 datetime.strptime(physical_properties_dict[attr].split(".")[0], "%Y-%m-%d %H:%M:%S"))
+                        setattr(self.physical_properties, attr, physical_properties_dict[attr])
+                    else:
+                        setattr(self.physical_properties, attr, None)
                 else:
                     setattr(self.physical_properties, attr, physical_properties_dict[attr])
 

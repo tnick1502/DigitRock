@@ -305,8 +305,8 @@ class MechanicalProperties:
                 #self.sigma_1, self.sigma_3, self.fi, self.qf, self.E50, physical_properties.type_ground,
                 #physical_properties.rs, physical_properties.e, physical_properties.Il)
 
-            self.dilatancy_angle = MechanicalProperties.define_dilatancy(
-                physical_properties.type_ground, physical_properties.e, physical_properties.Il, physical_properties.Ip) * np.random.uniform(0.9, 1.1)
+            self.dilatancy_angle = np.round(MechanicalProperties.define_dilatancy(
+                physical_properties.type_ground, physical_properties.e, physical_properties.Il, physical_properties.Ip) * np.random.uniform(0.9, 1.1), 2)
 
             if self.dilatancy_angle <= 0:
                 self.dilatancy_angle = np.random.uniform(1, 3)

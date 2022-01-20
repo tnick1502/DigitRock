@@ -18,7 +18,7 @@ from general.save_widget import Save_Dir
 from general.reports import report_rc
 from excel_statment.initial_statment_widgets import RezonantColumnStatment
 from loggers.logger import app_logger, log_this, handler
-from general.excel_functions import set_cell_data
+from excel_statment.functions import set_cell_data
 from singletons import RC_models, statment
 from version_control.configs import actual_version
 __version__ = actual_version
@@ -490,8 +490,9 @@ class RezonantColumnSoilTestApp(QWidget):
                       self.tab_2.test_widget.save_canvas(), __version__)
 
             number = statment[statment.current_test].physical_properties.sample_number + 7
-            set_cell_data(self.tab_1.path, "HL" + str(number), test_result["G0"], sheet="Лист1")
-            set_cell_data(self.tab_1.path, "HK" + str(number), test_result["threshold_shear_strain"], sheet="Лист1")
+
+            set_cell_data(self.tab_1.path, ("HL" + str(number), (number, 219)), test_result["G0"], sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("HK" + str(number), (number, 218)), test_result["threshold_shear_strain"], sheet="Лист1")
 
             shutil.copy(file_name, self.tab_2.save_widget.report_directory + "/" + file_name[len(file_name) -
                                                                                       file_name[::-1].index("/"):])
