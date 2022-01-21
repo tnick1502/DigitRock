@@ -518,7 +518,7 @@ class VibrationCreepStatment(InitialStatment):
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
 
             combo_params = self.open_line.get_data()
-            columns_marker = list(zip(*c_fi_E_PropertyPosition[combo_params["Виброползучесть"]]))
+            columns_marker = list(zip(*c_fi_E_PropertyPosition["Виброползучесть"]))
             marker, customer = read_general_prameters(self.path)
 
             try:

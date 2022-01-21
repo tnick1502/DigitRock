@@ -933,7 +933,10 @@ class MechanicalProperties:
         if val is None:
             return None
         else:
-            val = list(map(lambda val: int(float(val.replace(",", ".").strip(" ")) * 1000), val.split("/")))
+            try:
+                val = list(map(lambda val: int(float(val.replace(",", ".").strip(" ")) * 1000), val.split("/")))
+            except:
+                app_logger.exception("Некорректно введены пользовательские ступени давления")
             return val
 
 class ConsolidationProperties:
