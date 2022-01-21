@@ -8,14 +8,13 @@ import sys
 import os
 
 from openpyxl import load_workbook
-from general.excel_functions import cfe_test_type_columns, k0_test_type_column, column_fullness_test, read_customer
+from excel_statment.functions import read_general_prameters, k0_test_type_column, column_fullness_test
 from excel_statment.initial_tables import TableCastomer, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, CyclicProperties, \
     DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties, ShearProperties
-from excel_statment.position_configs import IdentificationColumns
 from loggers.logger import app_logger, log_this
-from singletons import statment, models, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, Shear_models, Shear_Dilatancy_models
+from singletons import statment, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, Shear_models, Shear_Dilatancy_models
 
 from resonant_column.rezonant_column_hss_model import ModelRezonantColumnSoilTest
 from consolidation.consolidation_model import ModelTriaxialConsolidationSoilTest
@@ -26,6 +25,7 @@ from vibration_creep.vibration_creep_model import ModelVibrationCreepSoilTest
 from shear_test.shear_test_model import ModelShearSoilTest
 from shear_test.shear_dilatancy_test_model import ModelShearDilatancySoilTest
 from excel_statment.params import accreditation
+from excel_statment.position_configs import c_fi_E_PropertyPosition
 
 from transliterate import translit
 
@@ -235,21 +235,20 @@ class RezonantColumnStatment(InitialStatment):
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
-
-            wb = load_workbook(self.path, data_only=True)
-
             combo_params = self.open_line.get_data()
 
-            columns_marker = ["FV"]
+            columns_marker = [("FV", 177)]
 
-            columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
-            marker, customer = read_customer(wb)
+            marker, customer = read_general_prameters(self.path)
 
             try:
-                assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=columns_marker),\
-                    "Заполните K0 в ведомости"
-                assert column_fullness_test(wb, columns=["BD", "BC", "BE"], initial_columns=columns_marker), \
+                assert column_fullness_test(
+                    self.path, columns=k0_test_type_column(combo_params["K0_mode"]),
+                    initial_columns=columns_marker), "Заполните K0 в ведомости"
+                assert column_fullness_test(self.path, columns=list(zip(*c_fi_E_PropertyPosition["Резонансная колонка"])),
+                                            initial_columns=columns_marker), \
                     "Заполните параметры прочности и деформируемости (BD, BC, BE)"
+
                 assert not marker, "Проверьте " + customer
 
             except AssertionError as error:
@@ -333,20 +332,15 @@ class TriaxialStaticStatment(InitialStatment):
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
-            wb = load_workbook(self.path, data_only=True)
-
             combo_params = self.open_line.get_data()
-
-            columns_marker = cfe_test_type_columns(combo_params["test_mode"])
-            columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
-            marker, customer = read_customer(wb)
+            columns_marker = list(zip(*c_fi_E_PropertyPosition[combo_params["test_mode"]]))
+            marker, error = read_general_prameters(self.path)
 
             try:
-                assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)), \
-                    "Заполните K0 в ведомости"
-                assert not marker, "Проверьте " + customer
-                #assert column_fullness_test(wb, columns=["CC", "CF"], initial_columns=list(columns_marker_cfe)), \
-                    #"Заполните данные консолидации('CC', 'CF')"
+                assert column_fullness_test(
+                    self.path, columns=k0_test_type_column(combo_params["K0_mode"]),
+                    initial_columns=columns_marker), "Заполните K0 в ведомости"
+                assert not marker, "Проверьте " + error
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
             else:
@@ -434,31 +428,31 @@ class CyclicStatment(InitialStatment):
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
-            wb = load_workbook(self.path, data_only=True)
-
             combo_params = self.open_line.get_data()
 
-            columns_marker = cfe_test_type_columns(combo_params["test_mode"])
-            columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
-            marker, customer = read_customer(wb)
+            columns_marker = list(zip(*c_fi_E_PropertyPosition[combo_params["test_mode"]]))
+            marker, customer = read_general_prameters(self.path)
 
             try:
-                assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)),\
-                    "Заполните K0 в ведомости"
+                assert column_fullness_test(self.path, columns=[("AJ", 35)], initial_columns=columns_marker), \
+                    "Заполните уровень грунтовых вод в ведомости"
+                assert column_fullness_test(
+                    self.path, columns=k0_test_type_column(combo_params["K0_mode"]),
+                    initial_columns=columns_marker), "Заполните K0 в ведомости"
                 assert not marker, "Проверьте " + customer
-                if combo_params["test_mode"] != "Демпфирование":
-                    assert column_fullness_test(wb, columns=["AJ"], initial_columns=list(columns_marker)), \
-                        "Заполните уровень грунтовых вод в ведомости"
+
+                if combo_params["test_mode"] == "Демпфирование":
+                    assert column_fullness_test(self.path, columns=[("AO", 40), ("AN", 39)],
+                                                initial_columns=columns_marker), \
+                        "Заполните амплитуду ('AO') и частоту ('AN')"
 
                 if combo_params["test_mode"] == "Штормовое разжижение":
-                    assert column_fullness_test(wb, columns=['HR', 'HS', 'HT','HU'],
-                                                initial_columns=list(columns_marker)), "Заполните данные по шторму в ведомости"
-                elif combo_params["test_mode"] == "Сейсморазжижение":
-                    assert column_fullness_test(wb, columns=["AM", "AQ"], initial_columns=list(columns_marker)), \
+                    assert column_fullness_test(self.path, columns=[('HR', 225), ('HS', 226), ('HT', 227), ('HU', 228)],
+                                                initial_columns=columns_marker), "Заполните данные по шторму в ведомости"
+                if combo_params["test_mode"] == "Сейсморазжижение":
+                    assert column_fullness_test(self.path, columns=[("AM", 38), ("AQ", 42)], initial_columns=columns_marker), \
                         "Заполните магнитуду и бальность"
-                elif combo_params["test_mode"] == "Демпфирование":
-                    assert column_fullness_test(wb, columns=["AO", "AN"], initial_columns=list(columns_marker)), \
-                        "Заполните амплитуду ('AO') и частоту ('AN')"
+
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
@@ -523,21 +517,15 @@ class VibrationCreepStatment(InitialStatment):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
 
-            wb = load_workbook(self.path, data_only=True)
-
             combo_params = self.open_line.get_data()
-
-            columns_marker_cfe = cfe_test_type_columns("Виброползучесть")
-            columns_marker_k0 = k0_test_type_column(combo_params["K0_mode"])
-            marker, customer = read_customer(wb)
+            columns_marker = list(zip(*c_fi_E_PropertyPosition["Виброползучесть"]))
+            marker, customer = read_general_prameters(self.path)
 
             try:
-                assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker_cfe)),\
-                    "Заполните K0 в ведомости"
+                assert column_fullness_test(
+                    self.path, columns=k0_test_type_column(combo_params["K0_mode"]),
+                    initial_columns=columns_marker), "Заполните K0 в ведомости"
                 assert not marker, "Проверьте " + customer
-                #assert column_fullness_test(wb, columns=["AO"],
-                                            #initial_columns=cfe_test_type_columns("Виброползучесть")), \
-                    #"Заполните амплитуду ('AO')"
 
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
@@ -553,7 +541,7 @@ class VibrationCreepStatment(InitialStatment):
 
                 if len(statment) < 1:
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта"
-                                        + str(cfe_test_type_columns("Виброползучесть")), QMessageBox.Ok)
+                                        + str(c_fi_E_PropertyPosition["Виброползучесть"][0]), QMessageBox.Ok)
                 keys = list(statment.tests.keys())
                 for test in keys:
                     if not statment[test].mechanical_properties.E50:
@@ -598,7 +586,7 @@ class ConsolidationStatment(InitialStatment):
 
             combo_params = self.open_line.get_data()
 
-            marker, customer = read_customer(wb)
+            marker, customer = read_general_prameters(self.path)
 
             try:
                 assert not marker, "Проверьте " + customer
@@ -684,8 +672,8 @@ class ShearStatment(InitialStatment):
 
             combo_params = self.open_line.get_data()
 
-            columns_marker = cfe_test_type_columns(combo_params["test_mode"])
-            marker, customer = read_customer(wb)
+            columns_marker = c_fi_E_PropertyPosition[combo_params["test_mode"]][0]
+            marker, customer = read_general_prameters(self.path)
 
             try:
                 # assert column_fullness_test(wb, columns=columns_marker_k0, initial_columns=list(columns_marker)), \

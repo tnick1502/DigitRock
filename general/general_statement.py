@@ -1,15 +1,21 @@
+from datetime import datetime
+
 from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QGroupBox, QDialog, \
     QComboBox, QWidget, QLineEdit, QPushButton, QVBoxLayout, QLabel, QMessageBox, QApplication
 from PyQt5.QtCore import Qt
 import sys
 import os
 
+import numpy as np
+
 from openpyxl import load_workbook
 
-from general.excel_functions import read_customer, form_xlsx_dictionary, table_data
+# from general.excel_functions import read_customer, form_xlsx_dictionary, table_data
 from general.general_functions import create_json_file, read_json_file, unique_number
 from general.initial_tables import Table
 from general.report_general_statment import save_report
+import xlrd
+from openpyxl.utils import get_column_letter, column_index_from_string
 
 class StatementGenerator(QDialog):
     """
@@ -101,13 +107,13 @@ class StatementGenerator(QDialog):
             self.path = QFileDialog.getOpenFileName(self, 'Open file', '/home')[0]
             if self.path:
                 try:
-                    wb = load_workbook(self.path, data_only=True)
-                    marker, self.customer = read_customer(wb)
+                    #wb = load_workbook(self.path, data_only=True)
+                    marker, self.customer = self.read_customer(self.path)
                     self.customer_table.set_data([["Заказчик", "Объект", "Дата", "Аккредитация"],
                                                   [self.customer[i] for i in
                                                    ["customer", "object_name", "data", "accreditation"]]], "Stretch")
                     self.text_file_path.setText(self.path)
-                    self.statment_data = form_xlsx_dictionary(wb, last_key='IV')
+                    self.statment_data = self.form_excel_dictionary(self.path, last_key='IV')
                 except FileNotFoundError as error:
                     print(error)
             else:
@@ -118,7 +124,7 @@ class StatementGenerator(QDialog):
         # print(table_data(self.statment_data, self.StatementStructure.get_structure()))
         if self.statment_data:
             if self._structure_assretion_tests(self.statment_data, self.StatementStructure.get_structure()):
-                titles, data, scales = table_data(self.statment_data, self.StatementStructure.get_structure())
+                titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
                 for i in range(len(data)):
                     for j in range(len(data[i])):
                         if data[i][j] == 'None':
@@ -176,7 +182,7 @@ class StatementGenerator(QDialog):
                     # self.StatementStructure._additional_parameters = \
                     #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
 
-                    titles, data, scales = table_data(self.statment_data, self.StatementStructure.get_structure())
+                    titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
                     for i in range(len(data)):
                         for j in range(len(data[i])):
                             if data[i][j] == 'None':
@@ -207,6 +213,287 @@ class StatementGenerator(QDialog):
             else:
                 pass
             pass
+
+    def generator_of_cell_with_lab_number_xls(self, sheet):
+        """Функция генерирует последовательность строк с заполненными данными по лабномеру"""
+        for i in range(6, sheet.nrows):
+            if str(sheet.cell(i, 0).value).replace(' ', '') not in ["None", ""]:
+                yield i
+
+    def generator_of_cell_with_lab_number_xlsx(self, wb):
+        """Функция генерирует последовательность строк с заполненными данными по лабномеру"""
+        for i in range(7, len(wb['Лист1']['A']) + 5):
+            if str(wb["Лист1"]['A' + str(i)].value) != "None":
+                yield i
+
+    def get_column_index(self, colname: str):
+        for i in range(1000):
+            if colname == xlrd.colname(i):
+                return i
+        return None
+
+    def get_column_letters(self, last_letter='IV'):
+        """
+        Функция формирует список наименований колонок из exel (ключей)
+        :param last_letter: str, название колонки по которую (включительно) формировать словарь
+        :return: list, список наименований колонок (ключи)
+        """
+        import_columns = []
+        try:
+            last_letter_index = column_index_from_string(last_letter)
+        except:
+            last_letter_index = column_index_from_string('IV')
+        for i in range(1, last_letter_index + 1):
+            import_columns.append(get_column_letter(i))
+        return import_columns[:last_letter_index + 1]  # обрезание идет До индекса, так что включаем еще значение
+
+    def form_xls_dictionary(self, sheet, last_key='IV'):
+        """
+
+        """
+
+        # наименования колонок большими буквами
+        last_key = last_key.upper()
+
+        # sheet = sheet.sheet_by_index(0)
+
+        # формируем список ключей
+        import_columns = self.get_column_letters(last_key)
+
+        # объявляем словарь
+        xls_dictionary = {str(import_columns[0]): []}
+        # вносим в него ключи
+        for col in import_columns:
+            xls_dictionary[str(col)] = []
+
+        ig_index = self.get_column_index('IG')
+        a_index = self.get_column_index('A')
+
+        for col in range(len(import_columns)):
+            for row in self.generator_of_cell_with_lab_number_xls(sheet):
+                # выполняем проверку, что ячейка не пустая
+                if str(sheet.cell(row, col).value).replace(' ', '') not in ["None", ""]:
+                    if xlrd.colname(col) == "A":
+                        if str(sheet.cell(row, ig_index).value) not in ["None", ""]:
+                            xls_dictionary[xlrd.colname(col)].append(str(sheet.cell(row, ig_index).value))
+                        else:
+                            xls_dictionary[xlrd.colname(col)].append(str(sheet.cell(row, a_index).value))
+                    else:
+                        xls_dictionary[xlrd.colname(col)].append(str(sheet.cell(row, col).value))
+                else:
+                    xls_dictionary[xlrd.colname(col)].append("None")
+
+        for key in xls_dictionary:
+            xls_dictionary[str(key)] = np.array(xls_dictionary[str(key)])
+
+        return xls_dictionary
+
+    def form_xlsx_dictionary(self, wb, last_key):
+        """
+        Функция считывает всю ведомость и записывает значения в словарь, где
+        ключи - обозначения колонок в exel таблице ('A', 'B', ...)
+        значения - колонок из ведомости в виде массивов
+        :param wb: workbook, результат импорта ведомости
+        :param last_key: str, название колонки (ключа) по которую (включительно) формировать словарь
+        :return: dict, словарь с ключами по наименованиям колонок и соответствующими массивами колонок - numpy.ndarray
+        """
+
+        # наименования колонок большими буквами
+        last_key = last_key.upper()
+
+        # формируем список ключей
+        import_columns = self.get_column_letters(last_key)
+
+        # объявляем словарь
+        xlsx_dictionary = {str(import_columns[0]): []}
+        # вносим в него ключи
+        for col in import_columns:
+            xlsx_dictionary[str(col)] = []
+
+        for key in xlsx_dictionary:
+            for i in self.generator_of_cell_with_lab_number_xlsx(wb):
+                # выполняем проверку, что ячейка не пустая
+                if str(wb["Лист1"][str(key) + str(i)].value) != "None":
+                    if str(key) == "A":
+                        if str(wb["Лист1"]["IG" + str(i)].value) not in ["None", ""]:
+                            xlsx_dictionary[str(key)].append(wb["Лист1"]["IG" + str(i)].value)
+                        else:
+                            xlsx_dictionary[str(key)].append(wb["Лист1"]["A" + str(i)].value)
+                    else:
+                        xlsx_dictionary[str(key)].append(wb["Лист1"][str(key) + str(i)].value)
+                else:
+                    xlsx_dictionary[str(key)].append("None")
+        # переводим значения в массивы numpy.ndarray
+        for key in xlsx_dictionary:
+            xlsx_dictionary[str(key)] = np.array(xlsx_dictionary[str(key)])
+
+        return xlsx_dictionary
+
+    def form_excel_dictionary(self, path, last_key='IV'):
+
+        # наименования колонок большими буквами
+        last_key = last_key.upper()
+        if path[-1] == "x":
+            print("xlsx")
+            sheet = load_workbook(path, data_only=True)
+            return self.form_xlsx_dictionary(sheet, last_key)
+
+        else:
+            print("xls")
+            sheet = xlrd.open_workbook(path, formatting_info=True)
+            sheet = sheet.sheet_by_index(0)
+            return self.form_xls_dictionary(sheet, last_key)
+
+    def read_customer(self, path):
+        """Чтение данных заказчика, даты
+            Передается документ excel, возвращает маркер False и данные, либо маркер True и имя ошибки"""
+
+        if path.endswith("xlsx"):
+            wb = load_workbook(path, data_only=True)
+            data = {"customer": str(wb["Лист1"]["A1"].value),
+                    "object_name": str(wb["Лист1"]["A2"].value),
+                    "data": wb["Лист1"]["Q1"].value,
+                    "start_date": wb["Лист1"]["U1"].value,
+                    "accreditation": str(wb["Лист1"]["I2"].value),
+                    "object_number": str(wb["Лист1"]["AI1"].value)}
+        else:
+            wb = xlrd.open_workbook(path, formatting_info=True)
+            wb = wb.sheet_by_index(0)
+            data = {"customer": self.str_float(wb.cell(0, 0).value),
+                    "object_name": self.str_float(wb.cell(1, 0).value),
+                    "data": self.date_datetime(wb.cell(0, 16).value),
+                    "start_date": self.date_datetime(wb.cell(0, 20).value),
+                    "accreditation": self.str_float(wb.cell(1, 8).value),
+                    "object_number": self.str_float(wb.cell(0, 34).value)}
+
+        for i in data:
+            if data[i] == "None":
+                return True, i
+
+        if not isinstance(data["data"], datetime):
+            return True, "Дата окончания опытов"
+
+        if not isinstance(data["start_date"], datetime):
+            return True, "Дата начала опытов"
+
+        return False, data
+
+    def table_data(self, table, structure):
+        """Функция возвращает матрицу для построения таблицы. Первая втрока - имя, остальные - столбцы значений
+        Входные параметры: table - матрица, считанная с excel,
+                           structure - словарь, описывающий структуру таблицы
+                           structure = {"trigger": ['BI', 'AS'],
+                           "columns": {"0": {"title": "Скважина", "cell": "B"},
+                                      "1": {"title": "Лаб.номер", "cell": "A"},
+                                      "2": {"title": "Глубина", "cell": "C"}}}"""
+
+        data = [[]]
+
+        titles = [structure["columns"][str(i)]["title"] for i in range(len(structure["columns"]))]
+
+        scale = [structure["columns"][str(i)]["scale_factor"] for i in range(len(structure["columns"]))]
+
+        parameter_decimal = [structure["columns"][str(i)]["number_of_decimal_places"] for i in
+                             range(len(structure["columns"]))]
+
+        # for i in range(len(structure["columns"])): # идем по строкам columns
+        #     data[0].append(structure["columns"][str(i)]["title"])  # в список списков в первый список записываем все title из columns str(i)-дает обращение к нужному ключу по порядку
+
+        if (structure["trigger"] is None) or (structure["trigger"] == []):
+            structure["trigger"] = [None]
+        while len(structure["trigger"]) > 1 and structure["trigger"].count(None) > 0:
+            structure["trigger"].remove(
+                None)  # удаляем None так, чтобы остался массив из одного None на случай массива [None, A]
+
+        if structure["trigger"].count(None) == 0:
+            k = 0
+            for i in range(len(table[structure["trigger"][0]])):  # Идем по столбцу тригера
+                flag = 1
+                for tr in range(len(structure["trigger"])):  # внутренний цикл для того чтобы идти по всем тригерам
+                    if table[structure["trigger"][tr]][
+                        i] == 'None':  # если в ячейке из столбца тригера пусто меняем флаг на 0
+                        flag = 0
+                if flag:  # для непустых ячеек тригера дбавляем в список списков пустые списки
+                    for j in range(len(structure["columns"])):  # по длине массива с названими
+                        data[k].append(table[structure["columns"][str(j)]["cell"]][
+                                           i])  # записываем в каждый массив значения из каждой строки в нужных столбцах
+                    data.append([])
+                    k += 1  # считаем количество строк которые были записаны
+            data.pop(-1)
+        else:  # если тригера нет
+            for i in range(len(table[structure["columns"]["0"]["cell"]])):  # идем по столбцу первому из columns
+                for j in range(len(structure["columns"])):
+                    data[i].append(table[structure["columns"][str(j)]["cell"]][
+                                       i])  # записываем в каждый массив значения из каждой строки в нужных столбцах
+                data.append([])  # добавляем нужное число пустых массивов
+            data.pop(-1)
+        # print('до округ',data)
+        # Форматирование данных под число знаком после запятой
+        data = self.number_of_decimal_places(data, parameter_decimal)
+
+        # Перевод scale к виду scales = [3 * cm, 5 * cm, 6 * cm]
+        for i in range(len(scale)):
+            try:
+                scale[i] = 28.346456692913385 * float(
+                    scale[i])  # значение cm в from reportlab.lib.units import inch, cm, mm
+            except ValueError:
+                pass
+        s = [i.strip(" ") for i in structure["additional_parameter"].split(";")]
+        print('f11', s)
+        for i in range(len(s)):
+            data.append([s[i]])
+        # data.append([structure["additional_parameter"]])
+
+        print('titles', titles)
+        print('data', data)
+        print('scale', scale)
+        return titles, data, scale
+
+    def number_of_decimal_places(self, matrix, parameter_decimal):
+        for j, count in enumerate(parameter_decimal):
+            if str(count) != 'None' and str(count) != '*' and str(count) != '':
+                for i in range(len(matrix)):
+                    try:
+                        matrix[i][j] = self.number_format(self.float_float(matrix[i][j]), characters_number=int(count), split='.')
+
+                    except:
+                        pass
+
+        # !!!
+        for i in range(len(matrix)):
+            for j in range(len(matrix[0])):
+                try:
+                    matrix[i][j] = str(matrix[i][j])
+                except:
+                    pass
+
+        return matrix
+
+    def float_float(self, a):
+        try:
+            a = float(a)
+            return a
+        except ValueError:
+            try:
+                a = float(a.replace(",", "."))
+                return a
+            except ValueError:
+                return a
+
+    def date_datetime(self, val):
+        value = str(val)
+        if not value.replace(' ', ''):
+            return 0
+
+        try:
+            value = int(val)
+        except ValueError:
+            value = 0
+
+        if value:
+            return xlrd.xldate_as_datetime(value, 0)
+
+        return 0
 
 class StatementStructure(QWidget):
     """

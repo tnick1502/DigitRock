@@ -311,8 +311,8 @@ class VibrationCreepSoilTestApp(QWidget):
 
             VC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="VC_models.pickle")
             E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
-            statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
-                          name=statment.general_parameters.test_mode + ".pickle")
+            #statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
+                          #name=statment.general_parameters.test_mode + ".pickle")
 
             test_parameter = {'sigma_3': statment[statment.current_test].mechanical_properties.sigma_3,
                               't': statment[statment.current_test].mechanical_properties.t,
@@ -379,18 +379,12 @@ class VibrationCreepSoilTestApp(QWidget):
                     E50 += zap(res[i]["E50"], 1) + "; "
                     prediction += zap(res[i]["prediction"]["50_years"], 3) + "; "
 
-                set_cell_data(self.tab_1.path,
-                              "IH" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                              E50, sheet="Лист1",
-                              color="FF6961")
+                number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                set_cell_data(self.tab_1.path,
-                              "II" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                              Ed, sheet="Лист1", color="FF6961")
-                set_cell_data(self.tab_1.path,
-                              "CB" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                              Kd, sheet="Лист1",
-                              color="FF6961")
+                set_cell_data(self.tab_1.path, ("IH" + str(number), (number, 241)), E50, sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.path, ("II" + str(number), (number, 242)), Ed, sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.path, ("IH" + str(number), (number, 79)), Kd, sheet="Лист1", color="FF6961")
+
 
             else:
                 pick_vc, pick_c = self.tab_3.dynamic_widget.save_canvas()
@@ -403,21 +397,15 @@ class VibrationCreepSoilTestApp(QWidget):
                                       [pick_vc, pick_c, *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])], "{:.2f}".format(__version__))
                 res = res[0]
 
-                set_cell_data(self.tab_1.path,
-                              "BU" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                              res["E50"], sheet="Лист1",
-                              color="FF6961")
-                set_cell_data(self.tab_1.path,
-                              "IH" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                              res["E50"], sheet="Лист1",
-                              color="FF6961")
+                number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                set_cell_data(self.tab_1.path,
-                              "II" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                              res["E50d"], sheet="Лист1", color="FF6961")
-                set_cell_data(self.tab_1.path,
-                              "CB" + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                              res["Kd"], sheet="Лист1",
+                set_cell_data(self.tab_1.path, ("IH" + str(number), (number, 241)), res["E50"], sheet="Лист1",
+                              color="FF6961")
+                set_cell_data(self.tab_1.path, ("II" + str(number), (number, 242)), res["E50d"], sheet="Лист1",
+                              color="FF6961")
+                set_cell_data(self.tab_1.path, ("IH" + str(number), (number, 79)), res["Kd"], sheet="Лист1",
+                              color="FF6961")
+                set_cell_data(self.tab_1.path, ("BU" + str(number), (number, 72)), res["E50"], sheet="Лист1",
                               color="FF6961")
 
 

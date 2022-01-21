@@ -576,16 +576,25 @@ class ShearSoilTestApp(QWidget):
                 c_pos = c_fi_E_PropertyPosition[statment.general_parameters.test_mode][0][0]
                 fi_pos = c_fi_E_PropertyPosition[statment.general_parameters.test_mode][0][1]
 
-                set_cell_data(self.tab_1.path,
-                              fi_pos + str(statment[statment.current_test].physical_properties.sample_number + 7),
-                              test_result["fi"], sheet="Лист1", color="FF6961")
+                number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                set_cell_data(self.tab_1.path,
-                              c_pos + str(statment[statment.current_test].physical_properties.sample_number+ 7),
-                              test_result["c"], sheet="Лист1", color="FF6961")
 
-            statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
-                          name=statment.general_parameters.test_mode + ".pickle")
+                set_cell_data(
+                    self.tab_1.path,
+                    (c_fi_E_PropertyPosition[statment.general_parameters.test_mode][0][1] + str(number),
+                    (number, c_fi_E_PropertyPosition[statment.general_parameters.test_mode][1][1])),
+                    test_result["fi"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(
+                    self.tab_1.path,
+                    (c_fi_E_PropertyPosition["statment.general_parameters.test_mode"][0][0] + str(number),
+                    (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][1][0])),
+                    test_result["c"], sheet="Лист1", color="FF6961")
+
+
+
+            #statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
+                          #name=statment.general_parameters.test_mode + ".pickle")
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")

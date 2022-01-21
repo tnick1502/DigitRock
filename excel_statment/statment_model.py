@@ -4,11 +4,12 @@ import pandas as pd
 import os
 import pyexcel as p
 import pickle
+import xlrd
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, PropertiesDict, ConsolidationProperties, CyclicProperties
 from descriptors import DataTypeValidation
 from excel_statment.position_configs import PhysicalPropertyPosition, MechanicalPropertyPosition, c_fi_E_PropertyPosition, \
-    DynamicsPropertyPosition, IdentificationColumns
+    DynamicsPropertyPosition, IdentificationColumns, GeneralDataColumns
 from excel_statment.functions import str_df, float_df
 from general.general_functions import read_json_file, create_json_file
 import shelve
@@ -25,20 +26,29 @@ class StatmentData:
     object_number = DataTypeValidation(str)
 
     def __init__(self, statment_path):
-        wb = load_workbook(statment_path, data_only=True)
-        object_name = str(wb["Лист1"]["A2"].value)
-        customer = str(wb["Лист1"]["A1"].value)
-        accreditation = str(wb["Лист1"]["I2"].value)
+        if statment_path.endswith("xlsx"):
+            wb = load_workbook(statment_path, data_only=True)
+            object_name = str(wb["Лист1"][GeneralDataColumns["object_name"][0]].value)
+            customer = str(wb["Лист1"][GeneralDataColumns["customer"][0]].value)
+            accreditation = str(wb["Лист1"][GeneralDataColumns["accreditation"][0]].value)
+            object_number = str(wb["Лист1"][GeneralDataColumns["object_number"][0]].value)
+            start_date = wb["Лист1"][GeneralDataColumns["start_date"][0]].value
+            end_date = wb["Лист1"][GeneralDataColumns["end_date"][0]].value
+            wb.close()
+        else:
+            wb = xlrd.open_workbook(statment_path, formatting_info=True)
+            sheet = wb.sheet_by_index(0)
+            object_name = str(sheet.cell(*GeneralDataColumns["object_name"][1]).value)
+            customer = str(sheet.cell(*GeneralDataColumns["customer"][1]).value)
+            accreditation = str(sheet.cell(*GeneralDataColumns["accreditation"][1]).value)
+            object_number = str(sheet.cell(*GeneralDataColumns["object_number"][1]).value)
+            start_date = datetime(*xlrd.xldate_as_tuple(sheet.cell(*GeneralDataColumns["start_date"][1]).value, wb.datemode))
+            end_date = datetime(*xlrd.xldate_as_tuple(sheet.cell(*GeneralDataColumns["end_date"][1]).value, wb.datemode))
 
         if accreditation in ["OAO", "ОАО"]:
             accreditation = "АО"
         elif accreditation == "OOO":
             accreditation = "ООО"
-
-        object_number = str(wb["Лист1"]["AI1"].value)
-        start_date = wb["Лист1"]["U1"].value
-        end_date = wb["Лист1"]["Q1"].value
-        wb.close()
 
         assert not isinstance(self.start_date, datetime), "Не установлена дата начала опытов"
         assert not isinstance(self.end_date, datetime), "Не установлена дата окончания опытов"
@@ -89,11 +99,12 @@ class Test:
             self.physical_properties = PhysicalProperties()
             for attr in physical_properties_dict:
                 if attr == "date":
-                    if physical_properties_dict[attr] is None:
-                        setattr(self.physical_properties, attr, physical_properties_dict[attr])
-                    else:
+                    if isinstance(physical_properties_dict[attr], datetime)  is None:
                         setattr(self.physical_properties, attr,
                                 datetime.strptime(physical_properties_dict[attr].split(".")[0], "%Y-%m-%d %H:%M:%S"))
+                        setattr(self.physical_properties, attr, physical_properties_dict[attr])
+                    else:
+                        setattr(self.physical_properties, attr, None)
                 else:
                     setattr(self.physical_properties, attr, physical_properties_dict[attr])
 
@@ -198,7 +209,7 @@ class Statment:
             self.original_keys = data["original_keys"]
 
     @staticmethod
-    def createDataFrame(excel_path, read_xls=False) -> pd.DataFrame:
+    def createDataFrame(excel_path) -> pd.DataFrame:
         """Функция считывания файла excel в датафрейм"""
 
         def resave_xls_to_xlsx(file):
@@ -228,13 +239,13 @@ class Statment:
 
             return current_file_name
 
-        if (excel_path.endswith("xlsx") or excel_path.endswith("xls")) and not read_xls:
+        '''if (excel_path.endswith("xlsx") or excel_path.endswith("xls")) and not read_xls:
             wb = resave_xls_to_xlsx(excel_path)
         elif excel_path.endswith("xls") and read_xls:
             wb = excel_path
         else:
-            return None
-
+            return None'''
+        wb = excel_path
         df = pd.read_excel(wb, usecols="A:IV", skiprows=[0, 1, 3, 4, 5])
         df = df[df['Лаб. № пробы'].notna()]
 
@@ -260,9 +271,9 @@ class Statment:
 
 
 if __name__ == '__main__':
-   """ from excel_statment.properties_model import RCProperties
+    from excel_statment.properties_model import RCProperties
     s = Statment()
-    s.setTestClass(RCProperties)
-    s.setGeneralParameters({'test_mode': "Резонансная колонка", 'K0_mode': 'K0: По ГОСТ-65353'})
-    s.readExcelFile(r"Z:\МДГТ - (Заказчики)\ЦГИ ООО\2021\762-21 Ильменский, 4\2. в работе\G0\762-21 Ильменский, 4 -G0.xlsx", None)
-    print(s)"""
+    s.setTestClass(MechanicalProperties)
+    s.setGeneralParameters({'test_mode': "Трёхосное сжатие (F, C, E)", 'K0_mode': 'K0: По ГОСТ-65353'})
+    s.readExcelFile(r"C:\Users\Пользователь\Desktop\test\818-20 Атомфлот - мех.xlsx", None)
+    print(s)

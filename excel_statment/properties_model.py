@@ -279,6 +279,8 @@ class MechanicalProperties:
 
             self.K0 = MechanicalProperties.define_K0(data_frame, K0_mode, string, physical_properties.Il,
                                                      self.fi)
+            if not self.K0:
+                raise ValueError(f"Ошибка определения K0 в пробе {physical_properties.laboratory_number}")
 
             self.sigma_3 = MechanicalProperties.round_sigma_3(
                 MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
@@ -303,8 +305,8 @@ class MechanicalProperties:
                 #self.sigma_1, self.sigma_3, self.fi, self.qf, self.E50, physical_properties.type_ground,
                 #physical_properties.rs, physical_properties.e, physical_properties.Il)
 
-            self.dilatancy_angle = MechanicalProperties.define_dilatancy(
-                physical_properties.type_ground, physical_properties.e, physical_properties.Il, physical_properties.Ip) * np.random.uniform(0.9, 1.1)
+            self.dilatancy_angle = np.round(MechanicalProperties.define_dilatancy(
+                physical_properties.type_ground, physical_properties.e, physical_properties.Il, physical_properties.Ip) * np.random.uniform(0.9, 1.1), 2)
 
             if self.dilatancy_angle <= 0:
                 self.dilatancy_angle = np.random.uniform(1, 3)
@@ -931,7 +933,10 @@ class MechanicalProperties:
         if val is None:
             return None
         else:
-            val = list(map(lambda val: int(float(val.replace(",", ".").strip(" ")) * 1000), val.split("/")))
+            try:
+                val = list(map(lambda val: int(float(val.replace(",", ".").strip(" ")) * 1000), val.split("/")))
+            except:
+                app_logger.exception("Некорректно введены пользовательские ступени давления")
             return val
 
 class ConsolidationProperties:

@@ -90,6 +90,29 @@ def column_fullness_test(wb, columns=[], initial_columns=[]):
 
     return True
 
+def column_fullness_test_xls(wb, columns=[], initial_columns=[]):
+    """Проверка заполнения заданной ячейки
+    входные параметры:
+        columns - список столбцов, которые проверяются на заполненность
+        initial_columns - список столбцов, которые будут указателями, какие строки для columns проверять"""
+
+    def test_one_columns(wb, column, initial_columns):
+        """Проверка заполнения одного столбца, с учетом initial"""
+        all_is_okey = True
+        initial_columns.append("A")
+        for i in range(7, len(wb['Лист1']['A'])):
+            if "None" not in [str(wb["Лист1"][x + str(i)].value) for x in initial_columns]:
+                if str(wb["Лист1"][column + str(i)].value) == "None":
+                    all_is_okey = False
+        return all_is_okey
+
+    for column in columns:
+        all_is_okey = test_one_columns(wb, column, initial_columns)
+        if all_is_okey == False:
+            return False
+
+    return True
+
 
 
 # Соответствие ячеек типу испытания

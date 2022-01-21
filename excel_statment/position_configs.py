@@ -89,3 +89,12 @@ IdentificationColumns = {
     "Сейсморазжижение": 230,
     "Штормовое разжижение": 230,
 }
+
+GeneralDataColumns = {
+    "customer": ["A1", (0, 0)],
+    "object_name": ["A2", (1, 0)],
+    "end_date": ["Q1", (0, 16)],
+    "start_date": ["U1", (0, 20)],
+    "accreditation": ["I2", (1, 8)],
+    "object_number": ["AI1", (0, 34)]
+}

@@ -70,7 +70,10 @@ class Statment:
 
     def update(self):
         """Подгрузка файла ведомости"""
-        self.data = Statment.read_excel_statment(self.path)
+        if self.path:
+            self.data = Statment.read_excel_statment(self.path)
+        else:
+            assert()
 
     def dump(self, directory, name="statment.pickle"):
         dump_data = {
@@ -104,6 +107,34 @@ class Statment:
                     result[reports[report].program] += reports[report].count
 
         return result
+
+    def get_interval_count(self, month_interval: int = 6):
+        result: Dict = {}
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+
+        for i in range(month_interval):
+            if current_month == 0:
+                current_month = 12
+                current_year -= 1
+
+            result[datetime(year=current_year, month=current_month, day=1)] = \
+                self.get_month_count(datetime(year=current_year, month=current_month, day=1))
+
+            current_month -= 1
+
+        return {
+            "time": list(result.keys()),
+            "triaxial": [result[i].get("triaxial", 0)for i in result.keys()],
+            "compression": [result[i].get("compression", 0) for i in result.keys()],
+            "TRM": [result[i].get("TRM", 0) for i in result.keys()],
+            "mathCAD": [result[i].get("mathCAD", 0) for i in result.keys()],
+        }
+
+
+
+
+
 
     @staticmethod
     def read_excel_statment(path: str) -> 'Statment.data':
@@ -385,9 +416,25 @@ class XlsBook:
 if __name__ == "__main__":
     x = Statment()
     # print(x)
-    x.set_excel_statment_path("C:/Users/Пользователь/Desktop/ПРОТОКОЛЫ+ведомости 2.xls")
+    #x.set_excel_statment_path("C:/Users/Пользователь/Desktop/ПРОТОКОЛЫ+ведомости.xls")
+    x.set_excel_statment_path(r"C:\Users\Пользователь\Desktop\ПРОТОКОЛЫ+ведомости.xls")
+
+    # Построение графика
     x.update()
-    print(x.get_month_count(datetime(year=2022, month=1, day=1)))
+    plot = x.get_interval_count(6)
+    import matplotlib.pyplot as plt
+    plt.plot(plot["time"], plot["triaxial"], label="triaxial")
+    plt.plot(plot["time"], plot["compression"], label="compression")
+    plt.plot(plot["time"], plot["mathCAD"], label="mathCAD")
+    plt.plot(plot["time"], plot["TRM"], label="TRM")
+    plt.legend()
+    #plt.show()
+
+
+    #За текущий месяц
+    res = x.get_month_count(datetime(year=2021, month=12, day=1))
+    print([f"{key}: {res[key]}" for key in res])
+    print(int(res["triaxial"]*40*0.7))
     # total: int = 0
     # eng = 'Селиванова О.С.'
     # for _key in data.keys():

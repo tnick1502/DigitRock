@@ -19,7 +19,7 @@ from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, Mode
 from general.save_widget import Save_Dir
 from general.report_general_statment import save_report
 from excel_statment.initial_statment_widgets import CyclicStatment
-from excel_statment.functions import write_to_excel
+from excel_statment.functions import write_to_excel, set_cell_data
 from excel_statment.initial_tables import TableVertical
 from loggers.logger import app_logger, log_this, handler
 from singletons import Cyclic_models, statment
@@ -721,15 +721,36 @@ class CyclicSoilTestApp(QWidget):
             shutil.copy(file_name, self.tab_3.report_directory + "/" + file_name[len(file_name) -
                                                                                  file_name[::-1].index("/"):])
 
-            write_to_excel(self.tab_1.path, statment.current_test,
-                           (round(test_result['max_strain'], 3),
-                            round(test_result['max_PPR'], 3),
-                            round(statment[statment.current_test].mechanical_properties.sigma_1, 3),
-                            round(statment[statment.current_test].mechanical_properties.sigma_3, 3),
-                            round(statment[statment.current_test].mechanical_properties.t, 3),
-                            round(statment[statment.current_test].mechanical_properties.K0, 3),
-                            statment[statment.current_test].mechanical_properties.frequency,
-                            test_result["fail_cycle"]))
+
+
+            set_cell_data(self.tab_1.path, ("HY5", (5, 232)), "Сигма1, кПа", sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("HZ5", (5, 233)), "Сигма3, кПа", sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("IA5", (5, 234)), "Тау, кПа", sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("IB5", (5, 235)), "K0", sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("IC5", (5, 236)), "Частота, Гц", sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("ID5", (5, 237)), "Цикл разрушения", sheet="Лист1")
+
+
+            number = statment[statment.current_test].physical_properties.sample_number + 7
+
+            set_cell_data(self.tab_1.path, ("HW" + str(number), (number, 230)), round(test_result['max_strain'], 3),
+                          sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("HX" + str(number), (number, 231)), round(test_result['max_PPR'], 3),
+                          sheet="Лист1")
+
+            set_cell_data(self.tab_1.path, ("HY" + str(number), (number, 232)),
+                          round(statment[statment.current_test].mechanical_properties.sigma_1, 3), sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("HZ" + str(number), (number, 233)),
+                          round(float(statment[statment.current_test].mechanical_properties.sigma_3), 3), sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("IA" + str(number), (number, 234)),
+                          round(statment[statment.current_test].mechanical_properties.t, 3), sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("IB" + str(number), (number, 235)),
+                          round(statment[statment.current_test].mechanical_properties.K0, 3), sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("IC" + str(number), (number, 236)),
+                          statment[statment.current_test].mechanical_properties.frequency, sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("ID" + str(number), (number, 237)), test_result["fail_cycle"],
+                          sheet="Лист1")
+
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
@@ -740,8 +761,8 @@ class CyclicSoilTestApp(QWidget):
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
             Cyclic_models.dump(''.join(os.path.split(self.tab_3.directory)[:-1]), name="cyclic_models.pickle")
-            statment.dump(''.join(os.path.split(self.tab_3.directory)[:-1]),
-                          name=statment.general_parameters.test_mode + ".pickle")
+            #statment.dump(''.join(os.path.split(self.tab_3.directory)[:-1]),
+                          #ame=statment.general_parameters.test_mode + ".pickle")
 
 
         except AssertionError as error:
