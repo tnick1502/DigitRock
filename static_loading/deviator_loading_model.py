@@ -181,8 +181,9 @@ class ModelTriaxialDeviatorLoading:
             E50 = point_to_xy(Point(x=0, y=0), Point(
                     x=0.9 * self._test_result.qf * 1000/ (self._test_result.E50*1000),
                     y=0.9 * self._test_result.qf))
-            E = {"x": self._test_result.E[1],
-                 "y": np.array(self._test_result.E[2]) / 1000}
+            if self._test_result.E is not None:
+                E = {"x": self._test_result.E[1],
+                     "y": np.array(self._test_result.E[2]) / 1000}
 
         else:
             E50 = None
