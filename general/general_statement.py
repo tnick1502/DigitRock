@@ -495,6 +495,11 @@ class StatementGenerator(QDialog):
 
         return 0
 
+    def str_float(self, val):
+        value = str(val)
+        if value == " ":
+            return "None"
+        return value
 class StatementStructure(QWidget):
     """
     Класс для представления пользовательского интерфейса и механизмов создания и хранения шаблонов

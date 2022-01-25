@@ -63,6 +63,7 @@ class Statment:
         }
 
     def set_excel_statment_path(self, path: str):
+        print(path)
         if os.path.isfile(path) and path.endswith("xls"):
             self.path = path
         else:
@@ -417,7 +418,8 @@ if __name__ == "__main__":
     x = Statment()
     # print(x)
     #x.set_excel_statment_path("C:/Users/Пользователь/Desktop/ПРОТОКОЛЫ+ведомости.xls")
-    x.set_excel_statment_path(r"C:\Users\Пользователь\Desktop\ПРОТОКОЛЫ+ведомости.xls")
+
+    x.set_excel_statment_path("Z:/МДГТ - (Учет рабоч.времени, Отпуск, Даты рожд., телефоны, план работ)/ПРОТОКОЛЫ+ведомости.xls")
 
     # Построение графика
     x.update()
@@ -432,9 +434,9 @@ if __name__ == "__main__":
 
 
     #За текущий месяц
-    res = x.get_month_count(datetime(year=2021, month=12, day=1))
+    res = x.get_month_count(datetime(year=datetime.now().year, month=datetime.now().month, day=1))
     print([f"{key}: {res[key]}" for key in res])
-    print(int(res["triaxial"]*40*0.7))
+    print(res["triaxial"]*40*0.7)
     # total: int = 0
     # eng = 'Селиванова О.С.'
     # for _key in data.keys():
