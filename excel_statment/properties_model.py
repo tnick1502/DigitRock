@@ -1508,7 +1508,7 @@ class ShearProperties(MechanicalProperties):
 
             self.E50 = ShearProperties.define_E50(physical_properties.type_ground,
                                                   physical_properties.Ir,
-                                                  physical_properties.Ip, physical_properties.e,
+                                                  physical_properties.Il, physical_properties.e,
                                                   physical_properties.stratigraphic_index, self.tau_max)
 
             self.E50 = self.E50 * 1000
@@ -1734,6 +1734,10 @@ class ShearProperties(MechanicalProperties):
             if Ir is None:
                 return None
 
+
+            if Il is None:
+                Il = np.random.uniform(0.25, 0.5)
+
             if Ir < 0:
                 Ir = 0
             if Ir > 0.25:
@@ -1779,18 +1783,21 @@ class ShearProperties(MechanicalProperties):
                     return np.interp(e, np.array([1.05, 1.05, 1.25]),
                                      np.array([3.5, 3, 2.5]))
 
+        __E50_for_clay = define_E50_for_clay(Il, e, stratigraphic_index, type_ground)
+        __E50_for_peat = define_E50_for_peat(Il, Ir, e)
+
         dependence_E50_on_type_ground = {
             1: define_E50_for_sand(np.array([50, 40, 30*0.5]), e),  # Песок гравелистый
             2: define_E50_for_sand(np.array([50, 40, 30*0.5]), e),  # Песок крупный
             3: define_E50_for_sand(np.array([50, 30, 30*0.5]), e),  # Песок средней крупности
             4: define_E50_for_sand(np.array([48*0.5, 38*0.5, 28*0.5, 18*0.5]), e),  # Песок мелкий
             5: define_E50_for_sand(np.array([39*0.5, 28*0.5, 18*0.5, 11*0.5]), e),  # Песок пылеватый
-            6: define_E50_for_clay(Il, e, stratigraphic_index, type_ground),  # Супесь
-            7: define_E50_for_clay(Il, e, stratigraphic_index, type_ground),  # Суглинок
-            8: define_E50_for_clay(Il, e, stratigraphic_index, type_ground),  # Глина
-            9: define_E50_for_peat(Il, Ir, e),  # Торф
+            6: __E50_for_clay*0.2 if __E50_for_clay else __E50_for_clay,  # Супесь
+            7: __E50_for_clay*0.4 if __E50_for_clay else __E50_for_clay,  # Суглинок
+            8: __E50_for_clay*0.4 if __E50_for_clay else __E50_for_clay,  # Глина
+            9: __E50_for_peat*0.5 if __E50_for_peat else __E50_for_peat  # Торф
         }
-
+        print(dependence_E50_on_type_ground[7])
         return dependence_E50_on_type_ground[type_ground]
 
     @staticmethod

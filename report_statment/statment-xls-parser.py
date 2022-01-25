@@ -416,9 +416,6 @@ class XlsBook:
 
 if __name__ == "__main__":
     x = Statment()
-    # print(x)
-    #x.set_excel_statment_path("C:/Users/Пользователь/Desktop/ПРОТОКОЛЫ+ведомости.xls")
-
     x.set_excel_statment_path("Z:/МДГТ - (Учет рабоч.времени, Отпуск, Даты рожд., телефоны, план работ)/ПРОТОКОЛЫ+ведомости.xls")
 
     # Построение графика
@@ -434,9 +431,6 @@ if __name__ == "__main__":
 
 
     #За текущий месяц
-    res = x.get_month_count(datetime(year=datetime.now().year, month=datetime.now().month, day=1))
-    print([f"{key}: {res[key]}" for key in res])
-    print(res["triaxial"]*40*0.7)
     # total: int = 0
     # eng = 'Селиванова О.С.'
     # for _key in data.keys():
