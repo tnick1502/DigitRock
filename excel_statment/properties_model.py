@@ -56,6 +56,7 @@ class PhysicalProperties:
     date = DataTypeValidation(datetime)
     sample_size = DataTypeValidation(tuple, list)
     new_laboratory_number = DataTypeValidation(str)
+    skempton_initial = DataTypeValidation(float)
 
     def __init__(self):
         self._setNone()
@@ -91,6 +92,8 @@ class PhysicalProperties:
             self.type_ground = PhysicalProperties.define_type_ground_by_name(self.soil_name)
 
         self.sample_size = PhysicalProperties.define_sample_size(self.granulometric_10, self.granulometric_5)
+
+        self.skempton_initial = PhysicalProperties.define_skempton_initial()
 
         if self.laboratory_number.isdigit():
             self.laboratory_number = str(int(self.laboratory_number))
@@ -201,6 +204,10 @@ class PhysicalProperties:
             return 50, 100
         else:
             return 38, 76
+
+    @staticmethod
+    def define_skempton_initial() -> float:
+        return np.random.uniform(0.5, 0.7)
 
 class MechanicalProperties:
     """Расширенный класс с дополнительными обработанными свойствами"""

@@ -49,6 +49,7 @@ class ModelTriaxialReconsolidation:
      средний (он же в get_test_results()), найденных по двум точкам (начальная и точек на участке,
      где поровое давлие стабилизировалось): self._intermediate_data.scempton['mean']
       """
+
     def __init__(self):
         # Основные массивы опыта
         self._reset_data()
@@ -115,7 +116,7 @@ class ModelTriaxialReconsolidation:
 
         if plots:
 
-            figure = plt.figure(figsize = [6, 6])
+            figure = plt.figure(figsize=[6, 6])
             figure.subplots_adjust(right=0.98, top=0.98, bottom=0.1, wspace=0.25, hspace=0.25, left=0.1)
 
             ax = figure.add_subplot(1, 1, 1)
@@ -126,7 +127,7 @@ class ModelTriaxialReconsolidation:
             ax.plot(plots["cell_pressure"], plots["pore_pressure"], **plotter_params["main_line"])
 
             ax.plot([], [], label="Scempton ratio = " + str(res["scempton"]),
-                                  color="#eeeeee")
+                    color="#eeeeee")
             ax.legend()
 
             if save_path:
@@ -146,7 +147,7 @@ class ModelTriaxialReconsolidation:
         if index_begin_vfs != len(self._test_data.time) - 1:
             for index_end_vfs in range(index_begin_vfs + 1, len(self._test_data.time)):
                 if self._test_data.trajectory[index_end_vfs] not in ['RPSReconsolidation',
-                                                                  'ReconsolidationWoDrain']:
+                                                                     'ReconsolidationWoDrain']:
                     self._test_data.index_list.append(index_end_vfs)
                     break
             else:
@@ -189,7 +190,6 @@ class ModelTriaxialReconsolidation:
         else:
             print('Этап реконсолидации не проводился')
 
-
     @staticmethod
     def define_skemton_end(cell_press, pore_press, action):
         """ Универсальный модуль определения коэффициента Скемптона на последнем шаге нагружения.
@@ -218,7 +218,7 @@ class ModelTriaxialReconsolidation:
         # Доля от шага увеличения порового давления, при кот. считаем его стабилизировавшимся
         procent = 0.95
         # При каком увеличении давления в камере будем считать полноценным шагом
-        delta_sigma = 15    # (меньше 5 не ставить! из-за этапа противодавления)
+        delta_sigma = 15  # (меньше 5 не ставить! из-за этапа противодавления)
         # Сколько цифр после запятой сохранять в коэф.Скемптона
         num_round = 2
 
@@ -316,6 +316,7 @@ class ModelTriaxialReconsolidation:
 
         return skempton_dict
 
+
 class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
     """
     Модель реконсолидации с определением коэффициента Скемтона на последнем этапе
@@ -334,26 +335,47 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
      средний (он же в get_test_results()), найденных по двум точкам (начальная и точек на участке,
      где поровое давлие стабилизировалось): self._intermediate_data.scempton['mean']
     """
+
     def __init__(self):
         ModelTriaxialReconsolidation.__init__(self)
 
         self.params = AttrDict({"sigma_ref": None,
-                                "param_for_b_test": None})
+                                "param_for_b_test": None,
+                                "skempton_initial": None,
+                                "skempton_end": None})
 
     def set_test_params(self):
         """Записываются параметры для моделирования реконсолидации, запускается процессов моделирования эксперимента и
         нахождения коэффициента кемптона"""
 
         self.params.sigma_ref = statment[statment.current_test].mechanical_properties.sigma_3
-        if self.params.sigma_ref < 100:
-            self.params.sigma_ref = 100
+        self.params.skempton_initial = statment[statment.current_test].physical_properties.skempton_initial
+        self.params.skempton_end = np.random.uniform(0.96, 0.98)
+        self.physical_properties = statment[statment.current_test].physical_properties
+
+        if self.params.sigma_ref < 50:
+            self.params.sigma_ref = 50
+
+        if self.params.skempton_initial <= 0:
+            self.params.skempton_initial = 0.4
+        if self.params.skempton_initial >= 1:
+            self.params.skempton_initial = 0.6
+
+        if self.params.skempton_end <= 0.96:
+            self.params.skempton_end = 0.96
+        if self.params.skempton_end >= 1:
+            self.params.skempton_end = 0.98
+
         # Получаешь self.params входные данные для моделирования входных данных эксперимента
         self._test_modeling()
         self._test_processing()
 
     def _test_modeling(self):
         """Получение модели результатов опыта"""
-        self.params.param_for_b_test = ModelTriaxialReconsolidationSoilTest.define_input(self.params.sigma_ref)
+        self.params.param_for_b_test = ModelTriaxialReconsolidationSoilTest.define_input(self.params.sigma_ref,
+                                                                                         self.params.skempton_initial,
+                                                                                         self.params.skempton_end, u_vfs_end=75)
+
         self._test_data_all = ModelTriaxialReconsolidationSoilTest.create_b_test(self.params.param_for_b_test)
         self._test_data.pore_pressure = self._test_data_all['PorePress_kPa']
         self._test_data.cell_pressure = self._test_data_all['CellPress_kPa']
@@ -361,7 +383,7 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         self._test_data.time = self._test_data_all['Time']
         self._test_data.trajectory = self._test_data_all["Trajectory"]
 
-        #self._test_data_all['PorePress_kPa'][-1] = self._test_data_all['CellPress_kPa'][-1]
+        # self._test_data_all['PorePress_kPa'][-1] = self._test_data_all['CellPress_kPa'][-1]
 
         self._test_result.delta_h_reconsolidation = self._test_data_all["VerticalDeformation_mm"][-1]
 
@@ -376,17 +398,19 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
     def get_duration(self):
         return self._test_data.time[-1]
 
-
     @staticmethod
-    def define_input(sigma_ref, u_vfs_end=0, flag_define_deformation=False):
-        '''
+    def define_input(sigma_ref, skempton_initial=np.random.uniform(0.4, 0.6),
+                     skempton_end=np.random.uniform(0.95, 0.98), u_vfs_end=0, flag_define_deformation=False):
+        """
         Определяет входные параметры для моделирования реконсолидации create_b_test(input_dict)
         :param sigma_ref: Бытовое давление (устанавливаемое давление в камере в конце вфс) в кПа
+        :param skempton_initial: Значение коэффициента Скемптона на первом шаге нагружения
+        :param skempton_end: Значение коэффициента Скемптона на последнем шаге нагружения
         :param u_vfs_end: Поровое давление при бытовом давлении в конце этапа вфс в кПа
         :param flag_define_deformation: заданы ли начальная и конечная вертикальная деформация
 
         :return: input_dict - словарь, в котором записаны все необходимые для моделирования реконсолидации параметры
-        '''
+        """
         # Начальная и конечная вертикальная деформация
         initial_vertical_deformation = 0
         end_vertical_deformation = -0.2
@@ -395,10 +419,6 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
 
         # Построение рисунков
         flag_plot = 0
-        # Значение коэффициента Скемптона на первом шаге нагружения
-        skempton_initial = np.random.uniform(0.4, 0.6)
-        # Значение коэффициента Скемптона на последнем шаге нагружения
-        skempton_end = np.random.uniform(0.95, 0.98)
         # время стаблизации каждого шага нагружения (увеличения давления в камере) в минутах
         t_stabil = 15
         # Диапазон времени стабилизации в минутах при противодавлении
@@ -413,13 +433,13 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         sigma_VPD_step = 50
 
         # Шаг диксретизации датчика деформаций б/р
-        dicreate_step_deformation = 0.005
+        discrete_step_deformation = 0.005
         # Шаг диксретизации датчик давления в камере в кПа
-        dicreate_step_press = 0.5
+        discrete_step_press = 0.5
         # Шаг диксретизации датчика порового давления в кПа
-        dicreate_step_u = 0.5
+        discrete_step_u = 0.5
         # Шаг диксретизации датчика изменения объема мм^3
-        dicreate_step_volume = 5
+        discrete_step_volume = 5
         # объемная деформация в конце этапа вфс
         epsilon_volume = 0.01
         # Плавность экспоненциального роста коэффициента Скемптона на этапе (пологая - 1...3, резкая - 10...20 )
@@ -431,35 +451,37 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
 
         # В будущем возможно понадобиться
         # Диаметр образца 38 или 50 мм
-        sample_diameter = 38
+        # sample_diameter = 38
         # Диаметр штока в мм
-        rod_diameter = 20
+        # rod_diameter = 20
         # Высота образца
-        sample_height = 2 * sample_diameter
+        # sample_height = 2 * sample_diameter
         # Площадь поперечного сечения образца в мм^2
-        sample_area = (np.pi * sample_diameter) ** 2 / 4
+        # sample_area = (np.pi * sample_diameter) ** 2 / 4
         # Площадь поперечного сечения штока в мм^2
-        rod_area = (np.pi * rod_diameter) ** 2 / 4
+        # rod_area = (np.pi * rod_diameter) ** 2 / 4
 
         # Определение, какое максимальное количество шагов впд возможно при заданном бытовом давлении
-        max_count_step_vpd = int((max_press_exp - np.random.randint(1, 5) * sigma_VPD_step - sigma_ref) / sigma_VPD_step)
+        max_count_step_vpd = int((max_press_exp - np.random.randint(1, 5) *
+                                  sigma_VPD_step - sigma_ref) / sigma_VPD_step)
+
         if max_count_step_vpd > 1:
             if max_count_step_vpd == 2:
                 # Этап впд может как проводиться, так и не провдиться
                 # Давление в конце реконсолидации
                 sigma_VPD_end = sigma_ref + np.random.randint(0, 2) * 2 * sigma_VPD_step
                 # Скемптон при давлении залегания (бытовом давлении)
-                scemptom_ref = skempton_end - (sigma_VPD_end - sigma_ref) / sigma_VPD_step / 2 * np.random.uniform(0.1,
+                skempton_ref = skempton_end - (sigma_VPD_end - sigma_ref) / sigma_VPD_step / 2 * np.random.uniform(0.1,
                                                                                                                    0.2)
             else:
                 # Этап впд проводится
                 sigma_VPD_end = sigma_ref + np.random.randint(2, max_count_step_vpd + 1) * sigma_VPD_step
-                scemptom_ref = skempton_initial + (
+                skempton_ref = skempton_initial + (
                         skempton_end - skempton_initial) * sigma_ref / sigma_VPD_end * np.random.uniform(0.8, 0.9)
         else:
             # Этап впд не проводится
             sigma_VPD_end = sigma_ref
-            scemptom_ref = skempton_end
+            skempton_ref = skempton_end
 
         # Запись списков давления в камере и коэффициента скемтона на этапе ВФС
 
@@ -474,15 +496,15 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         if u_vfs_end > 0:
             try:
                 ratio_increase_skempton_vfs = 1.2
-                scemptom_ref = u_vfs_end / sigma_VFS_step * (1 - ratio_increase_skempton_vfs) / \
-                               (1 - ratio_increase_skempton_vfs ** (count_step_vfs))
-                skempton_step = [scemptom_ref * (ratio_increase_skempton_vfs ** x) for x in range(0, count_step_vfs)]
+                skempton_ref = (u_vfs_end / sigma_VFS_step * (1 - ratio_increase_skempton_vfs) /
+                                (1 - ratio_increase_skempton_vfs ** count_step_vfs))
+                skempton_step = [skempton_ref * (ratio_increase_skempton_vfs ** x) for x in range(0, count_step_vfs)]
             except ZeroDivisionError:
-                scemptom_ref = u_vfs_end / sigma_ref
-                skempton_step = [scemptom_ref]
+                skempton_ref = u_vfs_end / sigma_ref
+                skempton_step = [skempton_ref]
         else:
             skempton_step = list(create_stabil_exponent(np.array(sigma_steps[:-1]),
-                                                        scemptom_ref - skempton_initial, slant_skempton,
+                                                        skempton_ref - skempton_initial, slant_skempton,
                                                         skempton_initial))
 
         # Запись списков давления в камере и коэффициента скемтона на этапе ВПД
@@ -503,9 +525,10 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
 
             sigma_steps.extend(sigma_steps_VPD)
 
-            skempton_step_vpd = create_stabil_exponent(np.array(sigma_steps[count_step_vfs + 1:])-sigma_steps[count_step_vfs],
-                                                       skempton_end - skempton_step[-1], slant_skempton,
-                                                       skempton_step[-1])
+            skempton_step_vpd = create_stabil_exponent(
+                np.array(sigma_steps[count_step_vfs + 1:]) - sigma_steps[count_step_vfs],
+                skempton_end - skempton_step[-1], slant_skempton,
+                skempton_step[-1])
             skempton_step.extend(skempton_step_vpd)
 
         # _______________________Этап отладки
@@ -513,12 +536,14 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
             pass
             """plot_any(sigma_steps[1:], skempton_step, name_x = "sigma", name_y = "pore_press",
                       name_file = 'skempton.jpg', path = os.getcwd())"""
-        #_______________________
+        # _______________________
 
         if not flag_define_deformation:
             initial_vertical_deformation = - np.random.uniform(0.005, 0.3)
             end_vertical_deformation = - (
-                    np.random.uniform(0, 3 * dicreate_step_deformation) + initial_vertical_deformation)
+                    np.random.uniform(0, 3 * discrete_step_deformation) + initial_vertical_deformation)
+
+        pore_press_slant = np.random.uniform(1, 5)
 
         input_dict = {
             'sigma_steps': sigma_steps,
@@ -527,14 +552,15 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
             't_add_u': t_add_u,
             'time_step': time_step,
             'sigma_ref': sigma_ref,
-            'dicreate_step_deformation': dicreate_step_deformation,
-            'dicreate_step_press': dicreate_step_press,
-            'dicreate_step_u': dicreate_step_u,
-            'dicreate_step_volume': dicreate_step_volume,
+            'discrete_step_deformation': discrete_step_deformation,
+            'discrete_step_press': discrete_step_press,
+            'discrete_step_u': discrete_step_u,
+            'discrete_step_volume': discrete_step_volume,
             'epsilon_volume': epsilon_volume,
             'cell_volume_end_step': cell_volume_end_step,
             'initial_vertical_deformation': initial_vertical_deformation,
-            'end_vertical_deformation': end_vertical_deformation
+            'end_vertical_deformation': end_vertical_deformation,
+            'pore_press_slant': pore_press_slant
         }
 
         return input_dict
@@ -562,10 +588,10 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         ['initial_vertical_deformation'] - начальная осевая деформация
         ['end_vertical_deformation'] - конечная осевая деформация
         ['epsilon_volume'] - объемная деформация в конце этапа вфс
-        ['dicreate_step_deformation'] - шаг диксретизации датчика деформаций
-        ['dicreate_step_press'] - шаг диксретизации датчик давления в камере
-        ['dicreate_step_u'] - шаг диксретизации датчика порового давления
-        ['dicreate_step_volume'] - шаг диксретизации датчика изменения объема
+        ['discrete_step_deformation'] - шаг диксретизации датчика деформаций
+        ['discrete_step_press'] - шаг диксретизации датчик давления в камере
+        ['discrete_step_u'] - шаг диксретизации датчика порового давления
+        ['discrete_step_volume'] - шаг диксретизации датчика изменения объема
 
         :return: dict  - словарь, в котором с заданным шагом по времени смоделирован этап реконсолидации для таких величин,
          как давление в камере, поровое давление, измененеие объема в камере и образце, вертикальная деформация,
@@ -585,11 +611,12 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         initial_vertical_deformation = input_dict['initial_vertical_deformation']
         end_vertical_deformation = input_dict['end_vertical_deformation']
         epsilon_volume = input_dict['epsilon_volume']
+        pore_press_slant = input_dict['pore_press_slant']
 
-        dicreate_step_deformation = input_dict['dicreate_step_deformation']
-        dicreate_step_press = input_dict['dicreate_step_press']
-        dicreate_step_u = input_dict['dicreate_step_u']
-        dicreate_step_volume = input_dict['dicreate_step_volume']
+        discrete_step_deformation = input_dict['discrete_step_deformation']
+        discrete_step_press = input_dict['discrete_step_press']
+        discrete_step_u = input_dict['discrete_step_u']
+        discrete_step_volume = input_dict['discrete_step_volume']
 
         dict_accum = {'time': list([float(0.1)]),
                       'action_accum': ['Start'],
@@ -600,71 +627,81 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                       'pore_volume_accum': list([0]),
                       'index_end_step': [[0]]}
 
-        def step_reconsolidation(delta_initial, dict_accum, t_step=time_step, sigma_VFS_end_=sigma_ref,
-                                 fix_value_=fix_value):
+        def step_reconsolidation(_delta_initial, _dict_accum,
+                                 t_step=time_step, sigma_VFS_end_=sigma_ref, fix_value_=fix_value,
+                                 _pore_press_slant=pore_press_slant):
+
             k_sigma = np.random.uniform(0.5, 0.7)
             pore_volume_slant = np.random.uniform(5, 6)
             cell_volume_slant = np.random.uniform(10, 20)
 
-            n_time = int(((delta_initial['time']) * 60) // (t_step - 1))
+            n_time = int(((_delta_initial['time']) * 60) // (t_step - 1))
             time_current = np.array([i * t_step for i in range(0, n_time)]).astype('float64')
 
             sigma_current = ModelTriaxialReconsolidationSoilTest.create_linear_step(time_current,
-                                                                                    delta_initial['press']['delta'],
+                                                                                    _delta_initial['press']['delta'],
                                                                                     k_sigma,
-                                                                                    delta_initial['press']['initial'])
+                                                                                    _delta_initial['press']['initial'])
 
-            action_changed = ['' for x in range(len(time_current))]
+            action_changed = ['' for __ in range(len(time_current))]
             action_changed[-1] = 'True'
-            action = ['' for x in range(len(time_current))]
+            action = ['' for __ in range(len(time_current))]
             index_load = 0
 
-            if delta_initial['press']['delta'] == fix_value_:
-                k_u = np.random.uniform(0.5, 0.7)
+            if _delta_initial['press']['delta'] == fix_value_:
                 u_current = ModelTriaxialReconsolidationSoilTest.create_linear_step(time_current,
-                                                                                    delta_initial['u']['delta'][0], k_u,
-                                                                                    delta_initial['u']['initial'])
-                while index_load + 1 < len(sigma_current) and time_current[index_load] < delta_initial['press'][
-                    'delta'] / k_u:
+                                                                                    _delta_initial['u']['delta'][0],
+                                                                                    _pore_press_slant,
+                                                                                    _delta_initial['u']['initial'])
+
+                while index_load + 1 < len(sigma_current) and\
+                        time_current[index_load] < _delta_initial['press']['delta'] / _pore_press_slant:
+
                     action[index_load] = 'LoadStage'
                     index_load += 1
                 else:
                     action_changed[index_load - 1] = 'True'
-                    action[index_load:] = ['Stabilization' if sigma_current[-1] < sigma_VFS_end_
-                                           else 'Wait' for x in range(index_load, len(action))]
+                    action[index_load:] = ['Stabilization' if sigma_current[-1] < sigma_VFS_end_ else
+                                           'Wait' for x in range(index_load, len(action))]
 
             else:
+                time_load = _delta_initial['press']['delta'] / k_sigma
 
-                time_load = delta_initial['press']['delta'] / k_sigma
-                k_u = delta_initial['u']['delta'][0] / time_load
+                _pore_press_slant = _delta_initial['u']['delta'][0] / time_load
+
                 for index_time_liner_u in range(len(time_current)):
                     if time_current[index_time_liner_u] > time_load:
                         break
-                slant_u = k_u * max(time_current[index_time_liner_u:] - time_load) / (
-                        delta_initial['u']['delta'][1] - k_u * time_load)
-                u_current = list(
-                    ModelTriaxialReconsolidationSoilTest.create_linear_step(time_current[:index_time_liner_u],
-                                                                            k_u * time_load, k_u,
-                                                                            delta_initial['u']['initial']))
-                u_current_add = list(create_stabil_exponent(time_current[index_time_liner_u:] - time_load,
-                                                            delta_initial['u']['delta'][1] - k_u * time_load, slant_u,
-                                                            u_current[-1]))
+
+                max_time = max(time_current[index_time_liner_u:] - time_load)
+                slant_u = _pore_press_slant * max_time / (_delta_initial['u']['delta'][1] - _pore_press_slant * time_load)
+
+                u_current = ModelTriaxialReconsolidationSoilTest.create_linear_step(time_current[:index_time_liner_u],
+                                                                                    _pore_press_slant * time_load, _pore_press_slant,
+                                                                                    _delta_initial['u']['initial'])
+
+                u_current_add = create_stabil_exponent(time_current[index_time_liner_u:] - time_load,
+                                                       _delta_initial['u']['delta'][1] - _pore_press_slant * time_load, slant_u,
+                                                       u_current[-1])
+
                 u_current.extend(u_current_add)
+
                 while index_load + 1 < len(u_current) and time_current[index_load] < time_load:
                     action[index_load] = 'LoadStage'
                     index_load += 1
                 else:
                     action_changed[index_load - 1] = 'True'
-                    action[index_load:] = ['Wait' for x in range(index_load, len(action))]
+                    action[index_load:] = ['Wait' for __ in range(index_load, len(action))]
 
-            pore_volume_current = create_stabil_exponent(time_current, delta_initial['v_pore']['delta'],
-                                                         pore_volume_slant,
-                                                         0)
-            cell_volume_current = create_stabil_exponent(time_current, delta_initial['v_cell']['delta'],
-                                                         cell_volume_slant,
-                                                         delta_initial['v_cell']['initial']) - pore_volume_current
-            pore_volume_current += delta_initial['v_pore']['initial']
-            time_current += dict_accum['time'][-1]
+            pore_volume_current = create_stabil_exponent(time_current, _delta_initial['v_pore']['delta'],
+                                                         pore_volume_slant, 0)
+
+            cell_volume_current = create_stabil_exponent(time_current, _delta_initial['v_cell']['delta'],
+                                                         cell_volume_slant, _delta_initial['v_cell']['initial'])
+            cell_volume_current = cell_volume_current - pore_volume_current
+
+            pore_volume_current += _delta_initial['v_pore']['initial']
+            time_current += _dict_accum['time'][-1]
 
             dict_current = {'time': time_current,
                             'action_accum': action,
@@ -673,14 +710,15 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                             'sigma_accum': sigma_current,
                             'cell_volume_accum': cell_volume_current,
                             'pore_volume_accum': pore_volume_current,
-                            'index_end_step': [[len(time_current) + dict_accum['index_end_step'][-1][0]]]}
+                            'index_end_step': [[len(time_current) + _dict_accum['index_end_step'][-1][0]]]}
 
-            for key_ in dict_accum:
-                dict_accum[key_].extend(dict_current[key_])
-                # new_dict[key] = dict_accum[key].extend(dict_current[key])
+            for key_ in _dict_accum:
+                _dict_accum[key_].extend(dict_current[key_])
+                # new_dict[key] = _dict_accum[key].extend(dict_current[key])
 
-            return dict_accum
+            return _dict_accum
 
+        # Основной цикл по всем этапам нагружения
         for i_sigma, press_current in enumerate(sigma_steps[1:]):
 
             sigma_previous = dict_accum['sigma_accum'][-1]
@@ -700,24 +738,27 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                                         'initial': dict_accum['cell_volume_accum'][-1]}}
 
             dict_accum = step_reconsolidation(delta_initial, dict_accum)
-            if press_current <= sigma_ref:
 
+            if press_current <= sigma_ref:
                 dict_accum['index_end_step'][-1].append('вфс')
             else:
                 dict_accum['index_end_step'][-1].append('впд_камера')
+
             if press_current > sigma_ref and skempton_step[i_sigma] < 0.99 * skempton_end:
+
                 delta_initial = {'time': np.random.uniform(t_add_u[0], t_add_u[1]),
                                  'press': {'delta': fix_value,
                                            'initial': dict_accum['sigma_accum'][-1]},
                                  'u': {'delta': [u_previos + delta_sigma - dict_accum['u_accum'][-1], 0],
                                        'initial': dict_accum['u_accum'][-1]},
                                  'v_pore': {'delta': cell_volume_end_step / skempton_step[i_sigma] / 10,
-                                            'initial': dict_accum['pore_volume_accum'][-1] - cell_volume_end_step /
-                                                       skempton_step[i_sigma] / 40},
+                                            'initial': dict_accum['pore_volume_accum'][-1] -
+                                                       cell_volume_end_step / skempton_step[i_sigma] / 40},
                                  'v_cell': {'delta': fix_value,
                                             'initial': dict_accum['cell_volume_accum'][-1]}}
                 dict_accum = step_reconsolidation(delta_initial, dict_accum)
                 dict_accum['index_end_step'][-1].append('впд_образец')
+
 
         for index_j_step_end_vfs, indexes_step in enumerate(dict_accum['index_end_step'][1:]):
             if indexes_step[1] == 'впд_камера':
@@ -734,41 +775,38 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         trajectory_accum[0] = 'HC'
 
         try:
-
             index_start_vfs = trajectory_accum.index('MoisturingBackPressure')
 
-            vertical_deformation = list(create_stabil_exponent(np.array(dict_accum['time'][0:index_start_vfs]),
-                                                               end_vertical_deformation - initial_vertical_deformation,
-                                                               10) \
-                                        + initial_vertical_deformation)
+            vertical_deformation = create_stabil_exponent(np.array(dict_accum['time'][0:index_start_vfs]),
+                                                          end_vertical_deformation - initial_vertical_deformation,
+                                                          10) + initial_vertical_deformation
 
             vertical_deformation_vfs = create_stabil_exponent(np.array(dict_accum['time'][index_start_vfs:]),
-                                                              -epsilon_volume / 3, 1) \
-                                       + vertical_deformation[-1]
+                                                              -epsilon_volume / 3, 1) + vertical_deformation[-1]
 
-            vertical_deformation.extend(vertical_deformation_vfs)
+            vertical_deformation = np.hstack((vertical_deformation, vertical_deformation_vfs))
 
         except ValueError:
             vertical_deformation = create_stabil_exponent(np.array(dict_accum['time']),
-                                                          end_vertical_deformation - initial_vertical_deformation, 10) \
-                                   + initial_vertical_deformation
+                                                          end_vertical_deformation - initial_vertical_deformation,
+                                                          10) + initial_vertical_deformation
 
         dict = {
-            'Time': [float("{:.3f}".format(x/60)) for x in
+            'Time': [float("{:.3f}".format(x / 60)) for x in
                      (dict_accum['time'] + np.random.uniform(-0.1, 0.1, len(dict_accum['time'])))],
             'Action': dict_accum['action_accum'],
             'Action_Changed': dict_accum['action_changed_accum'],
             'SampleHeight_mm': np.full(len(dict_accum['time']), 76),
             'SampleDiameter_mm': np.full(len(dict_accum['time']), 38),
             'Deviator_kPa': [int("{:.0f}".format(x)) for x in np.zeros(len(dict_accum['time']))],
-            'VerticalDeformation_mm': array_discreate_noise(vertical_deformation, dicreate_step_deformation, 8),
-            'CellPress_kPa': array_discreate_noise(dict_accum['sigma_accum'], dicreate_step_press, 5,
+            'VerticalDeformation_mm': array_discreate_noise(vertical_deformation, discrete_step_deformation, 8),
+            'CellPress_kPa': array_discreate_noise(dict_accum['sigma_accum'], discrete_step_press, 5,
                                                    koef_noise_before=0.1),
-            'CellVolume_mm3': array_discreate_noise(dict_accum['cell_volume_accum'], dicreate_step_volume, 2),
-            'PorePress_kPa': array_discreate_noise(dict_accum['u_accum'], dicreate_step_u, 5, koef_noise_before=0.1),
-            'PoreVolume_mm3': array_discreate_noise(dict_accum['pore_volume_accum'], dicreate_step_volume, 3,
+            'CellVolume_mm3': array_discreate_noise(dict_accum['cell_volume_accum'], discrete_step_volume, 2),
+            'PorePress_kPa': array_discreate_noise(dict_accum['u_accum'], discrete_step_u, 5, koef_noise_before=0.1),
+            'PoreVolume_mm3': array_discreate_noise(dict_accum['pore_volume_accum'], discrete_step_volume, 3,
                                                     koef_noise_before=0.5),
-            'VerticalPress_kPa': array_discreate_noise(dict_accum['sigma_accum'], dicreate_step_press, 5),
+            'VerticalPress_kPa': array_discreate_noise(dict_accum['sigma_accum'], discrete_step_press, 5),
             'Trajectory': trajectory_accum
 
             # 'skempton': skempton_step,
@@ -813,9 +851,27 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         return y2
 
 
+def time_series(x: np.ndarray) -> np.ndarray:
+    """
+    Возвращает массив целых чисел по размеру `x`: [0,1,2,...,len(`x`)-1]:
+    """
+    time = np.linspace(0, len(x) - 1, len(x))
+    return time
+
 if __name__ == '__main__':
     a = ModelTriaxialReconsolidationSoilTest()
-    a.set_test_params(100)
+    a.set_test_params(120, skempton_initial=0.87, skempton_end=0.97)
     a.plotter()
     plt.show()
 
+    # data = a.get_plot_data()
+    # plt.figure()
+    # plt.plot(time_series(data["pore_pressure"]), data["pore_pressure"])
+    # plt.show()
+
+
+    # x = np.linspace(0, 100, 1000)
+    # y = create_stabil_exponent(x, 10, 1, 0)
+    # plt.figure()
+    # plt.plot(x, y)
+    # plt.show()
