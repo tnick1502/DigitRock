@@ -15,7 +15,7 @@ from vibration_creep.vibration_creep_widgets import VibrationCreepSoilTestApp
 from consolidation.consolidation_widget import ConsolidationSoilTestApp
 from resonant_column.resonant_column_widgets import RezonantColumnSoilTestApp
 
-icon_path = "C:/Users/Пользователь/Desktop/Новая папка (7)"
+icon_path = "project_data/icons/"
 
 prog_dict = {
     "static": StatickSoilTestApp,
