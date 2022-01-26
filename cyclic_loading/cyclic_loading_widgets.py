@@ -572,9 +572,12 @@ class CyclicProcessingApp(QWidget):
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
 
 class CyclicSoilTestApp(QWidget):
-    def __init__(self):
+    def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
-        super().__init__()
+        super().__init__(parent=parent)
+
+        if geometry is not None:
+            self.setGeometry(geometry["left"], geometry["top"], geometry["width"], geometry["height"])
         # Создаем вкладки
 
         self.save_massage = True

@@ -424,9 +424,12 @@ class ShearProcessingApp(QWidget):
 
 class ShearSoilTestApp(QWidget):
 
-    def __init__(self):
-        super(QWidget, self).__init__()
+    def __init__(self, parent=None, geometry=None):
+        """Определяем основную структуру данных"""
+        super().__init__(parent=parent)
 
+        if geometry is not None:
+            self.setGeometry(geometry["left"], geometry["top"], geometry["width"], geometry["height"])
         # Создаем вкладки
         self.layout = QHBoxLayout(self)
 
