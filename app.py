@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget, QGr
 from PyQt5.QtGui import QIcon, QPixmap, QFont
 from PyQt5.QtCore import QSize
 from consolidation.consolidation_widget import ConsolidationSoilTestApp, __version__
+from multiprocessing import Process
+import threading
 
 from version_control.json_management import test_version, get_actual_version
 from version_control.configs import actual_version
@@ -126,8 +128,19 @@ class App(QMainWindow):  # Окно и виджеты на нем
 
     def buttons_click(self):
         sender = self.sender().objectName()
-        prog = prog_dict[sender](geometry=prog_geometry[sender])
-        prog.show()
+        self.prog = prog_dict[sender](geometry=prog_geometry[sender])
+        self.prog.show()
+
+        #def f(sender):
+            #self.prog = prog_dict[sender](parent=None, geometry=prog_geometry[sender])
+            #self.prog.show()
+            #sys.exit(app.exec())
+
+        #p = Process(target=f, args=(sender,))
+        #p.start()
+        #p.join()
+        #thr = threading.Thread(target=f, args=(sender, ))
+        #thr.start()
 
     def keyPressEvent(self, event):
         if str(event.key()) == "16777216":
