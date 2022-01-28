@@ -121,7 +121,6 @@ def read_general_prameters(path):
         except:
             pass
 
-
     for i in data:
         if data[i] == "None":
             return True, i
