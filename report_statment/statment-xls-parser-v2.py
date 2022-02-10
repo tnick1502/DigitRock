@@ -391,12 +391,24 @@ class XlsBook:
     def __get_color(self, color_index: int):
         return self.book.colour_map.get(color_index)
 
+def str_reports():
+    now = datetime.now()
+    res = x.get_month_count(datetime(year=now.year, month=now.month, day=1))
+    return f"""
+python: {res['python_report']}
+python динамика: {res['python_dynamic_report']}
+python компрессия: {res['python_compression_report']}
+mathCAD: {res['mathcad_report']}
+Ведомости физ: {res['physical_statement']}
+Ведомости мех: {res['mechanics_statement']}\n
+python/mathCAD: {round(((res['python_report'] + res['python_compression_report'] + res['python_dynamic_report'])/res['mathcad_report'] * 100), 2)} %
+"""
 
 if __name__ == "__main__":
     x = Statment()
     # print(x)
     # x.set_excel_statment_path("C:/Users/Пользователь/Desktop/ПРОТОКОЛЫ+ведомости.xls")
-    x.set_excel_statment_path(r"C:\Users\Пользователь\Desktop\ПРОТОКОЛЫ+ведомости.xls")
+    x.set_excel_statment_path(r"Z:\МДГТ - (Учет рабоч. времени, Отпуск, Даты рожд., телефоны, план работ)\ПРОТОКОЛЫ+ведомости.xls")
 
     # Построение графика
     x.update()
@@ -412,12 +424,10 @@ if __name__ == "__main__":
     plt.plot(plot["time"], plot["mechanics_statement"], label="mechanics_statement")
 
     plt.legend()
-    plt.show()
+    #plt.show()
 
     # За текущий месяц
-    res = x.get_month_count(datetime(year=2021, month=12, day=1))
-    print([f"{key}: {res[key]}" for key in res])
-    print(int(res["mathcad_report"] * 40 * 0.7))
+    print(str_reports())
     # total: int = 0
     # eng = 'Селиванова О.С.'
     # for _key in data.keys():

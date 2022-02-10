@@ -1,10 +1,9 @@
-import xlrd
 
-path = r"C:\Users\Пользователь\Desktop\984-21 Паромный причал - мех.xls"
+import hashlib
 
-from excel_statment.position_configs import GeneralDataColumns
+def hash_id(labolatory_number: str, object_number: str):
+    hash_object = hashlib.sha1(f"{object_number} {labolatory_number}".encode("utf-8"))
+    return hash_object.hexdigest()
 
-x = xlrd.open_workbook(path, formatting_info=True)
-sheet = x.sheet_by_index(0)
-for key in GeneralDataColumns:
-    print(f"{key}: {sheet.cell(*GeneralDataColumns[key][1]).value}")
+
+print(hex_dig)

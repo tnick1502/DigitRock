@@ -56,6 +56,7 @@ class PhysicalProperties:
     date = DataTypeValidation(datetime)
     sample_size = DataTypeValidation(tuple, list)
     new_laboratory_number = DataTypeValidation(str)
+    skempton_initial = DataTypeValidation(float)
 
     def __init__(self):
         self._setNone()
@@ -91,6 +92,8 @@ class PhysicalProperties:
             self.type_ground = PhysicalProperties.define_type_ground_by_name(self.soil_name)
 
         self.sample_size = PhysicalProperties.define_sample_size(self.granulometric_10, self.granulometric_5)
+
+        self.skempton_initial = PhysicalProperties.define_skempton_initial()
 
         if self.laboratory_number.isdigit():
             self.laboratory_number = str(int(self.laboratory_number))
@@ -201,6 +204,10 @@ class PhysicalProperties:
             return 50, 100
         else:
             return 38, 76
+
+    @staticmethod
+    def define_skempton_initial() -> float:
+        return np.random.uniform(0.5, 0.7)
 
 class MechanicalProperties:
     """Расширенный класс с дополнительными обработанными свойствами"""
@@ -1313,7 +1320,7 @@ class VibrationCreepProperties(MechanicalProperties):
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
             if physical_properties.type_ground in [1, 2, 3, 4, 5]:
                 self.Kd = [VibrationCreepProperties.define_Kd_sand(
-                    physical_properties.type_ground, physical_properties.e, frequency) for frequency in
+                    physical_properties.type_ground, physical_properties.e, frequency, self.sigma_3) for frequency in
                     self.frequency]
             else:
                 self.Kd = [VibrationCreepProperties.define_Kd(
@@ -1362,8 +1369,11 @@ class VibrationCreepProperties(MechanicalProperties):
         return np.round(Kd, 2)
 
     @staticmethod
-    def define_Kd_sand(type, e, frequency):
+    def define_Kd_sand(type, e, frequency, sigma_3):
         FREQUENCY = np.array([2, 5, 10, 30, 40, 61.5, 100])
+
+        if e is None:
+            e = np.round(np.random.uniform(0.6, 0.7), 2)
 
         def type_1_2(e, frequency, frequency_array=FREQUENCY):
             if e <= 0.55:
@@ -1437,7 +1447,14 @@ class VibrationCreepProperties(MechanicalProperties):
             5: type_5(e, frequency),
         }
 
-        return Kd_dict[type]
+        sigma_koef = 0.0007*sigma_3 + 1
+
+        Kd = Kd_dict[type] * sigma_koef
+
+        if Kd >= 0.97:
+            Kd = np.random.uniform(0.95, 0.97)
+
+        return np.round(Kd, 3)
 
 class ShearProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""

@@ -582,10 +582,8 @@ class ConsolidationStatment(InitialStatment):
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
-            wb = load_workbook(self.path, data_only=True)
 
             combo_params = self.open_line.get_data()
-
             marker, customer = read_general_prameters(self.path)
 
             try:
@@ -668,7 +666,6 @@ class ShearStatment(InitialStatment):
     def file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
-            wb = load_workbook(self.path, data_only=True)
 
             combo_params = self.open_line.get_data()
 
