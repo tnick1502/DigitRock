@@ -1274,7 +1274,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         sigma_1 = sigma_3/K0
         sigma_mean = (sigma_1 + 2*sigma_3)/3
-        q_c = sigma_3 * (1/K0-1)
+        q_c = sigma_1 - sigma_3#sigma_3 * (1/K0-1)
 
         def type_from_Il_loam(Il):
             if Il:
