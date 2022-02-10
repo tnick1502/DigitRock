@@ -672,7 +672,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         if self._test_params.Eur:
             self.unloading_borders = ModelTriaxialDeviatorLoadingSoilTest.define_unloading_points(
                 statment[statment.current_test].physical_properties.Il, statment[statment.current_test].physical_properties.type_ground,
-                self._test_params.sigma_3, self._test_params.sigma_3/statment[statment.current_test].mechanical_properties.K0)
+                self._test_params.sigma_3, statment[statment.current_test].mechanical_properties.K0)
 
             self._draw_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
                 E50=self._test_params.E50, qf=self._test_params.qf, Il=statment[statment.current_test].physical_properties.Il,
@@ -1266,11 +1266,15 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         return data
 
     @staticmethod
-    def define_unloading_points(Il, type_ground, sigma_mean: float, sigma_1: float) -> float:
+    def define_unloading_points(Il, type_ground, sigma_3: float, K0: float) -> float:
         """ Рассчет начала разгрузки в зависимости от грансостава и среднеобжимающего давления
             :param physical_data: словарь с физическими параметрами
             :param sigma_1: эффективное значение sigma_3c
             :return: девиатор начала разгрузки"""
+
+        sigma_1 = sigma_3/K0
+        sigma_mean = (sigma_1 + 2*sigma_3)/3
+        q_c = sigma_3 * (1/K0-1)
 
         def type_from_Il_loam(Il):
             if Il:
@@ -1291,7 +1295,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 return [0, 0]
 
         # Функция рассчета начала разгрузки по ГОСТ 12248-2020
-        deviator_start_unloading = lambda step_1, step_2: sigma_mean * (step_1 + step_2)
+        deviator_start_unloading = lambda step_1, step_2: sigma_mean * (step_1 + step_2) + q_c
 
         # Рассчет начала разгрузки в зависимости от грансостава
         dependence_deviator_start_unloading_on_type_ground = {
@@ -1307,7 +1311,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         }
 
         return (
-        dependence_deviator_start_unloading_on_type_ground[type_ground], 10)
+        dependence_deviator_start_unloading_on_type_ground[type_ground], 10 + q_c)
 
     @staticmethod
     def define_final_loading_point(deviator: List, persent: float) -> int:
