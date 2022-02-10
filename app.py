@@ -127,9 +127,11 @@ class App(QMainWindow):  # Окно и виджеты на нем
                                  QMessageBox.Ok)
 
     def buttons_click(self):
+
         sender = self.sender().objectName()
-        self.prog = prog_dict[sender](geometry=prog_geometry[sender])
-        self.prog.show()
+        #self.prog = prog_dict[sender](geometry=prog_geometry[sender])
+        os.system(f"python {os.path.join(os.getcwd(), sender + '.py')}")
+        #self.prog.show()
 
         #def f(sender):
             #self.prog = prog_dict[sender](parent=None, geometry=prog_geometry[sender])
