@@ -452,7 +452,7 @@ class ShearSoilTestApp(QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.signal[bool].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.set_directory(x, statment.general_parameters.test_mode))
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.set_directory(x, statment.general_parameters.test_mode, statment.general_data.shipment_number))
 
         self.previous_test_type = ''
         self.tab_1.open_line.combo_changes_signal.connect(self.on_test_type_changed)

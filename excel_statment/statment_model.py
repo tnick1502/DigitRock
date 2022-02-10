@@ -24,6 +24,7 @@ class StatmentData:
     accreditation = DataTypeValidation(str)
     accreditation_key = DataTypeValidation(str)
     object_number = DataTypeValidation(str)
+    shipment_number = DataTypeValidation(str)
 
     def __init__(self, statment_path):
         if statment_path.endswith("xlsx"):
@@ -34,6 +35,7 @@ class StatmentData:
             object_number = str(wb["Лист1"][GeneralDataColumns["object_number"][0]].value)
             start_date = wb["Лист1"][GeneralDataColumns["start_date"][0]].value
             end_date = wb["Лист1"][GeneralDataColumns["end_date"][0]].value
+            shipment_number = wb["Лист1"][GeneralDataColumns["shipment_number"][0]].value
             wb.close()
         else:
             wb = xlrd.open_workbook(statment_path, formatting_info=True)
@@ -44,6 +46,7 @@ class StatmentData:
             object_number = str(sheet.cell(*GeneralDataColumns["object_number"][1]).value)
             start_date = datetime(*xlrd.xldate_as_tuple(sheet.cell(*GeneralDataColumns["start_date"][1]).value, wb.datemode))
             end_date = datetime(*xlrd.xldate_as_tuple(sheet.cell(*GeneralDataColumns["end_date"][1]).value, wb.datemode))
+            shipment_number = sheet.cell(*GeneralDataColumns["shipment_number"][1]).value
 
         if accreditation in ["OAO", "ОАО"]:
             accreditation = "АО"
@@ -56,6 +59,10 @@ class StatmentData:
         assert customer, "Не указан заказчик"
         assert customer, "Не указан заказчик"
         assert accreditation, "Не указана аккредитация"
+        if shipment_number is None:
+            shipment_number = ""
+        else:
+            shipment_number = str(shipment_number)
 
         if accreditation in ["AO", "АО"]:
             self.accreditation_key = "новая"
@@ -68,6 +75,7 @@ class StatmentData:
         self.object_number = object_number
         self.start_date = start_date
         self.end_date = end_date
+        self.shipment_number = shipment_number
 
     def __repr__(self):
         return str(self.__dict__)

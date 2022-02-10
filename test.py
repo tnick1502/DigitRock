@@ -6,4 +6,4 @@ def hash_id(labolatory_number: str, object_number: str):
     return hash_object.hexdigest()
 
 
-print(hex_dig)
+lambda: 1

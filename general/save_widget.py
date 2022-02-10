@@ -140,16 +140,20 @@ class Save_Dir(QWidget):
         for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
             create_path(path)
 
-    def set_directory(self, signal, mode):
+    def set_directory(self, signal, mode, postfix=""):
         """Получение пути к файлу ведомости excel"""
         self.mode = mode
-        try:
+        if postfix:
+            self.postfix = f" - {postfix}"
+        else:
+            self.postfix = ""
+        """try:
             self.postfix = signal[signal.index("мех")+3:-5]
         except ValueError:
             try:
                 self.postfix = signal[signal.index("циклика") + 7:-5]
             except ValueError:
-                self.postfix = ""
+                self.postfix = ''"""
 
         self._create_save_directory(signal[0:-signal[::-1].index("/")], mode)
 

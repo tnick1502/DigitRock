@@ -245,7 +245,7 @@ class ConsolidationSoilTestApp(QWidget):
         self.layout.addWidget(self.tab_widget)
 
         self.tab_1.signal[bool].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_wigdet.set_directory(x, "Консолидация"))
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_wigdet.set_directory(x, "Консолидация", statment.general_data.shipment_number))
 
         self.tab_2.save_wigdet.save_button.clicked.connect(self.save_report)
         self.tab_2.save_wigdet.save_all_button.clicked.connect(self.save_all_reports)

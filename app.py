@@ -4,13 +4,15 @@ from PyQt5.QtGui import QIcon, QPixmap, QFont
 from PyQt5.QtCore import QSize
 import traceback
 import subprocess
-from consolidation.consolidation_widget import ConsolidationSoilTestApp, __version__
+from consolidation.consolidation_widget import ConsolidationSoilTestApp
 from multiprocessing import Process
 import threading
+import json
 
 from version_control.json_management import test_version, get_actual_version
 from version_control.configs import actual_version
 from loggers.logger import app_logger
+from version_control.configs import path
 
 from static import StatickSoilTestApp
 from cyclic import CyclicSoilTestApp
@@ -83,16 +85,15 @@ prog_geometry = {
     }
 }
 
-
 class App(QMainWindow):  # Окно и виджеты на нем
 
     def __init__(self):
         super().__init__()
-        self.title = "DigitRock SoilTest " + "{:.2f}".format(__version__)
+        self.title = "DigitRock SoilTest " + "{:.2f}".format(actual_version)
         self.left = 100
-        self.top = 100
+        self.top = 50
         self.width = 900
-        self.height = 900
+        self.height = 950
         self.setWindowTitle(self.title)
         #self.setWindowIcon(QIcon(icons + "ST.png"))
         self.setGeometry(self.left, self.top, self.width, self.height)
@@ -100,8 +101,12 @@ class App(QMainWindow):  # Окно и виджеты на нем
             self.table_widget = QWidget()
             self.layout = QGridLayout()
             self.table_widget.setLayout(self.layout)
+            self.info_button = QPushButton("Лог версий")
+            self.info_button.setFixedHeight(50)
+            self.info_button.clicked.connect(self.info)
+            self.layout.addWidget(self.info_button, 0, 0, 1, -1)
 
-            col, string = 0, 0
+            col, string = 0, 1
 
             for key in prog_dict:
                 setattr(self, key, QPushButton(prog_name[key]))
@@ -166,6 +171,18 @@ class App(QMainWindow):  # Окно и виджеты на нем
                 self.showNormal()
             else:
                 self.showFullScreen()
+
+    def info(self):
+        path = "Z:/НАУКА/Разработка/!Программы/Digitrock/version_log.json"
+
+        def open_json(path: str) -> dict:
+            """Считывание json файла в словарь"""
+            with open(path, 'r', encoding='utf-8') as file:
+                json_data = json.load(file)
+
+            return "\n\n".join([f"{version}:\n{info}" for version, info in json_data.items()])
+
+        QMessageBox.about(self, "Лог версий", open_json(path))
 
 
 if __name__ == '__main__':

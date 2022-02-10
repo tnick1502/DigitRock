@@ -23,23 +23,19 @@ class App(QMainWindow):  # Окно и виджеты на нем
 
 
         if test_version(actual_version):
-            try:
-                self.table_widget = RezonantColumnSoilTestApp()
-                self.setCentralWidget(self.table_widget)
-                self.show()
-            except:
-                app_logger.exception("Ошибка приложения")
+            self.table_widget = RezonantColumnSoilTestApp()
+            self.setCentralWidget(self.table_widget)
+            self.show()
+
         else:
             ret = QMessageBox.question(self, 'Предупреждение',
                                        f"Вы запускаете устаревшую версию программы. Актуальная версия {get_actual_version()}",
                                        QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
             if ret == QMessageBox.Yes:
-                try:
-                    self.table_widget = RezonantColumnSoilTestApp()
-                    self.setCentralWidget(self.table_widget)
-                    self.show()
-                except:
-                    app_logger.exception("Ошибка приложения")
+                self.table_widget = RezonantColumnSoilTestApp()
+                self.setCentralWidget(self.table_widget)
+                self.show()
+
             else:
                 sys.exit()
 

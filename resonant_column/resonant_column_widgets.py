@@ -438,7 +438,7 @@ class RezonantColumnSoilTestApp(QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(lambda x:
-                                                   self.tab_2.save_widget.set_directory(x, "Резонансная колонка"))
+                                                   self.tab_2.save_widget.set_directory(x, "Резонансная колонка", statment.general_data.shipment_number))
         self.tab_1.signal[bool].connect(self.tab_2.set_test_params)
         self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_data)
         self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
@@ -458,8 +458,8 @@ class RezonantColumnSoilTestApp(QWidget):
                 dialog.get_data()
                 RC_models.generateTests()
                 RC_models.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]), name="rc_models.pickle")
-                statment.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]),
-                              name="Резонансная колонка.pickle")
+                #statment.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]),
+                              #name="Резонансная колонка.pickle")
                 app_logger.info("Новые параметры ведомости и модели сохранены")
 
     @log_this(app_logger, "debug")

@@ -25,7 +25,8 @@ from vibration_creep.vibration_creep_model import ModelVibrationCreepSoilTest
 from shear_test.shear_test_model import ModelShearSoilTest
 from shear_test.shear_dilatancy_test_model import ModelShearDilatancySoilTest
 from excel_statment.params import accreditation
-from excel_statment.position_configs import c_fi_E_PropertyPosition
+from excel_statment.position_configs import c_fi_E_PropertyPosition, GeneralDataColumns
+from excel_statment.functions import set_cell_data
 
 from transliterate import translit
 
@@ -78,6 +79,34 @@ class SetAccreditation(QGroupBox):
                 rb.setChecked(True)
             else:
                 rb.setChecked(False)
+
+class ShipmentDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+
+        self.setWindowTitle("Ошибка ведомости")
+
+        self.layout = QHBoxLayout()
+        self.line = QLineEdit()
+        self.line.setText("1")
+        self.button = QPushButton("Ok")
+        self.button.clicked.connect(self.close)
+        #self.button.clicked.connect(self.return_strings)
+        self.layout.addWidget(QLabel("Введите номер привоза:"))
+        self.layout.addWidget(self.line)
+        self.layout.addWidget(self.button)
+        self.setLayout(self.layout)
+
+    def return_strings(self):
+        self.close()
+        return self.line.text()
+
+    @staticmethod
+    def get_data(parent=None):
+        dialog = ShipmentDialog(parent)
+        dialog.exec_()
+        return dialog.return_strings()
 
 class InitialStatment(QWidget):
     """Класс макет для ведомости
@@ -191,6 +220,14 @@ class InitialStatment(QWidget):
 
         self.customer_line.set_data()
         self.accreditation.set_data()
+
+        if statment.general_data.shipment_number == "":
+            window = ShipmentDialog()
+            statment.general_data.shipment_number = window.get_data()
+
+            set_cell_data(self.path, (GeneralDataColumns["shipment_number"][0],
+                                      (GeneralDataColumns["shipment_number"][1])),
+                          statment.general_data.shipment_number, sheet="Лист1", color="FF6961")
 
     def load_models(self, models_name, models, models_type):
         model_file = "".join([i for i in os.path.split(self.path)[:-1]]) + f"/{models_name}"
@@ -348,6 +385,7 @@ class TriaxialStaticStatment(InitialStatment):
                     statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
                     properties_type=MechanicalProperties,
                     general_params=combo_params)
+
 
                 statment.general_parameters.reconsolidation = False
 
@@ -797,9 +835,8 @@ class ShearStatment(InitialStatment):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    Dialog = VibrationCreepStatment()
-    Dialog.show()
+    window = ShipmentDialog()
+    print(window.get_data())
+    #print(Dialog.save())
     app.setStyle('Fusion')
-
-
     sys.exit(app.exec_())

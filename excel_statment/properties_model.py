@@ -289,8 +289,18 @@ class MechanicalProperties:
             if not self.K0:
                 raise ValueError(f"Ошибка определения K0 в пробе {physical_properties.laboratory_number}")
 
-            self.sigma_3 = MechanicalProperties.round_sigma_3(
-                MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
+            if physical_properties.ground_water_depth is not None:
+                if physical_properties.depth <= physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
+                elif physical_properties.depth > physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                            9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+
+                self.sigma_3 = round(self.sigma_1 * self.K0, 1)
+
+            else:
+                self.sigma_3 = MechanicalProperties.round_sigma_3(
+                    MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
 
             if self.sigma_3 < 100:
                 self.sigma_3 = 100

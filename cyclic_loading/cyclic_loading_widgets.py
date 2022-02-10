@@ -599,7 +599,7 @@ class CyclicSoilTestApp(QWidget):
 
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.set_directory(x, statment.general_parameters.test_mode))
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.set_directory(x, statment.general_parameters.test_mode, statment.general_data.shipment_number))
         self.tab_1.signal[bool].connect(self.tab_2.set_params)
         self.tab_1.signal[bool].connect(self.tab_2.identification.set_data)
 
