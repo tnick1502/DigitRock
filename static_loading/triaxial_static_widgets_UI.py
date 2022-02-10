@@ -183,8 +183,8 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                     #self.deviator_ax2.set_xlim([lim[0], lim[1]])
                     self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', МПa", fontsize=8)
                     self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
-                    # self.deviator_ax2.plot(plots["strain"], plots["deviator"] + plots["sigma_3"],
-                    #                        **plotter_params["static_loading_main_line"])
+                    self.deviator_ax2.plot(plots["strain"], plots["deviator"] + plots["sigma_3"],
+                                           **plotter_params["static_loading_main_line"])
                     if res["E"] is not None:
                         pass
                         #self.deviator_ax2.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"],
