@@ -2,6 +2,8 @@ import sys, os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget, QGridLayout, QPushButton
 from PyQt5.QtGui import QIcon, QPixmap, QFont
 from PyQt5.QtCore import QSize
+import traceback
+import subprocess
 from consolidation.consolidation_widget import ConsolidationSoilTestApp, __version__
 from multiprocessing import Process
 import threading
@@ -129,8 +131,22 @@ class App(QMainWindow):  # Окно и виджеты на нем
     def buttons_click(self):
 
         sender = self.sender().objectName()
-        #self.prog = prog_dict[sender](geometry=prog_geometry[sender])
-        os.system(f"python {os.path.join(os.getcwd(), sender + '.py')}")
+        #os.system(f"python {os.path.join(os.getcwd(), sender + '.py')}")
+
+        pipe = subprocess.Popen(f"python {os.path.join(os.getcwd(), sender + '.py')}", stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        output, error = pipe.communicate()
+        if pipe.returncode != 0:
+            QMessageBox.critical(self, "Ошибка", f"{str(output)}\n{str(error)}", QMessageBox.Ok)
+            #print(pipe.returncode)
+
+            #exc_info = sys.exc_info()
+            #print("1", exc_info[0])
+            #print("2", exc_info[1])
+            #traceback.print_tb("3", exc_info[2])
+        #pipe.returncode
+
+        # self.prog = prog_dict[sender](geometry=prog_geometry[sender])
         #self.prog.show()
 
         #def f(sender):
