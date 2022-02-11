@@ -228,18 +228,23 @@ class InitialStatment(QWidget):
             set_cell_data(self.path, (GeneralDataColumns["shipment_number"][0],
                                       (GeneralDataColumns["shipment_number"][1])),
                           statment.general_data.shipment_number, sheet="Лист1", color="FF6961")
+        statment.save_dir.set_directory(self.path, statment_name.split(".")[0], statment.general_data.shipment_number)
 
     def load_models(self, models_name, models, models_type):
-        model_file = "".join([i for i in os.path.split(self.path)[:-1]]) + f"/{models_name}"
-        models.setModelType(models_type)
+        if statment.general_data.shipment_number:
+            shipment_number = f" - {statment.general_data.shipment_number}"
+        else:
+            shipment_number = ""
 
+        model_file = os.path.join(statment.save_dir.save_directory, models_name.split(".")[0] + shipment_number + ".pickle")
+        models.setModelType(models_type)
         if os.path.exists(model_file):
             models.load(model_file)
-            app_logger.info(f"Загружен файл модели {models_name}")
+            app_logger.info(f"Загружен файл модели {models_name.split('.')[0] + shipment_number + '.pickle'}")
         else:
             models.generateTests()
-            models.dump("".join([i for i in os.path.split(self.path)[:-1]]), models_name)
-            app_logger.info(f"Сгенерирован сохраненен новый файл модели {models_name}")
+            models.dump(model_file)
+            app_logger.info(f"Сгенерирован сохраненен новый файл модели {models_name.split('.')[0] + shipment_number + '.pickle'}")
 
     @log_this(app_logger, "debug")
     def table_physical_properties_click(self, laboratory_number):
@@ -312,7 +317,7 @@ class RezonantColumnStatment(InitialStatment):
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
 
-                    self.load_models(models_name="RC_models.pickle",
+                    self.load_models(models_name="rc_models.pickle",
                                      models=RC_models, models_type=ModelRezonantColumnSoilTest)
 
 class TriaxialStaticStatment(InitialStatment):
@@ -629,6 +634,7 @@ class ConsolidationStatment(InitialStatment):
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
             else:
+                combo_params["test_mode"] = "Консолидация"
 
                 self.load_statment(
                     statment_name="Консолидация.pickle",
@@ -769,13 +775,12 @@ class ShearStatment(InitialStatment):
                     # elif ShearStatment.shear_type(statment.general_parameters.test_mode) == self.SHEAR_DILATANCY:
                     #     self.load_models(models_name="Shear_dilatancy_models.pickle",
                     #                      models=Shear_Dilatancy_models, models_type=ModelShearDilatancySoilTest)
-
                     _test_mode = statment.general_parameters.test_mode
                     if not ShearStatment.is_dilatancy_type(_test_mode):
-                        self.load_models(models_name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)),
+                        self.load_models(models_name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0],
                                          models=Shear_models, models_type=ModelShearSoilTest)
                     elif ShearStatment.is_dilatancy_type(_test_mode):
-                        self.load_models(models_name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)),
+                        self.load_models(models_name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0],
                                          models=Shear_Dilatancy_models, models_type=ModelShearDilatancySoilTest)
 
     def button_open_click(self):

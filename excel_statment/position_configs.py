@@ -97,5 +97,5 @@ GeneralDataColumns = {
     "start_date": ["U1", (0, 20)],
     "accreditation": ["I2", (1, 8)],
     "object_number": ["AI1", (0, 34)],
-    "shipment_number": ["J2", (2, 9)]
+    "shipment_number": ["J2", (1, 9)]
 }

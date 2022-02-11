@@ -8,7 +8,7 @@ import numpy as np
 import sys
 import os
 import time
-import pyautogui
+#import pyautogui
 import shutil
 from general.reports import report_triaxial_cyclic, report_cyclic_damping
 import threading
@@ -48,7 +48,7 @@ class CyclicProcessingWidget(QWidget):
         if s:
             try:
                 time.sleep(0.3)
-                pyautogui.screenshot(s+".png", region=(0, 0, 1920, 1080))
+                #pyautogui.screenshot(s+".png", region=(0, 0, 1920, 1080))
                 QMessageBox.about(self, "Сообщение", "Скриншот сохранен")
             except PermissionError:
                 QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
@@ -240,7 +240,7 @@ class CyclicSoilTestWidget(QWidget):
         if s:
             try:
                 time.sleep(0.3)
-                pyautogui.screenshot(s+".png", region=(0, 0, 1920, 600))
+                #pyautogui.screenshot(s+".png", region=(0, 0, 1920, 600))
                 QMessageBox.about(self, "Сообщение", "Скриншот сохранен")
             except PermissionError:
                 QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
@@ -599,7 +599,7 @@ class CyclicSoilTestApp(QWidget):
 
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.set_directory(x, statment.general_parameters.test_mode, statment.general_data.shipment_number))
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.update())
         self.tab_1.signal[bool].connect(self.tab_2.set_params)
         self.tab_1.signal[bool].connect(self.tab_2.identification.set_data)
 
@@ -639,8 +639,8 @@ class CyclicSoilTestApp(QWidget):
 
             if dialog.exec() == QDialog.Accepted:
                 Cyclic_models.generateTests()
-                Cyclic_models.dump(''.join(os.path.split(self.tab_3.directory)[:-1]), name="cyclic_models.pickle")
-                statment.dump(''.join(os.path.split(self.tab_3.directory)[:-1]), name=statment.general_parameters.test_mode + ".pickle")
+                Cyclic_models.dump(os.path.join(statment.save_dir.save_directory,
+                                                f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
                 app_logger.info("Новые параметры ведомости и модели сохранены")
 
     def save_report(self):
@@ -655,7 +655,7 @@ class CyclicSoilTestApp(QWidget):
             assert statment.current_test, "Не выбран образец в ведомости"
             file_path_name = statment.current_test.replace("/", "-").replace("*", "")
 
-            save = self.tab_3.arhive_directory + "/" + file_path_name
+            save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
 
             if os.path.isdir(save):
@@ -721,7 +721,7 @@ class CyclicSoilTestApp(QWidget):
 
             Cyclic_models[statment.current_test].generate_log_file(save)
 
-            shutil.copy(file_name, self.tab_3.report_directory + "/" + file_name[len(file_name) -
+            shutil.copy(file_name, statment.save_dir.report_directory + "/" + file_name[len(file_name) -
                                                                                  file_name[::-1].index("/"):])
 
 
@@ -763,7 +763,8 @@ class CyclicSoilTestApp(QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
-            Cyclic_models.dump(''.join(os.path.split(self.tab_3.directory)[:-1]), name="cyclic_models.pickle")
+            Cyclic_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
             #statment.dump(''.join(os.path.split(self.tab_3.directory)[:-1]),
                           #ame=statment.general_parameters.test_mode + ".pickle")
 

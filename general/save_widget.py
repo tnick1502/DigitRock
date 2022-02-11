@@ -4,6 +4,7 @@ import sys
 import os
 
 from general.general_functions import create_path
+from singletons import statment
 from general.general_statement import StatementGenerator
 from loggers.logger import app_logger
 
@@ -16,16 +17,12 @@ class Save_Dir(QWidget):
     def __init__(self, report_type=None):
         super().__init__()
 
-        self._save_directory = "C:/"
-
-        self.postfix = ""
-        self.mode = ""
         self._report_types = report_type
 
         self.create_UI()
 
-        self.save_directory_text.setText(self._save_directory)
-        self.tree.setRootIndex(self.model.index(self._save_directory))
+        self.save_directory_text.setText(statment.save_dir.save_directory)
+        self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))
 
     def create_UI(self):
 
@@ -82,7 +79,7 @@ class Save_Dir(QWidget):
         self.tree = QTreeView()
         self.tree.setModel(self.model)
         self.tree.setColumnWidth(0, 500)
-        self.tree.setRootIndex(self.model.index(self._save_directory))
+        self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))
         self.tree.doubleClicked.connect(self._doubleclick)
 
         self.tree.setAnimated(True)
@@ -97,21 +94,6 @@ class Save_Dir(QWidget):
         self.setLayout(self.savebox_layout)
         self.savebox_layout.setContentsMargins(5, 5, 5, 5)
 
-    @property
-    def report_directory(self):
-        return self._save_directory + f"/{self.mode}{self.postfix}/"
-
-    @property
-    def arhive_directory(self):
-        return self._save_directory + f"/Архив {self.mode}{self.postfix}/"
-
-    @property
-    def cvi_directory(self):
-        return self._save_directory + "/ЦВИ/"
-
-    @property
-    def directory(self):
-        return self._save_directory
 
     @property
     def report_type(self):
@@ -120,48 +102,14 @@ class Save_Dir(QWidget):
         else:
             return None
 
-    def _create_save_directory(self, path, mode=""):
-        """Создание папки и подпапок для сохранения отчета"""
-        self._save_directory = path + "/" + mode
-
-        create_path(self._save_directory)
-
-        for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
-            create_path(path)
-
-        self.save_directory_text.setText(self._save_directory)
-
-        self.tree.setRootIndex(self.model.index(self._save_directory))
-
-        app_logger.info(f"Папка сохранения опытов {self._save_directory}")
-
-    def check_dirs(self):
-        create_path(self._save_directory)
-        for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
-            create_path(path)
-
-    def set_directory(self, signal, mode, postfix=""):
-        """Получение пути к файлу ведомости excel"""
-        self.mode = mode
-        if postfix:
-            self.postfix = f" - {postfix}"
-        else:
-            self.postfix = ""
-        """try:
-            self.postfix = signal[signal.index("мех")+3:-5]
-        except ValueError:
-            try:
-                self.postfix = signal[signal.index("циклика") + 7:-5]
-            except ValueError:
-                self.postfix = ''"""
-
-        self._create_save_directory(signal[0:-signal[::-1].index("/")], mode)
+    def update(self):
+        self.save_directory_text.setText(statment.save_dir.save_directory)
+        self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))
 
     def change_save_directory(self):
         """Самостоятельный выбор папки сохранения"""
         s = QFileDialog.getExistingDirectory(self, "Select Directory")
-        if s:
-            self._create_save_directory(s)
+        statment.save_dir.set_directory(s, statment.general_parameters.test_mode, statment.general_data.shipment_number)
 
     def _doubleclick(self, item):
         "Обработчик события двойного клика в проводнике. Открывает файл"

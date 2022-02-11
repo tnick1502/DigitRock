@@ -452,7 +452,7 @@ class ShearSoilTestApp(QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.signal[bool].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.set_directory(x, statment.general_parameters.test_mode, statment.general_data.shipment_number))
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.update())
 
         self.previous_test_type = ''
         self.tab_1.open_line.combo_changes_signal.connect(self.on_test_type_changed)
@@ -527,7 +527,7 @@ class ShearSoilTestApp(QWidget):
             if date:
                 data_customer.end_date = date
 
-            save = self.tab_4.arhive_directory + "/" + file_path_name
+            save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
             if os.path.isdir(save):
                 pass
@@ -542,7 +542,7 @@ class ShearSoilTestApp(QWidget):
                                             name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)))
                 Shear_Dilatancy_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
                 Shear_Dilatancy_models[statment.current_test].save_cvi_file(save,
-                                                                            self.tab_4.cvi_directory +
+                                                                            statment.save_dir.cvi_directory +
                                                                             "/" + f"{file_path_name} ЦВИ.xls")
 
                 test_result = Shear_Dilatancy_models[statment.current_test].get_test_results()
@@ -557,11 +557,17 @@ class ShearSoilTestApp(QWidget):
                 name = file_path_name + " " + statment.general_data.object_number + " Сп" + ".pdf"
                 Shear_models[statment.current_test].save_log_files(save)
                 Shear_models[statment.current_test].save_cvi_file(save,
-                                                                  self.tab_4.cvi_directory +
+                                                                  statment.save_dircvi_directory +
                                                                   "/" + f"{file_path_name} ЦВИ.xls",
                                                                   ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_NATURAL)
                 Shear_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
                                   name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)))
+
+                Shear_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"{ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
+
+                statment.general_parameters.test_mode
+
                 test_result = {}
                 test_result["sigma_shear"], test_result["tau_max"] = Shear_models[
                     statment.current_test].get_sigma_tau_max()
@@ -574,7 +580,7 @@ class ShearSoilTestApp(QWidget):
                              os.getcwd() + "/project_data/", test_parameter, test_result,
                              (*self.tab_3.save_canvas(), *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
 
-                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+                shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
                 c_pos = c_fi_E_PropertyPosition[statment.general_parameters.test_mode][0][0]
                 fi_pos = c_fi_E_PropertyPosition[statment.general_parameters.test_mode][0][1]

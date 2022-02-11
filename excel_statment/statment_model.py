@@ -8,11 +8,13 @@ import xlrd
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, PropertiesDict, ConsolidationProperties, CyclicProperties
 from descriptors import DataTypeValidation
+from general.general_functions import create_path
 from excel_statment.position_configs import PhysicalPropertyPosition, MechanicalPropertyPosition, c_fi_E_PropertyPosition, \
     DynamicsPropertyPosition, IdentificationColumns, GeneralDataColumns
 from excel_statment.functions import str_df, float_df
 from general.general_functions import read_json_file, create_json_file
 import shelve
+from loggers.logger import app_logger
 
 
 class StatmentData:
@@ -47,6 +49,7 @@ class StatmentData:
             start_date = datetime(*xlrd.xldate_as_tuple(sheet.cell(*GeneralDataColumns["start_date"][1]).value, wb.datemode))
             end_date = datetime(*xlrd.xldate_as_tuple(sheet.cell(*GeneralDataColumns["end_date"][1]).value, wb.datemode))
             shipment_number = sheet.cell(*GeneralDataColumns["shipment_number"][1]).value
+            print("dfg", shipment_number)
 
         if accreditation in ["OAO", "ОАО"]:
             accreditation = "АО"
@@ -80,6 +83,15 @@ class StatmentData:
     def __repr__(self):
         return str(self.__dict__)
 
+    def get_shipment_number(self):
+
+        if self.shipment_number:
+            shipment_number = f" - {self.shipment_number}"
+        else:
+            shipment_number = ""
+
+        return shipment_number
+
     def get_json(self):
         return self.__dict__
 
@@ -96,6 +108,69 @@ class GeneralParameters:
 
     def get_json(self):
         return self.__dict__
+
+class SaveDir:
+    """Класс создает интерфейс для сохранения отчетов.
+    Сигнал с директорией файла ведомости передается из класса открытия,
+     после чего в этой директории создаются соответствующие папки.
+     Название папки отчета передается в класс через коструктор mode"""
+
+    def __init__(self, path="", ):
+        super().__init__()
+
+        self._save_directory = "C:/"
+
+        self.postfix = ""
+        self.mode = ""
+
+    @property
+    def report_directory(self):
+        return self._save_directory + f"/{self.mode}{self.postfix}/"
+
+    @property
+    def save_directory(self):
+        return self._save_directory
+
+    @property
+    def arhive_directory(self):
+        return self._save_directory + f"/Архив {self.mode}{self.postfix}/"
+
+    @property
+    def cvi_directory(self):
+        return self._save_directory + f"/ЦВИ{self.postfix}/"
+
+    @property
+    def directory(self):
+        return self._save_directory
+
+    def _create_save_directory(self, path, mode=""):
+        """Создание папки и подпапок для сохранения отчета"""
+
+        self._save_directory = path + "/" + mode
+
+        create_path(self._save_directory)
+
+        for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
+            create_path(path)
+
+        app_logger.info(f"Папка сохранения опытов {self._save_directory}")
+
+    def check_dirs(self):
+        create_path(self._save_directory)
+        for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
+            create_path(path)
+
+    def set_directory(self, dir, mode, postfix=""):
+        """Получение пути к файлу ведомости excel"""
+        self.mode = mode
+
+        if postfix:
+            self.postfix = f" - {postfix}"
+        else:
+            self.postfix = ""
+
+        self._create_save_directory(os.path.split(dir)[0], mode)
+
 
 class Test:
     physical_properties = DataTypeValidation(PhysicalProperties)
@@ -145,6 +220,7 @@ class Statment:
     test_class = None
     current_test: str
     original_keys: list = None
+    save_dir = DataTypeValidation(SaveDir)
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):
@@ -156,6 +232,7 @@ class Statment:
         self.general_parameters = None
         self.tests = {}
         self.current_test = None
+        self.save_dir = SaveDir()
 
     def setTestClass(self, cls):
         self.test_class = cls

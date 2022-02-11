@@ -137,7 +137,7 @@ class RezonantColumnSoilTestWidget(QWidget):
         except KeyError:
             pass
 
-    @log_this(app_logger, "debug")
+    #@log_this(app_logger, "debug")
     def _refresh(self):
         try:
             RC_models[statment.current_test].set_test_params()
@@ -438,7 +438,7 @@ class RezonantColumnSoilTestApp(QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(lambda x:
-                                                   self.tab_2.save_widget.set_directory(x, "Резонансная колонка", statment.general_data.shipment_number))
+                                                   self.tab_2.save_widget.update())
         self.tab_1.signal[bool].connect(self.tab_2.set_test_params)
         self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_data)
         self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
@@ -457,7 +457,8 @@ class RezonantColumnSoilTestApp(QWidget):
             if dialog.exec() == QDialog.Accepted:
                 dialog.get_data()
                 RC_models.generateTests()
-                RC_models.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]), name="rc_models.pickle")
+                RC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
                 #statment.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]),
                               #name="Резонансная колонка.pickle")
                 app_logger.info("Новые параметры ведомости и модели сохранены")
@@ -468,7 +469,7 @@ class RezonantColumnSoilTestApp(QWidget):
             assert statment.current_test, "Не выбран образец в ведомости"
             file_path_name = statment.current_test.replace("/", "-").replace("*", "")
 
-            save = self.tab_2.save_widget.arhive_directory + "/" + file_path_name
+            save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
 
             if os.path.isdir(save):
@@ -498,7 +499,7 @@ class RezonantColumnSoilTestApp(QWidget):
             set_cell_data(self.tab_1.path, ("HL" + str(number), (number, 219)), test_result["G0"], sheet="Лист1")
             set_cell_data(self.tab_1.path, ("HK" + str(number), (number, 218)), test_result["threshold_shear_strain"], sheet="Лист1")
 
-            shutil.copy(file_name, self.tab_2.save_widget.report_directory + "/" + file_name[len(file_name) -
+            shutil.copy(file_name, statment.save_dir.report_directory + "/" + file_name[len(file_name) -
                                                                                       file_name[::-1].index("/"):])
             RC_models[statment.current_test].save_log_file(save)
             if self.save_massage:
@@ -508,9 +509,9 @@ class RezonantColumnSoilTestApp(QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
-            RC_models.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]), name="rc_models.pickle")
-            statment.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]),
-                          name="Резонансная колонка.pickle")
+            RC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                        f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
+
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

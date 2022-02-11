@@ -2,6 +2,7 @@ from excel_statment.statment_model import Statment
 from descriptors import DataTypeValidation
 from loggers.logger import app_logger, log_this
 import pickle
+import os
 
 instances = {}
 
@@ -35,12 +36,12 @@ class Models:
             except:
                 app_logger.exception(f"Ошибка моделирования опыта {test_name}")
 
-    def dump(self, directory, name="models.pickle"):
-        with open(directory + "/" + name, "wb") as file:
+    def dump(self, path):
+        with open(path, "wb") as file:
             pickle.dump(self.tests, file)
 
-    def load(self, file):
-        with open(file, 'rb') as f:
+    def load(self, path):
+        with open(path, 'rb') as f:
             self.tests = pickle.load(f)
 
     def __iter__(self):
@@ -60,6 +61,10 @@ class Models:
 
 @singleton
 class ModelsE(Models):
+    pass
+
+@singleton
+class ModelsEur(Models):
     pass
 
 @singleton
@@ -93,6 +98,8 @@ class ModelsShearDilatancy(Models):
 statment = Statment()
 
 E_models = ModelsE()
+
+Eur_models = ModelsEur()
 
 FC_models = ModelsFC()
 

@@ -636,8 +636,7 @@ class StatickSoilTestApp(QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.signal[bool].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.set_directory(
-            x, statment.general_parameters.test_mode, statment.general_data.shipment_number))
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.update())
 
         self.tab_4.save_button.clicked.connect(self.save_report)
         self.tab_4.save_all_button.clicked.connect(self.save_all_reports)
@@ -702,22 +701,23 @@ class StatickSoilTestApp(QWidget):
             if date:
                 data_customer.end_date = date
 
-            save = self.tab_4.arhive_directory + "/" + file_path_name
+            save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
             if os.path.isdir(save):
                 pass
             else:
                 os.mkdir(save)
 
-            self.tab_4.check_dirs()
+            statment.save_dir.check_dirs()
 
             if statment.general_parameters.test_mode == "Трёхосное сжатие (E)":
                 name = file_path_name + " " + statment.general_data.object_number + " ТС" + ".pdf"
 
-                E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                           f"E_models{statment.general_data.get_shipment_number()}.pickle"))
                 E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log")
                 E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
-                shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"), self.tab_4.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
+                shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"), statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
 
                 test_result = E_models[statment.current_test].get_test_results()
 
@@ -728,7 +728,7 @@ class StatickSoilTestApp(QWidget):
                                  (*self.tab_2.consolidation.save_canvas(),
                                   *self.tab_2.deviator_loading.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
 
-                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+                shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
@@ -741,8 +741,9 @@ class StatickSoilTestApp(QWidget):
                 E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log")
                 E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
-                            self.tab_4.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
-                E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
+                            statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                                f"E_models{statment.general_data.get_shipment_number()}.pickle"))
                 test_result = E_models[statment.current_test].get_test_results()
                 report_E(save + "/" + name, data_customer,
                                      statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
@@ -751,7 +752,7 @@ class StatickSoilTestApp(QWidget):
                                      (*self.tab_2.consolidation.save_canvas(),
                                       *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), self.tab_4.report_type, "{:.2f}".format(__version__))
 
-                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+                shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
@@ -765,15 +766,18 @@ class StatickSoilTestApp(QWidget):
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
 
-                E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
-                FC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="FC_models.pickle")
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                           f"E_models{statment.general_data.get_shipment_number()}.pickle"))
+                FC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                           f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
+
                 FC_models[statment.current_test].save_log_files(save, file_path_name)
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
-                            self.tab_4.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
+                            statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
                 E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log")
                 E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
-                            self.tab_4.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
+                            statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
 
                 test_result = E_models[statment.current_test].get_test_results()
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[statment.current_test].get_sigma_3_1()
@@ -790,7 +794,7 @@ class StatickSoilTestApp(QWidget):
                            (*self.tab_2.deviator_loading.save_canvas(),
                             *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
 
-                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+                shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
@@ -809,8 +813,8 @@ class StatickSoilTestApp(QWidget):
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, Eur)":
 
-                report_directory_FC = self.tab_4.report_directory + "/Трёхосное сжатие (F, C)"
-                report_directory_Eur = self.tab_4.report_directory + "/Трёхосное сжатие с разгрузкой"
+                report_directory_FC = statment.save_dir.report_directory + "/Трёхосное сжатие (F, C)"
+                report_directory_Eur = statment.save_dir.report_directory + "/Трёхосное сжатие с разгрузкой"
 
                 create_path(report_directory_FC)
                 create_path(report_directory_Eur)
@@ -818,15 +822,18 @@ class StatickSoilTestApp(QWidget):
 
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
 
-                E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
-                FC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="FC_models.pickle")
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                           f"E_models{statment.general_data.get_shipment_number()}.pickle"))
+                FC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
+
                 FC_models[statment.current_test].save_log_files(save, file_path_name)
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
-                            self.tab_4.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
+                            statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
                 E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log")
                 E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
-                            self.tab_4.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
+                            statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
 
                 test_result = E_models[statment.current_test].get_test_results()
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[statment.current_test].get_sigma_3_1()
@@ -884,8 +891,10 @@ class StatickSoilTestApp(QWidget):
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
                 FC_models[statment.current_test].save_log_files(save, file_path_name)
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
-                            self.tab_4.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
-                FC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="FC_models.pickle")
+                            statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
+
+                FC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
                 test_result = {}
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[
                     statment.current_test].get_sigma_3_1()
@@ -903,7 +912,7 @@ class StatickSoilTestApp(QWidget):
                           (*self.tab_3.save_canvas(),
                            *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
 
-                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+                shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
@@ -919,9 +928,11 @@ class StatickSoilTestApp(QWidget):
 
             elif statment.general_parameters.test_mode == 'Трёхосное сжатие КН':
                 name = file_path_name + " " + statment.general_data.object_number + " КН" + ".pdf"
-                FC_models[statment.current_test].save_log_files(save, file_path_name)
+
+                FC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
-                            self.tab_4.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
+                            statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
                 FC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="FC_models.pickle")
                 test_result = {}
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[
@@ -939,7 +950,7 @@ class StatickSoilTestApp(QWidget):
                           (*self.tab_3.save_canvas(),
                            *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
 
-                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+                shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 

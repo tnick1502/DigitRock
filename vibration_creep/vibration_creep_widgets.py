@@ -287,7 +287,7 @@ class VibrationCreepSoilTestApp(QWidget):
 
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
-        self.tab_1.statment_directory[str].connect(lambda signal: self.tab_4.set_directory(signal, "Виброползучесть", statment.general_data.shipment_number))
+        self.tab_1.statment_directory[str].connect(lambda signal: self.tab_4.update())
         #self.tab_1.signal[object].connect(self.tab_2.identification.set_data)
         self.tab_1.signal[bool].connect(self._set_params)
         self.tab_4.save_button.clicked.connect(self.save_report)
@@ -312,8 +312,11 @@ class VibrationCreepSoilTestApp(QWidget):
             assert statment.current_test, "Не выбран образец в ведомости"
             file_path_name = statment.current_test.replace("/", "-").replace("*", "")
 
-            VC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="VC_models.pickle")
-            E_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="E_models.pickle")
+            VC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                        f"VC_models{statment.general_data.get_shipment_number()}.pickle"))
+            E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                        f"E_models{statment.general_data.get_shipment_number()}.pickle"))
+
             #statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
                           #name=statment.general_parameters.test_mode + ".pickle")
 
@@ -323,7 +326,7 @@ class VibrationCreepSoilTestApp(QWidget):
                               'Rezhim': 'Изотропная реконсолидация, девиаторное циклическое нагружение',
                               'Oborudovanie': "Wille Geotechnik 13-HG/020:001", 'h': 76, 'd': 38}
 
-            save = self.tab_4.arhive_directory + "/" + file_path_name
+            save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
 
             if os.path.isdir(save):
@@ -412,7 +415,7 @@ class VibrationCreepSoilTestApp(QWidget):
                               color="FF6961")
 
 
-            shutil.copy(save + "/" + file_name, self.tab_4.report_directory + "/" + file_name)
+            shutil.copy(save + "/" + file_name, statment.save_dir.report_directory + "/" + file_name)
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
@@ -469,8 +472,10 @@ class VibrationCreepSoilTestApp(QWidget):
             if dialog.exec() == QDialog.Accepted:
                 dialog.get_data()
                 VC_models.generateTests()
-                VC_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), name="VC_models.pickle")
-                statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]), "Виброползучесть.pickle")
+                VC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"VC_models{statment.general_data.get_shipment_number()}.pickle"))
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                           f"E_models{statment.general_data.get_shipment_number()}.pickle"))
                 app_logger.info("Новые параметры ведомости и модели сохранены")
 
 

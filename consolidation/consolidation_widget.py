@@ -245,7 +245,7 @@ class ConsolidationSoilTestApp(QWidget):
         self.layout.addWidget(self.tab_widget)
 
         self.tab_1.signal[bool].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_wigdet.set_directory(x, "Консолидация", statment.general_data.shipment_number))
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_wigdet.update())
 
         self.tab_2.save_wigdet.save_button.clicked.connect(self.save_report)
         self.tab_2.save_wigdet.save_all_button.clicked.connect(self.save_all_reports)
@@ -294,7 +294,7 @@ class ConsolidationSoilTestApp(QWidget):
             if date:
                 data_customer.end_date = date
 
-            save = self.tab_2.save_wigdet.arhive_directory + "/" + file_path_name
+            save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
             if os.path.isdir(save):
                 pass
@@ -302,10 +302,11 @@ class ConsolidationSoilTestApp(QWidget):
                 os.mkdir(save)
 
             name = file_path_name + " " + statment.general_data.object_number + " ВК" + ".pdf"
-            Consolidation_models.dump(''.join(os.path.split(self.tab_2.save_wigdet.directory)[:-1]), name="consolidation_models.pickle")
+            Consolidation_models.dump(os.path.join(statment.save_dir.save_directory,
+                                        f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"))
             #models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
             test_result = Consolidation_models[statment.current_test].get_test_results()
-            Consolidation_models[statment.current_test].save_cvi_file(save, self.tab_2.save_wigdet.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
+            Consolidation_models[statment.current_test].save_cvi_file(save, statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
 
             report_consolidation(save + "/" + name, data_customer,
                                  statment[statment.current_test].physical_properties, statment.current_test,
@@ -313,13 +314,11 @@ class ConsolidationSoilTestApp(QWidget):
                                  test_parameter, test_result,
                                  self.tab_2.consolidation.save_canvas(), "{:.2f}".format(__version__))
 
-            shutil.copy(save + "/" + name, self.tab_2.save_wigdet.report_directory + "/" + name)
+            shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
             #set_cell_data(self.tab_1.path,
                           #"BK" + str(statment[statment.current_test].physical_properties.sample_number + 7),
                           #test_result["E50"], sheet="Лист1", color="FF6961")
-
-            statment.dump(''.join(os.path.split(self.tab_2.save_wigdet.directory)[:-1]), "consolidation.pickle")
 
             Consolidation_models[statment.current_test].save_log(save, file_path_name + " " + statment.general_data.object_number + "ВК")
 

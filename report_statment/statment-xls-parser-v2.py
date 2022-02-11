@@ -126,6 +126,14 @@ class Statment:
         return {
             "time": list(result.keys()),
             "mathcad_report": [result[i].get("mathcad_report", 0) for i in result.keys()],
+            "python_report": [result[i].get("python_compression_report", 0) + result[i].get("python_report", 0) + result[i].get("python_dynamic_report", 0)for i in result.keys()],
+            "physical_statement": [result[i].get("physical_statement", 0) for i in result.keys()],
+            "mechanics_statement": [result[i].get("mechanics_statement", 0) for i in result.keys()],
+        }
+
+        return {
+            "time": list(result.keys()),
+            "mathcad_report": [result[i].get("mathcad_report", 0) for i in result.keys()],
             "python_compression_report": [result[i].get("python_compression_report", 0) for i in result.keys()],
             "python_report": [result[i].get("python_report", 0) for i in result.keys()],
             "python_dynamic_report": [result[i].get("python_dynamic_report", 0) for i in result.keys()],
@@ -415,19 +423,15 @@ if __name__ == "__main__":
     plot = x.get_interval_count(6)
     import matplotlib.pyplot as plt
 
-    plt.plot(plot["time"], plot["mathcad_report"], label="mathcad_report")
-    plt.plot(plot["time"], plot["python_compression_report"], label="python_compression_report")
-    plt.plot(plot["time"], plot["python_report"], label="python_report")
-    plt.plot(plot["time"], plot["python_dynamic_report"], label="python_dynamic_report")
-    plt.plot(plot["time"], plot["plaxis_report"], label="plaxis_report")
-    plt.plot(plot["time"], plot["physical_statement"], label="physical_statement")
-    plt.plot(plot["time"], plot["mechanics_statement"], label="mechanics_statement")
+    plt.plot(plot["time"], plot["mathcad_report"], label="mathCad")
+    plt.plot(plot["time"], plot["python_report"], label="python")
+    plt.plot(plot["time"], plot["physical_statement"], label="ведомости физ")
+    plt.plot(plot["time"], plot["mechanics_statement"], label="ведомости мех")
 
     plt.legend()
-    #plt.show()
+    plt.show()
 
     # За текущий месяц
-    print(str_reports())
     # total: int = 0
     # eng = 'Селиванова О.С.'
     # for _key in data.keys():
