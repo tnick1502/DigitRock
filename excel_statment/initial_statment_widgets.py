@@ -413,13 +413,22 @@ class TriaxialStaticStatment(InitialStatment):
                         self.load_models(models_name="FC_models.pickle",
                                          models=FC_models, models_type=ModelMohrCirclesSoilTest)
 
-                    elif statment.general_parameters.test_mode == "Трёхосное сжатие (E)" or statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
+                    elif statment.general_parameters.test_mode == "Трёхосное сжатие (E)":
                         self.load_models(models_name="E_models.pickle",
                                          models=E_models, models_type=ModelTriaxialStaticLoadSoilTest)
 
-                    elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)" or \
-                            statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, Eur)":
+                    elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
+                        self.load_models(models_name="Eur_models.pickle",
+                                         models=E_models, models_type=ModelTriaxialStaticLoadSoilTest)
+
+                    elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
                         self.load_models(models_name="E_models.pickle",
+                                         models=E_models, models_type=ModelTriaxialStaticLoadSoilTest)
+                        self.load_models(models_name="FC_models.pickle",
+                                         models=FC_models, models_type=ModelMohrCirclesSoilTest)
+
+                    elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, Eur)":
+                        self.load_models(models_name="Eur_models.pickle",
                                          models=E_models, models_type=ModelTriaxialStaticLoadSoilTest)
                         self.load_models(models_name="FC_models.pickle",
                                          models=FC_models, models_type=ModelMohrCirclesSoilTest)

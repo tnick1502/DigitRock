@@ -743,7 +743,7 @@ class StatickSoilTestApp(QWidget):
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
-                                                f"E_models{statment.general_data.get_shipment_number()}.pickle"))
+                                                f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
                 test_result = E_models[statment.current_test].get_test_results()
                 report_E(save + "/" + name, data_customer,
                                      statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
@@ -823,7 +823,7 @@ class StatickSoilTestApp(QWidget):
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
 
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
-                                           f"E_models{statment.general_data.get_shipment_number()}.pickle"))
+                                           f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
                 FC_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
 
