@@ -97,7 +97,8 @@ class ModelTriaxialDeviatorLoading:
                                     "pore_pressure_cut": None,
                                     "volume_strain_cut": None,
                                     "deviator_cut": None,
-                                    "reload_points_cut": None})
+                                    "reload_points_cut": None,
+                                    "E_processing_points_index": None})
 
         self._test_params = AttrDict({"sigma_3": None, "u": None, "K0": 1})
 
@@ -163,6 +164,26 @@ class ModelTriaxialDeviatorLoading:
         self._test_cut_position.right = right
         self._cut()
         self._approximate_volume_strain()
+
+        q_c = self._test_params.sigma_3 * ((1 / self._test_params.K0) - 1)
+
+        if self._test_params.K0 == 1:
+            i_start_E = 0
+        else:
+            i_start_E, = np.where(self._test_data.deviator_cut >= q_c)
+            i_start_E = i_start_E[0]
+
+        if q_c == 0:
+            i_end_E, = np.where(self._test_data.deviator_cut >= np.max(self._test_data.deviator_cut)*0.2)
+            i_end_E = i_end_E[0]
+        else:
+            i_end_E, = np.where(self._test_data.deviator_cut >= q_c * 1.1)
+            i_end_E = i_end_E[0]
+
+        if i_end_E <= i_start_E:
+            i_end_E = i_start_E + 1
+
+        self._test_params.E_processing_points_index = (i_start_E, i_end_E)
         self._test_processing()
 
     def get_borders(self):
@@ -181,7 +202,9 @@ class ModelTriaxialDeviatorLoading:
             E50 = point_to_xy(Point(x=0, y=0), Point(
                     x=0.9 * self._test_result.qf * 1000/ (self._test_result.E50*1000),
                     y=0.9 * self._test_result.qf))
+
             if self._test_result.E is not None:
+
                 E = {"x": self._test_result.E[1],
                      "y": np.array(self._test_result.E[2]) / 1000}
 
@@ -359,12 +382,18 @@ class ModelTriaxialDeviatorLoading:
                                     self._test_data.volume_strain_approximate)
 
         self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
-                                  self._test_data.deviator_cut, self._test_params.sigma_3, self._test_params.K0)
+                                  self._test_data.deviator_cut, self._test_params.E_processing_points_index)
 
         self._test_result.max_pore_pressure = np.round(np.max(self._test_data.pore_pressure_cut))
 
         if self._test_result.max_pore_pressure <= 5:
             self._test_result.max_pore_pressure = 0
+
+    def set_E_processing_points(self, point_1, point_2):
+        self._test_params.E_processing_points_index = (point_1, point_2)
+
+    def get_E_processing_points(self):
+        return self._test_params.E_processing_points_index
 
     def get_processing_parameters(self):
         "Функция возвращает данные по обрезанию краев графиков"
@@ -424,7 +453,7 @@ class ModelTriaxialDeviatorLoading:
         return np.round(E50 / 1000, 1), np.round(qf / 1000, 3)
 
     @staticmethod
-    def define_E(strain, deviator, sigma_3, K0):
+    def define_E_true_gost(strain, deviator, sigma_3, K0):
         """Определение параметров qf и E50"""
         q_c = sigma_3 * ((1 / K0) - 1)
 
@@ -458,6 +487,24 @@ class ModelTriaxialDeviatorLoading:
                     #[line(A1, B1, strain[i_start_E]), line(A1, B1, strain[i_end_for_plot[0]])])
         return (round(E / 1000, 1), [strain[i_start_E], strain[i_end_for_plot[0]]],
                 [deviator[i_start_E], line(E, b, strain[i_end_for_plot[0]])])
+
+    @staticmethod
+    def define_E(strain: np.array, deviator: np.array, E_processing_points_index: tuple):
+        """Определение параметра E"""
+        E = np.round((deviator[E_processing_points_index[1]] - deviator[E_processing_points_index[0]]) /
+                        (strain[E_processing_points_index[1]] - strain[E_processing_points_index[0]]), 1)
+
+        b = deviator[E_processing_points_index[0]] - strain[E_processing_points_index[0]] * E
+
+        i_end_for_plot, = np.where(line(E, b, strain) >= 0.9 * np.max(deviator))
+
+        if len(i_end_for_plot):
+            i_end_for_plot = i_end_for_plot[0]
+        else:
+            i_end_for_plot = len(deviator)
+
+        return (round(E / 1000, 1), [strain[E_processing_points_index[0]], strain[i_end_for_plot]],
+                [deviator[E_processing_points_index[0]], line(E, b, strain[i_end_for_plot])])
 
     @staticmethod
     def define_Eur(strain, deviator, reload):
