@@ -484,9 +484,14 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
             skempton_ref = skempton_end
 
         # Запись списков давления в камере и коэффициента скемтона на этапе ВФС
-
         sigma_steps = [x for x in range(0, int(sigma_ref), int(sigma_VFS_step))]
-        if sigma_ref - sigma_steps[-1] <= tolerance_merge_sigma * sigma_VFS_step:
+
+        if sigma_ref not in sigma_steps:
+            sigma_steps.append(int(sigma_ref))
+
+        # Мы не производим слияние если это единственный шаг
+        if (sigma_steps[-1] != sigma_VFS_step) and\
+                (sigma_ref - sigma_steps[-1] <= tolerance_merge_sigma * sigma_VFS_step):
             sigma_steps[-1] = sigma_ref
         else:
             sigma_steps.append(sigma_ref)
@@ -676,6 +681,8 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                 max_time = max(time_current[index_time_liner_u:] - time_load)
                 slant_u = _pore_press_slant * max_time / (_delta_initial['u']['delta'][1] - _pore_press_slant * time_load)
 
+                assert slant_u >= 0, "Проблема с распределением шагов. Проверить sigma_steps"
+
                 u_current = ModelTriaxialReconsolidationSoilTest.create_linear_step(time_current[:index_time_liner_u],
                                                                                     _pore_press_slant * time_load, _pore_press_slant,
                                                                                     _delta_initial['u']['initial'])
@@ -860,7 +867,7 @@ def time_series(x: np.ndarray) -> np.ndarray:
 
 if __name__ == '__main__':
     a = ModelTriaxialReconsolidationSoilTest()
-    a.set_test_params(120, skempton_initial=0.87, skempton_end=0.97)
+    a.set_test_params(50.6, skempton_initial=0.87, skempton_end=0.97)
     a.plotter()
     plt.show()
 
