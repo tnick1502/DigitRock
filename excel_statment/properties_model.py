@@ -1188,7 +1188,7 @@ class CyclicProperties(MechanicalProperties):
 
             self.CSR = np.round(self.t / self.sigma_1, 2)
 
-            self.damping_ratio = np.random.uniform(1, 2)
+            self.damping_ratio = CyclicProperties.define_damping_ratio(physical_properties.type_ground, self.frequency)
             #np.round(CyclicProperties.define_damping_ratio(), 2)
 
     @staticmethod
@@ -1259,8 +1259,19 @@ class CyclicProperties(MechanicalProperties):
         return N
 
     @staticmethod
-    def define_damping_ratio() -> float:
-        return np.random.uniform(5, 15)
+    def define_damping_ratio(type_ground, frequency) -> float:
+
+        if type_ground in [1, 2, 3, 4, 5]:
+            psi = np.random.uniform(1, 2)
+        elif type_ground == 5:
+            psi = np.random.uniform(2, 3)
+        elif type_ground in [6, 7]:
+            psi = np.random.uniform(2, 4)
+        else:
+            psi = np.random.uniform(3, 5)
+
+        return (0.2 * frequency + 0.9) * psi
+
 
 class RCProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
