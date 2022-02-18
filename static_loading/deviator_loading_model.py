@@ -167,7 +167,7 @@ class ModelTriaxialDeviatorLoading:
 
         q_c = self._test_params.sigma_3 * ((1 / self._test_params.K0) - 1)
 
-        if self._test_params.K0 == 1:
+        """if self._test_params.K0 == 1:
             i_start_E = 0
         else:
             i_start_E, = np.where(self._test_data.deviator_cut >= q_c)
@@ -181,9 +181,13 @@ class ModelTriaxialDeviatorLoading:
             i_end_E = i_end_E[0]
 
         if i_end_E <= i_start_E:
-            i_end_E = i_start_E + 1
+            i_end_E = i_start_E + 1"""
 
-        self._test_params.E_processing_points_index = (i_start_E, i_end_E)
+        i_start_E = 0
+        i_end_E, = np.where(self._test_data.deviator_cut >= np.max(self._test_data.deviator_cut) * 0.25)
+        i_end_E = i_end_E[0]
+
+        self._test_params.E_processing_points_index = [i_start_E, i_end_E]
         self._test_processing()
 
     def get_borders(self):
@@ -254,11 +258,15 @@ class ModelTriaxialDeviatorLoading:
                 "volume_strain_approximate": self._test_data.volume_strain_approximate,
                 "E50": E50,
                 "E": E,
+                "E_point_1": (self._test_data.strain_cut[self._test_params.E_processing_points_index[0]],
+                              (self._test_data.deviator_cut[self._test_params.E_processing_points_index[0]] + self._test_params.sigma_3)/1000),
+                "E_point_2": (self._test_data.strain_cut[self._test_params.E_processing_points_index[1]],
+                              (self._test_data.deviator_cut[self._test_params.E_processing_points_index[1]] + self._test_params.sigma_3) / 1000),
                 "Eur": Eur,
                 "strain_Eur": strain_Eur,
                 "deviator_Eur": deviator_Eur,
                 "sigma_3": self._test_params.sigma_3/1000,
-                "dilatancy": dilatancy}
+                "dilatancy": dilatancy,}
 
     def check_none(self):
         if self._test_data.strain is None:
@@ -389,8 +397,54 @@ class ModelTriaxialDeviatorLoading:
         if self._test_result.max_pore_pressure <= 5:
             self._test_result.max_pore_pressure = 0
 
+        self._test_result.Eps50 = (self._test_result.qf*0.5) / self._test_result.E50
+        self._test_result.qf50 = self._test_result.qf*0.5 / 1000
+
+        self._test_result.E50 = np.round(self._test_result.E50 / 1000, 1)
+        self._test_result.qf = np.round(self._test_result.qf / 1000, 1)
+
+    def define_click_point(self, x, y):
+        a = (np.max(self._test_data.strain_cut) / 20) ** 2
+        b = (np.max(self._test_data.deviator_cut/1000) / 20) ** 2
+
+        point_1 = Point(x=self._test_data.strain_cut[self._test_params.E_processing_points_index[0]],
+                        y=(self._test_data.deviator_cut[self._test_params.E_processing_points_index[0]] + self._test_params.sigma_3)/1000)
+
+        point_2 = Point(x=self._test_data.strain_cut[self._test_params.E_processing_points_index[1]],
+                        y=(self._test_data.deviator_cut[self._test_params.E_processing_points_index[1]] + self._test_params.sigma_3)/1000)
+
+        if (((x - point_1.x) ** 2) / a) + (((y - point_1.y) ** 2) / b) <= 1:
+            return 1
+        elif (((x - point_2.x) ** 2) / a) + (((y - point_2.y) ** 2) / b) <= 1:
+            return 2
+        else:
+            return None
+
+    def moove_catch_point(self, x, y, point_identificator):
+        """Метод обрабатывает значения полученной точки и запускает перерасчет"""
+        y = y*1000 - self._test_params.sigma_3
+        i, = np.where(self._test_data.deviator_cut >= y)
+
+        if len(i):
+            index = self._test_params.E_processing_points_index
+
+            self._test_params.E_processing_points_index[point_identificator - 1] = i[0]
+
+            if self._test_params.E_processing_points_index[0] >= self._test_params.E_processing_points_index[1]:
+                self._test_params.E_processing_points_index = index
+
+            else:
+                self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
+                                                                            self._test_data.deviator_cut,
+                                                                            self._test_params.E_processing_points_index)
+
+
+
     def set_E_processing_points(self, point_1, point_2):
         self._test_params.E_processing_points_index = (point_1, point_2)
+        self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
+                                                                    self._test_data.deviator_cut,
+                                                                    self._test_params.E_processing_points_index)
 
     def get_E_processing_points(self):
         return self._test_params.E_processing_points_index
@@ -450,7 +504,7 @@ class ModelTriaxialDeviatorLoading:
         E50 = (qf / 2) / (
             np.interp(qf / 2, np.array([deviator[imin], deviator[imax]]), np.array([strain[imin], strain[imax]])))
 
-        return np.round(E50 / 1000, 1), np.round(qf / 1000, 3)
+        return E50, qf
 
     @staticmethod
     def define_E_true_gost(strain, deviator, sigma_3, K0):

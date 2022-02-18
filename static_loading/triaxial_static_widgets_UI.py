@@ -129,7 +129,9 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.graph_canvas_layout.addWidget(self.deviator_frame)
         self.graph_canvas_layout.addWidget(self.volume_strain_frame)
 
+
         self.graph_layout.addLayout(self.graph_canvas_layout)
+
 
         self.layout.addWidget(self.graph)
         self.layout.setContentsMargins(5, 5, 5, 5)
@@ -189,12 +191,17 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                     self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"] + plots["sigma_3"],
                                           **plotter_params["static_loading_gray_line"])
 
+                    self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
+                    self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
+
                     self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
                     self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
                     x, y = plots["E50"][0], np.array(plots["E50"][1])
+                    self.deviator_ax2.scatter(res["Eps50"], res["qf50"], s=20, color="black")
 
                     self.deviator_ax2.plot(*plots["E50"],
+                                          label=_label,
                                           **plotter_params["static_loading_black_dotted_line"])
 
                     self.deviator_ax2.plot(plots["strain"], plots["deviator"],
