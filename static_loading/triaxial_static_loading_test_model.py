@@ -27,10 +27,12 @@ from static_loading.reconsolidation_model import ModelTriaxialReconsolidation, M
 from static_loading.consolidation_model import ModelTriaxialConsolidation, ModelTriaxialConsolidationSoilTest
 from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading, ModelTriaxialDeviatorLoadingSoilTest
 from general.general_functions import read_json_file, create_json_file
+from vibration_resistance.vibration_resistance_model import ModelResistanseSoilTest
 from loggers.logger import app_logger
 from datetime import timedelta
 from singletons import E_models, statment
 from cvi.cvi_writer import save_cvi_E
+from general.general_functions import define_qf
 
 class ModelTriaxialStaticLoad:
     """Класс моделирования опыта трехосного сжатия
@@ -266,6 +268,43 @@ class ModelTriaxialStaticLoad:
         test_data["deviator_loading"] = define_deviator_loading(read_data, delta_h_consolidation)
 
         return test_data
+
+class ModelResistanseSoilTest(ModelTriaxialDeviatorLoadingSoilTest):
+
+    def __init__(self):
+        super().__init__()
+        self._test_params.c_vibration = None
+        self._test_params.fi_vibration = None
+
+        self._test_params.frequency = None
+        self._test_params.sigma_d = None
+
+
+    def _test_modeling(self, Ms=None):
+        self.set_velocity_delta_h(0.15, 0)
+
+        self._test_params.c_vibration = statment[statment.current_test].mechanical_properties.c / 2
+        self._test_params.fi_vibration = np.random.uniform(5, 8)
+
+        self._test_params.frequency = 30
+        self._test_params.sigma_d = 5
+
+        super()._test_modeling()
+        time = np.linspace(0, int((self._test_data.strain_cut[-1] * 76*60) / 0.15), len(self._test_data.strain_cut))
+
+        qf = define_qf(self._test_params.sigma_3, self._test_params.c_vibration, self._test_params.fi_vibration)
+        self._test_data.deviator_cut *= (qf/np.max(self._test_data.deviator_cut))
+
+        self._test_data.deviator_cut += self._test_params.sigma_d * np.sin(2*np.pi*time)
+        self._test_data.strain_cut += (self._test_params.sigma_d/(self._test_params.E50 * 3)) * np.sin(2 * np.pi * time)
+
+        self._test_data.deviator_cut += np.random.uniform(-1, 1, len(self._test_data.deviator_cut))
+        self._test_data.strain_cut += np.random.uniform(-0.0003, 0.0003, len(self._test_data.deviator_cut))
+
+        self._test_data.deviator_cut -= self._test_data.deviator_cut[0]
+        self._test_data.strain_cut -= self._test_data.strain_cut[0]
+
+        self._test_result.qf = np.max(self._test_data.deviator_cut)
 
 class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
     """Класс моделирования опыта трехосного сжатия
