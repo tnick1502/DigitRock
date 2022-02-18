@@ -686,8 +686,13 @@ class StatickSoilTestApp(QWidget):
             else:
                 d, h = statment[statment.current_test].physical_properties.sample_size
 
+            if statment.general_parameters.waterfill == "Водонасыщенное состояние":
+                s = "в водонасыщенном состоянии"
+            elif statment.general_parameters.waterfill == "Природная влажность":
+                s = "при природной влажности"
+
             test_parameter = {"equipment": statment.general_parameters.equipment,
-                              "mode": "КД, девиаторное нагружение в кинематическом режиме",
+                              "mode": "КД, девиаторное нагружение в кинематическом режиме " + s,
                               "sigma_3": statment[statment.current_test].mechanical_properties.sigma_3,
                               "K0": [statment[statment.current_test].mechanical_properties.K0,
                                      "-" if self.tab_3.reference_pressure_array_box.get_checked() == "set_by_user" or
