@@ -538,8 +538,10 @@ class ShearSoilTestApp(QWidget):
 
             if ShearStatment.is_dilatancy_type(_test_mode):
                 name = file_path_name + " " + statment.general_data.object_number + " ДС" + ".pdf"
-                Shear_Dilatancy_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
-                                            name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)))
+
+                Shear_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"{ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
+
                 Shear_Dilatancy_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
                 Shear_Dilatancy_models[statment.current_test].save_cvi_file(save,
                                                                             statment.save_dir.cvi_directory +
@@ -557,11 +559,9 @@ class ShearSoilTestApp(QWidget):
                 name = file_path_name + " " + statment.general_data.object_number + " Сп" + ".pdf"
                 Shear_models[statment.current_test].save_log_files(save)
                 Shear_models[statment.current_test].save_cvi_file(save,
-                                                                  statment.save_dircvi_directory +
+                                                                  statment.save_dir.cvi_directory +
                                                                   "/" + f"{file_path_name} ЦВИ.xls",
                                                                   ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_NATURAL)
-                Shear_models.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
-                                  name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)))
 
                 Shear_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"{ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
