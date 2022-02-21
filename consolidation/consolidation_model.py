@@ -136,6 +136,9 @@ class ModelTriaxialConsolidation:
             self._sqrt_processing()
             self._log_processing()
 
+    def get_interpolation_type(self):
+        return self._interpolation_type
+
     def set_interpolation_param(self, interpolation_param):
         """Настройка параметров интерполяции"""
         if self._test_data.time_sqrt is not None:
@@ -1087,10 +1090,10 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                 {"value": -self._draw_params.strain,
                  "borders":[-self._draw_params.strain / 2, -self._draw_params.strain * 2]},
             "Cv":
-                {"value": self._test_params.Cv,
+                {"value": self._draw_params.Cv,
                  "borders": [self._test_params.Cv / 5, self._draw_params.Cv * 5]},
             "Ca":
-                {"value": self._test_params.Ca,
+                {"value": self._draw_params.Ca,
                  "borders": [self._test_params.Ca / 5, self._draw_params.Ca * 5]}
         }
 

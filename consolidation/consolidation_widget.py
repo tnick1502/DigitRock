@@ -203,13 +203,24 @@ class ConsilidationSoilTestWidget(QWidget):
         except:
             pass
 
+
     @log_this(app_logger, "debug")
     def set_params(self, param=None):
         try:
             self.consolidation_sliders.set_sliders_params(Consolidation_models[statment.current_test].get_draw_params())
+
+            interpolation_type = Consolidation_models[statment.current_test].get_interpolation_type()
+            if interpolation_type == "poly":
+                self.consolidation.function_replacement_radio_button_1.setChecked(True)
+                self.consolidation.function_replacement_radio_button_2.setChecked(False)
+            elif interpolation_type == "ermit":
+                self.consolidation.function_replacement_radio_button_1.setChecked(False)
+                self.consolidation.function_replacement_radio_button_2.setChecked(True)
+
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
             self._connect_model_Ui()
+
         except KeyError:
             pass
 
@@ -270,7 +281,7 @@ class ConsolidationSoilTestApp(QWidget):
     def set_test_parameters(self, params):
         self.tab_2.item_identification.set_data()
         self.tab_2.set_params()
-        self.tab_2._consolidation_interpolation_type(self.tab_2.consolidation.function_replacement_button_group.checkedButton())
+        # self.tab_2._consolidation_interpolation_type(self.tab_2.consolidation.function_replacement_button_group.checkedButton())
 
     def save_report(self):
         try:
