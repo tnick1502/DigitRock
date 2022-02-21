@@ -47,6 +47,7 @@ class StaticProcessingWidget(QWidget):
 
         self.consolidation = ModelTriaxialConsolidationUI()
         self.point_identificator = None
+        self.point_identificator_deviator = None
         self.consolidation.setFixedHeight(500)
         self.deviator_loading = ModelTriaxialDeviatorLoadingUI()
         self.deviator_loading.setFixedHeight(500)
@@ -95,6 +96,10 @@ class StaticProcessingWidget(QWidget):
         self.consolidation.log_canvas.mpl_connect('button_press_event', self._canvas_click)
         self.consolidation.log_canvas.mpl_connect("motion_notify_event", self._canvas_on_moove)
         self.consolidation.log_canvas.mpl_connect('button_release_event', self._canvas_on_release)
+
+        self.deviator_loading.deviator_canvas.mpl_connect('button_press_event', self._canvas_deviator_click)
+        self.deviator_loading.deviator_canvas.mpl_connect("motion_notify_event", self._canvas_deviator_on_moove)
+        self.deviator_loading.deviator_canvas.mpl_connect('button_release_event', self._canvas_deviator_on_release)
 
     def _open_file(self, path=None):
         if not path:
@@ -284,6 +289,23 @@ class StaticProcessingWidget(QWidget):
         if event.button == 1 and event.xdata and event.ydata:
             self.point_identificator = E_models[statment.current_test].consolidation.define_click_point(float(event.xdata),
                                                                                     float(event.ydata), canvas)
+
+    def _canvas_deviator_click(self, event):
+        """Метод обрабатывает нажатие на канвас"""
+        if event.button == 1 and event.xdata and event.ydata:
+            self.point_identificator_deviator = E_models[statment.current_test].deviator_loading.define_click_point(
+                float(event.xdata),
+                float(event.ydata))
+
+    def _canvas_deviator_on_moove(self, event):
+        """Метод обрабаотывает перемещение зажатой точки"""
+        if self.point_identificator_deviator and event.xdata and event.ydata and event.button == 1:
+            E_models[statment.current_test].deviator_loading.moove_catch_point(float(event.xdata), float(event.ydata), self.point_identificator_deviator)
+            self._plot_deviator_loading()
+
+    def _canvas_deviator_on_release(self, event):
+        """Метод обрабатывает итпуск зажатой точки"""
+        self.point_identificator_deviator = None
 
     def _canvas_on_moove(self, event):
         """Метод обрабаотывает перемещение зажатой точки"""
@@ -686,8 +708,15 @@ class StatickSoilTestApp(QWidget):
             else:
                 d, h = statment[statment.current_test].physical_properties.sample_size
 
+            if statment.general_parameters.waterfill == "Водонасыщенное состояние":
+                s = "в водонасыщенном состоянии"
+            elif statment.general_parameters.waterfill == "Природная влажность":
+                s = "при природной влажности"
+            elif statment.general_parameters.waterfill == "Не указывать":
+                s = ""
+
             test_parameter = {"equipment": statment.general_parameters.equipment,
-                              "mode": "КД, девиаторное нагружение в кинематическом режиме",
+                              "mode": "КД, девиаторное нагружение в кинематическом режиме " + s,
                               "sigma_3": statment[statment.current_test].mechanical_properties.sigma_3,
                               "K0": [statment[statment.current_test].mechanical_properties.K0,
                                      "-" if self.tab_3.reference_pressure_array_box.get_checked() == "set_by_user" or
