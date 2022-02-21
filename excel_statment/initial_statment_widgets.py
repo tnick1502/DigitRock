@@ -347,7 +347,8 @@ class TriaxialStaticStatment(InitialStatment):
                         "K0: K0 = 1",
                         "K0: Формула Джекки c учетом переупл."],
 
-            "waterfill": ["Водонасыщение", "Водонасыщенное состояние", "Природная влажность"]
+            "waterfill": ["Водонасыщение", "Водонасыщенное состояние", "Природная влажность", "Не указывать"]
+
         }
 
         fill_keys = {
@@ -371,6 +372,8 @@ class TriaxialStaticStatment(InitialStatment):
         }
 
         super().__init__(data_test_parameters, fill_keys)
+
+        self.open_line.combo_waterfill.setCurrentText("Не указывать")
 
     @log_this(app_logger, "debug")
     def file_open(self):

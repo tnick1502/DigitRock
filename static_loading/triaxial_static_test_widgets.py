@@ -712,6 +712,8 @@ class StatickSoilTestApp(QWidget):
                 s = "в водонасыщенном состоянии"
             elif statment.general_parameters.waterfill == "Природная влажность":
                 s = "при природной влажности"
+            elif statment.general_parameters.waterfill == "Не указывать":
+                s = ""
 
             test_parameter = {"equipment": statment.general_parameters.equipment,
                               "mode": "КД, девиаторное нагружение в кинематическом режиме " + s,
