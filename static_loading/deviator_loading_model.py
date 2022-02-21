@@ -184,7 +184,7 @@ class ModelTriaxialDeviatorLoading:
             i_end_E = i_start_E + 1"""
 
         i_start_E = 0
-        i_end_E, = np.where(self._test_data.deviator_cut >= np.max(self._test_data.deviator_cut) * 0.25)
+        i_end_E, = np.where(self._test_data.deviator_cut >= np.max(self._test_data.deviator_cut) * np.random.uniform(0.3, 0.4))
         i_end_E = i_end_E[0]
 
         self._test_params.E_processing_points_index = [i_start_E, i_end_E]
@@ -401,7 +401,7 @@ class ModelTriaxialDeviatorLoading:
         self._test_result.qf50 = self._test_result.qf*0.5 / 1000
 
         self._test_result.E50 = np.round(self._test_result.E50 / 1000, 1)
-        self._test_result.qf = np.round(self._test_result.qf / 1000, 1)
+        self._test_result.qf = np.round(self._test_result.qf / 1000, 3)
 
     def define_click_point(self, x, y):
         a = (np.max(self._test_data.strain_cut) / 20) ** 2
@@ -437,8 +437,6 @@ class ModelTriaxialDeviatorLoading:
                 self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
                                                                             self._test_data.deviator_cut,
                                                                             self._test_params.E_processing_points_index)
-
-
 
     def set_E_processing_points(self, point_1, point_2):
         self._test_params.E_processing_points_index = (point_1, point_2)
