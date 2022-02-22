@@ -1047,20 +1047,27 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (48-((r-30)*4) - 4) * mm)
 
-def result_table_deviator_standart(canvas, Res, pick, scale = 0.8):
+def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E"):
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
     r = 28
     for i in range(r):
         tableData.append([""])
 
+    if result_E == "E":
+        E = Res["E"][0]
+        Ew = '''<p>Модуль деформации E, МПа:</p>'''
+    else:
+        E = Res["E50"]
+        Ew = '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>'''
+
     if Res["Eur"]:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
         renderPDF.draw(a, canvas, 36 * mm, 66 * mm)
         tableData.append(
-            [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle), "", "", "",
-             Res["E50"], ""])
+            [Paragraph(Ew, LeftStyle), "", "", "",
+             E, ""])
         tableData.append(
             [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
         tableData.append(
@@ -1102,8 +1109,8 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8):
             #[Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
              #Res["qf"], ""])
         tableData.append(
-            [Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "",
-             Res["E"][0], ""])
+            [Paragraph(Ew, LeftStyle), "", "", "",
+             E, ""])
         #tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", E, ""])
         tableData.append(
             [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
@@ -2284,12 +2291,14 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
     test_parameter["K0"] = K0[0]
 
     test_mode_consolidation(canvas, test_parameter)
-    if report_type == "standart":
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]])
+    if report_type == "standart_E":
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E")
+    elif report_type == "standart_E50":
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50")
     elif report_type == "user_define_1":
         result_table_deviator_user_1(canvas, res, [picks[2], picks[3]])
     else:
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]])
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50")
 
     canvas.showPage()
 
@@ -2319,12 +2328,14 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     test_parameter["K0"] = K0[0]
     test_mode_consolidation(canvas, test_parameter)
 
-    if report_type == "standart":
-        result_table_deviator_standart(canvas, res, [picks[0], picks[1]])
+    if report_type == "standart_E":
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E")
+    elif report_type == "standart_E50":
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50")
     elif report_type == "user_define_1":
         result_table_deviator_user_1(canvas, res, [picks[0], picks[1]])
     else:
-        result_table_deviator_standart(canvas, res, [picks[0], picks[1]])
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50")
 
     canvas.showPage()
     if report_type == "plaxis":

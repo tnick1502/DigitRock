@@ -640,7 +640,8 @@ class StatickSoilTestApp(QWidget):
         self.tab_3 = MohrWidgetSoilTest()
         self.tab_4 = Save_Dir(
             {
-                "standart": "Стандардный",
+                "standart_E": "Стандардный E",
+                "standart_E50": "Стандардный E50",
                 "plaxis": "Plaxis/Midas",
                 "user_define_1": "Пользовательский с ε50"
             })
@@ -708,11 +709,14 @@ class StatickSoilTestApp(QWidget):
             else:
                 d, h = statment[statment.current_test].physical_properties.sample_size
 
-            if statment.general_parameters.waterfill == "Водонасыщенное состояние":
-                s = "в водонасыщенном состоянии"
-            elif statment.general_parameters.waterfill == "Природная влажность":
-                s = "при природной влажности"
-            elif statment.general_parameters.waterfill == "Не указывать":
+            try:
+                if statment.general_parameters.waterfill == "Водонасыщенное состояние":
+                    s = "в водонасыщенном состоянии"
+                elif statment.general_parameters.waterfill == "Природная влажность":
+                    s = "при природной влажности"
+                elif statment.general_parameters.waterfill == "Не указывать":
+                    s = ""
+            except:
                 s = ""
 
             test_parameter = {"equipment": statment.general_parameters.equipment,
