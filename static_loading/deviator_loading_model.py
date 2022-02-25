@@ -181,7 +181,11 @@ class ModelTriaxialDeviatorLoading:
             i_end_E = i_end_E[0]
         else:
             i_end_E, = np.where(self._test_data.deviator_cut >= q_c2)
-            i_end_E = i_end_E[0]
+            if len(i_end_E) > 0:
+                i_end_E = i_end_E[0]
+            else:
+                i_end_E, = np.where(self._test_data.deviator_cut >= np.max(self._test_data.deviator_cut) * 0.8)
+                i_end_E = i_end_E[0]
 
         if i_end_E <= i_start_E:
             i_end_E = i_start_E + 1
