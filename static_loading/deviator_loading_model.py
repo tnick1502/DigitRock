@@ -184,7 +184,7 @@ class ModelTriaxialDeviatorLoading:
             if len(i_end_E) > 0:
                 i_end_E = i_end_E[0]
             else:
-                i_end_E, = np.where(self._test_data.deviator_cut >= np.max(self._test_data.deviator_cut) * 0.8)
+                i_end_E, = np.where(self._test_data.deviator_cut >= np.max(self._test_data.deviator_cut)*0.8)
                 i_end_E = i_end_E[0]
 
         if i_end_E <= i_start_E:
@@ -830,7 +830,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                   "residual_strength_param": {"value": self._draw_params.residual_strength_param, "borders": [0.05, 0.6]},
                   "residual_strength": {"value": self._draw_params.residual_strength,
                                         "borders": [self._test_params.qf*0.5, self._test_params.qf]},
-                  "qocr": {"value": self._draw_params.qocr, "borders": [0, self._test_params.qf]},
+                  "qocr": {"value": self._draw_params.qocr+1, "borders": [0.0, self._test_params.qf]},
                   "poisson": {"value": self._draw_params.poisson, "borders": [0.25, 0.45]},
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
                   "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]},
@@ -864,6 +864,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(self._draw_params.dilatancy)) /
                              (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
+
 
         if self._test_params.qf >= 150:
 

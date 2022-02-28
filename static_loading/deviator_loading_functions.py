@@ -665,8 +665,51 @@ def loop(x, y, Eur, y_rel_p, point2_y):
 
     return x_loop, y_loop, point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, x1_l, x2_l, y1_l, y2_l
 
+def cos_ocr(x, y,  qf, qocr):
+    '''возвращает функцию косинуса
+     и параболы для участка x50 qf'''
 
-def dev_loading(qf, e50, x50, xc, x2, qf2, qocr, gaus_or_par, amount_points, y_rel_p, Eur, point2_y):
+    index_xocr, = np.where(y > qocr)
+    xocr = x[index_xocr[0]]
+    proiz_ocr= (y[index_xocr[0]+1]-y[index_xocr[0]])/\
+         (x[index_xocr[0]+1]-x[index_xocr[0]])
+
+    count = 0
+    while proiz_ocr <= 0 and count < 10:
+        proiz_ocr = (y[index_xocr[0] + 1 + count] - y[index_xocr[0]]) / (x[index_xocr[0] + 1 + count] - x[index_xocr[0]])
+        count += 1
+
+    # print(f"deviator loading functions : cos_ocr : proiz_ocr = {proiz_ocr}")
+
+    if proiz_ocr < 10000:
+        vl_h = 1
+    elif (proiz_ocr >= 10000) and (proiz_ocr <= 50000):
+        kvl = -0.3 / 40000
+        bvl = 0.3 - 50000 * kvl
+        vl_h = kvl * proiz_ocr + bvl  # 1. / 40000. * e50 - 1. / 8
+    elif proiz_ocr > 50000:
+        vl_h = 0.3
+
+    h = 0.2 * qf * vl_h  # высота функции
+
+    if h > 0.3 * qocr:
+        h = 0.3 * qocr
+
+    sm = xocr
+    k = h / (sm) ** 2
+
+    index_2xocr, = np.where(x >= 2 * xocr)
+    index_xocr, = np.where(x >= xocr)
+
+    cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
+                         h * (1 / 2) * (np.cos((1. / sm) * np.pi * (x[index_xocr[0]:index_2xocr[0]]) - np.pi) + 1),
+                         np.zeros(len(x[index_2xocr[0]:]))))
+
+    return cos_par
+
+
+def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points, y_rel_p, Eur, point2_y):
+    qocr = 0  # !!!
     '''кусочная функция: на участкe [0,xc]-сумма функций гиперболы и
     (экспоненты или тангенса) и кусочной функции синуса и парболы
     на участке [xc...]-половина функции Гаусса или параболы'''
@@ -800,7 +843,7 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, qocr, gaus_or_par, amount_points, y_r
         x_loop) - 2  # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
     y_smooth[0] = 0.
 
-    return xold, xnew, y_smooth, qf, xc, x2, qf2, xocr, qocr, e50, point1_x, point2_x, point3_x, point1_x_index, point2_x_index, point3_x_index
+    return xold, xnew, y_smooth, qf, xc, x2, qf2, e50, point1_x, point2_x, point3_x, point1_x_index, point2_x_index, point3_x_index
 
 
 # Обьемная деформация
@@ -1106,13 +1149,56 @@ def curve(qf, e50, **kwargs):
         qf2 = qf
     x50 = (qf / 2.) / e50
 
-    x_old, x, y, qf, xc, x2, qf2, xocr, qocr, e50, point1_x, point2_x, point3_x, point1_x_index, point2_x_index, point3_x_index = dev_loading(
-        qf, e50, x50, xc, x2, qf2,
-        qocr, gaus_or_par,
+    x_old, x, y, qf, xc, x2, qf2, e50, point1_x, point2_x, point3_x, point1_x_index, point2_x_index, point3_x_index = dev_loading(
+        qf, e50, x50, xc, x2, qf2, gaus_or_par,
         amount_points, y_rel_p,
         Eur, point2_y)  # x_old - без участка разгрузки, возвращается для обьемной деформации
     # x - c участком разгрузки или без в зависимости от того передан ли Eur
 
+    if qocr > (0.6 * qf):
+        qocr = 0.6 * qf
+
+    index_xocr, = np.where(y > qocr)
+    xocr = x[index_xocr[0]]
+
+    cos = cos_ocr(x, y, qf, qocr)
+    y_ocr = y + cos
+    index_x50, = np.where(x >= x50)
+
+    if cos[index_x50[0]] > 0:
+        delta = abs(y_ocr[index_x50[0]] - qf / 2)
+
+        e50_ocr = (y[index_x50[0]] - delta) / x50
+        x50_ocr = (y[index_x50[0]]) / e50_ocr
+        index_x50_ocr, = np.where(x >= x50_ocr)
+        x50_ocr = x[index_x50_ocr[0]]
+
+        x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr, \
+        point1_x, point2_x, point3_x, point1_x_index, \
+        point2_x_index, point3_x_index = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points, y_rel_p, Eur, point2_y)
+
+        y_ocr = y_ocr + cos
+
+
+        n = 0
+        while (abs(y_ocr[index_x50[0]] - qf / 2)) > 10 and n < 10:
+            print(f"n : {n}")
+            n = n + 1
+            delta_ocr = (y_ocr[index_x50[0]] - qf / 2)
+
+            delta = delta + delta_ocr
+
+            e50_ocr = (y[index_x50[0]] - delta) / x50
+            x50_ocr = (y[index_x50[0]]) / e50_ocr
+            index_x50_ocr, = np.where(x >= x50_ocr)
+            x50_ocr = x[index_x50_ocr[0]]
+            x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr, \
+            point1_x, point2_x, point3_x, point1_x_index, \
+            point2_x_index, point3_x_index = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points, y_rel_p, Eur, point2_y)
+            #
+            y_ocr = y_ocr + cos
+
+    y = copy.deepcopy(y_ocr)
     # ограничение на хс (не меньше чем x_given)
     if xc <= 0.025:
         xc = np.random.uniform(0.025, 0.03)
@@ -1369,7 +1455,7 @@ def curve(qf, e50, **kwargs):
     if U:
         e50_U = U / x50
         x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50,  kwargs.get('xc'), 1.2* kwargs.get('xc'), np.random.uniform(0.3, 0.7)*U,
-                                            0, 0, amount_points, 0.8*U, False, 10)
+                                        0, amount_points, 0.8*U, False, 10)
         index_x2, = np.where(x_U >= 0.15)
         x_U = x_U[:index_x2[0]]
         y_U = y_U[:index_x2[0]]
