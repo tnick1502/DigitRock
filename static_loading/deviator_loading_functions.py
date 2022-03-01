@@ -665,7 +665,7 @@ def loop(x, y, Eur, y_rel_p, point2_y):
 
     return x_loop, y_loop, point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, x1_l, x2_l, y1_l, y2_l
 
-def cos_ocr(x, y,  qf, qocr):
+def cos_ocr(x, y,  qf, qocr, xc):
     '''возвращает функцию косинуса
      и параболы для участка x50 qf'''
 
@@ -681,28 +681,30 @@ def cos_ocr(x, y,  qf, qocr):
 
     # print(f"deviator loading functions : cos_ocr : proiz_ocr = {proiz_ocr}")
 
-    if proiz_ocr < 10000:
-        vl_h = 1
-    elif (proiz_ocr >= 10000) and (proiz_ocr <= 50000):
-        kvl = -0.3 / 40000
-        bvl = 0.3 - 50000 * kvl
+    if proiz_ocr < 20000:
+        vl_h = 0.2
+    elif (proiz_ocr >= 20000) and (proiz_ocr <= 80000):
+        kvl = 0.8 / 60000
+        bvl = 0.2 - 20000 * kvl
         vl_h = kvl * proiz_ocr + bvl  # 1. / 40000. * e50 - 1. / 8
-    elif proiz_ocr > 50000:
-        vl_h = 0.3
+    elif proiz_ocr > 80000:
+        vl_h = 1
+    print('proiz_ocr', proiz_ocr, vl_h)
 
-    h = 0.2 * qf * vl_h  # высота функции
+    h = 0.2 * qf * vl_h # высота функции
 
-    if h > 0.3 * qocr:
-        h = 0.3 * qocr
+    if h > 0.8 * qocr:
+        h = 0.8 * qocr
 
     sm = xocr
+
     k = h / (sm) ** 2
 
-    index_2xocr, = np.where(x >= 2 * xocr)
+    index_2xocr, = np.where(x >= xc)
     index_xocr, = np.where(x >= xocr)
 
     cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
-                         h * (1 / 2) * (np.cos((1. / sm) * np.pi * (x[index_xocr[0]:index_2xocr[0]]) - np.pi) + 1),
+                         h * (1 / 2) * (np.cos((1. / (xc - sm)) * np.pi * (x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
                          np.zeros(len(x[index_2xocr[0]:]))))
 
     return cos_par
@@ -1161,7 +1163,7 @@ def curve(qf, e50, **kwargs):
     index_xocr, = np.where(y > qocr)
     xocr = x[index_xocr[0]]
 
-    cos = cos_ocr(x, y, qf, qocr)
+    cos = cos_ocr(x, y, qf, qocr, xc)
     y_ocr = y + cos
     index_x50, = np.where(x >= x50)
 
@@ -1181,8 +1183,11 @@ def curve(qf, e50, **kwargs):
 
 
         n = 0
-        while (abs(y_ocr[index_x50[0]] - qf / 2)) > 10 and n < 10:
-            print(f"n : {n}")
+
+        # print(f"E50 ololo : {abs((y_ocr[index_x50[0]])/(index_x50[0]) - (qf / 2)/(index_x50[0]))}")
+
+        while (abs((y_ocr[index_x50[0]])/(index_x50[0]) - (qf / 2)/(index_x50[0]))) > 0.005 and n < 10:
+            # print(f"n : {n}")
             n = n + 1
             delta_ocr = (y_ocr[index_x50[0]] - qf / 2)
 
@@ -1192,6 +1197,8 @@ def curve(qf, e50, **kwargs):
             x50_ocr = (y[index_x50[0]]) / e50_ocr
             index_x50_ocr, = np.where(x >= x50_ocr)
             x50_ocr = x[index_x50_ocr[0]]
+
+
             x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr, \
             point1_x, point2_x, point3_x, point1_x_index, \
             point2_x_index, point3_x_index = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points, y_rel_p, Eur, point2_y)
