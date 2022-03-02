@@ -296,7 +296,7 @@ class MechanicalProperties:
                     self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
                             9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
 
-                self.sigma_3 = round(self.sigma_1 * self.K0, 1)
+                self.sigma_3 = MechanicalProperties.round_sigma_3(self.sigma_1 * self.K0)
 
             else:
                 self.sigma_3 = MechanicalProperties.round_sigma_3(
