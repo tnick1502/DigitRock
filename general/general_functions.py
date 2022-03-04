@@ -353,6 +353,7 @@ def find_line_area(x, y, d, step, Uslovie = [0.8, 1]):
             A = (ya[-1] - ya[0]) / (xData[-1] - xData[0])
             B = np.polyval(p, 0)
 
+
             # Обнуляем количество точек
             points = 0
             iEnd = i
