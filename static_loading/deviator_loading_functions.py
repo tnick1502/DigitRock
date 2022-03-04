@@ -1216,23 +1216,9 @@ def curve(qf, e50, **kwargs):
     x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
                          [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
 
-    # x_qf2ocr = x[index_qf2ocr[0]]
-
     index_x50, = np.where(x >= x50)
 
-    delta = 1
-
-    # a = np.interp(x50, [x[index_x50[0]-1],x[index_x50[0]]],[y_ocr[index_x50[0]-1],y_ocr[index_x50[0]]])
-    # print(a, y_ocr[index_x50[0]],y_ocr[index_x50[0]-1])
-    # x_for_cos = copy.deepcopy(x)
     if cos[index_x50[0]] > 0:
-        # if xc < 0.15:
-        #     delta = x50 / x_qf2ocr
-        #     # x_for_cos = copy.deepcopy(x)
-        #     # f = interpolate.interp1d(copy.deepcopy(x), copy.deepcopy(cos), kind=linear)
-        #     x = x * delta
-        #     # cos_interpolated = f(x)
-        # else:
         a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
         delta = abs(a - qf / 2)
 
@@ -1251,10 +1237,8 @@ def curve(qf, e50, **kwargs):
         a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
         n = 0
 
-        while abs((a / x50 - (qf / 2) / x50)) > 10 and n < 30:
-            # print(f"n : {n}")
+        while abs((a / x50 - (qf / 2) / x50)) > 50 and n < 30:
             a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
-            # print("E", a/x50, (qf / 2)/x50)
 
             n = n + 1
             delta_ocr = (a - qf / 2)
@@ -1271,9 +1255,17 @@ def curve(qf, e50, **kwargs):
             #
             y_ocr = y_ocr + cos
 
-    y = copy.deepcopy(y_ocr)
+        index_qf2ocr, = np.where(y_ocr >= qf / 2)
+        x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
+                             [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
+        delta = x50 / x_qf2ocr
+        x = x * delta
+        index_x50, = np.where(x >= x50)
+        y_qf2ocr = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
+        k = y_qf2ocr / (qf/2)
+        y_ocr = y_ocr / k
 
-    # print(f"max y after ocr: {max(y)}")
+    y = copy.deepcopy(y_ocr)
 
     # ограничение на хс (не меньше чем x_given)
     if xc <= 0.025:
