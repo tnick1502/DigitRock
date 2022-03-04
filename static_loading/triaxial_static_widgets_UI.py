@@ -170,9 +170,10 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                     self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
                     self.deviator_ax.set_ylabel("Девиатор q, МПа")
 
-                    self.deviator_ax.plot(*plots["E50"],
-                                          label=_label,
-                                          **plotter_params["static_loading_black_dotted_line"])
+                    if statment.general_parameters.test_mode != "Виброползучесть":
+                        self.deviator_ax.plot(*plots["E50"],
+                                              label=_label,
+                                              **plotter_params["static_loading_black_dotted_line"])
                     #self.deviator_ax.plot(*plots["Eur"], **plotter_params["static_loading_red_dotted_line"],
                                           #label="$E_{ur}$" + ", MПа = " + str(res["Eur"]))
                     self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
@@ -180,7 +181,8 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
                     self.deviator_ax2.plot(plots["strain_Eur"], plots["deviator_Eur"],
                                            **plotter_params["static_loading_main_line"])
-                    self.deviator_ax2.plot(*plots["Eur"], **plotter_params["static_loading_black_dotted_line"])
+                    if statment.general_parameters.test_mode != "Виброползучесть":
+                        self.deviator_ax2.plot(*plots["Eur"], **plotter_params["static_loading_black_dotted_line"])
                     # label="$E$" + ", MПа = " + str(res["E"][0]) + "\n" + "$E$" + ", MПа = " + str(res["E"][0]))
                     plt.xticks(fontsize=8)
                     plt.yticks(fontsize=8)
@@ -191,24 +193,28 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                     self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"] + plots["sigma_3"],
                                           **plotter_params["static_loading_gray_line"])
 
-                    self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
-                    self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
+                    if statment.general_parameters.test_mode != "Виброползучесть":
+                        self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
+                        self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
 
                     self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
                     self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
                     x, y = plots["E50"][0], np.array(plots["E50"][1])
-                    self.deviator_ax2.scatter(res["Eps50"], res["qf50"], s=20, color="black")
+                    if statment.general_parameters.test_mode != "Виброползучесть":
+                        self.deviator_ax2.scatter(res["Eps50"], res["qf50"], s=20, color="black")
 
-                    self.deviator_ax2.plot(*plots["E50"],
-                                          label=_label,
-                                          **plotter_params["static_loading_black_dotted_line"])
+                    if statment.general_parameters.test_mode != "Виброползучесть":
+                        self.deviator_ax2.plot(*plots["E50"],
+                                              label=_label,
+                                              **plotter_params["static_loading_black_dotted_line"])
 
                     self.deviator_ax2.plot(plots["strain"], plots["deviator"],
                                            **plotter_params["static_loading_main_line"])
                     if res["E"] is not None:
-                        self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"],label=_label,
-                                              **plotter_params["static_loading_black_dotted_line"])
+                        if statment.general_parameters.test_mode != "Виброползучесть":
+                            self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"],label=_label,
+                                                  **plotter_params["static_loading_black_dotted_line"])
                                           #label="$E$" + ", MПа = " + str(res["E"][0]) + "\n" + "$E$" + ", MПа = " + str(res["E"][0]))
 
                     #self.deviator_ax2.set_xticklabels(self.deviator_ax2.get_xticks(), size=8)
@@ -222,7 +228,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                                       **plotter_params["static_loading_red_dotted_line"])
                 if plots["dilatancy"]:
                     self.volume_strain_ax.plot(plots["dilatancy"]["x"], plots["dilatancy"]["y"],
-                                          **plotter_params["static_loading_black_dotted_line"])
+                                            **plotter_params["static_loading_black_dotted_line"])
 
                 self.volume_strain_ax.set_xlim(self.deviator_ax.get_xlim())
 
