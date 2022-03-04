@@ -864,7 +864,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(self._draw_params.dilatancy)) /
                              (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
 
-
+        print("qocr", self._draw_params.qocr)
         if self._test_params.qf >= 150:
 
             if self._test_params.Eur:

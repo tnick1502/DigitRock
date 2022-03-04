@@ -673,22 +673,21 @@ def cos_ocr(x, y,  qf, qocr, xc):
 
     index_xocr, = np.where(y > qocr)
     xocr = x[index_xocr[0]]
-    proiz_ocr = (y[index_xocr[0] + 1] - y[index_xocr[0]]) / \
-                (x[index_xocr[0] + 1] - x[index_xocr[0]])
+    proiz_ocr= (y[index_xocr[0]+1]-y[index_xocr[0]])/\
+         (x[index_xocr[0]+1]-x[index_xocr[0]])
 
     count = 0
     while proiz_ocr <= 0 and count < 10:
-        proiz_ocr = (y[index_xocr[0] + 1 + count] - y[index_xocr[0]]) / (
-                    x[index_xocr[0] + 1 + count] - x[index_xocr[0]])
+        proiz_ocr = (y[index_xocr[0] + 1 + count] - y[index_xocr[0]]) / (x[index_xocr[0] + 1 + count] - x[index_xocr[0]])
         count += 1
 
     # print(f"deviator loading functions : cos_ocr : proiz_ocr = {proiz_ocr}")
 
     if proiz_ocr < 20000:
-        vl_h = 0.2
+        vl_h = 0.3
     elif (proiz_ocr >= 20000) and (proiz_ocr <= 80000):
-        kvl = 0.8 / 60000
-        bvl = 0.2 - 20000 * kvl
+        kvl = 0.7/ 60000
+        bvl = 0.3 - 20000 * kvl
         vl_h = kvl * proiz_ocr + bvl  # 1. / 40000. * e50 - 1. / 8
     elif proiz_ocr > 80000:
         vl_h = 1
@@ -697,7 +696,7 @@ def cos_ocr(x, y,  qf, qocr, xc):
 
     index_max = np.argmax(y)
 
-    h = 0.2 * qf * vl_h  # высота функции
+    h = 0.2 * qf * vl_h # высота функции
 
     if h > 0.8 * qocr:
         h = 0.8 * qocr
@@ -710,45 +709,47 @@ def cos_ocr(x, y,  qf, qocr, xc):
     index_xocr, = np.where(x >= xocr)
 
     cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
-                         h * (1 / 2) * (np.cos(
-                             (1. / (xc - sm)) * np.pi * (x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
+                         h * (1 / 2) * (np.cos((1. / (xc - sm)) * np.pi * (x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
                          np.zeros(len(x[index_2xocr[0]:]))))
 
-    extremums = argrelextrema(y + cos_par, np.greater)
+    # proiz_ocr = [(y[i]+cos_par[i] - y[i+1]-cos_par[i + 1])/ (x[i] - x[i + 1]) for i in range(len(x)-1)]
+    # plt.plot(x[:-1], proiz_ocr)
 
-    while (max(y + cos_par) > max_y_initial) and count < 100:
-
-        xc = xc - 0.0005
-        if xc <= sm:
-            break
-
-        index_2xocr, = np.where(x >= xc)
-        index_xocr, = np.where(x >= xocr)
-
-        cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
-                             h * (1 / 2) * (np.cos((1. / (xc - sm)) * np.pi * (
-                                     x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
-                             np.zeros(len(x[index_2xocr[0]:]))))
-
-        count = count + 1
+    extremums = argrelextrema(y+cos_par, np.greater)
 
     y_ocr = y + cos_par
-    count = 0
-    delta = 0.01 * h
-    while (extremums[0][0] < index_max) and y_ocr[extremums[0][0]] > 0.9 * max_y_initial and count < 100:
-        h = h - delta
+    if xc < 0.15:
+        count = 0
+        while ((max(y+cos_par) > max_y_initial) or ((extremums[0][0] < index_max) and y_ocr[extremums[0][0]] > 0.9 * max_y_initial)) and count < 200:
 
-        k = h / (sm) ** 2
+            if max(y + cos_par) > max_y_initial:
+                xc = xc - 0.0001
+                if xc >= sm:
+                    index_2xocr, = np.where(x >= xc)
+                    index_xocr, = np.where(x >= xocr)
 
-        index_2xocr, = np.where(x >= xc)
-        index_xocr, = np.where(x >= xocr)
+                    cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
+                                         h * (1 / 2) * (np.cos((1. / (xc - sm)) * np.pi * (
+                                                     x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
+                                         np.zeros(len(x[index_2xocr[0]:]))))
+            #
+            y_ocr = y+cos_par
+            delta = 0.01*h
 
-        cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
-                             h * (1 / 2) * (np.cos((1. / (xc - sm)) * np.pi * (
-                                     x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
-                             np.zeros(len(x[index_2xocr[0]:]))))
-        extremums = argrelextrema(y + cos_par, np.greater)
-        count = count + 1
+            if (extremums[0][0] < index_max) and y_ocr[extremums[0][0]] > 0.95 * max_y_initial:
+                h = h - delta
+                k = h / (sm) ** 2
+                index_2xocr, = np.where(x >= xc)
+                index_xocr, = np.where(x >= xocr)
+
+                cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
+                                     h * (1 / 2) * (np.cos((1. / (xc - sm)) * np.pi * (
+                                                 x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
+                                     np.zeros(len(x[index_2xocr[0]:]))))
+                extremums = argrelextrema(y + cos_par, np.greater)
+            #
+            y_ocr = y + cos_par
+            count = count + 1
 
     return cos_par
 
@@ -1212,7 +1213,8 @@ def curve(qf, e50, **kwargs):
 
     index_qf2ocr, = np.where(y_ocr >= qf / 2)
 
-    x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]], [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
+    x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
+                         [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
 
     # x_qf2ocr = x[index_qf2ocr[0]]
 
@@ -1222,51 +1224,56 @@ def curve(qf, e50, **kwargs):
 
     # a = np.interp(x50, [x[index_x50[0]-1],x[index_x50[0]]],[y_ocr[index_x50[0]-1],y_ocr[index_x50[0]]])
     # print(a, y_ocr[index_x50[0]],y_ocr[index_x50[0]-1])
-
+    # x_for_cos = copy.deepcopy(x)
     if cos[index_x50[0]] > 0:
-        if xc < 0.15:
-            delta = x50 / x_qf2ocr
-            x = x * delta
-        else:
-            a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
-            delta = abs(a - qf / 2)
+        # if xc < 0.15:
+        #     delta = x50 / x_qf2ocr
+        #     # x_for_cos = copy.deepcopy(x)
+        #     # f = interpolate.interp1d(copy.deepcopy(x), copy.deepcopy(cos), kind=linear)
+        #     x = x * delta
+        #     # cos_interpolated = f(x)
+        # else:
+        a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
+        delta = abs(a - qf / 2)
 
-            e50_ocr = (qf/2 - delta) / x50
-            x50_ocr = (qf/2) / e50_ocr
-            # index_x50_ocr, = np.where(x >= x50_ocr)
-            # x50_ocr = x[index_x50_ocr[0]]
+        e50_ocr = (qf / 2 - delta) / x50
+        x50_ocr = (qf / 2) / e50_ocr
+        # index_x50_ocr, = np.where(x >= x50_ocr)
+        # x50_ocr = x[index_x50_ocr[0]]
+
+        x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr, \
+        point1_x, point2_x, point3_x, point1_x_index, \
+        point2_x_index, point3_x_index = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points,
+                                                     y_rel_p, Eur, point2_y)
+
+        y_ocr = y_ocr + cos
+
+        a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
+        n = 0
+
+        while abs((a / x50 - (qf / 2) / x50)) > 10 and n < 30:
+            # print(f"n : {n}")
+            a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
+            # print("E", a/x50, (qf / 2)/x50)
+
+            n = n + 1
+            delta_ocr = (a - qf / 2)
+
+            delta = delta + delta_ocr
+
+            e50_ocr = (qf / 2 - delta) / x50
+            x50_ocr = (qf / 2) / e50_ocr
 
             x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr, \
-                point1_x, point2_x, point3_x, point1_x_index, \
-                point2_x_index, point3_x_index = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points, y_rel_p, Eur, point2_y)
-
+            point1_x, point2_x, point3_x, point1_x_index, \
+            point2_x_index, point3_x_index = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points,
+                                                         y_rel_p, Eur, point2_y)
+            #
             y_ocr = y_ocr + cos
-
-            a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
-            n = 0
-
-            while abs((a / x50 - (qf / 2) / x50)) > 50 and n < 20:
-                # print(f"n : {n}")
-                a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
-                # print("E", a/x50, (qf / 2)/x50)
-
-                n = n + 1
-                delta_ocr = (a - qf / 2)
-
-                delta = delta + delta_ocr
-
-                e50_ocr = (qf/2 - delta) / x50
-                x50_ocr = (qf/2) / e50_ocr
-
-                x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr, \
-                    point1_x, point2_x, point3_x, point1_x_index, \
-                    point2_x_index, point3_x_index = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points, y_rel_p, Eur, point2_y)
-                #
-                y_ocr = y_ocr + cos
 
     y = copy.deepcopy(y_ocr)
 
-    print(f"max y after ocr: {max(y)}")
+    # print(f"max y after ocr: {max(y)}")
 
     # ограничение на хс (не меньше чем x_given)
     if xc <= 0.025:
