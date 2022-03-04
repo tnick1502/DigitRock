@@ -184,7 +184,7 @@ class ModelTriaxialDeviatorLoading:
             if len(i_end_E):
                 i_end_E = i_end_E[0]
             else:
-                i_end_E = len(self._test_data.deviator_cut)-1
+                i_end_E = len(self._test_data.deviator_cut) - 1
 
         if i_end_E <= i_start_E:
             i_end_E = i_start_E + 1
@@ -570,7 +570,7 @@ class ModelTriaxialDeviatorLoading:
         if len(i_end_for_plot):
             i_end_for_plot = i_end_for_plot[0]
         else:
-            i_end_for_plot = len(deviator)-1
+            i_end_for_plot = len(deviator) - 1
 
         return (round(E / 1000, 1), [strain[E_processing_points_index[0]], strain[i_end_for_plot]],
                 [deviator[E_processing_points_index[0]], line(E, b, strain[i_end_for_plot])])
