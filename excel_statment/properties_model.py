@@ -169,6 +169,7 @@ class PhysicalProperties:
         """Функция определения типа грунта через грансостав"""
 
         ground_name = name.upper()
+        print(ground_name)
 
         if "ТОРФ" in ground_name:
             type_ground = 9

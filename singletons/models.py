@@ -72,6 +72,10 @@ class ModelsFC(Models):
     pass
 
 @singleton
+class ModelsVibrationFC(Models):
+    pass
+
+@singleton
 class ModelsVibrationCreep(Models):
     pass
 
@@ -114,6 +118,8 @@ Consolidation_models = ModelsConsolidation()
 Shear_models = ModelsShear()
 
 Shear_Dilatancy_models = ModelsShearDilatancy()
+
+VibrationFC_models = ModelsVibrationFC()
 
 
 

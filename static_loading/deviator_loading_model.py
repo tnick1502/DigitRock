@@ -397,14 +397,17 @@ class ModelTriaxialDeviatorLoading:
         self._test_result.Eur = \
             ModelTriaxialDeviatorLoading.define_Eur(self._test_data.strain_cut,
                                   self._test_data.deviator_cut, self._test_data.reload_points_cut)
+        if self._test_data.volume_strain_approximate is not None:
+            self._test_result.poissons_ratio = ModelTriaxialDeviatorLoading.define_poissons(self._test_data.strain_cut,
+                                      self._test_data.deviator_cut,
+                                        self._test_data.volume_strain_approximate)
 
-        self._test_result.poissons_ratio = ModelTriaxialDeviatorLoading.define_poissons(self._test_data.strain_cut,
-                                  self._test_data.deviator_cut,
-                                    self._test_data.volume_strain_approximate)
-
-        self._test_result.dilatancy_angle = ModelTriaxialDeviatorLoading.define_dilatancy(self._test_data.strain_cut,
-                                  self._test_data.deviator_cut,
-                                    self._test_data.volume_strain_approximate)
+            self._test_result.dilatancy_angle = ModelTriaxialDeviatorLoading.define_dilatancy(self._test_data.strain_cut,
+                                      self._test_data.deviator_cut,
+                                        self._test_data.volume_strain_approximate)
+        else:
+            self._test_result.poissons_ratio = 0.3
+            self._test_result.dilatancy_angle =[12, 3, 10]
 
         self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
                                   self._test_data.deviator_cut, self._test_params.E_processing_points_index)
@@ -787,15 +790,17 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         if self._test_params.Eur:
             self.unloading_borders = ModelTriaxialDeviatorLoadingSoilTest.define_unloading_points(
-                statment[statment.current_test].physical_properties.Il, statment[statment.current_test].physical_properties.type_ground,
+                statment[statment.current_test].physical_properties.Il,
+                statment[statment.current_test].physical_properties.type_ground,
                 self._test_params.sigma_3, statment[statment.current_test].mechanical_properties.K0)
 
             if type(self._test_params.Eur) is bool:
                 self._draw_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
-                    E50=self._test_params.E50, qf=self._test_params.qf, Il=statment[statment.current_test].physical_properties.Il,
+                    E50=self._test_params.E50, qf=self._test_params.qf,
+                    Il=statment[statment.current_test].physical_properties.Il,
                     initial_unloading_deviator=self.unloading_borders[0])
             else:
-                self._draw_params.Eur = self._test_params.Eur *1.2
+                self._draw_params.Eur = self._test_params.Eur * 1.2
         else:
             self._draw_params.Eur = None
 
