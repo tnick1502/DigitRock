@@ -597,7 +597,7 @@ class ShearSoilTestApp(QWidget):
                 set_cell_data(
                     self.tab_1.path,
                     (c_fi_E_PropertyPosition[statment.general_parameters.test_mode][0][0] + str(number),
-                    (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][1][0])),
+                    (number, c_fi_E_PropertyPosition[statment.general_parameters.test_mode][1][0])),
                     test_result["c"], sheet="Лист1", color="FF6961")
 
 

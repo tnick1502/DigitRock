@@ -790,9 +790,12 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 statment[statment.current_test].physical_properties.Il, statment[statment.current_test].physical_properties.type_ground,
                 self._test_params.sigma_3, statment[statment.current_test].mechanical_properties.K0)
 
-            self._draw_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
-                E50=self._test_params.E50, qf=self._test_params.qf, Il=statment[statment.current_test].physical_properties.Il,
-                initial_unloading_deviator=self.unloading_borders[0])
+            if type(self._test_params.Eur) is bool:
+                self._draw_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
+                    E50=self._test_params.E50, qf=self._test_params.qf, Il=statment[statment.current_test].physical_properties.Il,
+                    initial_unloading_deviator=self.unloading_borders[0])
+            else:
+                self._draw_params.Eur = self._test_params.Eur *1.2
         else:
             self._draw_params.Eur = None
 

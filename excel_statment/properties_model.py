@@ -169,7 +169,6 @@ class PhysicalProperties:
         """Функция определения типа грунта через грансостав"""
 
         ground_name = name.upper()
-        print(ground_name)
 
         if "ТОРФ" in ground_name:
             type_ground = 9
@@ -338,10 +337,12 @@ class MechanicalProperties:
             if not self.OCR:
                 self.OCR = 1
 
+            Eur = float_df(data_frame.iat[string, MechanicalPropertyPosition["Eur"][1]])
+
             if test_mode == "Трёхосное сжатие с разгрузкой":
-                self.Eur = True
+                self.Eur = Eur * 1000 if Eur else True
             elif test_mode == "Трёхосное сжатие (F, C, Eur)":
-                self.Eur = True
+                self.Eur = Eur * 1000 if Eur else True
             else:
                 self.Eur = None
 

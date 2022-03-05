@@ -9,7 +9,7 @@ import os
 
 from openpyxl import load_workbook
 from excel_statment.functions import read_general_prameters, k0_test_type_column, column_fullness_test
-from excel_statment.initial_tables import TableCastomer, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties
+from excel_statment.initial_tables import TableCastomer, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties, ComboBox_Initial_ParametersV2
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, CyclicProperties, \
     DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties, ShearProperties
@@ -136,8 +136,8 @@ class InitialStatment(QWidget):
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
-        self.open_line = ComboBox_Initial_Parameters(self.test_parameters)
-        self.open_line.setFixedHeight(80)
+        self.open_line = ComboBox_Initial_ParametersV2(self.test_parameters)
+        self.open_line.setFixedHeight(120)
 
         self.customer_line = TableCastomer()
         self.accreditation = SetAccreditation()
@@ -185,7 +185,7 @@ class InitialStatment(QWidget):
 
         test = True
         for key in self.test_parameters:
-            if combo_params[key] == self.test_parameters[key][0]:
+            if combo_params[key] == "Не выбрано":
                 test = False
                 QMessageBox.critical(self, "Предупреждение", "Проверьте заполнение {}".format(key),
                                            QMessageBox.Ok)
@@ -256,11 +256,15 @@ class RezonantColumnStatment(InitialStatment):
     def __init__(self):
         data_test_parameters = {#"p_ref": ["Выберите референтное давление", "Pref: Pref из столбца FV",
                                           #"Pref: Через бытовое давление"],
-                                "K0_mode": ["Тип определения K0",
-                                                 "K0: По ГОСТ-56353", "K0: K0nc из ведомости",
-                                                 "K0: K0 из ведомости", "K0: Формула Джекки",
-                                                 "K0: K0 = 1", "K0: Формула Джекки c учетом переупл."]
+                                "K0_mode": {
+                                    "label": "Тип определения K0",
+                                    "vars": [
+                                        "Не выбрано",
+                                        "K0: По ГОСТ-56353", "K0: K0nc из ведомости",
+                                        "K0: K0 из ведомости", "K0: Формула Джекки",
+                                        "K0: K0 = 1", "K0: Формула Джекки c учетом переупл."]
                                 }
+        }
 
         fill_keys = {
             "laboratory_number": "Лаб. ном.",
@@ -324,31 +328,48 @@ class TriaxialStaticStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
     def __init__(self):
         data_test_parameters = {
-            "equipment": [
-                "Выберите прибор",
-                "ЛИГА КЛ-1С",
-                "АСИС ГТ.2.0.5",
-                "GIESA UP-25a",
-                "АСИС ГТ.2.0.5 (150х300)",
-            ],
+            "equipment": {
+                "label": "Оборудование",
+                "vars": [
+                    "ЛИГА КЛ-1С",
+                    "АСИС ГТ.2.0.5",
+                    "GIESA UP-25a",
+                    "АСИС ГТ.2.0.5 (150х300)"]
+            },
 
-            "test_mode": [
-                "Выберите тип испытания", "Трёхосное сжатие (E)",
-                "Трёхосное сжатие (F, C)",
-                "Трёхосное сжатие (F, C, E)",
-                "Трёхосное сжатие с разгрузкой",
-                "Трёхосное сжатие (F, C, Eur)",
-                "Трёхосное сжатие КН",
-                "Трёхосное сжатие НН"],
+            "test_mode": {
+                "label": "Тип испытания",
+                "vars": [
+                    "Не выбрано",
+                    "Трёхосное сжатие (E)",
+                    "Трёхосное сжатие (F, C)",
+                    "Трёхосное сжатие (F, C, E)",
+                    "Трёхосное сжатие с разгрузкой",
+                    "Трёхосное сжатие (F, C, Eur)",
+                    "Трёхосное сжатие КН",
+                    "Трёхосное сжатие НН"]
+            },
 
-            "K0_mode": ["Тип определения K0",
-                        "K0: По ГОСТ-56353", "K0: K0nc из ведомости",
-                        "K0: K0 из ведомости", "K0: Формула Джекки",
-                        "K0: K0 = 1",
-                        "K0: Формула Джекки c учетом переупл."],
+            "K0_mode": {
+                "label": "Тип определения K0",
+                "vars": [
+                    "Не выбрано",
+                    "K0: По ГОСТ-56353",
+                    "K0: K0nc из ведомости",
+                    "K0: K0 из ведомости",
+                    "K0: Формула Джекки",
+                    "K0: K0 = 1",
+                    "K0: Формула Джекки c учетом переупл."]
+            },
 
-            "waterfill": ["Водонасыщение", "Водонасыщенное состояние", "Природная влажность", "Не указывать"]
-
+            "waterfill": {
+                "label": "Водонасыщение",
+                "vars": [
+                    "Водонасыщенное состояние",
+                    "Природная влажность",
+                    "Не указывать"
+                ]
+            },
         }
 
         fill_keys = {
@@ -442,18 +463,29 @@ class CyclicStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
     def __init__(self):
         data_test_parameters = {
-            "test_mode": [
-                "Режим испытания",
-                "Сейсморазжижение",
-                "Штормовое разжижение",
-                "Демпфирование",
-                "По заданным параметрам"
-            ],
-            "K0_mode": ["Тип определения K0",
-                        "K0: По ГОСТ-56353", "K0: K0nc из ведомости",
-                        "K0: K0 из ведомости", "K0: Формула Джекки",
-                        "K0: K0 = 1",
-                        "K0: Формула Джекки c учетом переупл."]
+
+            "test_mode": {
+                "label": "Тип испытания",
+                "vars": [
+                    "Не выбрано",
+                    "Сейсморазжижение",
+                    "Штормовое разжижение",
+                    "Демпфирование",
+                    "По заданным параметрам"
+                    ]
+            },
+
+            "K0_mode": {
+                "label": "Тип определения K0",
+                "vars": [
+                    "Не выбрано",
+                    "K0: По ГОСТ-56353",
+                    "K0: K0nc из ведомости",
+                    "K0: K0 из ведомости",
+                    "K0: Формула Джекки",
+                    "K0: K0 = 1",
+                    "K0: Формула Джекки c учетом переупл."]
+            }
         }
 
         fill_keys = {
@@ -539,12 +571,19 @@ class CyclicStatment(InitialStatment):
 class VibrationCreepStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
     def __init__(self):
-        data_test_parameters = {"static_equipment": ["Выберите прибор статики", "ЛИГА", "АСИС ГТ.2.0.5", "GIESA UP-25a"],
-                                "K0_mode": ["Тип определения K0",
-                        "K0: По ГОСТ-56353", "K0: K0nc из ведомости",
-                        "K0: K0 из ведомости", "K0: Формула Джекки",
-                        "K0: K0 = 1",
-                        "K0: Формула Джекки c учетом переупл."]}
+        data_test_parameters = {
+            "K0_mode": {
+                "label": "Тип определения K0",
+                "vars": [
+                    "Не выбрано",
+                    "K0: По ГОСТ-56353",
+                    "K0: K0nc из ведомости",
+                    "K0: K0 из ведомости",
+                    "K0: Формула Джекки",
+                    "K0: K0 = 1",
+                    "K0: Формула Джекки c учетом переупл."]
+            }
+        }
 
         fill_keys = {
             "laboratory_number": "Лаб. ном.",
@@ -618,8 +657,16 @@ class ConsolidationStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
     def __init__(self):
         data_test_parameters = {
-            "equipment": ["Выберите прибор", "ЛИГА КЛ1", "КППА 60/25 ДС (ГТ 1.1.1)", "GIG, Absolut Digimatic ID-S",
-                          "АСИС ГТ.2.0.5"]
+
+            "equipment": {
+                "label": "Оборудование",
+                "vars": [
+                    "Не выбрано",
+                    "ЛИГА КЛ1",
+                    "КППА 60/25 ДС (ГТ 1.1.1)",
+                    "GIG, Absolut Digimatic ID-S",
+                    "АСИС ГТ.2.0.5"]
+            }
         }
 
         fill_keys = {
@@ -682,26 +729,33 @@ class ShearStatment(InitialStatment):
     '''Срез дилатансия'''
     def __init__(self):
         data_test_parameters = {
-            "equipment": [
-                "Выберите прибор",
-                "АСИС ГТ.2.0.5",
-                "GIESA UP-25a",
 
-            ],
+            "equipment": {
+                "label": "Оборудование",
+                "vars": [
+                    "Не выбрано",
+                    "АСИС ГТ.2.0.5",
+                    "GIESA UP-25a",]
+            },
 
-            "test_mode": [
-                "Выберите тип испытания",
-                "Срез природное",
-                "Срез водонасыщенное",
-                "Срез плашка по плашке",
-                "Срез НН",
-                "Срез дилатансия"],
+            "test_mode": {
+                "label": "Тип испытания",
+                "vars": [
+                    "Не выбрано",
+                    "Срез природное",
+                    "Срез водонасыщенное",
+                    "Срез плашка по плашке",
+                    "Срез НН",
+                    "Срез дилатансия"]
+            },
 
-            "optional": [
-                "Состояние не задано",
-                "Природное",
-                "Водонасщенное"],
-
+            "optional": {
+                "label": "Водонасыщение",
+                "vars": [
+                    "Не выбрано",
+                    "Природное",
+                    "Водонасщенное"]
+            }
             }
 
         fill_keys = {

@@ -915,6 +915,7 @@ class StatickSoilTestApp(QWidget):
                 set_cell_data(self.tab_1.path,
                               ("GI" + str(number), (number, 190)),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
+
                 set_cell_data(self.tab_1.path,
                               (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
                                (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
