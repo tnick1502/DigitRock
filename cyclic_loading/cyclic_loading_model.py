@@ -1634,7 +1634,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         return time, strain, deviator
 
     @staticmethod
-    def generate_willie_log_file(file_path, deviator, PPR, strain, frequency, N, points_in_cycle, setpoint, cell_pressure, reconsolidation_time, post_name=None):
+    def generate_willie_log_file(file_path, deviator, PPR, strain, frequency, N, points_in_cycle, setpoint, cell_pressure, reconsolidation_time, post_name=None, time=None):
         """Сохранение текстового файла формата Willie.
                     Передается папка, массивы"""
         if post_name:
@@ -1680,7 +1680,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         piston_area = 314.159265
         sample_height = round(np.random.uniform(75.970000, 76.000000), 5)
 
-        time = np.round((np.arange(0, (N / frequency) + 1 / (points_in_cycle * frequency),
+        if time is None:
+            time = np.round((np.arange(0, (N / frequency) + 1 / (points_in_cycle * frequency),
                                    1 / (points_in_cycle * frequency)) + reconsolidation_time), 4)
 
         data = {

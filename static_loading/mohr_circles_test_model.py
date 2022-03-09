@@ -335,11 +335,11 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         qf_array = []
         sigma_1_array = []
         E50_array = []
-        if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН':# or statment.general_parameters.test_mode == 'Вибропрочность':
+        if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or \
+                statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == 'Вибропрочность':
             u_array = statment[statment.current_test].mechanical_properties.u
         else:
             u_array = [0 for i in self._reference_pressure_array]
-
 
         sigma_3_origin = statment[statment.current_test].mechanical_properties.sigma_3
         qf_origin = statment[statment.current_test].mechanical_properties.qf
@@ -401,7 +401,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
             statment[statment.current_test].mechanical_properties.qf = qf_array[i]
             statment[statment.current_test].mechanical_properties.sigma_1 = sigma_1_array[i] + u_array[i]
             statment[statment.current_test].mechanical_properties.E50 = E50_array[i]
-            if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
+            if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == 'Вибропрочность':
                 statment[statment.current_test].mechanical_properties.u = u_array[i]
             self.add_test_st()
 

@@ -267,7 +267,7 @@ class MechanicalProperties:
     def defineProperties(self, physical_properties, data_frame: pd.DataFrame, string: int,
                          test_mode=None, K0_mode=None) -> None:
         """Считывание строки свойств"""
-        if test_mode == "Трёхосное сжатие КН":
+        if test_mode == "Трёхосное сжатие КН" or test_mode == "Вибропрочность":
             self.c, self.fi, self.E50, self.u = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
         else:
             self.c, self.fi, self.E50 = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
@@ -368,7 +368,7 @@ class MechanicalProperties:
                 self.pressure_array["calculated_by_pressure"] = \
                     MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3)
 
-            if test_mode == "Трёхосное сжатие КН":
+            if test_mode == "Трёхосное сжатие КН" or test_mode == "Вибропрочность":
                 self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
             elif test_mode == "Трёхосное сжатие НН":
                 self.u = [np.round(i * np.random.uniform(0.85, 0.95), 1) for i in self.pressure_array["current"]]
