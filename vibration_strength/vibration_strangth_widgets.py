@@ -6,6 +6,7 @@ from PyQt5.QtGui import QPalette, QBrush
 import matplotlib.pyplot as plt
 import shutil
 import threading
+from general.reports import report_vibration_strangth
 
 from general.general_functions import create_path
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
@@ -136,10 +137,12 @@ class StatickSoilTestApp(QWidget):
 
             statment.save_dir.check_dirs()
 
-            if statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)':
+            if statment.general_parameters.test_mode:
 
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
+
                 FC_models[statment.current_test].save_log_files(save, file_path_name)
+
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
 
@@ -156,10 +159,23 @@ class StatickSoilTestApp(QWidget):
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
-                report_FC(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
+
+                test_result["sigma_3_mohr_vs"], test_result["sigma_1_mohr_vs"] = VibrationFC_models[
+                    statment.current_test].get_sigma_3_1()
+
+                test_result["u_mohr_vs"] = FC_models[statment.current_test].get_sigma_u()
+                test_result["c_vs"], test_result["fi_vs"], test_result["m"] = \
+                VibrationFC_models[statment.current_test].get_test_results()["c"], \
+                VibrationFC_models[statment.current_test].get_test_results()["fi"], \
+                VibrationFC_models[statment.current_test].get_test_results()["m"]
+
+                test_result["u_mohr_vs"] = VibrationFC_models[statment.current_test].get_sigma_u()
+
+
+                report_vibration_strangth(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
                            statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
-                          (*self.tab_3.save_canvas(),
+                          (*self.tab_2.save_canvas(),
                            *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
