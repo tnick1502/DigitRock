@@ -548,14 +548,40 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         initial = np.delete(sigma1_with_noise, fixed_circle_index)
         from scipy.optimize import Bounds, minimize
         bnds = Bounds(np.zeros_like(initial), np.ones_like(initial) * np.inf)
+
+        def constrains(x):
+            """
+            Функция ограничений на икс, должна подаваться в cons.
+            Должна представлять собой массивы ограничений вида x1 - x2 < 0
+            """
+
+            # икс для фукнции оптимизации это два круга, поэтому возвращаем в икс убранный круг
+            x = np.insert(x, fixed_circle_index, sigma1_with_noise[fixed_circle_index])
+
+            # первое ограничение - каждая последующая сигма не меньше предыдущей
+            first = np.array([x[i + 1] - x[i] for i in range(len(x) - 1)])
+
+            # замыкаем последний на первый на всякий случай
+            second = np.array([x[-1] - x[0]])
+
+            # здесь считаем тау - каждый следующий тау не меньше предыдущего (- погреность)
+            EPS = 1
+            third = np.array([(x[i + 1] - sigma3[i+1])/2 - (x[i] - sigma3[i])/2 - EPS for i in range(len(x) - 1)])
+
+            res = np.hstack((first, second, third))
+            return res
+
         cons = {'type': 'ineq',
-                'fun': lambda x: np.hstack((np.array([x[i + 1] - x[i] for i in range(len(x) - 1)]),
-                                            np.array([x[-1] - x[0]])))
-                }
+                'fun': constrains}
+
         res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, options={'ftol': 1e-9})
         res = res.x
         sigma1_with_noise = np.insert(res, fixed_circle_index, sigma1_with_noise[fixed_circle_index])
+
         qf_with_noise = sigma1_with_noise - sigma3
+
+        if np.any(qf_with_noise[1:] < qf_with_noise[:-1]):
+            raise RuntimeWarning(f"Круги имеют ошибочные размеры : tau : {qf_with_noise / 2}")
 
         assert sum([abs(sigma1[i] - sigma1_with_noise[i]) < 10 ** (-1) for i in range(len(sigma1))]) < 2, \
             "Два круга не зашумлены!"
