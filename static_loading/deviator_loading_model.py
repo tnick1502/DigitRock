@@ -222,6 +222,10 @@ class ModelTriaxialDeviatorLoading:
         """Получение результатов обработки опыта"""
         dict = copy.deepcopy(self._test_result.get_dict())
         dict["sigma_3"] = np.round((self._test_params.sigma_3 - float(dict["max_pore_pressure"])) / 1000, 3)
+
+        dict["K_E50"] = np.round(self._test_result.E[0]/self._test_result.E50, 2)
+        dict["K_Eur"] = np.round(self._test_result.Eur/self._test_result.E[0], 2) if self._test_result.Eur else None
+
         return dict
 
     def get_plot_data(self):
