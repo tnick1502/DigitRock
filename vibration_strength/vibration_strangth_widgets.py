@@ -142,6 +142,7 @@ class StatickSoilTestApp(QWidget):
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
 
                 FC_models[statment.current_test].save_log_files(save, file_path_name)
+                VibrationFC_models[statment.current_test].save_log_files(save, file_path_name)
 
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")

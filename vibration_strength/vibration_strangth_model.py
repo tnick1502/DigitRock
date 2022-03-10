@@ -7,6 +7,7 @@ from static_loading.mohr_circles_test_model import ModelMohrCirclesSoilTest
 from typing import List
 from static_loading.deviator_loading_functions import curve
 from singletons import statment
+import os
 
 class CyclicVibrationStrangth(ModelTriaxialDeviatorLoadingSoilTest):
     def set_test_params(self):
@@ -264,10 +265,10 @@ class ModelCyclicVibrationStrangthSoilTest(ModelTriaxialStaticLoadSoilTest):
             N=1,
             points_in_cycle=20,
             setpoint=self.deviator_loading._test_data.deviator_cut,
-            cell_pressure=self.deviator_loading._test_params.sigma_3,
+            cell_pressure=np.full(len(self.deviator_loading._test_data.deviator_cut), self.deviator_loading._test_params.sigma_3) + np.random.uniform(-0.5, 0.5, len(self.deviator_loading._test_data.deviator_cut)),
             reconsolidation_time=0,
             post_name=statment.current_test,
-            time=self.deviator_loading._test_data.deviator_cut)
+            time=self.deviator_loading._test_data.time)
 
 class CyclicVibrationStrangthMohr(ModelMohrCirclesSoilTest):
     def add_test_st(self):
@@ -303,6 +304,19 @@ class CyclicVibrationStrangthMohr(ModelMohrCirclesSoilTest):
 
         statment[statment.current_test].mechanical_properties.c = c
         statment[statment.current_test].mechanical_properties.fi = fi
+
+    def save_log_files(self, directory, name):
+        """Метод генерирует файлы испытания для всех кругов"""
+
+        if len(self._tests) >= 3:
+            for test in self._tests:
+                results = test.deviator_loading.get_test_results()
+                print("Сейчас сохраняется с давлением ", str(results["sigma_3"]))
+                path = os.path.join(directory, str(results["sigma_3"]))
+                if not os.path.isdir(path):
+                    os.mkdir(path)
+                test.save_log_file(path)
+
 
 
 
