@@ -423,6 +423,9 @@ if __name__ == "__main__":
     plot = x.get_interval_count(6)
     import matplotlib.pyplot as plt
 
+    for i in range(len(plot["time"])):
+        print(f'Месяц: {plot["time"][i]}, mathCad: {plot["mathcad_report"][i]}, python: {plot["python_report"][i]}, ведомости физ: {plot["physical_statement"][i]}, ведомости мех: {plot["mechanics_statement"][i]}')
+
     plt.plot(plot["time"], plot["mathcad_report"], label="mathCad")
     plt.plot(plot["time"], plot["python_report"], label="python")
     plt.plot(plot["time"], plot["physical_statement"], label="ведомости физ")

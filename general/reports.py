@@ -1594,6 +1594,12 @@ def result_vibration_creep3(canvas, Res, pick, test_parameter):
         prediction.append(zap(Res[i]["prediction"]["50_years"], 3))
         frequency.append(zap(test_parameter["frequency"][i], 1))
 
+    if len(frequency) == 2:
+        frequency.append("-")
+        E50.append("-")
+        Ed.append("-")
+        Kd.append("-")
+
     tableData.append(
         [Paragraph(
             '''<p>Частота нагружения, Гц:</p>''',
@@ -2610,7 +2616,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     code = SaveCode(version)
 
-    main_frame(canvas, path, Data_customer, code, "1/5")
+    main_frame(canvas, path, Data_customer, code, f"1/{2+len(test_parameter['frequency'])}")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
@@ -2624,8 +2630,8 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     canvas.showPage()
 
-    for i in range(3):
-        main_frame(canvas, path, Data_customer, code, f"{i+2}/5")
+    for i in range(len(test_parameter["frequency"])):
+        main_frame(canvas, path, Data_customer, code, f"{i+2}/{2+len(test_parameter['frequency'])}")
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                                  "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
@@ -2638,7 +2644,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
         result_vibration_creep(canvas, [res_dynamic[i]], [pick_vc_array[i], pick_c_array[i]], test_parameter)
         canvas.showPage()
 
-    main_frame(canvas, path, Data_customer, code, "5/5")
+    main_frame(canvas, path, Data_customer, code, f"{2+len(test_parameter['frequency'])}/{2+len(test_parameter['frequency'])}")
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"],
@@ -2647,7 +2653,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_vibration_creep(canvas, test_parameter)
 
-    result_vibration_creep3(canvas, res_dynamic, [pick_vc_array[3], pick_c_array[3]], test_parameter)
+    result_vibration_creep3(canvas, res_dynamic, [pick_vc_array[len(test_parameter['frequency'])], pick_c_array[len(test_parameter['frequency'])]], test_parameter)
     canvas.showPage()
 
     canvas.save()
