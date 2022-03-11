@@ -98,40 +98,50 @@ class App(QMainWindow):  # Окно и виджеты на нем
         #self.setWindowIcon(QIcon(icons + "ST.png"))
         self.setGeometry(self.left, self.top, self.width, self.height)
         if test_version(actual_version):
-            self.table_widget = QWidget()
-            self.layout = QGridLayout()
-            self.table_widget.setLayout(self.layout)
-            self.info_button = QPushButton("Лог версий")
-            self.info_button.setFixedHeight(50)
-            self.info_button.clicked.connect(self.info)
-            self.layout.addWidget(self.info_button, 0, 0, 1, -1)
-
-            col, string = 0, 1
-
-            for key in prog_dict:
-                setattr(self, key, QPushButton(prog_name[key]))
-                btn = getattr(self, key)
-                btn.setObjectName(key)
-                btn.clicked.connect(self.buttons_click)
-                btn.setFixedHeight(290)
-
-                btn.setStyleSheet("QPushButton { text-align: left; }")
-                btn.setFont(QFont('Times', 24))
-                btn.setIcon(QIcon(QPixmap(os.path.join(icon_path, key + ".jpg"))))
-                btn.setIconSize(QSize(280, 280))
-
-                self.layout.addWidget(btn, string, col)
-                col += 1
-                if col == 2:
-                    col = 0
-                    string += 1
-
-            self.setCentralWidget(self.table_widget)
-            self.show()
+            self.run()
         else:
-            QMessageBox.critical(self, "Ошибка",
-                                 f"Скачайте актуальную версию приложения {get_actual_version()}",
-                                 QMessageBox.Ok)
+            ret = QMessageBox.question(self, 'Предупреждение',
+                                       f"Вы запускаете устаревшую версию программы. Актуальная версия {get_actual_version()}",
+                                       QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+            if ret == QMessageBox.Yes:
+                try:
+                    self.run()
+                except:
+                    app_logger.exception("Ошибка приложения")
+            else:
+                sys.exit()
+
+    def run(self):
+        self.table_widget = QWidget()
+        self.layout = QGridLayout()
+        self.table_widget.setLayout(self.layout)
+        self.info_button = QPushButton("Лог версий")
+        self.info_button.setFixedHeight(50)
+        self.info_button.clicked.connect(self.info)
+        self.layout.addWidget(self.info_button, 0, 0, 1, -1)
+
+        col, string = 0, 1
+
+        for key in prog_dict:
+            setattr(self, key, QPushButton(prog_name[key]))
+            btn = getattr(self, key)
+            btn.setObjectName(key)
+            btn.clicked.connect(self.buttons_click)
+            btn.setFixedHeight(290)
+
+            btn.setStyleSheet("QPushButton { text-align: left; }")
+            btn.setFont(QFont('Times', 24))
+            btn.setIcon(QIcon(QPixmap(os.path.join(icon_path, key + ".jpg"))))
+            btn.setIconSize(QSize(280, 280))
+
+            self.layout.addWidget(btn, string, col)
+            col += 1
+            if col == 2:
+                col = 0
+                string += 1
+
+        self.setCentralWidget(self.table_widget)
+        self.show()
 
     def buttons_click(self):
 

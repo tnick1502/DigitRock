@@ -35,6 +35,7 @@ class Models:
                 self.tests[test_name].set_test_params()
             except:
                 app_logger.exception(f"Ошибка моделирования опыта {test_name}")
+                break
 
     def dump(self, path):
         with open(path, "wb") as file:
