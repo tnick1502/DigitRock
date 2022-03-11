@@ -575,6 +575,8 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 'fun': constrains}
 
         res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, options={'ftol': 1e-9})
+        # res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds,
+        #                options={'ftol': 1e-9, 'maxiter': 50}) # отбойник на 50
         res = res.x
         sigma1_with_noise = np.insert(res, fixed_circle_index, sigma1_with_noise[fixed_circle_index])
 
@@ -614,5 +616,3 @@ if __name__ == '__main__':
     a.plotter()
     a.save_log_files("C:/Users/Пользователь/Desktop")
     plt.show()
-
-
