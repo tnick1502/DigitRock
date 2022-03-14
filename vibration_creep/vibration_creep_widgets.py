@@ -389,7 +389,7 @@ class VibrationCreepSoilTestApp(QWidget):
 
                 set_cell_data(self.tab_1.path, ("IH" + str(number), (number, 241)), E50, sheet="Лист1", color="FF6961")
                 set_cell_data(self.tab_1.path, ("II" + str(number), (number, 242)), Ed, sheet="Лист1", color="FF6961")
-                set_cell_data(self.tab_1.path, ("IH" + str(number), (number, 79)), Kd, sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.path, ("CB" + str(number), (number, 79)), Kd, sheet="Лист1", color="FF6961")
 
 
             else:
@@ -409,7 +409,7 @@ class VibrationCreepSoilTestApp(QWidget):
                               color="FF6961")
                 set_cell_data(self.tab_1.path, ("II" + str(number), (number, 242)), res["E50d"], sheet="Лист1",
                               color="FF6961")
-                set_cell_data(self.tab_1.path, ("IH" + str(number), (number, 79)), res["Kd"], sheet="Лист1",
+                set_cell_data(self.tab_1.path, ("CB" + str(number), (number, 79)), res["Kd"], sheet="Лист1",
                               color="FF6961")
                 set_cell_data(self.tab_1.path, ("BU" + str(number), (number, 72)), res["E50"], sheet="Лист1",
                               color="FF6961")

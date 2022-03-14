@@ -718,43 +718,45 @@ def cos_ocr(x, y,  qf, qocr, xc):
     extremums = argrelextrema(y+cos_par, np.greater)
 
     y_ocr = y + cos_par
-    if xc < 0.15:
-        count = 0
-        while ((max(y+cos_par) > max_y_initial) or ((extremums[0][0] < index_max) and y_ocr[extremums[0][0]] > 0.9 * max_y_initial)) and count < 200:
 
-            if max(y + cos_par) > max_y_initial:
-                xc = xc - 0.0001
-                if xc >= sm:
-                    index_2xocr, = np.where(x >= xc)
-                    index_xocr, = np.where(x >= xocr)
+    count = 0
+    while ((max(y + cos_par) > max_y_initial) or (
+            (extremums[0][0] < index_max) and y_ocr[extremums[0][0]] > 0.9 * max_y_initial)) and count < 200:
 
-                    cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
-                                         h * (1 / 2) * (np.cos((1. / (xc - sm)) * np.pi * (
-                                                     x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
-                                         np.zeros(len(x[index_2xocr[0]:]))))
-            #
-            y_ocr = y+cos_par
-            delta = 0.01*h
-
-            if (extremums[0][0] < index_max) and y_ocr[extremums[0][0]] > 0.95 * max_y_initial:
-                h = h - delta
-                k = h / (sm) ** 2
+        if max(y + cos_par) > max_y_initial:
+            xc = xc - 0.0001
+            if xc >= sm:
                 index_2xocr, = np.where(x >= xc)
                 index_xocr, = np.where(x >= xocr)
 
                 cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
                                      h * (1 / 2) * (np.cos((1. / (xc - sm)) * np.pi * (
-                                                 x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
+                                             x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
                                      np.zeros(len(x[index_2xocr[0]:]))))
-                extremums = argrelextrema(y + cos_par, np.greater)
-            #
-            y_ocr = y + cos_par
-            count = count + 1
+        #
+        y_ocr = y + cos_par
+        delta = 0.01 * h
+
+        if (extremums[0][0] < index_max) and y_ocr[extremums[0][0]] > 0.95 * max_y_initial:
+            h = h - delta
+            k = h / (sm) ** 2
+            index_2xocr, = np.where(x >= xc)
+            index_xocr, = np.where(x >= xocr)
+
+            cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
+                                 h * (1 / 2) * (np.cos((1. / (xc - sm)) * np.pi * (
+                                         x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
+                                 np.zeros(len(x[index_2xocr[0]:]))))
+            extremums = argrelextrema(y + cos_par, np.greater)
+        #
+        y_ocr = y + cos_par
+        count = count + 1
+        # print(f"cos_ocr : COUNT : {count}")
 
     return cos_par
 
 
-def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points, y_rel_p, Eur, point2_y):
+def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
     qocr = 0  # !!!
     '''кусочная функция: на участкe [0,xc]-сумма функций гиперболы и
     (экспоненты или тангенса) и кусочной функции синуса и парболы
@@ -857,39 +859,8 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points, y_rel_p, 
     y_smooth = spl(xnew)
 
     xold = xnew  # масиив х без учета петли (для обьемной деформации)
-    x_loop, y_loop, point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, x1_l, x2_l, y1_l, y2_l = loop(xnew,
-                                                                                                              y_smooth,
-                                                                                                              Eur,
-                                                                                                              y_rel_p, point2_y)
-    index_point1_x, = np.where(xnew >= point1_x)
-    index_point3_x, = np.where(xnew >= point3_x)
-    index_point1_y, = np.where(y_smooth >= point1_y)
-    index_point3_y, = np.where(y_smooth >= point3_y)
 
-    y_smooth += deviator_loading_deviation(xnew, y_smooth, xc)
-
-    y_smooth = sensor_accuracy(xnew, y_smooth, qf, x50, xc)  # шум на кривой без петли
-    y_smooth = discrete_array(y_smooth, 0.5)  # ступеньки на кривой без петли
-
-    y1_l = y1_l + np.random.uniform(-1, 1, len(y1_l))  # шум на петле
-    y2_l = y2_l + np.random.uniform(-1, 1, len(y2_l))  # шум на петле
-    y1_l = discrete_array(y1_l, 1)  # ступени на петле
-    y2_l = discrete_array(y2_l, 1)  # cтупени на петле
-
-    y_loop = np.hstack((y1_l, y2_l))  # петля
-
-    if Eur:
-        y_smooth = np.hstack(
-            (y_smooth[:index_point1_x[0]], y_loop, y_smooth[index_point3_x[0] + 1:]))  # кривая с петлей
-        xnew = np.hstack((xnew[:index_point1_x[0]], x_loop, xnew[index_point3_x[0] + 1:]))  # кривая с петлей
-
-    point1_x_index = index_point1_x[0] + 1  # первая точка петли на самом деле принадлежит исходной кривой
-    point2_x_index = index_point1_x[0] + len(y1_l)  # -1 + 1 = 0 т.к. самая нижняя точка петли принадлежит разгрузке
-    point3_x_index = index_point1_x[0] + len(
-        x_loop) - 2  # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
-    y_smooth[0] = 0.
-
-    return xold, xnew, y_smooth, qf, xc, x2, qf2, e50, point1_x, point2_x, point3_x, point1_x_index, point2_x_index, point3_x_index
+    return xold, xnew, y_smooth, qf, xc, x2, qf2, e50
 
 
 # Обьемная деформация
@@ -1195,10 +1166,7 @@ def curve(qf, e50, **kwargs):
         qf2 = qf
     x50 = (qf / 2.) / e50
 
-    x_old, x, y, qf, xc, x2, qf2, e50, point1_x, point2_x, point3_x, point1_x_index, point2_x_index, point3_x_index = dev_loading(
-        qf, e50, x50, xc, x2, qf2, gaus_or_par,
-        amount_points, y_rel_p,
-        Eur, point2_y)  # x_old - без участка разгрузки, возвращается для обьемной деформации
+    x_old, x, y, qf, xc, x2, qf2, e50 = dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points)  # x_old - без участка разгрузки, возвращается для обьемной деформации
     # x - c участком разгрузки или без в зависимости от того передан ли Eur
 
     if qocr > (0.6 * qf):
@@ -1218,7 +1186,9 @@ def curve(qf, e50, **kwargs):
 
     index_x50, = np.where(x >= x50)
 
+    is_OCR = False
     if cos[index_x50[0]] > 0:
+        is_OCR = True
         a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
         delta = abs(a - qf / 2)
 
@@ -1227,10 +1197,7 @@ def curve(qf, e50, **kwargs):
         # index_x50_ocr, = np.where(x >= x50_ocr)
         # x50_ocr = x[index_x50_ocr[0]]
 
-        x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr, \
-        point1_x, point2_x, point3_x, point1_x_index, \
-        point2_x_index, point3_x_index = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points,
-                                                     y_rel_p, Eur, point2_y)
+        x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points)
 
         y_ocr = y_ocr + cos
 
@@ -1248,24 +1215,60 @@ def curve(qf, e50, **kwargs):
             e50_ocr = (qf / 2 - delta) / x50
             x50_ocr = (qf / 2) / e50_ocr
 
-            x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr, \
-            point1_x, point2_x, point3_x, point1_x_index, \
-            point2_x_index, point3_x_index = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points,
-                                                         y_rel_p, Eur, point2_y)
+            x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points)
             #
             y_ocr = y_ocr + cos
 
+    y = copy.deepcopy(y_ocr)
+
+    x_loop, y_loop, point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, x1_l, x2_l, y1_l, y2_l = loop(x,
+                                                                                                              y,
+                                                                                                              Eur,
+                                                                                                              y_rel_p, point2_y)
+    index_point1_x, = np.where(x >= point1_x)
+    index_point3_x, = np.where(x >= point3_x)
+    index_point1_y, = np.where(y >= point1_y)
+    index_point3_y, = np.where(y >= point3_y)
+
+    y += deviator_loading_deviation(x, y, xc)
+
+    y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
+    y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
+
+    #
+    if not Eur and is_OCR:
+        y_ocr = copy.deepcopy(y)
         index_qf2ocr, = np.where(y_ocr >= qf / 2)
         x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
                              [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
         delta = x50 / x_qf2ocr
+
         x = x * delta
         index_x50, = np.where(x >= x50)
         y_qf2ocr = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
-        k = y_qf2ocr / (qf/2)
+        k = y_qf2ocr / (qf / 2)
         y_ocr = y_ocr / k
+        y = copy.deepcopy(y_ocr)
+    #
 
-    y = copy.deepcopy(y_ocr)
+
+    y1_l = y1_l + np.random.uniform(-1, 1, len(y1_l))  # шум на петле
+    y2_l = y2_l + np.random.uniform(-1, 1, len(y2_l))  # шум на петле
+    y1_l = discrete_array(y1_l, 1)  # ступени на петле
+    y2_l = discrete_array(y2_l, 1)  # cтупени на петле
+
+    y_loop = np.hstack((y1_l, y2_l))  # петля
+
+    if Eur:
+        y = np.hstack((y[:index_point1_x[0]],
+                              y_loop, y[index_point3_x[0] + 1:]))  # кривая с петлей
+        x = np.hstack((x[:index_point1_x[0]], x_loop, x[index_point3_x[0] + 1:]))  # кривая с петлей
+
+    point1_x_index = index_point1_x[0] + 1  # первая точка петли на самом деле принадлежит исходной кривой
+    point2_x_index = index_point1_x[0] + len(y1_l)  # -1 + 1 = 0 т.к. самая нижняя точка петли принадлежит разгрузке
+    point3_x_index = index_point1_x[0] + len(x_loop) - 2  # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
+    y[0] = 0.
+
 
     # ограничение на хс (не меньше чем x_given)
     if xc <= 0.025:
