@@ -55,7 +55,6 @@ class MyProgress(QProgressDialog):
                 self.setValue(data["value"])
 
             if data.get("break", None):
-                print("SERVER_CLOSE")
                 conn.close()
                 break
         self.close()

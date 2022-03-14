@@ -853,12 +853,11 @@ class ShearStatment(InitialStatment):
 
     def button_open_click(self):
         combo_params = self.open_line.get_data()
-
         test = True
         for key in self.test_parameters:
             if key == "optional":
                 continue
-            if combo_params[key] == self.test_parameters[key][0]:
+            if combo_params[key] == self.test_parameters[key]["vars"][0]:
                 test = False
                 QMessageBox.critical(self, "Предупреждение", "Проверьте заполнение {}".format(key),
                                            QMessageBox.Ok)
