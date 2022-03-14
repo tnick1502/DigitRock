@@ -500,9 +500,9 @@ class ShearSoilTestApp(QWidget):
 
             moisture_type = self.tab_1.open_line.get_data()["optional"]
             moisture = ""
-            if moisture_type == self.tab_1.test_parameters["optional"][1]:
+            if moisture_type == self.tab_1.test_parameters["optional"]["vars"][1]:
                 moisture = "при природной влажности "
-            elif moisture_type == self.tab_1.test_parameters["optional"][2]:
+            elif moisture_type == self.tab_1.test_parameters["optional"]["vars"][2]:
                 moisture = "в водонасыщенном состоянии "
 
             test_mode = self.tab_1.shear_test_type_from_open_line()

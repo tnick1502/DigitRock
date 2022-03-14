@@ -5,7 +5,7 @@ import sys
 import socket
 import pickle
 
-BUFFER_SIZE = 1024
+BUFFER_SIZE = 4096
 
 def send_to_server(port, data):
     if port:
@@ -13,8 +13,6 @@ def send_to_server(port, data):
         sock.connect(('localhost', port))
         sock.sendall(pickle.dumps(data))
         sock.close()
-    else:
-        pass
 
 
 class MyProgress(QProgressDialog):
@@ -30,7 +28,7 @@ class MyProgress(QProgressDialog):
     def run(self):
         sock = socket.socket()
         sock.bind(('', self.port))
-        sock.listen(5)
+        sock.listen(10)
         while True:
             conn, addr = sock.accept()
             all_data = bytearray()
@@ -46,7 +44,9 @@ class MyProgress(QProgressDialog):
                 self.setLabelText(data["label"])
 
             if data.get("window_title", None):
-                self.setWindowTitle(data["window_title"])
+                pass
+                #self.setWindowTitle(data["window_title"])
+                #print("Q22222")
 
             if data.get("maximum", None):
                 self.setMaximum(data["maximum"])

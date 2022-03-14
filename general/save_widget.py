@@ -127,7 +127,10 @@ class Save_Dir(QWidget):
         statment.show()
 
     def pdf_watermark(self):
-        self.wm = PDFWatermark(statment.save_dir.save_directory)
+        try:
+            self.wm = PDFWatermark(statment.save_dir.save_directory)
+        except Exception as err:
+            print(str(err))
 
 
 class ReportType(QGroupBox):

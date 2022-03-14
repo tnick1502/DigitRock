@@ -28,12 +28,21 @@ class WaterMarks:
 
     # Все файлы ватермарок
     #_watermark: str = "pdf_watermark/5.pdf"
-    _watermark: Dict = {
-        "vertical": "pdf_watermark/vertical.pdf",
-        "horizontal": "pdf_watermark/horizontal.pdf"
-    }
 
-    _watermark_config: Dict = read_json_file("pdf_watermark/configs.json")
+    try:
+        _watermark: Dict = {
+            "vertical": "pdf_watermark/vertical.pdf",
+            "horizontal": "pdf_watermark/horizontal.pdf"
+        }
+
+        _watermark_config: Dict = read_json_file("pdf_watermark/configs.json")
+    except FileNotFoundError:
+        _watermark: Dict = {
+            "vertical": "vertical.pdf",
+            "horizontal": "horizontal.pdf"
+        }
+
+        _watermark_config: Dict = read_json_file("configs.json")
 
     def __init__(self, directory: str, port: int = 5001):
         self.set_initial_directory(directory)

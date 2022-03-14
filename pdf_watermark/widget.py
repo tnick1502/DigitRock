@@ -28,5 +28,5 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
 
-    progress = PDFWatermark(r"C:\Users\Пользователь\Desktop\test\1\Виброползучесть\Виброползучесть - 1")
+    progress = PDFWatermark(r"C:\Users\Пользователь\Desktop\test\Трёхосное сжатие (F, C, E)\Трёхосное сжатие (F, C, E) - 1")
     sys.exit(app.exec_())
