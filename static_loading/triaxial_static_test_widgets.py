@@ -642,6 +642,7 @@ class StatickSoilTestApp(QWidget):
             {
                 "standart_E": "Стандардный E",
                 "standart_E50": "Стандардный E50",
+                "E_E50": "Совместный E/E50",
                 "plaxis": "Plaxis/Midas",
                 "user_define_1": "Пользовательский с ε50"
             })
@@ -765,9 +766,15 @@ class StatickSoilTestApp(QWidget):
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                set_cell_data(self.tab_1.path,
-                              (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
-                              test_result["E"][0], sheet="Лист1", color="FF6961")
+                if self.tab_4.report_type == "standart_E":
+                    set_cell_data(self.tab_1.path,
+                                  (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
+                                  test_result["E"][0], sheet="Лист1", color="FF6961")
+                else:
+                    set_cell_data(self.tab_1.path,
+                                  (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number),
+                                   (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
+                                  test_result["E50"], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
                 name = file_path_name + " " + statment.general_data.object_number + " ТС Р" + ".pdf"
@@ -792,9 +799,16 @@ class StatickSoilTestApp(QWidget):
                 set_cell_data(self.tab_1.path,
                               ("GI" + str(number), (number, 190)),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
-                set_cell_data(self.tab_1.path,
-                              (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
-                              test_result["E"][0], sheet="Лист1", color="FF6961")
+
+                if self.tab_4.report_type == "standart_E":
+                    set_cell_data(self.tab_1.path,
+                                  (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
+                                  test_result["E"][0], sheet="Лист1", color="FF6961")
+                else:
+                    set_cell_data(self.tab_1.path,
+                                  (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
+                                   (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
+                                  test_result["E50"], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
@@ -831,10 +845,17 @@ class StatickSoilTestApp(QWidget):
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                set_cell_data(
-                    self.tab_1.path,
-                    (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][2] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][2])),
-                    test_result["E"][0], sheet="Лист1", color="FF6961")
+                if self.tab_4.report_type == "standart_E":
+                    set_cell_data(
+                        self.tab_1.path,
+                        (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][2] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][2])),
+                        test_result["E"][0], sheet="Лист1", color="FF6961")
+                else:
+                    set_cell_data(
+                        self.tab_1.path,
+                        (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][2] + str(number),
+                         (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][2])),
+                        test_result["E50"], sheet="Лист1", color="FF6961")
 
                 set_cell_data(self.tab_1.path,
                               (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][0] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][0])),
@@ -915,10 +936,17 @@ class StatickSoilTestApp(QWidget):
                 set_cell_data(self.tab_1.path,
                               ("GI" + str(number), (number, 190)),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
-                set_cell_data(self.tab_1.path,
-                              (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
-                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
-                              test_result["E"][0], sheet="Лист1", color="FF6961")
+
+                if self.tab_4.report_type == "standart_E":
+                    set_cell_data(self.tab_1.path,
+                                  (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
+                                   (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
+                                  test_result["E"][0], sheet="Лист1", color="FF6961")
+                else:
+                    set_cell_data(self.tab_1.path,
+                                  (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
+                                   (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
+                                  test_result["E50"], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)':
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
