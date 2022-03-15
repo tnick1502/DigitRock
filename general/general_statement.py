@@ -17,6 +17,85 @@ from general.report_general_statment import save_report
 import xlrd
 from openpyxl.utils import get_column_letter, column_index_from_string
 
+
+def convert_data(data):
+    def zap(val, prec, none='-'):
+        """ Возвращает значение `val` в виде строки с `prec` знаков после запятой
+        используя запятую как разделитель дробной части
+        """
+        if isinstance(val, str):
+            return val
+        if val is None:
+            return none
+        fmt = "{:." + str(int(prec)) + "f}"
+        return fmt.format(val).replace(".", ",")
+
+    def val_to_list(val, prec) -> list:
+        if val is None:
+            return None
+        else:
+            try:
+                val = [float(val)]
+            except ValueError:
+                v = val.split(";")
+                val = []
+                for value in v:
+                    try:
+                        a = float(value.replace(",", ".").strip(" "))
+                        a = zap(a, prec)
+                        val.append(a)
+                    except:
+                        pass
+
+            return val
+
+    data_new = []
+
+    for i in range(len(data)):
+        try:
+            line = data[i]
+            borehole = float(line[1])
+            if borehole % 1 < 0.001:
+                line[1] = str(int(borehole))
+            else:
+                line[1] = str(borehole)
+
+            line[2] = line[2].replace(".", ",")# zap(line[2], 1, none='-')
+
+            for i in range(3, len(line)):
+                try:
+                    line[i] = line[i].replace(".", ",")
+                except:
+                    pass
+
+        except IndexError:
+            pass
+
+        try:
+            if len(val_to_list(line[5], 1)) > 0:
+                f = val_to_list(line[4], 1)
+                E50 = val_to_list(line[5], 1)
+                Ed = val_to_list(line[6], 1)
+                Kd =val_to_list(line[7], 2)
+
+                line = [line[0], line[1], line[2], line[3], f[0], E50[0], Ed[0], Kd[0]]
+                data_new.append(line)
+
+                for j in range(1, len(f)):
+                    line = [line[0], line[1], line[2], line[3], f[j], E50[j], Ed[j], Kd[j]]
+                    data_new.append(line)
+            else:
+                data_new.append(line)
+        except:
+            data_new.append(line)
+
+    return data_new
+
+
+
+    #x.insert(val, pos)
+
+
 class StatementGenerator(QDialog):
     """
     Класс для представления пользовательского интерфейса импорта ведомости и
@@ -185,8 +264,8 @@ class StatementGenerator(QDialog):
 
                     # self.StatementStructure._additional_parameters = \
                     #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
-
                     titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
+                    data = convert_data(data)
                     for i in range(len(data)):
                         for j in range(len(data[i])):
                             if data[i][j] == 'None':
@@ -338,12 +417,12 @@ class StatementGenerator(QDialog):
         # наименования колонок большими буквами
         last_key = last_key.upper()
         if path[-1] == "x":
-            print("xlsx")
+            #print("xlsx")
             sheet = load_workbook(path, data_only=True)
             return self.form_xlsx_dictionary(sheet, last_key)
 
         else:
-            print("xls")
+            #print("xls")
             sheet = xlrd.open_workbook(path, formatting_info=True)
             sheet = sheet.sheet_by_index(0)
             return self.form_xls_dictionary(sheet, last_key)
@@ -443,14 +522,14 @@ class StatementGenerator(QDialog):
             except ValueError:
                 pass
         s = [i.strip(" ") for i in structure["additional_parameter"].split(";")]
-        print('f11', s)
+        #print('f11', s)
         for i in range(len(s)):
             data.append([s[i]])
         # data.append([structure["additional_parameter"]])
 
-        print('titles', titles)
-        print('data', data)
-        print('scale', scale)
+        #print('titles', titles)
+        #print('data', data)
+        #print('scale', scale)
         return titles, data, scale
 
     def number_of_decimal_places(self, matrix, parameter_decimal):
