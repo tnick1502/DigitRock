@@ -5,6 +5,7 @@
 
 import os
 
+from intersect import intersection
 from scipy.special import comb
 from scipy.optimize import fsolve
 import math
@@ -613,7 +614,7 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     min_E0 = point1_y / point1_x  # максимальный угол наклона петли
 
     if Eur < 1.1 * min_E0:
-        #print("\nВНИМАНИЕ: Eur изменен!\n")
+        print("\nВНИМАНИЕ: Eur изменен!\n")
         Eur = 1.1 * min_E0
         E0 = 1.1 * Eur
 
@@ -623,7 +624,7 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     point2_x = x[ip2x[0]]  # ???
 
     if ip2x[0] >= ip1[0]: # если точка 2 совпадает с точкой один или правее, то меняем точку 2 на предыдущую
-        #print("\nВНИМАНИЕ: Eur изменен!\n")
+        print("\nВНИМАНИЕ: Eur изменен!\n")
         ip2x[0] = ip1[0] - 1
         point2_x = x[ip2x[0]]
 
@@ -1219,16 +1220,45 @@ def curve(qf, e50, **kwargs):
             #
             y_ocr = y_ocr + cos
 
-    y = copy.deepcopy(y_ocr)
+        y = copy.deepcopy(y_ocr)
 
-    x_loop, y_loop, point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, x1_l, x2_l, y1_l, y2_l = loop(x,
-                                                                                                              y,
-                                                                                                              Eur,
-                                                                                                              y_rel_p, point2_y)
+    def define_eur(strain, deviator, reload):
+        if len(reload) > 0 and reload != [0, 0, 0]:
+            try:
+                x, y = intersection(strain[reload[0]:reload[1]], deviator[reload[0]:reload[1]],
+                                    strain[reload[1]:reload[2]], deviator[reload[1]:reload[2]])
+                if len(x) < 1:
+                    return None
+                Eur = round(((y[0] - deviator[reload[1]]) / (x[0] - strain[reload[1]])), 1)
+                return Eur
+            except ValueError:
+                return None
+        return None
+
+    print(f"ПОДАННЫЙ Еур : {Eur}")
+    x_loop, y_loop,\
+        point1_x, point1_y, point2_x, point2_y, point3_x, point3_y,\
+        x1_l, x2_l, y1_l, y2_l = loop(x, y, Eur, y_rel_p, point2_y)
+
+    current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
+    print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur}")
+    delta_Eur = Eur
+    error = Eur - current_Eur
+    while error > 0.05*Eur:
+        delta_Eur = delta_Eur + 50 #if error>0 else delta_Eur - 100
+        x_loop, y_loop, \
+        point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
+        x1_l, x2_l, y1_l, y2_l = loop(x, y, delta_Eur, y_rel_p, point2_y)
+
+        current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
+        print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur}")
+        error = Eur - current_Eur
+
     index_point1_x, = np.where(x >= point1_x)
     index_point3_x, = np.where(x >= point3_x)
-    index_point1_y, = np.where(y >= point1_y)
-    index_point3_y, = np.where(y >= point3_y)
+
+    # index_point1_y, = np.where(y >= point1_y)
+    # index_point3_y, = np.where(y >= point3_y)
 
     y += deviator_loading_deviation(x, y, xc)
 
@@ -1251,17 +1281,15 @@ def curve(qf, e50, **kwargs):
         y = copy.deepcopy(y_ocr)
     #
 
-
     y1_l = y1_l + np.random.uniform(-1, 1, len(y1_l))  # шум на петле
     y2_l = y2_l + np.random.uniform(-1, 1, len(y2_l))  # шум на петле
     y1_l = discrete_array(y1_l, 1)  # ступени на петле
-    y2_l = discrete_array(y2_l, 1)  # cтупени на петле
+    y2_l = discrete_array(y2_l, 1)  # ступени на петле
 
     y_loop = np.hstack((y1_l, y2_l))  # петля
 
     if Eur:
-        y = np.hstack((y[:index_point1_x[0]],
-                              y_loop, y[index_point3_x[0] + 1:]))  # кривая с петлей
+        y = np.hstack((y[:index_point1_x[0]], y_loop, y[index_point3_x[0] + 1:]))  # кривая с петлей
         x = np.hstack((x[:index_point1_x[0]], x_loop, x[index_point3_x[0] + 1:]))  # кривая с петлей
 
     point1_x_index = index_point1_x[0] + 1  # первая точка петли на самом деле принадлежит исходной кривой
@@ -1269,6 +1297,8 @@ def curve(qf, e50, **kwargs):
     point3_x_index = index_point1_x[0] + len(x_loop) - 2  # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
     y[0] = 0.
 
+    current_Eur = define_eur(x, y, [point1_x_index - 1, point2_x_index - 1, point3_x_index + 1])
+    print(f"Еур ПОСЛЕ ПРИСОЕДИНЕНИЯ: {current_Eur}")
 
     # ограничение на хс (не меньше чем x_given)
     if xc <= 0.025:
@@ -1794,8 +1824,8 @@ if __name__ == '__main__':
     #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
     # (596.48, 382.8)
 
-    x, y, y1, y2, indexs_loop, a, x_U, y_U = curve(800, 29710.0, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                 amount_points=500, angle_of_dilatacy=6, y_rel_p=596, point2_y=382, U=300)
+    x, y, y1, y2, indexs_loop, a = curve(800, 29710.0, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
+                                 amount_points=500, angle_of_dilatacy=6, y_rel_p=596, point2_y=382, Eur=30000)
 
     #
     # i, = np.where(x >= max(x) - 0.15)
@@ -1810,7 +1840,7 @@ if __name__ == '__main__':
     # #print(E)
     # i = np.argmax(y)
     # y -= y[0]
-    plt.plot(x[a:] - x[a], y[a:] - y[a], x[a:] - x[a], y_U[a:] - y_U[a])
+    plt.plot(x, y)
     #with open("C:/Users/Пользователь/Desktop/test_file.txt", "w") as file:
         #for i in range(len(y)):
             #file.write(str(np.round(-x[i], 4)).replace(".", ",") + "\t" + str(np.round(y[i], 4)).replace(".", ",")+ "\n")
