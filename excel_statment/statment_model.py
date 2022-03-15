@@ -27,6 +27,7 @@ class StatmentData:
     accreditation_key = DataTypeValidation(str)
     object_number = DataTypeValidation(str)
     shipment_number = DataTypeValidation(str)
+    path = DataTypeValidation(str)
 
     def __init__(self, statment_path):
         if statment_path.endswith("xlsx"):
@@ -79,6 +80,7 @@ class StatmentData:
         self.start_date = start_date
         self.end_date = end_date
         self.shipment_number = shipment_number
+        self.path = statment_path
 
     def __repr__(self):
         return str(self.__dict__)

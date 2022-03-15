@@ -123,8 +123,13 @@ class Save_Dir(QWidget):
         os.startfile(path)
 
     def general_statment(self):
-        statment = StatementGenerator(self)
-        statment.show()
+        try:
+            s = statment.general_data.path
+        except:
+            s = None
+
+        #_statment = StatementGenerator(self, path=s)
+        #_statment.show()
 
     def pdf_watermark(self):
         try:

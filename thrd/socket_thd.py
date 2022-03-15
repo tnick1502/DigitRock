@@ -39,14 +39,11 @@ class MyProgress(QProgressDialog):
                 all_data += data
 
             data = pickle.loads(all_data)
-
             if data.get("label", None):
                 self.setLabelText(data["label"])
 
             if data.get("window_title", None):
                 pass
-                #self.setWindowTitle(data["window_title"])
-                #print("Q22222")
 
             if data.get("maximum", None):
                 self.setMaximum(data["maximum"])

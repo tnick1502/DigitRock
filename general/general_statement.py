@@ -51,7 +51,7 @@ class StatementGenerator(QDialog):
 
     """
 
-    def __init__(self, parent, path=None, statement_structure=None):
+    def __init__(self, parent, path=None, statment_data=None, statement_structure_key=None):
         super().__init__(parent)
 
         self.setGeometry(100, 50, 1000, 950)
@@ -59,12 +59,18 @@ class StatementGenerator(QDialog):
         self.path = path
         self.customer = None
 
+        self.statment_data = statment_data
+
+        self._statement_structure_key = statement_structure_key if statement_structure_key else "triaxial_cyclic"
+
+        self.create_UI()
+
         if path:
             self.open_excel(path)
 
-        self.statment_data = None
+        if statement_structure_key:
+            self._plot()
 
-        self.create_UI()
 
     def create_UI(self):
         self.layout = QVBoxLayout()
@@ -88,7 +94,7 @@ class StatementGenerator(QDialog):
         self.customer_table.setFixedHeight(80)
         self.layout.addWidget(self.customer_table)
 
-        self.StatementStructure = StatementStructure(statement_structure_key="triaxial_cyclic")
+        self.StatementStructure = StatementStructure(statement_structure_key=self._statement_structure_key)
         self.layout.addWidget(self.StatementStructure)
 
         self.statment_table = Table(moove=True)
@@ -105,19 +111,17 @@ class StatementGenerator(QDialog):
             self.path = path
         else:
             self.path = QFileDialog.getOpenFileName(self, 'Open file', '/home')[0]
-            if self.path:
-                try:
-                    #wb = load_workbook(self.path, data_only=True)
-                    marker, self.customer = self.read_customer(self.path)
-                    self.customer_table.set_data([["Заказчик", "Объект", "Дата", "Аккредитация"],
-                                                  [self.customer[i] for i in
-                                                   ["customer", "object_name", "data", "accreditation"]]], "Stretch")
-                    self.text_file_path.setText(self.path)
-                    self.statment_data = self.form_excel_dictionary(self.path, last_key='IV')
-                except FileNotFoundError as error:
-                    print(error)
-            else:
-                pass
+
+        try:
+            #wb = load_workbook(self.path, data_only=True)
+            marker, self.customer = self.read_customer(self.path)
+            self.customer_table.set_data([["Заказчик", "Объект", "Дата", "Аккредитация"],
+                                          [self.customer[i] for i in
+                                           ["customer", "object_name", "data", "accreditation"]]], "Stretch")
+            self.text_file_path.setText(self.path)
+            self.statment_data = self.form_excel_dictionary(self.path, last_key='IV')
+        except FileNotFoundError as error:
+            print(error)
 
     def _plot(self):
         # print(self.StatementStructure.get_structure())
@@ -500,6 +504,7 @@ class StatementGenerator(QDialog):
         if value == " ":
             return "None"
         return value
+
 class StatementStructure(QWidget):
     """
     Класс для представления пользовательского интерфейса и механизмов создания и хранения шаблонов
@@ -566,7 +571,6 @@ class StatementStructure(QWidget):
         self._open_statement_structures(self._statement_structures_path)  # вызываем функцию от пути которая считывает структуру из файла json
         if statement_structure_key:  # только если в переменную передали ключ
             self._set_combo_structure(statement_structure_key)
-
 
     def create_UI(self):
         self.layout = QVBoxLayout()
