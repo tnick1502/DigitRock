@@ -809,7 +809,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                     E50=self._test_params.E50, Il=statment[statment.current_test].physical_properties.Il,
                     type_ground=statment[statment.current_test].physical_properties.type_ground)
             else:
-                self._draw_params.Eur = self._test_params.Eur * 1.2
+                self._draw_params.Eur = self._test_params.Eur
         else:
             self._draw_params.Eur = None
 
