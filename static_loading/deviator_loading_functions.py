@@ -1794,8 +1794,8 @@ if __name__ == '__main__':
     #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
     # (596.48, 382.8)
 
-    x, y, y1, y2, indexs_loop, a, x_U, y_U = curve(800, 29710.0, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                 amount_points=500, angle_of_dilatacy=6, y_rel_p=596, point2_y=382, U=300)
+    x, y, y1, y2, indexs_loop, a = curve(800, 29710.0, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
+                                         amount_points=500, angle_of_dilatacy=6, y_rel_p=596, point2_y=382, Eur=150000)
 
     #
     # i, = np.where(x >= max(x) - 0.15)
@@ -1810,7 +1810,7 @@ if __name__ == '__main__':
     # #print(E)
     # i = np.argmax(y)
     # y -= y[0]
-    plt.plot(x[a:] - x[a], y[a:] - y[a], x[a:] - x[a], y_U[a:] - y_U[a])
+    plt.plot(x, y)
     #with open("C:/Users/Пользователь/Desktop/test_file.txt", "w") as file:
         #for i in range(len(y)):
             #file.write(str(np.round(-x[i], 4)).replace(".", ",") + "\t" + str(np.round(y[i], 4)).replace(".", ",")+ "\n")

@@ -600,14 +600,12 @@ def loop(x, y, Eur, y_rel_p, point2_y):
         point3_x = x[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
     point3_y = y[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
 
-
     d1_p3 = (y[ip3[0] + 1] - y[ip3[0]]) / (x[ip3[0] + 1] - x[ip3[0]])  # производная
     # кривой девиаторного нагружения в точке конца петли
     E0 = (y[1] - y[0]) / (x[1] - x[0])  # производная кривой девиаторного нагружения в 0
     # ограничение на E0 (не больше чем модуль петли разгрузки)
     if E0 < Eur:
         E0 = 1.1 * Eur
-
 
     # ограничение на угол наклона участка повтороной нагрузки,
     # чтобы исключить пересечение петли и девиаторной кривой
@@ -628,11 +626,13 @@ def loop(x, y, Eur, y_rel_p, point2_y):
         ip2x[0] = ip1[0] - 1
         point2_x = x[ip2x[0]]
 
-    x1_l = np.linspace(point1_x, point2_x, int(abs(point2_x - point1_x) / (x[1] - x[0]) + 1))  # участок разгрузки
-    x2_l = np.linspace(point2_x, point3_x,
-                       int(abs(point3_x - point2_x) / (x[1] - x[0]) + 1))  # участок повторной нагрузки
+    # участок разгрузки
+    x1_l = np.linspace(point1_x, point2_x, int(abs(point2_x - point1_x) / (x[1] - x[0]) + 1))
+    # участок повторной нагрузки
+    x2_l = np.linspace(point2_x, point3_x, int(abs(point3_x - point2_x) / (x[1] - x[0]) + 1))
 
     din_pr = 2 * Eur ## 0.8 * Eur + 60000  # производная в точке начала разгрузки (близка к бесконечности) #???
+
     spl1 = interpolate.make_interp_spline([point2_x, point1_x],
                                           [point2_y, point1_y], k=3,
                                           bc_type=([(2, 0)], [(1, din_pr)]))
@@ -1222,6 +1222,7 @@ def curve(qf, e50, **kwargs):
 
         y = copy.deepcopy(y_ocr)
 
+    # ПОСТРОЕНИЕ И ОПТИМИЗАЦИЯ ПЕТЛИ РАЗГРУЗКИ
     def define_eur(strain, deviator, reload):
         if len(reload) > 0 and reload != [0, 0, 0]:
             try:
@@ -1236,29 +1237,45 @@ def curve(qf, e50, **kwargs):
         return None
 
     print(f"ПОДАННЫЙ Еур : {Eur}")
+    # построение петли разгрузки
     x_loop, y_loop,\
         point1_x, point1_y, point2_x, point2_y, point3_x, point3_y,\
         x1_l, x2_l, y1_l, y2_l = loop(x, y, Eur, y_rel_p, point2_y)
-
-    current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
-    print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur}")
-    delta_Eur = Eur
-    error = Eur - current_Eur
-    while error > 0.05*Eur:
-        delta_Eur = delta_Eur + 50 #if error>0 else delta_Eur - 100
-        x_loop, y_loop, \
-        point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
-        x1_l, x2_l, y1_l, y2_l = loop(x, y, delta_Eur, y_rel_p, point2_y)
-
+    # оптимизация петли разгрузки
+    if Eur:
         current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
         print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur}")
+        delta_Eur = Eur
         error = Eur - current_Eur
+        best_error = error
+        best_Eur = delta_Eur
+
+        while abs(error/Eur*100) > 4:
+            delta_Eur = delta_Eur + 100
+            x_loop, y_loop, \
+                point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
+                x1_l, x2_l, y1_l, y2_l = loop(x, y, delta_Eur, y_rel_p, point2_y)
+
+            current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
+
+            if not current_Eur:
+                break
+
+            error = Eur - current_Eur
+            if abs(error) <= best_error:
+                best_error = abs(error)
+                best_Eur = delta_Eur
+            print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur} : ОШИБКА : {abs(Eur - current_Eur) / Eur * 100}")
+
+        x_loop, y_loop, \
+            point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
+            x1_l, x2_l, y1_l, y2_l = loop(x, y, best_Eur, y_rel_p, point2_y)
+        current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
+        print(f"ЛУЧШИЙ ПОЛУЧЕННЫЙ Еур : {current_Eur} : ОШИБКА : {abs(Eur - current_Eur) / Eur * 100}")
+        # оптимизация петли разгрузки завершена
 
     index_point1_x, = np.where(x >= point1_x)
     index_point3_x, = np.where(x >= point3_x)
-
-    # index_point1_y, = np.where(y >= point1_y)
-    # index_point3_y, = np.where(y >= point3_y)
 
     y += deviator_loading_deviation(x, y, xc)
 
@@ -1298,7 +1315,7 @@ def curve(qf, e50, **kwargs):
     y[0] = 0.
 
     current_Eur = define_eur(x, y, [point1_x_index - 1, point2_x_index - 1, point3_x_index + 1])
-    print(f"Еур ПОСЛЕ ПРИСОЕДИНЕНИЯ: {current_Eur}")
+    print(f"Еур ПОСЛЕ ПРИСОЕДИНЕНИЯ: {current_Eur} : ОШИБКА : {abs(Eur - current_Eur)/Eur*100}")
 
     # ограничение на хс (не меньше чем x_given)
     if xc <= 0.025:
@@ -1825,7 +1842,7 @@ if __name__ == '__main__':
     # (596.48, 382.8)
 
     x, y, y1, y2, indexs_loop, a = curve(800, 29710.0, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                 amount_points=500, angle_of_dilatacy=6, y_rel_p=596, point2_y=382, Eur=30000)
+                                 amount_points=500, angle_of_dilatacy=6, y_rel_p=596, point2_y=382, Eur=50000)
 
     #
     # i, = np.where(x >= max(x) - 0.15)
