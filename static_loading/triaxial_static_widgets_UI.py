@@ -4,7 +4,7 @@ __version__ = 1
 
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFrame, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, \
     QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout,\
-    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox
+    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QComboBox
 from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject
 
 import matplotlib.pyplot as plt
@@ -81,6 +81,15 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.widgets_line.addWidget(self.slider_cut_frame)
         self.widgets_line.addWidget(self.chose_volumometer)
 
+        self.chose_plot_type = QGroupBox("Режим построения")
+        self.chose_plot_type_layout = QHBoxLayout()
+        self.chose_plot_type.setLayout(self.chose_plot_type_layout)
+        self.combo_box = QComboBox()
+        self.combo_box.addItems(["E", "E50", "E и E50"])
+
+        self.chose_plot_type_layout.addWidget(self.combo_box)
+        self.widgets_line.addWidget(self.chose_plot_type)
+
 
         self.graph_canvas_layout = QHBoxLayout()
 
@@ -139,117 +148,235 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
     def plot(self, plots, res):
         """Построение графиков опыта"""
+
+        if statment.general_parameters.test_mode == "Виброползучесть":
+            self.combo_box.setCurrentText("E50")
+            self.combo_box.setDisabled(True)
+
+        if statment.general_parameters.test_mode in ["Трёхосное сжатие с разгрузкой", "Трёхосное сжатие (F, C, Eur)"]:
+            self.combo_box.addItems(["Eur"])
+            self.combo_box.setCurrentText("Eur")
+            self.combo_box.setDisabled(True)
+
         try:
-            self.deviator_ax.clear()
-            self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-            self.deviator_ax.set_ylabel("Напряжение $𝜎_1$', МПa")
+            if self.combo_box.currentText() == "E":
+                self._plot_E(plots, res)
+            elif self.combo_box.currentText() == "E50":
+                self._plot_E50(plots, res)
+            elif self.combo_box.currentText() == "E и E50":
+                self._plot_E_E50(plots, res)
+            elif self.combo_box.currentText() == "Eur":
+                self._plot_Eur(plots, res)
+            self._plot_volume_strain(plots, res)
+        except:
+            pass
 
-            self.volume_strain_ax.clear()
-            self.volume_strain_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-            self.volume_strain_ax.set_ylabel("Объемная деформация $ε_v$, д.е.")
+    def _plot_E(self, plots, res):
+        self.deviator_ax.clear()
+        self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.deviator_ax.set_ylabel("Напряжение $𝜎_1$', МПa")
 
-            self.deviator_ax2.clear()
+        self.deviator_ax2.clear()
+        self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
+        self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
-            if plots["strain"] is not None:
+        if plots["strain"] is not None:
 
-                if res["E"] is not None:
-                    _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
-                        res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0])
-                else:
-                    _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
-                        res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + "-"
+            if res["E"] is not None:
+                _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
+                    res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0])
+            else:
+                _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
+                    res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + "-"
+
+            self.deviator_ax.plot(plots["strain"], plots["deviator"] + plots["sigma_3"],
+                                  **plotter_params["static_loading_main_line"])
+            self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"] + plots["sigma_3"],
+                                  **plotter_params["static_loading_gray_line"])
+
+            self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
+            self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
+
+            self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"], label=_label,
+                                  **plotter_params["static_loading_black_dotted_line"])
+
+            self.deviator_ax2.plot(plots["strain"], plots["deviator"],
+                                   **plotter_params["static_loading_main_line"])
+
+            self.deviator_ax2.plot(plots["E"]["x"], plots["E"]["y"], label=_label,
+                                  **plotter_params["static_loading_black_dotted_line"])
+
+        label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
+            "K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
+        self.deviator_ax.plot([], [], label=label, color="#eeeeee")
+
+        self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
+        self.deviator_canvas.draw()
+
+    def _plot_E_E50(self, plots, res):
+        self.deviator_ax.clear()
+        self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.deviator_ax.set_ylabel("Напряжение $𝜎_1$', МПa")
+
+        self.deviator_ax2.clear()
+        self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
+        self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
+
+        if plots["strain"] is not None:
+
+            if res["E"] is not None:
+                _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
+                    res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0])
+            else:
+                _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
+                    res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + "-"
+
+            self.deviator_ax.plot(plots["strain"], plots["deviator"] + plots["sigma_3"],
+                                  **plotter_params["static_loading_main_line"])
+            self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"] + plots["sigma_3"],
+                                  **plotter_params["static_loading_gray_line"])
+
+            if statment.general_parameters.test_mode != "Виброползучесть":
+                self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
+                self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
+
+            if statment.general_parameters.test_mode != "Виброползучесть":
+                self.deviator_ax2.scatter(res["Eps50"], res["qf50"], s=20, color="black")
+
+            if statment.general_parameters.test_mode != "Виброползучесть":
+                self.deviator_ax2.plot(*plots["E50"],
+                                       label=_label,
+                                       **plotter_params["static_loading_black_dotted_line"])
+
+            self.deviator_ax2.plot(plots["strain"], plots["deviator"],
+                                   **plotter_params["static_loading_main_line"])
+            if res["E"] is not None:
+                if statment.general_parameters.test_mode != "Виброползучесть":
+                    self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"], label=_label,
+                                          **plotter_params["static_loading_black_dotted_line"])
+
+        label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
+            "K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
+        self.deviator_ax.plot([], [], label=label, color="#eeeeee")
+
+        self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
+        self.deviator_canvas.draw()
+
+    def _plot_E50(self, plots, res):
+        self.deviator_ax.clear()
+        self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.deviator_ax.set_ylabel("Девиатор q, МПа")
+
+        self.deviator_ax2.clear()
+        self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', МПa", fontsize=8)
+        self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
+
+        if plots["strain"] is not None:
+
+            if res["E"] is not None:
+                _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
+                    res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0])
+            else:
+                _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
+                    res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + "-"
+
+            self.deviator_ax.plot(plots["strain"], plots["deviator"],
+                                  **plotter_params["static_loading_main_line"])
+            self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"],
+                                  **plotter_params["static_loading_gray_line"])
+
+            self.deviator_ax.plot(*plots["E50"], label=_label,
+                                   **plotter_params["static_loading_black_dotted_line"])
+
+            self.deviator_ax.scatter(res["Eps50"], res["qf50"], s=20, color="black")
+
+            self.deviator_ax2.plot(plots["strain"], plots["deviator"] + plots["sigma_3"],
+                                   **plotter_params["static_loading_main_line"])
+
+            self.deviator_ax2.scatter(res["Eps50"], res["qf50"]+ plots["sigma_3"], s=20, color="black")
+
+            x, y = plots["E50"][0], np.array(plots["E50"][1])
+            self.deviator_ax2.plot(x, y + plots["sigma_3"],label=_label,
+                                   **plotter_params["static_loading_black_dotted_line"])
+
+        label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
+            "K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
+        self.deviator_ax.plot([], [], label=label, color="#eeeeee")
+
+        self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
+        self.deviator_canvas.draw()
+
+    def _plot_Eur(self, plots, res):
+        self.deviator_ax.clear()
+        self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.deviator_ax.set_ylabel("Напряжение $𝜎_1$', МПa")
+
+        self.deviator_ax2.clear()
+        self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
+        self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
+
+        if plots["strain"] is not None:
+
+            if res["E"] is not None:
+                _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
+                    res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0])
+            else:
+                _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
+                    res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + "-"
+
+            if plots["Eur"]:
+                self.deviator_ax.plot(plots["strain"], plots["deviator"] + plots["sigma_3"],
+                                      **plotter_params["static_loading_main_line"])
+                self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"] + plots["sigma_3"],
+                                      **plotter_params["static_loading_gray_line"])
+
+                self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"], label=_label,
+                                      **plotter_params["static_loading_black_dotted_line"])
 
 
+                self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
+                self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
 
+                self.deviator_ax2.plot(plots["strain_Eur"], plots["deviator_Eur"],
+                                       **plotter_params["static_loading_main_line"])
+                if statment.general_parameters.test_mode != "Виброползучесть":
+                    self.deviator_ax2.plot(*plots["Eur"], **plotter_params["static_loading_black_dotted_line"])
 
-                if plots["Eur"]:
-                    self.deviator_ax.plot(plots["strain"], plots["deviator"],
-                                          **plotter_params["static_loading_main_line"])
-
-                    self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"],
-                                          **plotter_params["static_loading_gray_line"])
-
-                    self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-                    self.deviator_ax.set_ylabel("Девиатор q, МПа")
-
-                    if statment.general_parameters.test_mode != "Виброползучесть":
-                        self.deviator_ax.plot(*plots["E50"],
-                                              label=_label,
-                                              **plotter_params["static_loading_black_dotted_line"])
-                    #self.deviator_ax.plot(*plots["Eur"], **plotter_params["static_loading_red_dotted_line"],
-                                          #label="$E_{ur}$" + ", MПа = " + str(res["Eur"]))
-                    self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
-                    self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
-
-                    self.deviator_ax2.plot(plots["strain_Eur"], plots["deviator_Eur"],
-                                           **plotter_params["static_loading_main_line"])
-                    if statment.general_parameters.test_mode != "Виброползучесть":
-                        self.deviator_ax2.plot(*plots["Eur"], **plotter_params["static_loading_black_dotted_line"])
-
-                else:
-                    self.deviator_ax.plot(plots["strain"], plots["deviator"] + plots["sigma_3"],
-                                          **plotter_params["static_loading_main_line"])
-                    self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"] + plots["sigma_3"],
-                                          **plotter_params["static_loading_gray_line"])
-
-                    if statment.general_parameters.test_mode != "Виброползучесть":
-                        self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
-                        self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
-
-                    self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
-                    self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
-
-                    x, y = plots["E50"][0], np.array(plots["E50"][1])
-                    if statment.general_parameters.test_mode != "Виброползучесть":
-                        self.deviator_ax2.scatter(res["Eps50"], res["qf50"], s=20, color="black")
-
-                    if statment.general_parameters.test_mode != "Виброползучесть":
-                        self.deviator_ax2.plot(*plots["E50"],
-                                              label=_label,
-                                              **plotter_params["static_loading_black_dotted_line"])
-
-                    self.deviator_ax2.plot(plots["strain"], plots["deviator"],
-                                           **plotter_params["static_loading_main_line"])
-                    if res["E"] is not None:
-                        if statment.general_parameters.test_mode != "Виброползучесть":
-                            self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"],label=_label,
-                                                  **plotter_params["static_loading_black_dotted_line"])
-                                          #label="$E$" + ", MПа = " + str(res["E"][0]) + "\n" + "$E$" + ", MПа = " + str(res["E"][0]))
-
-                    #self.deviator_ax2.set_xticklabels(self.deviator_ax2.get_xticks(), size=8)
-                    #self.deviator_ax2.set_yticklabels(self.deviator_ax2.get_yticks(), size=8)
-
-                #self.deviator_ax.plot([], [], label="$E_{50}$" + ", MПа = " + str(res["E50"]), color="#eeeeee")
-                #self.deviator_ax.plot([], [], label="$E$" + ", MПа = " + str(res["E"][0]), color="#eeeeee")
-
-                label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res["K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
+                label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
+                    "K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
 
                 self.deviator_ax.plot([], [], label=label, color="#eeeeee")
 
-                self.volume_strain_ax.plot(plots["strain"], plots["volume_strain"], **plotter_params["static_loading_main_line"])
-                self.volume_strain_ax.plot(plots["strain"], plots["volume_strain_approximate"],
-                                      **plotter_params["static_loading_red_dotted_line"])
-                if plots["dilatancy"]:
-                    self.volume_strain_ax.plot(plots["dilatancy"]["x"], plots["dilatancy"]["y"],
-                                            **plotter_params["static_loading_black_dotted_line"])
+        self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
+        self.deviator_canvas.draw()
 
-                self.volume_strain_ax.set_xlim(self.deviator_ax.get_xlim())
+    def _plot_volume_strain(self, plots, res):
+        self.volume_strain_ax.clear()
+        self.volume_strain_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.volume_strain_ax.set_ylabel("Объемная деформация $ε_v$, д.е.")
 
-                self.volume_strain_ax.plot([], [], label="Poissons ratio" + ", д.е. = " + str(res["poissons_ratio"]),
-                                      color="#eeeeee")
-                if res["dilatancy_angle"] is not None:
-                    self.volume_strain_ax.plot([], [],
-                                          label="Dilatancy angle" + ", град. = " + str(res["dilatancy_angle"][0]),
-                                          color="#eeeeee")
+        self.volume_strain_ax.plot(plots["strain"], plots["volume_strain"],
+                                   **plotter_params["static_loading_main_line"])
+        self.volume_strain_ax.plot(plots["strain"], plots["volume_strain_approximate"],
+                                   **plotter_params["static_loading_red_dotted_line"])
+        if plots["dilatancy"]:
+            self.volume_strain_ax.plot(plots["dilatancy"]["x"], plots["dilatancy"]["y"],
+                                       **plotter_params["static_loading_black_dotted_line"])
 
-                self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
-                self.volume_strain_ax.legend()
+        self.volume_strain_ax.set_xlim(self.deviator_ax.get_xlim())
 
-            self.deviator_canvas.draw()
-            self.volume_strain_canvas.draw()
+        self.volume_strain_ax.plot([], [], label="Poissons ratio" + ", д.е. = " + str(res["poissons_ratio"]),
+                                   color="#eeeeee")
+        if res["dilatancy_angle"] is not None:
+            self.volume_strain_ax.plot([], [],
+                                       label="Dilatancy angle" + ", град. = " + str(res["dilatancy_angle"][0]),
+                                       color="#eeeeee")
 
-        except:
-            pass
+        self.volume_strain_ax.legend()
+        self.volume_strain_canvas.draw()
+
+    def _combo_changed(self):
+        pass
 
     def save_canvas(self, format=["svg", "svg"], size=[[6, 2], [6, 2]]):
         """Сохранение графиков для передачи в отчет"""

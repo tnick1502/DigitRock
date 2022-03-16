@@ -52,6 +52,8 @@ class StaticProcessingWidget(QWidget):
         self.deviator_loading = ModelTriaxialDeviatorLoadingUI()
         self.deviator_loading.setFixedHeight(500)
 
+        self.deviator_loading.combo_box.activated.connect(self._combo_plot_deviator_changed)
+
         self._create_UI()
         self._wigets_connect()
 
@@ -323,6 +325,9 @@ class StaticProcessingWidget(QWidget):
     def _canvas_on_release(self, event):
         """Метод обрабатывает итпуск зажатой точки"""
         self.point_identificator = None
+
+    def _combo_plot_deviator_changed(self):
+        self._plot_deviator_loading()
 
     def get_test_results(self):
         return E_models[statment.current_test].get_test_results()
@@ -800,15 +805,10 @@ class StatickSoilTestApp(QWidget):
                               ("GI" + str(number), (number, 190)),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
 
-                if self.tab_4.report_type == "standart_E" or self.tab_4.report_type == "E_E50":
-                    set_cell_data(self.tab_1.path,
-                                  (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
-                                  test_result["E"][0], sheet="Лист1", color="FF6961")
-                else:
-                    set_cell_data(self.tab_1.path,
-                                  (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
-                                   (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
-                                  test_result["E50"], sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.path,
+                              (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
+                              test_result["E"][0], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
@@ -937,16 +937,10 @@ class StatickSoilTestApp(QWidget):
                               ("GI" + str(number), (number, 190)),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
 
-                if self.tab_4.report_type == "standart_E":
-                    set_cell_data(self.tab_1.path,
-                                  (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
-                                   (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
-                                  test_result["E"][0], sheet="Лист1", color="FF6961")
-                else:
-                    set_cell_data(self.tab_1.path,
-                                  (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
-                                   (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
-                                  test_result["E50"], sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.path,
+                              (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
+                              test_result["E"][0], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)':
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
