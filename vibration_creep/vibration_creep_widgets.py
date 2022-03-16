@@ -23,6 +23,7 @@ from singletons import E_models, VC_models, statment
 from loggers.logger import app_logger, handler
 from version_control.configs import actual_version
 __version__ = actual_version
+from general.general_statement import StatementGenerator
 
 class VibrationCreepSoilTestWidget(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -301,6 +302,8 @@ class VibrationCreepSoilTestApp(QWidget):
 
         self.save_massage = True
 
+        self.tab_4.general_statment_button.clicked.connect(self.general_statment)
+
     def _set_params(self, param):
         self.tab_2.set_params(param)
         self.tab_3.set_test_params(param)
@@ -389,7 +392,7 @@ class VibrationCreepSoilTestApp(QWidget):
 
                 set_cell_data(self.tab_1.path, ("IH" + str(number), (number, 241)), E50, sheet="Лист1", color="FF6961")
                 set_cell_data(self.tab_1.path, ("II" + str(number), (number, 242)), Ed, sheet="Лист1", color="FF6961")
-                set_cell_data(self.tab_1.path, ("IH" + str(number), (number, 79)), Kd, sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.path, ("CB" + str(number), (number, 79)), Kd, sheet="Лист1", color="FF6961")
 
 
             else:
@@ -409,7 +412,7 @@ class VibrationCreepSoilTestApp(QWidget):
                               color="FF6961")
                 set_cell_data(self.tab_1.path, ("II" + str(number), (number, 242)), res["E50d"], sheet="Лист1",
                               color="FF6961")
-                set_cell_data(self.tab_1.path, ("IH" + str(number), (number, 79)), res["Kd"], sheet="Лист1",
+                set_cell_data(self.tab_1.path, ("CB" + str(number), (number, 79)), res["Kd"], sheet="Лист1",
                               color="FF6961")
                 set_cell_data(self.tab_1.path, ("BU" + str(number), (number, 72)), res["E50"], sheet="Лист1",
                               color="FF6961")
@@ -477,6 +480,16 @@ class VibrationCreepSoilTestApp(QWidget):
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
                                            f"E_models{statment.general_data.get_shipment_number()}.pickle"))
                 app_logger.info("Новые параметры ведомости и модели сохранены")
+
+    def general_statment(self):
+        try:
+            s = statment.general_data.path
+        except:
+            s = None
+
+        _statment = StatementGenerator(self, path=s, statement_structure_key="triaxial_cyclic")
+        _statment.show()
+
 
 
 

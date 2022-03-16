@@ -23,7 +23,7 @@ from general.initial_tables import Table
 from general.general_widgets import Float_Slider
 from configs.plot_params import plotter_params
 from general.general_functions import read_json_file, AttrDict
-from singletons import FC_models, E_models, statment
+from singletons import FC_models, VibrationFC_models, E_models, statment
 from loggers.logger import app_logger, log_this
 from static_loading.triaxial_static_widgets_UI import ModelTriaxialDeviatorLoadingUI
 
@@ -132,10 +132,10 @@ class MohrTestManager(QWidget):
 class MohrWidget(QWidget):
     """Класс для табличного отображения параметров кругов Мора"""
 
-    def __init__(self):
+    def __init__(self, model="FC_models"):
         super().__init__()
 
-        self._model = ModelMohrCircles()
+        self._model = model
 
         self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.1}
 
@@ -144,7 +144,7 @@ class MohrWidget(QWidget):
         self.item_identification.setFixedWidth(350)
         self.mohr_test_manager = MohrTestManager()
         self.mohr_test_manager.setFixedHeight(330)
-        self.m_widget = MWidgetUI()
+        self.m_widget = MWidgetUI(self._model)
         self._create_UI()
 
         self.mohr_test_manager.add_test_button.clicked.connect(self._add_test)
@@ -222,7 +222,10 @@ class MohrWidget(QWidget):
         path = QFileDialog.getOpenFileName(self, 'Open file')[0]
         if path:
             try:
-                FC_models[statment.current_test].add_test(path)
+                if self._model == "FC_models":
+                    FC_models[statment.current_test].add_test(path)
+                else:
+                    VibrationFC_models[statment.current_test].add_test(path)
                 self._create_test_tables()
                 self._plot()
             except:
@@ -232,7 +235,12 @@ class MohrWidget(QWidget):
         """Удаление опыта"""
         parent = self.sender().parent()
         test_id = int(parent.title()[-1])
-        FC_models[statment.current_test].dell_test(test_id)
+
+        if self._model == "FC_models":
+            FC_models[statment.current_test].dell_test(test_id)
+        else:
+            VibrationFC_models[statment.current_test].dell_test(test_id)
+
         self._create_test_tables()
         self._plot()
 
@@ -241,23 +249,42 @@ class MohrWidget(QWidget):
         for Table in self.mohr_test_manager.findChildren(MohrTable):
             Table.deleteLater()
 
-        for num, test in enumerate(FC_models[statment.current_test].get_tests()):
-            res = test.deviator_loading.get_test_results()
-            res["sigma_1"] = res["sigma_3"] + res["qf"]
+        if self._model == "FC_models":
+            for num, test in enumerate(FC_models[statment.current_test].get_tests()):
+                res = test.deviator_loading.get_test_results()
+                res["sigma_1"] = res["sigma_3"] + res["qf"]
 
-            _format = "{:.3f}"
-            for key in ["sigma_1", "sigma_3", "max_pore_pressure"]:
-                if key == "max_pore_pressure":
-                    res[key] = _format.format(round(res[key]/1000, 3))
-                else:
-                    res[key] = _format.format(res[key])
+                _format = "{:.3f}"
+                for key in ["sigma_1", "sigma_3", "max_pore_pressure"]:
+                    if key == "max_pore_pressure":
+                        res[key] = _format.format(round(res[key] / 1000, 3))
+                    else:
+                        res[key] = _format.format(res[key])
 
-            setattr(self, "MohrTable_{}".format(num), MohrTable(num))
-            mohr = getattr(self, "MohrTable_{}".format(num))
-            mohr.set_param(res)
-            mohr.dell_button.clicked.connect(self._dell_test)
-            mohr.plot_button.clicked.connect(self._processing_test)
-            self.mohr_test_manager.add_test(mohr)
+                setattr(self, "MohrTable_{}".format(num), MohrTable(num))
+                mohr = getattr(self, "MohrTable_{}".format(num))
+                mohr.set_param(res)
+                mohr.dell_button.clicked.connect(self._dell_test)
+                mohr.plot_button.clicked.connect(self._processing_test)
+                self.mohr_test_manager.add_test(mohr)
+        else:
+            for num, test in enumerate(VibrationFC_models[statment.current_test].get_tests()):
+                res = test.deviator_loading.get_test_results()
+                res["sigma_1"] = res["sigma_3"] + res["qf"]
+
+                _format = "{:.3f}"
+                for key in ["sigma_1", "sigma_3", "max_pore_pressure"]:
+                    if key == "max_pore_pressure":
+                        res[key] = _format.format(round(res[key] / 1000, 3))
+                    else:
+                        res[key] = _format.format(res[key])
+
+                setattr(self, "MohrTable_{}".format(num), MohrTable(num))
+                mohr = getattr(self, "MohrTable_{}".format(num))
+                mohr.set_param(res)
+                mohr.dell_button.clicked.connect(self._dell_test)
+                mohr.plot_button.clicked.connect(self._processing_test)
+                self.mohr_test_manager.add_test(mohr)
 
     def _processing_test(self):
         """Вызов окна обработки опыта"""
@@ -280,8 +307,12 @@ class MohrWidget(QWidget):
         self.mohr_ax.set_xlabel("σ, МПа")
         self.mohr_ax.set_ylabel("τ, МПа")
 
-        plots = FC_models[statment.current_test].get_plot_data()
-        res = FC_models[statment.current_test].get_test_results()
+        if self._model == "FC_models":
+            plots = FC_models[statment.current_test].get_plot_data()
+            res = FC_models[statment.current_test].get_test_results()
+        else:
+            plots = VibrationFC_models[statment.current_test].get_plot_data()
+            res = VibrationFC_models[statment.current_test].get_test_results()
 
         if plots is not None:
             for i in range(len(plots["strain"])):
@@ -336,8 +367,8 @@ class MohrWidget(QWidget):
 
 class MohrWidgetSoilTest(MohrWidget):
     """Класс для табличного отображения параметров кругов Мора"""
-    def __init__(self):
-        super().__init__()
+    def __init__(self, model="FC_models"):
+        super().__init__(model)
         self.add_UI()
         self.refresh_test_button = QPushButton("Обновить опыт")
         self.refresh_test_button.clicked.connect(self.refresh)
@@ -349,7 +380,7 @@ class MohrWidgetSoilTest(MohrWidget):
         self.add_parameters_layout = QHBoxLayout()
         self.reference_pressure_array_box = PressureArray()
         self.add_parameters_layout.addWidget(self.reference_pressure_array_box)
-        self.reconsolidation = ReconsolidationRadio()
+        self.reconsolidation = ReconsolidationRadio(self._model)
         self.add_parameters_layout.addWidget(self.reconsolidation)
 
         self.m_sliders = TriaxialStaticLoading_Sliders({"m": "Предполагаемое значение m"})
@@ -384,7 +415,11 @@ class MohrWidgetSoilTest(MohrWidget):
         self.reference_pressure_array_box_layout.addStretch(-1)"""
 
     def add_test(self, path):
-        FC_models[statment.current_test].add_test(path)
+        if self._model == "FC_models":
+            FC_models[statment.current_test].add_test(path)
+        else:
+            VibrationFC_models[statment.current_test].add_test(path)
+
         self._create_test_tables()
         self._plot()
 
@@ -428,23 +463,39 @@ class MohrWidgetSoilTest(MohrWidget):
     #@log_this(app_logger, "debug")
     def refresh(self):
         try:
-            FC_models[statment.current_test].set_test_params()
+            if self._model == "FC_models":
+                FC_models[statment.current_test].set_test_params()
+            else:
+                VibrationFC_models[statment.current_test].set_test_params()
             self.set_params()
         except KeyError:
             pass
 
     def clear(self):
-        FC_models[statment.current_test]._tests = []
-        FC_models[statment.current_test]._test_data = AttrDict({"fi": None, "c": None})
-        FC_models[statment.current_test]._test_result = AttrDict({"fi": None, "c": None, "m": None})
-        FC_models[statment.current_test]._test_reference_params = AttrDict({"p_ref": None, "Eref": None})
+
+        if self._model == "FC_models":
+            FC_models[statment.current_test]._tests = []
+            FC_models[statment.current_test]._test_data = AttrDict({"fi": None, "c": None})
+            FC_models[statment.current_test]._test_result = AttrDict({"fi": None, "c": None, "m": None})
+            FC_models[statment.current_test]._test_reference_params = AttrDict({"p_ref": None, "Eref": None})
+        else:
+            VibrationFC_models[statment.current_test]._tests = []
+            VibrationFC_models[statment.current_test]._test_data = AttrDict({"fi": None, "c": None})
+            VibrationFC_models[statment.current_test]._test_result = AttrDict({"fi": None, "c": None, "m": None})
+            VibrationFC_models[statment.current_test]._test_reference_params = AttrDict({"p_ref": None, "Eref": None})
+
+
 
     def _processing_test(self):
         """Вызов окна обработки опыта"""
         parent = self.sender().parent()
         test_id = int(parent.title()[-1])
 
-        dialog = StaticSoilTestDialog(FC_models[statment.current_test]._tests[test_id], self)
+        if self._model == "FC_models":
+            dialog = StaticSoilTestDialog(FC_models[statment.current_test]._tests[test_id], self)
+        else:
+            dialog = StaticSoilTestDialog(VibrationFC_models[statment.current_test]._tests[test_id], self)
+
         # показывает диалог и после нажатия Ok передаёт виджету модель из диалога
         if dialog.exec() == QDialog.Accepted:
             FC_models[statment.current_test]._tests[test_id] = dialog._model
@@ -523,7 +574,8 @@ class PressureArray(QGroupBox):
         return self._checked
 
 class ReconsolidationRadio(QGroupBox):
-    def __init__(self):
+    def __init__(self, model):
+        self._model = model
         super().__init__()
         self.add_UI()
         self._checked = None
@@ -564,7 +616,10 @@ class ReconsolidationRadio(QGroupBox):
 
     def _btnClicked(self):
         if len(statment):
-            FC_models.generateTests()
+            if self._model == "FC_models":
+                FC_models.generateTests()
+            else:
+                VibrationFC_models.generateTests()
 
     def set_data(self):
         if statment.general_parameters.reconsolidation:
@@ -578,7 +633,10 @@ class ReconsolidationRadio(QGroupBox):
 class MWidgetUI(QGroupBox):
     """Класс для табличного отображения параметров кругов Мора"""
 
-    def __init__(self):
+    def __init__(self, model):
+
+        self._model = model
+
         super().__init__()
         self.setTitle('Обработка параметра m')
         self.layout = QVBoxLayout()
@@ -614,8 +672,12 @@ class MWidgetUI(QGroupBox):
         self.ax.set_xlabel(r"$ln(\frac{c*ctg(\varphi) + \sigma_3^{'}}{c*ctg(\varphi) + p_{ref}})$")
         self.ax.set_ylabel(r"$ln(\frac{E_{50}}{E_{50}^{ref}})$")
 
-        plots = FC_models[statment.current_test].get_plot_data()
-        res = FC_models[statment.current_test].get_test_results()
+        if self._model == "FC_models":
+            plots = FC_models[statment.current_test].get_plot_data()
+            res = FC_models[statment.current_test].get_test_results()
+        else:
+            plots = VibrationFC_models[statment.current_test].get_plot_data()
+            res = VibrationFC_models[statment.current_test].get_test_results()
 
         if plots is not None:
             if res["m"]:

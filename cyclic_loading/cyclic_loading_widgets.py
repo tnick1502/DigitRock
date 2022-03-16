@@ -28,6 +28,7 @@ from tests_log.equipment import dynamic
 from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogCyclic
 from version_control.configs import actual_version
+from general.general_statement import StatementGenerator
 __version__ = actual_version
 
 class CyclicProcessingWidget(QWidget):
@@ -617,6 +618,8 @@ class CyclicSoilTestApp(QWidget):
         self.button_predict_liquefaction.clicked.connect(self._predict)
         self.tab_1.splitter_table_vertical.addWidget(self.button_predict_liquefaction)
 
+        self.tab_3.general_statment_button.clicked.connect(self.general_statment)
+
     def keyPressEvent(self, event):
         if statment.current_test:
             list = [x for x in statment]
@@ -811,6 +814,28 @@ class CyclicSoilTestApp(QWidget):
     def jornal(self):
         self.dialog = TestsLogWidget(dynamic, TestsLogCyclic, self.tab_1.path)
         self.dialog.show()
+
+    def general_statment(self):
+        try:
+            s = statment.general_data.path
+        except:
+            s = None
+
+        key = None
+        try:
+            if statment.general_parameters.test_mode == "Сейсморазжижение":
+                key = "Seismic liquefaction"
+            elif statment.general_parameters.test_mode == "Штормовое разжижение":
+                key = "Storm liquefaction"
+            elif statment.general_parameters.test_mode == "Демпфирование":
+                key = "damping"
+            elif statment.general_parameters.test_mode == "По заданным параметрам":
+                key = "Seismic liquefaction"
+        except:
+            key = None
+
+        _statment = StatementGenerator(self, path=s, statement_structure_key=key)
+        _statment.show()
 
 
 

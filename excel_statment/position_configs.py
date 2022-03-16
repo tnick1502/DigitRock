@@ -45,7 +45,8 @@ MechanicalPropertyPosition = {
     "pressure_array": ["BO", 66],
     "Eoed": ["CE", 82],
     "Pref": ["FV", 177],
-    "p_max": ["CV", 99]
+    "p_max": ["CV", 99],
+    "Eur": ["GI", 190]
 }
 
 c_fi_E_PropertyPosition = {
@@ -67,7 +68,8 @@ c_fi_E_PropertyPosition = {
     "Срез плашка по плашке": [["AY", "AZ"], [50, 51]],
     "Срез НН": [["BA", "BB"], [52, 53]],
     "Срез дилатансия": [["HB", "HC", "HE"], [209, 210, 212]],
-    "Резонансная колонка": [["BC", "BD", "BE"], [54, 55, 56]]
+    "Резонансная колонка": [["BC", "BD", "BE"], [54, 55, 56]],
+    "Вибропрочность": [["BC", "BD", "BE", "CR"], [54, 55, 56, 95]],
 }
 
 DynamicsPropertyPosition = {

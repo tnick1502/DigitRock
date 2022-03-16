@@ -3,7 +3,6 @@ scipy==1.5.0
 matplotlib==3.2.2
 openpyxl==3.0.4
 reportlab==3.5.49
-pyqt5
 pyexcel==0.6.4
 svglib==1.0.1
 pdfrw==0.4
@@ -12,3 +11,8 @@ transliterate==1.10.2
 xlrd==1.2.0
 xlwt==1.3.0
 xlutils==2.0.0
+pypdf4==1.27.0
+qt==5.9.7
+pyqt5==5.9.2
+pyqt5-qt5==5.15.2
+pyqt5-sip==12.8.1

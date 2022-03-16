@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QGroupBox, \
     QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton
 import sys
 import os
+from pdf_watermark.widget import PDFWatermark
 
 from general.general_functions import create_path
 from singletons import statment
@@ -58,6 +59,11 @@ class Save_Dir(QWidget):
         self.advanced_box_layout.addWidget(self.general_statment_button)
         self.jornal_button = QPushButton("Журнал опытов")
         self.advanced_box_layout.addWidget(self.jornal_button)
+
+        self.pdf_watermark_button = QPushButton("Маркировка отчетов")  # Button(icons + "Сохранить.png", 52, 52, 0.7)
+        self.pdf_watermark_button.clicked.connect(self.pdf_watermark)
+        self.advanced_box_layout.addWidget(self.pdf_watermark_button)
+
         self.advanced_box_layout.addStretch(-1)
 
         self.savebox_layout.addLayout(self.savebox_layout_line_1)
@@ -117,8 +123,20 @@ class Save_Dir(QWidget):
         os.startfile(path)
 
     def general_statment(self):
-        statment = StatementGenerator(self)
-        statment.show()
+        try:
+            s = statment.general_data.path
+        except:
+            s = None
+
+        #_statment = StatementGenerator(self, path=s)
+        #_statment.show()
+
+    def pdf_watermark(self):
+        try:
+            self.wm = PDFWatermark(statment.save_dir.save_directory)
+        except Exception as err:
+            print(str(err))
+
 
 class ReportType(QGroupBox):
 

@@ -159,8 +159,10 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                     _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
                         res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + "-"
 
-                if plots["Eur"]:
 
+
+
+                if plots["Eur"]:
                     self.deviator_ax.plot(plots["strain"], plots["deviator"],
                                           **plotter_params["static_loading_main_line"])
 
@@ -183,9 +185,6 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                                            **plotter_params["static_loading_main_line"])
                     if statment.general_parameters.test_mode != "Виброползучесть":
                         self.deviator_ax2.plot(*plots["Eur"], **plotter_params["static_loading_black_dotted_line"])
-                    # label="$E$" + ", MПа = " + str(res["E"][0]) + "\n" + "$E$" + ", MПа = " + str(res["E"][0]))
-                    plt.xticks(fontsize=8)
-                    plt.yticks(fontsize=8)
 
                 else:
                     self.deviator_ax.plot(plots["strain"], plots["deviator"] + plots["sigma_3"],
@@ -223,6 +222,10 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                 #self.deviator_ax.plot([], [], label="$E_{50}$" + ", MПа = " + str(res["E50"]), color="#eeeeee")
                 #self.deviator_ax.plot([], [], label="$E$" + ", MПа = " + str(res["E"][0]), color="#eeeeee")
 
+                label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res["K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
+
+                self.deviator_ax.plot([], [], label=label, color="#eeeeee")
+
                 self.volume_strain_ax.plot(plots["strain"], plots["volume_strain"], **plotter_params["static_loading_main_line"])
                 self.volume_strain_ax.plot(plots["strain"], plots["volume_strain_approximate"],
                                       **plotter_params["static_loading_red_dotted_line"])
@@ -239,7 +242,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                                           label="Dilatancy angle" + ", град. = " + str(res["dilatancy_angle"][0]),
                                           color="#eeeeee")
 
-                self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.75))
+                self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
                 self.volume_strain_ax.legend()
 
             self.deviator_canvas.draw()

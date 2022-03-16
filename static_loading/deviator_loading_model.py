@@ -180,13 +180,16 @@ class ModelTriaxialDeviatorLoading:
                 i_start_E = 0
         if q_c == 0:
             i_end_E, = np.where(self._test_data.deviator_cut >= np.max(self._test_data.deviator_cut)*np.random.uniform(0.2, 0.3))
-            i_end_E = i_end_E[0]
+            if len(i_end_E):
+                i_end_E = i_end_E[0]
+            else:
+                i_end_E = len(self._test_data.deviator_cut) - 1
         else:
             i_end_E, = np.where(self._test_data.deviator_cut >= q_c2)
             if len(i_end_E):
                 i_end_E = i_end_E[0]
             else:
-                i_end_E = len(self._test_data.deviator_cut)-1
+                i_end_E = len(self._test_data.deviator_cut) - 1
 
         if i_end_E <= i_start_E:
             i_end_E = i_start_E + 1
@@ -218,6 +221,10 @@ class ModelTriaxialDeviatorLoading:
         """Получение результатов обработки опыта"""
         dict = copy.deepcopy(self._test_result.get_dict())
         dict["sigma_3"] = np.round((self._test_params.sigma_3 - float(dict["max_pore_pressure"])) / 1000, 3)
+
+        dict["K_E50"] = np.round(self._test_result.E[0]/self._test_result.E50, 2)
+        dict["K_Eur"] = np.round(self._test_result.Eur/self._test_result.E[0], 2) if self._test_result.Eur else None
+
         return dict
 
     def get_plot_data(self):
@@ -399,14 +406,17 @@ class ModelTriaxialDeviatorLoading:
         self._test_result.Eur = \
             ModelTriaxialDeviatorLoading.define_Eur(self._test_data.strain_cut,
                                   self._test_data.deviator_cut, self._test_data.reload_points_cut)
+        if self._test_data.volume_strain_approximate is not None:
+            self._test_result.poissons_ratio = ModelTriaxialDeviatorLoading.define_poissons(self._test_data.strain_cut,
+                                      self._test_data.deviator_cut,
+                                        self._test_data.volume_strain_approximate)
 
-        self._test_result.poissons_ratio = ModelTriaxialDeviatorLoading.define_poissons(self._test_data.strain_cut,
-                                  self._test_data.deviator_cut,
-                                    self._test_data.volume_strain_approximate)
-
-        self._test_result.dilatancy_angle = ModelTriaxialDeviatorLoading.define_dilatancy(self._test_data.strain_cut,
-                                  self._test_data.deviator_cut,
-                                    self._test_data.volume_strain_approximate)
+            self._test_result.dilatancy_angle = ModelTriaxialDeviatorLoading.define_dilatancy(self._test_data.strain_cut,
+                                      self._test_data.deviator_cut,
+                                        self._test_data.volume_strain_approximate)
+        else:
+            self._test_result.poissons_ratio = 0.3
+            self._test_result.dilatancy_angle =[12, 3, 10]
 
         self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
                                   self._test_data.deviator_cut, self._test_params.E_processing_points_index)
@@ -572,7 +582,7 @@ class ModelTriaxialDeviatorLoading:
         if len(i_end_for_plot):
             i_end_for_plot = i_end_for_plot[0]
         else:
-            i_end_for_plot = len(deviator)-1
+            i_end_for_plot = len(deviator) - 1
 
         return (round(E / 1000, 1), [strain[E_processing_points_index[0]], strain[i_end_for_plot]],
                 [deviator[E_processing_points_index[0]], line(E, b, strain[i_end_for_plot])])
@@ -789,12 +799,16 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         if self._test_params.Eur:
             self.unloading_borders = ModelTriaxialDeviatorLoadingSoilTest.define_unloading_points(
-                statment[statment.current_test].physical_properties.Il, statment[statment.current_test].physical_properties.type_ground,
+                statment[statment.current_test].physical_properties.Il,
+                statment[statment.current_test].physical_properties.type_ground,
                 self._test_params.sigma_3, statment[statment.current_test].mechanical_properties.K0)
 
-            self._draw_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
-                E50=self._test_params.E50, qf=self._test_params.qf, Il=statment[statment.current_test].physical_properties.Il,
-                initial_unloading_deviator=self.unloading_borders[0])
+            if type(self._test_params.Eur) is bool:
+                self._draw_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
+                    E50=self._test_params.E50, Il=statment[statment.current_test].physical_properties.Il,
+                    type_ground=statment[statment.current_test].physical_properties.type_ground)
+            else:
+                self._draw_params.Eur = self._test_params.Eur
         else:
             self._draw_params.Eur = None
 
@@ -1114,7 +1128,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         return k_q
 
     @staticmethod
-    def dependence_Eur(E50: float, qf: float, Il: float, initial_unloading_deviator: float) -> float:
+    def dependence_Eur_old(E50: float, qf: float, Il: float, initial_unloading_deviator: float) -> float:
         """ Определение модуля Eur
         :param E50: модуль деформации
         :param qf: девиатор разрушения
@@ -1140,6 +1154,44 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         Esec = initial_unloading_deviator / exp_strain(initial_unloading_deviator, E50, qf)
 
         return Esec * dependence_Eur_on_Il(Il)
+
+    @staticmethod
+    def dependence_Eur(E50: float, Il: float, type_ground: int) -> float:
+        """ Определение модуля Eur
+        :param E50: модуль деформации
+        :param Il: показатель текучести
+        :param type_ground: гран состав
+        :return: Eur"""
+
+        if Il == None:
+            Il = np.random.uniform(0.25, 0.75)
+
+        def dependence_Eur_of_clay():
+            if type_ground == 6 or type_ground == 7 or type_ground == 8:
+                if Il <= 0:
+                    return np.random.uniform(2.5, 3.5)
+                elif Il > 0 and Il <= 0.25:
+                    return np.random.uniform(3, 5)
+                elif Il > 0.25 and Il <= 0.5:
+                    return np.random.uniform(4, 7)
+                elif Il > 0.5 and Il <= 0.75:
+                    return np.random.uniform(4.8, 7.3)
+                elif Il > 0.75:
+                    return np.random.uniform(5.8, 9)
+
+        dependence_Eur = {
+            1: np.random.uniform(3, 4),  # Песок гравелистый
+            2: np.random.uniform(3.3, 4.3),  # Песок крупный
+            3: np.random.uniform(4, 5),  # Песок средней крупности
+            4: np.random.uniform(4, 5.5),  # Песок мелкий
+            5: np.random.uniform(4, 5.5),  # Песок пылеватый
+            6: dependence_Eur_of_clay(),  # Супесь
+            7: dependence_Eur_of_clay(),  # Суглинок
+            8: dependence_Eur_of_clay(),  # Глина
+            9: np.random.uniform(3, 5),  # Торф
+        }
+
+        return E50 * dependence_Eur[type_ground]
 
     @staticmethod
     def xc_from_qf_e_if_is(sigma_3, type_ground, e, Ip, Il, Ir=None):

@@ -35,6 +35,7 @@ class Models:
                 self.tests[test_name].set_test_params()
             except:
                 app_logger.exception(f"Ошибка моделирования опыта {test_name}")
+                break
 
     def dump(self, path):
         with open(path, "wb") as file:
@@ -69,6 +70,10 @@ class ModelsEur(Models):
 
 @singleton
 class ModelsFC(Models):
+    pass
+
+@singleton
+class ModelsVibrationFC(Models):
     pass
 
 @singleton
@@ -114,6 +119,8 @@ Consolidation_models = ModelsConsolidation()
 Shear_models = ModelsShear()
 
 Shear_Dilatancy_models = ModelsShearDilatancy()
+
+VibrationFC_models = ModelsVibrationFC()
 
 
 

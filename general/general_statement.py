@@ -17,6 +17,85 @@ from general.report_general_statment import save_report
 import xlrd
 from openpyxl.utils import get_column_letter, column_index_from_string
 
+
+def convert_data(data):
+    def zap(val, prec, none='-'):
+        """ Возвращает значение `val` в виде строки с `prec` знаков после запятой
+        используя запятую как разделитель дробной части
+        """
+        if isinstance(val, str):
+            return val
+        if val is None:
+            return none
+        fmt = "{:." + str(int(prec)) + "f}"
+        return fmt.format(val).replace(".", ",")
+
+    def val_to_list(val, prec) -> list:
+        if val is None:
+            return None
+        else:
+            try:
+                val = [float(val)]
+            except ValueError:
+                v = val.split(";")
+                val = []
+                for value in v:
+                    try:
+                        a = float(value.replace(",", ".").strip(" "))
+                        a = zap(a, prec)
+                        val.append(a)
+                    except:
+                        pass
+
+            return val
+
+    data_new = []
+
+    for i in range(len(data)):
+        try:
+            line = data[i]
+            borehole = float(line[1])
+            if borehole % 1 < 0.001:
+                line[1] = str(int(borehole))
+            else:
+                line[1] = str(borehole)
+
+            line[2] = line[2].replace(".", ",")# zap(line[2], 1, none='-')
+
+            for i in range(3, len(line)):
+                try:
+                    line[i] = line[i].replace(".", ",")
+                except:
+                    pass
+
+        except IndexError:
+            pass
+
+        try:
+            if len(val_to_list(line[5], 1)) > 0:
+                f = val_to_list(line[4], 1)
+                E50 = val_to_list(line[5], 1)
+                Ed = val_to_list(line[6], 1)
+                Kd =val_to_list(line[7], 2)
+
+                line = [line[0], line[1], line[2], line[3], f[0], E50[0], Ed[0], Kd[0]]
+                data_new.append(line)
+
+                for j in range(1, len(f)):
+                    line = [line[0], line[1], line[2], line[3], f[j], E50[j], Ed[j], Kd[j]]
+                    data_new.append(line)
+            else:
+                data_new.append(line)
+        except:
+            data_new.append(line)
+
+    return data_new
+
+
+
+    #x.insert(val, pos)
+
+
 class StatementGenerator(QDialog):
     """
     Класс для представления пользовательского интерфейса импорта ведомости и
@@ -51,7 +130,7 @@ class StatementGenerator(QDialog):
 
     """
 
-    def __init__(self, parent, path=None, statement_structure=None):
+    def __init__(self, parent, path=None, statment_data=None, statement_structure_key=None):
         super().__init__(parent)
 
         self.setGeometry(100, 50, 1000, 950)
@@ -59,12 +138,18 @@ class StatementGenerator(QDialog):
         self.path = path
         self.customer = None
 
+        self.statment_data = statment_data
+
+        self._statement_structure_key = statement_structure_key if statement_structure_key else "triaxial_cyclic"
+
+        self.create_UI()
+
         if path:
             self.open_excel(path)
 
-        self.statment_data = None
+        if statement_structure_key:
+            self._plot()
 
-        self.create_UI()
 
     def create_UI(self):
         self.layout = QVBoxLayout()
@@ -88,7 +173,7 @@ class StatementGenerator(QDialog):
         self.customer_table.setFixedHeight(80)
         self.layout.addWidget(self.customer_table)
 
-        self.StatementStructure = StatementStructure(statement_structure_key="triaxial_cyclic")
+        self.StatementStructure = StatementStructure(statement_structure_key=self._statement_structure_key)
         self.layout.addWidget(self.StatementStructure)
 
         self.statment_table = Table(moove=True)
@@ -105,19 +190,17 @@ class StatementGenerator(QDialog):
             self.path = path
         else:
             self.path = QFileDialog.getOpenFileName(self, 'Open file', '/home')[0]
-            if self.path:
-                try:
-                    #wb = load_workbook(self.path, data_only=True)
-                    marker, self.customer = self.read_customer(self.path)
-                    self.customer_table.set_data([["Заказчик", "Объект", "Дата", "Аккредитация"],
-                                                  [self.customer[i] for i in
-                                                   ["customer", "object_name", "data", "accreditation"]]], "Stretch")
-                    self.text_file_path.setText(self.path)
-                    self.statment_data = self.form_excel_dictionary(self.path, last_key='IV')
-                except FileNotFoundError as error:
-                    print(error)
-            else:
-                pass
+
+        try:
+            #wb = load_workbook(self.path, data_only=True)
+            marker, self.customer = self.read_customer(self.path)
+            self.customer_table.set_data([["Заказчик", "Объект", "Дата", "Аккредитация"],
+                                          [self.customer[i] for i in
+                                           ["customer", "object_name", "data", "accreditation"]]], "Stretch")
+            self.text_file_path.setText(self.path)
+            self.statment_data = self.form_excel_dictionary(self.path, last_key='IV')
+        except FileNotFoundError as error:
+            print(error)
 
     def _plot(self):
         # print(self.StatementStructure.get_structure())
@@ -181,8 +264,8 @@ class StatementGenerator(QDialog):
 
                     # self.StatementStructure._additional_parameters = \
                     #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
-
                     titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
+                    data = convert_data(data)
                     for i in range(len(data)):
                         for j in range(len(data[i])):
                             if data[i][j] == 'None':
@@ -334,12 +417,12 @@ class StatementGenerator(QDialog):
         # наименования колонок большими буквами
         last_key = last_key.upper()
         if path[-1] == "x":
-            print("xlsx")
+            #print("xlsx")
             sheet = load_workbook(path, data_only=True)
             return self.form_xlsx_dictionary(sheet, last_key)
 
         else:
-            print("xls")
+            #print("xls")
             sheet = xlrd.open_workbook(path, formatting_info=True)
             sheet = sheet.sheet_by_index(0)
             return self.form_xls_dictionary(sheet, last_key)
@@ -439,14 +522,14 @@ class StatementGenerator(QDialog):
             except ValueError:
                 pass
         s = [i.strip(" ") for i in structure["additional_parameter"].split(";")]
-        print('f11', s)
+        #print('f11', s)
         for i in range(len(s)):
             data.append([s[i]])
         # data.append([structure["additional_parameter"]])
 
-        print('titles', titles)
-        print('data', data)
-        print('scale', scale)
+        #print('titles', titles)
+        #print('data', data)
+        #print('scale', scale)
         return titles, data, scale
 
     def number_of_decimal_places(self, matrix, parameter_decimal):
@@ -500,6 +583,7 @@ class StatementGenerator(QDialog):
         if value == " ":
             return "None"
         return value
+
 class StatementStructure(QWidget):
     """
     Класс для представления пользовательского интерфейса и механизмов создания и хранения шаблонов
@@ -566,7 +650,6 @@ class StatementStructure(QWidget):
         self._open_statement_structures(self._statement_structures_path)  # вызываем функцию от пути которая считывает структуру из файла json
         if statement_structure_key:  # только если в переменную передали ключ
             self._set_combo_structure(statement_structure_key)
-
 
     def create_UI(self):
         self.layout = QVBoxLayout()

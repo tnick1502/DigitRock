@@ -22,6 +22,7 @@ from excel_statment.functions import set_cell_data
 from singletons import RC_models, statment
 from version_control.configs import actual_version
 __version__ = actual_version
+from general.general_statement import StatementGenerator
 
 class RezonantColumnProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -449,6 +450,8 @@ class RezonantColumnSoilTestApp(QWidget):
         self.button_predict.clicked.connect(self._predict)
         self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
 
+        self.tab_2.save_widget.general_statment_button.clicked.connect(self.general_statment)
+
     def _predict(self):
         if len(statment):
             dialog = PredictRCTestResults()
@@ -541,6 +544,16 @@ class RezonantColumnSoilTestApp(QWidget):
         t = threading.Thread(target=save)
         progress.show()
         t.start()
+
+    def general_statment(self):
+        try:
+            s = statment.general_data.path
+        except:
+            s = None
+
+
+        _statment = StatementGenerator(self, path=s, statement_structure_key="Resonance column")
+        _statment.show()
 
 
 
