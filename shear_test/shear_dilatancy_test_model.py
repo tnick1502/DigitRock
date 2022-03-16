@@ -612,7 +612,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
 
-        self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.tau_max*residual_strength*1.2
+        self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.tau_max*residual_strength
         self._draw_params.qocr = 0
 
         self._draw_params.poisson = statment[statment.current_test].mechanical_properties.poisons_ratio
