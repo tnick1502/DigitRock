@@ -205,7 +205,7 @@ class ModelShearDilatancy:
         ax_volume_strain = figure.add_subplot(2, 1, 2)
         ax_volume_strain.grid(axis='both')
         ax_volume_strain.set_xlabel("Абсолютная деформация $l_1$, мм")
-        ax_volume_strain.set_ylabel("Абсалютная \n вертикальная деформация $h_1$, мм")
+        ax_volume_strain.set_ylabel("Абсолютная \n вертикальная деформация $h_1$, мм")
 
 
         plots = self.get_plot_data()

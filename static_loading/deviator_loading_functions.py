@@ -1272,7 +1272,7 @@ def curve(qf, e50, **kwargs):
         x_loop, y_loop, \
             point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
             x1_l, x2_l, y1_l, y2_l = loop(x, y, best_Eur, y_rel_p, point2_y)
-        current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
+        #current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
         # print(f"ЛУЧШИЙ ПОЛУЧЕННЫЙ Еур : {current_Eur} : ОШИБКА : {abs(Eur - current_Eur) / Eur * 100}")
         # оптимизация петли разгрузки завершена
 
@@ -1316,7 +1316,7 @@ def curve(qf, e50, **kwargs):
     point3_x_index = index_point1_x[0] + len(x_loop) - 2  # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
     y[0] = 0.
 
-    current_Eur = define_eur(x, y, [point1_x_index - 1, point2_x_index - 1, point3_x_index + 1])
+    #current_Eur = define_eur(x, y, [point1_x_index - 1, point2_x_index - 1, point3_x_index + 1])
     # print(f"Еур ПОСЛЕ ПРИСОЕДИНЕНИЯ: {current_Eur} : ОШИБКА : {abs(Eur - current_Eur)/Eur*100}")
 
     # ограничение на хс (не меньше чем x_given)
