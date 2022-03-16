@@ -4,7 +4,6 @@ from typing import List, Dict
 import logging
 from thrd.socket_thd import send_to_server
 
-import progressbar
 from PyPDF4 import PdfFileWriter, PdfFileReader
 import json
 from loggers.logger import app_logger
