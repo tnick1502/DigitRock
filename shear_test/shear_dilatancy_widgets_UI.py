@@ -143,7 +143,7 @@ class ModelShearDilatancyUI(QWidget):
 
             self.volume_strain_ax.clear()
             self.volume_strain_ax.set_xlabel("Абсолютная деформация $l_1$, мм")
-            self.volume_strain_ax.set_ylabel("Абсалютная \n вертикальная деформация $h_1$, мм")
+            self.volume_strain_ax.set_ylabel("Абсолютная \n вертикальная деформация $h_1$, мм")
 
             # self.deviator_ax2.clear()
 

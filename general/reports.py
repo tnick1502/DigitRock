@@ -1119,6 +1119,8 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E")
                  ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
                  ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
                  ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+        sss = 0
     else:
         #tableData.append(
             #[Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
