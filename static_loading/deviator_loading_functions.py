@@ -1236,7 +1236,7 @@ def curve(qf, e50, **kwargs):
                 return None
         return None
 
-    print(f"ПОДАННЫЙ Еур : {Eur}")
+    # print(f"ПОДАННЫЙ Еур : {Eur}")
     # построение петли разгрузки
     x_loop, y_loop,\
         point1_x, point1_y, point2_x, point2_y, point3_x, point3_y,\
