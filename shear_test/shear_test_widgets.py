@@ -553,7 +553,7 @@ class ShearSoilTestApp(QWidget):
                                        os.getcwd() + "/project_data/", test_parameter, test_result,
                                        (*self.tab_2.deviator_loading.save_canvas(), None), "{:.2f}".format(__version__))
 
-                shutil.copy(save + "/" + name, self.tab_4.report_directory + "/" + name)
+                shutil.copy(save + "/" + name,  statment.save_dir.report_directory + "/" + name)
 
             elif not ShearStatment.is_dilatancy_type(_test_mode):
                 name = file_path_name + " " + statment.general_data.object_number + " Сп" + ".pdf"
@@ -566,7 +566,6 @@ class ShearSoilTestApp(QWidget):
                 Shear_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"{ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
 
-                statment.general_parameters.test_mode
 
                 test_result = {}
                 test_result["sigma_shear"], test_result["tau_max"] = Shear_models[
