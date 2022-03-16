@@ -1244,6 +1244,8 @@ def curve(qf, e50, **kwargs):
     # оптимизация петли разгрузки
     if Eur:
         current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
+        if not current_Eur:
+            current_Eur = Eur * 1.3
         # print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur}")
         delta_Eur = Eur
         error = Eur - current_Eur
