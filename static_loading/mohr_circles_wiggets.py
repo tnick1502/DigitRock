@@ -327,6 +327,12 @@ class MohrWidget(QWidget):
             self.mohr_ax.set_xlim(*plots["x_lims"])
             self.mohr_ax.set_ylim(*plots["y_lims"])
 
+            if self._model == "VibrationFC_models":
+                res2 = FC_models[statment.current_test].get_test_results()
+                self.mohr_ax.plot([], [], label="Kfi = " + str(round(res["fi"] / res2["fi"], 2)), color="#eeeeee")
+                self.mohr_ax.plot([], [], label="Kc = " + str(round(res["c"] / res2["c"], 2)), color="#eeeeee")
+
+
             self.mohr_ax.legend()
 
         self.deviator_canvas.draw()
@@ -387,8 +393,14 @@ class MohrWidgetSoilTest(MohrWidget):
         self.m_sliders.signal[object].connect(self._m_sliders_moove)
         self.add_parameters_layout.addWidget(self.m_sliders)
 
+        if self._model == "VibrationFC_models":
+            self.k_sliders = TriaxialStaticLoading_Sliders({"Kfi": "Kfi", "Kc": "Kc"})
+            self.add_parameters_layout.addWidget(self.k_sliders)
+            self.k_sliders.signal[object].connect(self._k_sliders_moove)
+
         self.add_parameters_layout.addStretch(-1)
         self.layout_wiget.addLayout(self.add_parameters_layout)
+
 
 
         """self.reference_pressure_array_box = QGroupBox("Обжимающие давления")
@@ -445,17 +457,32 @@ class MohrWidgetSoilTest(MohrWidget):
         self.reference_pressure_array_box.set_data()
         self.reconsolidation.set_data()
         self._create_test_tables()
+
         self.m_sliders.set_sliders_params(
             {"m": {
                 "value": statment[statment.current_test].mechanical_properties.m, "borders": [0.3, 1]
                 }
             })
+        if self._model == "VibrationFC_models":
+            self.k_sliders.set_sliders_params(
+                {"Kfi": {"value": statment[statment.current_test].mechanical_properties.Kfi, "borders": [0.5, 1.1]},
+                 "Kc": {"value": statment[statment.current_test].mechanical_properties.Kc, "borders": [0.5, 1.1]}
+                })
         self._plot()
 
     def _m_sliders_moove(self, param):
         try:
             statment[statment.current_test].mechanical_properties.m = param["m"]
             FC_models[statment.current_test].set_test_params()
+            self._plot()
+        except KeyError:
+            pass
+
+    def _k_sliders_moove(self, param):
+        try:
+            statment[statment.current_test].mechanical_properties.Kfi = param["Kfi"]
+            statment[statment.current_test].mechanical_properties.Kc = param["Kc"]
+            VibrationFC_models[statment.current_test].set_test_params()
             self._plot()
         except KeyError:
             pass
@@ -704,7 +731,6 @@ class MWidgetUI(QGroupBox):
         self.ax.legend()
         self.canvas.draw()
         return path
-
 
 
 class TriaxialStaticLoading_Sliders(QWidget):

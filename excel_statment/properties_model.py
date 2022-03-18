@@ -368,7 +368,11 @@ class MechanicalProperties:
                 self.pressure_array["calculated_by_pressure"] = \
                     MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3)
 
-            if test_mode == "Трёхосное сжатие КН" or test_mode == "Вибропрочность":
+            if test_mode == "Вибропрочность":
+                self.Kfi = np.random.uniform(0.85, 1.05)
+                self.Kc = np.random.uniform(0.7, 0.9)
+
+            if test_mode == "Трёхосное сжатие КН":
                 self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
             elif test_mode == "Трёхосное сжатие НН":
                 self.u = [np.round(i * np.random.uniform(0.85, 0.95), 1) for i in self.pressure_array["current"]]

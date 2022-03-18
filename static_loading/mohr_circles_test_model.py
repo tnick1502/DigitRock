@@ -338,6 +338,8 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or \
                 statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == 'Вибропрочность':
             u_array = statment[statment.current_test].mechanical_properties.u
+            if type(u_array) != list:
+                u_array = [0 for i in self._reference_pressure_array]
         else:
             u_array = [0 for i in self._reference_pressure_array]
 
