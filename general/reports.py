@@ -267,8 +267,8 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
         t.wrapOn(canvas, 0, 0)
         t.drawOn(canvas, 158.75 * mm, 51.25 - 8 + 28* mm)
 
-        canvas.drawImage(qr_code, (8.25*0.5 + 158.75) * mm, 6 * mm,
-                         width=38 * mm, height=38 * mm)
+        canvas.drawImage(qr_code, (8.25*0.5 + 158.75 + 0.5) * mm, 6.5 * mm,
+                         width=37 * mm, height=37 * mm)
 
     else:
         dat3 = [[A[0 + s][0], A[0 + s][1]],

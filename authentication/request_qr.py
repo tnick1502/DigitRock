@@ -18,7 +18,7 @@ new_show = {
     }
 
 def request_qr(data):
-    response = requests.post('{HOST}report/', json=data)
+    response = requests.post(f'{HOST}report/', json=data)
     assert response.ok, "Не удалось сгенерировать код"
     with open("qr.png", "wb") as file:
         file.write(response.content)

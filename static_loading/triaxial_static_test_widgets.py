@@ -26,6 +26,7 @@ from tests_log.test_classes import TestsLogTriaxialStatic
 import os
 from version_control.configs import actual_version
 __version__ = actual_version
+from authentication.request_qr import request_qr
 
 class StaticProcessingWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -835,11 +836,31 @@ class StatickSoilTestApp(QWidget):
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
+                data = {
+                    "labolatory": "mdgt",
+                    "password": "it_user",
+
+                    "test_name": "FC",
+                    "object": statment.general_data.object_number,
+                    "labolatory_number": statment.current_test,
+                    "test_type": "FC",
+
+                    "data": {
+                        "Лаболаторный номер": statment.current_test,
+                        "Модуль деформации E, МПа:": str(test_result["E"][0]),
+                        "Коэффициент поперечной деформации ν, д.е.:": str(test_result["poissons_ratio"]),
+                        "Эффективное сцепление с', МПа:": str(test_result["c"]),
+                        "Эффективный угол внутреннего трения φ', град:": str(test_result["fi"]),
+                    }
+                }
+
+                #qr = request_qr(data)
+
                 report_FCE(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
-                            *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
+                            *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))#, qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
