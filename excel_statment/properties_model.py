@@ -272,7 +272,7 @@ class MechanicalProperties:
         else:
             self.c, self.fi, self.E50 = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
 
-        if self.c and self.fi and self.E50:
+        if self.c is not None and self.fi is not None and self.E50 is not None:
 
             self.E50 *= 1000
 
@@ -282,6 +282,7 @@ class MechanicalProperties:
             self.m = MechanicalProperties.define_m(physical_properties.e, physical_properties.Il)
             self.Cv = Cv if Cv else np.round(MechanicalProperties.define_Cv(
                 MechanicalProperties.define_kf(physical_properties.type_ground, physical_properties.e)), 3)
+
             self.Ca = Ca if Ca else np.round(np.random.uniform(0.01, 0.03), 5)
 
             self.K0 = MechanicalProperties.define_K0(data_frame, K0_mode, string, physical_properties.Il,
@@ -305,7 +306,12 @@ class MechanicalProperties:
             if self.sigma_3 < 100:
                 self.sigma_3 = 100
 
-            self.qf = np.round(float(MechanicalProperties.define_qf(self.sigma_3, self.c, self.fi) * np.random.uniform(0.95, 1.05)), 1)
+            if self.fi == 0:
+                self.qf = self.c * 1000 + np.random.uniform(-0.4, 0.4)
+            else:
+                self.qf = np.round(float(MechanicalProperties.define_qf(self.sigma_3, self.c, self.fi) * np.random.uniform(0.95, 1.05)), 1)
+
+            print(self.qf)
 
             self.sigma_1 = np.round(self.qf + self.sigma_3, 1)
 
