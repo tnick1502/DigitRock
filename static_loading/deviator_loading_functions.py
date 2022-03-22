@@ -1093,6 +1093,7 @@ def volumetric_deformation(x, x_given, m_given, xc, v_d2, x_end, angle_of_dilata
 
 
 def curve(qf, e50, **kwargs):
+
     try:
         kwargs["xc"]
     except KeyError:
@@ -1153,6 +1154,23 @@ def curve(qf, e50, **kwargs):
     y_rel_p = kwargs.get('y_rel_p')
     point2_y = kwargs.get('point2_y')
     U = kwargs.get('U')
+
+    qf_old = qf
+    if qf < 150:
+        k_low_qf = 250 / qf
+        if Eur:
+            qf = qf * k_low_qf
+            e50 = e50 * k_low_qf
+            qf2 = qf2 * k_low_qf
+            Eur = Eur * k_low_qf
+            # amount_points = amount_points * 6
+            y_rel_p = y_rel_p * k_low_qf
+            point2_y = point2_y * k_low_qf
+        else:
+            qf = qf * k_low_qf
+            e50 = e50 * k_low_qf
+            qf2 = qf2 * k_low_qf
+
 
     if y_rel_p > qf:
         y_rel_p = qf
@@ -1278,6 +1296,17 @@ def curve(qf, e50, **kwargs):
 
     index_point1_x, = np.where(x >= point1_x)
     index_point3_x, = np.where(x >= point3_x)
+
+    if qf_old < 150:
+        y = y / k_low_qf
+
+        if Eur:
+            qf = qf / k_low_qf
+            Eur = Eur / k_low_qf
+            y1_l = y1_l / k_low_qf
+            y2_l = y2_l / k_low_qf
+        else:
+            qf = qf / k_low_qf
 
     y += deviator_loading_deviation(x, y, xc)
 
@@ -1843,9 +1872,8 @@ if __name__ == '__main__':
     #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
     # (596.48, 382.8)
 
-    x, y, y1, y2, indexs_loop, a = curve(800, 29710.0, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                 amount_points=500, angle_of_dilatacy=6, y_rel_p=596, point2_y=382, Eur=50000)
-
+    x, y, y1, y2, indexs_loop, a = curve(15, 500, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
+                                         amount_points=500, angle_of_dilatacy=6, y_rel_p=12, point2_y=2)
     #
     # i, = np.where(x >= max(x) - 0.15)
     # x = x[i[0]:] - x[i[0]]
