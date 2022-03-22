@@ -49,8 +49,9 @@ class ModelTriaxialStaticLoad:
         self.deviator_loading.set_test_data(test_data["deviator_loading"])
 
     def get_processing_parameters(self):
+        cons = self.consolidation.get_processing_parameters() if self.consolidation is not None else None
         return {
-            "consolidation": self.consolidation.get_processing_parameters(),
+            "consolidation": cons,
             "deviator_loading": self.deviator_loading.get_processing_parameters()
         }
 

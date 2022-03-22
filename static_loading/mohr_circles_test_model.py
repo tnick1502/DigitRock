@@ -81,6 +81,19 @@ class ModelMohrCircles:
             return sigma_3, sigma_1
         return None, None
 
+    def get_sigma_3_deviator(self):
+        """Получение массивов давлений грунтов"""
+        if len(self._tests) >= 1:
+            sigma_3 = []
+            deviator = []
+
+            for test in self._tests:
+                results = test.deviator_loading.get_test_results()
+                sigma_3.append(np.round(results["sigma_3"], 3))
+                deviator.append(np.round(results["qf"], 3))
+            return sigma_3, deviator
+        return None, None
+
     def get_sigma_u(self):
         """Получение массивов давлений грунтов"""
         if len(self._tests) >= 2:
@@ -484,7 +497,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
             }
         }
 
-        if len(self._tests) >= 3:
+        if len(self._tests) >= 1:
             i = 1
             for test in self._tests:
                 results = test.deviator_loading.get_test_results()
