@@ -299,41 +299,66 @@ class MohrWidget(QWidget):
             #self._plot()
 
     def _plot(self):
-        self.deviator_ax.clear()
-        self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-        self.deviator_ax.set_ylabel("Девиатор q, МПа")
+        if statment.general_parameters.test_mode == "Трёхосное сжатие НН":
+            self.deviator_ax.clear()
+            self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+            self.deviator_ax.set_ylabel("Девиатор q, МПа")
 
-        self.mohr_ax.clear()
-        self.mohr_ax.set_xlabel("σ, МПа")
-        self.mohr_ax.set_ylabel("τ, МПа")
+            self.mohr_ax.clear()
+            self.mohr_ax.set_xlabel("Девиатор q, МПа")
+            self.mohr_ax.set_ylabel("τ, МПа")
 
-        if self._model == "FC_models":
             plots = FC_models[statment.current_test].get_plot_data()
             res = FC_models[statment.current_test].get_test_results()
+
+            if plots is not None:
+                for i in range(len(plots["strain"])):
+                    self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
+                    self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
+
+                self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
+                self.mohr_ax.plot([], [], label="$c_u$" + ", МПа = " + str(res["c"]), color="#eeeeee")
+
+                self.mohr_ax.set_xlim(*plots["x_lims"])
+                self.mohr_ax.set_ylim(*plots["y_lims"])
+
+                self.mohr_ax.legend()
         else:
-            plots = VibrationFC_models[statment.current_test].get_plot_data()
-            res = VibrationFC_models[statment.current_test].get_test_results()
+            self.deviator_ax.clear()
+            self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+            self.deviator_ax.set_ylabel("Девиатор q, МПа")
 
-        if plots is not None:
-            for i in range(len(plots["strain"])):
-                self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
-                self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
+            self.mohr_ax.clear()
+            self.mohr_ax.set_xlabel("σ, МПа")
+            self.mohr_ax.set_ylabel("τ, МПа")
 
-            self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
+            if self._model == "FC_models":
+                plots = FC_models[statment.current_test].get_plot_data()
+                res = FC_models[statment.current_test].get_test_results()
+            else:
+                plots = VibrationFC_models[statment.current_test].get_plot_data()
+                res = VibrationFC_models[statment.current_test].get_test_results()
 
-            self.mohr_ax.plot([], [], label="c" + ", МПа = " + str(res["c"]), color="#eeeeee")
-            self.mohr_ax.plot([], [], label="fi" + ", град. = " + str(res["fi"]), color="#eeeeee")
+            if plots is not None:
+                for i in range(len(plots["strain"])):
+                    self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
+                    self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
 
-            self.mohr_ax.set_xlim(*plots["x_lims"])
-            self.mohr_ax.set_ylim(*plots["y_lims"])
+                self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
 
-            if self._model == "VibrationFC_models":
-                res2 = FC_models[statment.current_test].get_test_results()
-                self.mohr_ax.plot([], [], label="Kfi = " + str(round(res["fi"] / res2["fi"], 2)), color="#eeeeee")
-                self.mohr_ax.plot([], [], label="Kc = " + str(round(res["c"] / res2["c"], 2)), color="#eeeeee")
+                self.mohr_ax.plot([], [], label="c" + ", МПа = " + str(res["c"]), color="#eeeeee")
+                self.mohr_ax.plot([], [], label="fi" + ", град. = " + str(res["fi"]), color="#eeeeee")
+
+                self.mohr_ax.set_xlim(*plots["x_lims"])
+                self.mohr_ax.set_ylim(*plots["y_lims"])
+
+                if self._model == "VibrationFC_models":
+                    res2 = FC_models[statment.current_test].get_test_results()
+                    self.mohr_ax.plot([], [], label="Kfi = " + str(round(res["fi"] / res2["fi"], 2)), color="#eeeeee")
+                    self.mohr_ax.plot([], [], label="Kc = " + str(round(res["c"] / res2["c"], 2)), color="#eeeeee")
 
 
-            self.mohr_ax.legend()
+                self.mohr_ax.legend()
 
         self.deviator_canvas.draw()
         self.mohr_canvas.draw()
