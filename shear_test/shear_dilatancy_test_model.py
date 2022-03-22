@@ -961,6 +961,9 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         """Функция находит деформацию пика девиаорного нагружения в зависимости от qf и E50, если по параметрам материала
         пик есть, если нет, возвращает xc = 0.15. Обжимающее напряжение должно быть в кПа"""
         if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
+            # if sigma_3 <= 0.1:
+            #     return 0
+            # else:
             return np.random.choice([0, 1], p=[0.7, 0.3])
         none_to_zero = lambda x: 0 if not x else x
         Ip = Ip if Ip else 0
