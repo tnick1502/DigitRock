@@ -331,17 +331,16 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
             self.reconsolidation = None
             delta_h_reconsolidation = 0
 
-        velocity = None
-        delta_h_consolidation = 0
-
-        while velocity is None:
-            self.consolidation.set_delta_h_reconsolidation(delta_h_reconsolidation)
-            self.consolidation.set_test_params()
-            velocity = self.consolidation.get_test_results()["velocity"]
-            delta_h_consolidation = self.consolidation.get_delta_h_consolidation()
-
-        if not consolidation:
+        if consolidation:
+            velocity = None
+            while velocity is None:
+                self.consolidation.set_delta_h_reconsolidation(delta_h_reconsolidation)
+                self.consolidation.set_test_params()
+                velocity = self.consolidation.get_test_results()["velocity"]
+                delta_h_consolidation = self.consolidation.get_delta_h_consolidation()
+        else:
             self.consolidation = None
+            velocity = 1
             delta_h_consolidation = 0
 
         self.deviator_loading.set_velocity_delta_h(velocity, delta_h_consolidation)
