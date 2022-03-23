@@ -560,7 +560,7 @@ def form_kp(x: float, qf, k, xocr, xc, qocr, x50):
 def sensor_accuracy(x, y, qf, x50, xc):
     '''возвразщает зашумеленную функцию без шума в характерных точках'''
 
-    sh = np.random.uniform(-1, 1, len(x))
+    sh = np.random.uniform(-0.4, 0.4, len(x))
     index_qf_half, = np.where(y >= np.max(y) / 2)
     index_qf, = np.where(y >= np.max(y))
     if xc > max(x):  # если хс последня точка в массиве или дальше
@@ -571,7 +571,7 @@ def sensor_accuracy(x, y, qf, x50, xc):
             if (y[i] + sh[i] < np.max(y)):
                 y[i] = y[i] + sh[i]
             else:
-                y[i] = y[i] - np.random.uniform(0.1, 0.5)  # в районе максимума шум меньше первоначального
+                y[i] = y[i] - np.random.uniform(0.05, 0.025)  # в районе максимума шум меньше первоначального
     return y
 
 
@@ -1156,16 +1156,16 @@ def curve(qf, e50, **kwargs):
     U = kwargs.get('U')
 
     if max_time < 50:
-        max_time = 50;
+        max_time = 50
     if max_time <= 499:
-        amount_points = max_time * 60
-        amount_points_for_stock = np.random.uniform(1, 3)*60
+        amount_points = max_time * 20
+        amount_points_for_stock = np.random.uniform(1, 3)*20
     elif max_time > 499 and max_time <= 2999:
-        amount_points = max_time * 6
-        amount_points_for_stock = np.random.uniform(5, 10)*6
+        amount_points = max_time * 2
+        amount_points_for_stock = np.random.uniform(5, 10)*2
     else:
-        amount_points = max_time
-        amount_points_for_stock = np.random.uniform(15, 20)
+        amount_points = max_time/3
+        amount_points_for_stock = np.random.uniform(15, 20)/3
 
 
 
@@ -1343,8 +1343,8 @@ def curve(qf, e50, **kwargs):
         y = copy.deepcopy(y_ocr)
     #
 
-    y1_l = y1_l + np.random.uniform(-1, 1, len(y1_l))  # шум на петле
-    y2_l = y2_l + np.random.uniform(-1, 1, len(y2_l))  # шум на петле
+    y1_l = y1_l + np.random.uniform(-0.4, 0.4, len(y1_l))  # шум на петле
+    y2_l = y2_l + np.random.uniform(-0.4, 0.4, len(y2_l))  # шум на петле
     y1_l = discrete_array(y1_l, 1)  # ступени на петле
     y2_l = discrete_array(y2_l, 1)  # ступени на петле
 
@@ -1580,7 +1580,7 @@ def curve(qf, e50, **kwargs):
         -2])  # смещение массива x для метрвого хода штока кривой девиаторного нагружения в отрицальную область
     y_start -= y_start[
         -1]  # смещение массива y для метрвого хода штока кривой девиаторного нагружения в отрицальную область
-    y_start = y_start + np.random.uniform(-1, 1, len(y_start))
+    y_start = y_start + np.random.uniform(-0.4, 0.4, len(y_start))
     y_start = discrete_array(y_start, 0.5)  # наложение ступенчватого шума на мертвый ход штока
     x = np.hstack((x_start, x))  # добавление начального участка в функцию девиаторного нагружения
 
@@ -1617,11 +1617,11 @@ def curve(qf, e50, **kwargs):
 
 
     if max_time <= 499:
-        time = [i/60 for i in range(len(x))]
+        time = [i/20 for i in range(len(x))]
     elif max_time > 499 and max_time <= 2999:
-        time = [i/6 for i in range(len(x))]
+        time = [i/2 for i in range(len(x))]
     else:
-        time = [i for i in range(len(x))]
+        time = [i*3 for i in range(len(x))]
 
     if U:
         e50_U = U / x50
@@ -1639,7 +1639,7 @@ def curve(qf, e50, **kwargs):
         y_start = exponent(x_start, amplitude, slant)
         x_start -= x_start[-1] + (x_U[-1] - x_U[-2])
         y_start -= y_start[-1]
-        y_start = y_start + np.random.uniform(-1, 1, len(y_start))
+        y_start = y_start + np.random.uniform(-0.4, 0.4, len(y_start))
         y_start = discrete_array(y_start, 0.5)
         x_U = np.hstack((x_start, x_U))
 
@@ -1894,8 +1894,9 @@ if __name__ == '__main__':
     #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
     # (596.48, 382.8)
 
-    x, y, y1, y2, indexs_loop, time, len = curve(300, 50000, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                         max_time=500, angle_of_dilatacy=6, y_rel_p=12, point2_y=2)
+    x, y, y1, y2, indexs_loop, time, lenlen = curve(30, 500, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
+                                         max_time=3000, angle_of_dilatacy=6, y_rel_p=12, point2_y=2)
+    print(len(x))
     print(time)
     #
     # i, = np.where(x >= max(x) - 0.15)
