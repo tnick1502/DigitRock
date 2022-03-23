@@ -213,11 +213,12 @@ class ModelK0SoilTest(ModelK0):
         self._test_modeling()
 
     def _test_modeling(self):
-        num = int((self._test_params.sigma_1_max + self._test_params.M - self._test_params.M)/self._test_params.sigma_1_step) + 1
-        sgima_1_sint = np.linspace(self._test_params.M, self._test_params.sigma_1_max+self._test_params.M, num)
-        sgima_3_sint = self._test_params.K0 * sgima_1_sint + self._test_params.M
+        delta_sigma_1 = self._test_params.sigma_1_max  # + self._test_params.M - self._test_params.M
+        num = int(delta_sigma_1/self._test_params.sigma_1_step) + 1
+        sgima_1_synth = np.linspace(self._test_params.M, self._test_params.sigma_1_max+self._test_params.M, num)
+        sgima_3_synth = self._test_params.K0 * sgima_1_synth + self._test_params.M
 
-        sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_sint, sgima_3_sint,
+        sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_synth, sgima_3_synth,
                                                      self._test_params.K0, self._test_params.M)
 
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
