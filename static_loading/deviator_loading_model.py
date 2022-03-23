@@ -833,7 +833,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         return ModelTriaxialDeviatorLoadingSoilTest.dictionary_deviator_loading(self._test_data.strain,
                                                                                 self._test_data.deviator,
                                     self._test_data.pore_volume_strain, self._test_data.cell_volume_strain,
-                                    self._test_data.reload_points, pore_pressure=self._test_data.pore_pressure,
+                                    self._test_data.reload_points, pore_pressure=self._test_data.pore_pressure, time=self._test_data.time,
                                                                                 velocity=self._test_params.velocity,
                                     delta_h_consolidation = self._test_params.delta_h_consolidation)
 
@@ -875,20 +875,23 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         if self._test_params.velocity is None:
             print("Ошибка в обработки консолидации")
         max_time = int((0.15 * (76 - self._test_params.delta_h_consolidation))/self._test_params.velocity)
-        if max_time <= 500:
-            max_time = 500
+        if max_time <= 50:
+            max_time = int(np.random.uniform(50, 70))
+
+        if max_time >= 2800:
+            max_time = int(np.random.uniform(2500, 3000))
 
         dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(self._draw_params.dilatancy)) /
                              (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
 
         if self._test_params.Eur:
             self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-            self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
+            self._test_data.cell_volume_strain, self._test_data.reload_points, self._test_data.time, begin = curve(self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
                                                                 x2=self._draw_params.residual_strength_param,
                                                                 qf2=self._draw_params.residual_strength,
                                                                 qocr=self._draw_params.qocr,
                                                                 m_given=self._draw_params.poisson,
-                                                                amount_points=max_time*6,
+                                                                max_time=max_time,
                                                                 angle_of_dilatacy=dilatancy,
                                                                 Eur=self._draw_params.Eur,
                                                                 y_rel_p=self.unloading_borders[0],
@@ -897,13 +900,13 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                 U=self._test_params.u)
         else:
             self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
-            self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
+            self._test_data.cell_volume_strain, self._test_data.reload_points, self._test_data.time, begin = curve(
                 self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
                 x2=self._draw_params.residual_strength_param,
                 qf2=self._draw_params.residual_strength,
                 qocr=self._draw_params.qocr,
                 m_given=self._draw_params.poisson,
-                amount_points=max_time,
+                 max_time=max_time,
                 angle_of_dilatacy=dilatancy,
                 v_d_xc=-self._draw_params.volumetric_strain_xc,
                 U=self._test_params.u)
@@ -929,6 +932,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
 
         i_end = ModelTriaxialDeviatorLoadingSoilTest.define_final_loading_point(self._test_data.deviator, 0.08 + np.random.uniform(0.01, 0.03))
+        self._test_data.time = self._test_data.time[:i_end]
         self._test_data.strain = self._test_data.strain[:i_end]
         self._test_data.deviator = self._test_data.deviator[:i_end]
         self._test_data.pore_volume_strain = self._test_data.pore_volume_strain[:i_end]
@@ -986,7 +990,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         return np.array(strain_array), np.array(main_stress_array), np.array(volume_strain_array)
 
     def get_duration(self):
-        return int((self._test_data.strain[-1] * (76 - self._test_params.delta_h_consolidation)) / self._test_params.velocity)
+        return np.max(self._test_data.time)#)int((self._test_data.strain[-1] * (76 - self._test_params.delta_h_consolidation)) / self._test_params.velocity)
 
     @staticmethod
     def define_pore_pressure_array(strain, start, pore_pressure, amplitude):
@@ -1320,9 +1324,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     @staticmethod
     def dictionary_deviator_loading(strain, deviator, pore_volume_strain, cell_volume_strain, indexs_loop,
-                                    pore_pressure, velocity=1, delta_h_consolidation=0,):
+                                    pore_pressure, time, velocity=1, delta_h_consolidation=0,):
         """Формирует словарь девиаторного нагружения"""
-
         index_unload, = np.where(strain >= strain[-1] * 0.92)  # индекс абциссы конца разгрузки
         x_unload_p = strain[index_unload[0]]  # деформация на конце разгрузки
         y_unload_p = - 0.05 * max(deviator)  # девиатор на конце разгрузки
@@ -1356,8 +1359,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         end_unload = len(strain) - len(x_unload) + 1  # индекс конца разгрузки в масииве
 
         # запись девиаторного нагружения в файл
-
-        time = np.linspace(0, int((strain[-1] * (76 - delta_h_consolidation)) / velocity), len(strain))
+        time = np.hstack((time, deviator[-1] + np.linspace(1, len(y_unload[1:]), len(y_unload[1:]))))
 
         action = ['WaitLimit' for __ in range(len(time))]
         pore_pressure = np.hstack((

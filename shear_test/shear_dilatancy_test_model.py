@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
 
 from cvi.cvi_writer import save_cvi_shear_dilatancy
+from excel_statment.properties_model import ShearProperties
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, mirrow_element, \
     define_dilatancy, define_type_ground, AttrDict, find_line_area, interpolated_intercept, Point, point_to_xy, \
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, exponent, create_json_file
@@ -588,10 +589,11 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         self._test_params.data_physical = statment[statment.current_test].physical_properties
         self._test_params.velocity = ModelShearDilatancySoilTest.define_velocity(
                  statment[statment.current_test].physical_properties.Ip, statment[statment.current_test].physical_properties.type_ground)
+        _test_mode = statment.general_parameters.test_mode
 
         xc, residual_strength = ModelShearDilatancySoilTest.define_xc_value_residual_strength(
             statment[statment.current_test].physical_properties, statment[statment.current_test].mechanical_properties.sigma,
-            statment[statment.current_test].mechanical_properties.tau_max, statment[statment.current_test].mechanical_properties.E50)
+            statment[statment.current_test].mechanical_properties.tau_max, statment[statment.current_test].mechanical_properties.E50, _test_mode)
 
 
         if xc <= 0.14:
@@ -612,7 +614,19 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
 
+        if ShearProperties.shear_type(_test_mode) == ShearProperties.SHEAR_DD:
+            residual_strength = residual_strength + (1-residual_strength)*0.8
+
+
         self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.tau_max*residual_strength
+        print("%",residual_strength)
+        print('znach', self._draw_params.residual_strength)#* np.random.uniform(1.5, 1.4)
+
+
+
+
+
+
         self._draw_params.qocr = 0
 
         self._draw_params.poisson = statment[statment.current_test].mechanical_properties.poisons_ratio
@@ -943,9 +957,14 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         return Esec * dependence_Eur_on_Il(Il)
 
     @staticmethod
-    def xc_from_qf_e_if_is(sigma_3, type_ground, e, Ip, Il, Ir):
+    def xc_from_qf_e_if_is(sigma_3, type_ground, e, Ip, Il, Ir, test_mode):
         """Функция находит деформацию пика девиаорного нагружения в зависимости от qf и E50, если по параметрам материала
         пик есть, если нет, возвращает xc = 0.15. Обжимающее напряжение должно быть в кПа"""
+        if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
+            # if sigma_3 <= 0.1:
+            #     return 0
+            # else:
+            return np.random.choice([0, 1], p=[0.7, 0.3])
         none_to_zero = lambda x: 0 if not x else x
         Ip = Ip if Ip else 0
         Il = Il if Il else 0.5
@@ -1070,10 +1089,10 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         return param
 
     @staticmethod
-    def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E):
+    def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E, test_mode):
 
         xc = ModelShearDilatancySoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
-                                                            data_phiz.Ip, data_phiz.Il, data_phiz.Ir)
+                                                            data_phiz.Ip, data_phiz.Il, data_phiz.Ir, test_mode)
 
         if xc:
             xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
