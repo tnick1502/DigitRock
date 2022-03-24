@@ -1,13 +1,13 @@
 import requests
-HOST = "http://192.168.0.76:8000/"
+HOST = "http://localhost:5000/"
 
 new_show = {
-        "labolatory": "mdgt",
+        "laboratory": "mdgt",
         "password": "it_user",
 
         "test_name": "triaxial",
         "object": "233445",
-        "labolatory_number": 12,
+        "laboratory_number": 12,
         "test_type": "mdgt",
 
         "data": {
@@ -19,6 +19,8 @@ new_show = {
 
 def request_qr(data):
     response = requests.post(f'{HOST}report/', json=data)
+    print(response.content)
+    print(response.ok)
     assert response.ok, "Не удалось сгенерировать код"
     with open("qr.png", "wb") as file:
         file.write(response.content)

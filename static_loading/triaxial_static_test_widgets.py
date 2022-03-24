@@ -772,15 +772,16 @@ class StatickSoilTestApp(QWidget):
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                if self.tab_4.report_type == "standart_E" or self.tab_4.report_type == "E_E50":
-                    set_cell_data(self.tab_1.path,
-                                  (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
-                                  test_result["E"][0], sheet="Лист1", color="FF6961")
-                else:
+                if self.tab_4.report_type == "standart_E50":
                     set_cell_data(self.tab_1.path,
                                   (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number),
                                    (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
                                   test_result["E50"], sheet="Лист1", color="FF6961")
+                else:
+                    set_cell_data(self.tab_1.path,
+                                  (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number),
+                                   (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
+                                  test_result["E"][0], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
                 name = file_path_name + " " + statment.general_data.object_number + " ТС Р" + ".pdf"
@@ -866,17 +867,18 @@ class StatickSoilTestApp(QWidget):
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                if self.tab_4.report_type == "standart_E" or self.tab_4.report_type == "E_E50":
-                    set_cell_data(
-                        self.tab_1.path,
-                        (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][2] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][2])),
-                        test_result["E"][0], sheet="Лист1", color="FF6961")
-                else:
+                if self.tab_4.report_type == "Standart_E50":
                     set_cell_data(
                         self.tab_1.path,
                         (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][2] + str(number),
                          (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][2])),
                         test_result["E50"], sheet="Лист1", color="FF6961")
+                else:
+                    set_cell_data(
+                        self.tab_1.path,
+                        (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][2] + str(number),
+                         (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][2])),
+                        test_result["E"][0], sheet="Лист1", color="FF6961")
 
                 set_cell_data(self.tab_1.path,
                               (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][0] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][0])),

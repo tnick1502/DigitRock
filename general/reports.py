@@ -2612,6 +2612,8 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E")
     elif report_type == "standart_E50":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50")
+    elif report_type == "E_E50":
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all")
     elif report_type == "user_define_1":
         result_table_deviator_user_1(canvas, res, [picks[2], picks[3]])
     else:
