@@ -1,48 +1,35 @@
-import numpy as np
-import matplotlib.pyplot as plt
+from general.report_general_statment import save_report
+import datetime
 
-def open_wille_log(file_path, define_frequency=True):
-    """Функция считывания файла опыта с прибора Вилли"""
-    test_data = {"time": np.array([]), "cycles": np.array([]), "deviator": np.array([]), "strain": np.array([]),
-                 "PPR": np.array([]), "mean_effective_stress": np.array([]), "cell_pressure": 0, "frequency": 0}
-
-    columns_key = ["Time", 'Deviator', 'Piston position', 'Pore pressure', 'Cell pressure', "Sample height"]
-
-    # Считываем файл
-    f = open(file_path)
-    lines = f.readlines()
-    f.close()
-
-    # Словарь считанных данных по ключам колонок
-    read_data = {}
-
-    for key in columns_key:  # по нужным столбцам
-        index = (lines[0].split("\t").index(key))  #
-        read_data[key] = np.array(list(map(lambda x: float(x.split("\t")[index]), lines[2:])))
-
-    u_consolidations = read_data['Pore pressure'][0]
-
-    test_data["cell_pressure"] = read_data['Cell pressure'] - u_consolidations
-    pore_pressure = read_data['Pore pressure'] - u_consolidations
-    test_data["PPR"] = pore_pressure / test_data["cell_pressure"]
-    test_data["time"] = read_data["Time"] - read_data["Time"][0]
-    test_data["deviator"] = read_data['Deviator']
-    test_data["strain"] = (read_data['Piston position'] / read_data['Sample height']) - \
-                          (read_data['Piston position'][0] / read_data['Sample height'][0])
-    test_data["mean_effective_stress"] = ((test_data["cell_pressure"] * (1 - test_data["PPR"])) * 3 +
-                                          test_data["deviator"]) / 3
-    test_data["mean_effective_stress"] = (test_data["deviator"] + test_data["cell_pressure"] * (
-                2 - 3 * test_data["PPR"])) / 3
-
-    if define_frequency:
-        test_data["frequency"], test_data["points"] = 30, 20
-        test_data["cycles"] = test_data["time"] * test_data["frequency"]
-    else:
-        pass
-    return test_data
+titles =['Лаб. № пробы', '№ скважины', 'Глубина отбора, м', 'Наименование грунта', 'Частота нагружения f, Гц', 'Модуль деформации E50, МПа', 'Модуль деформации после динамического нагружения E50d, МПа', 'Коэффициент виброползучести Kd, д.е.']
+scales =['*', '*', '*', 283.46456692913387, '*', '*', '*', '*']
+data_report = datetime.datetime.now()
+customer_data_info = ['Заказчик:', 'Объект:']
+customer_data = ['ООО "ЕМС"                  ', 'Реконструкция реактора «В» завода ПППНД ПАО «Казаньоргсинтез»                                       ']
+statement_title = "ВЕДОМОСТЬ РЕЗУЛЬТАТОВ ОПРЕДЕЛЕНИЯ КОЭФФИЦИЕНТА ВИБРОПОЛЗУЧЕСТИ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЕХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ №109-22СВД"
 
 
-if __name__ == "__main__":
-    data = open_wille_log("path")
-    plt.plot(data["strain"], data["deviator"])
-    plt.show()
+data = [['1 из под фундамента-1', '1 из под фундамента', '2,0', 'Песок мелкий неоднородный', '16,0', '29,8', '27,8', '0,93'],
+        ['1 из под фундамента-1', '1 из под фундамента', '2,0', 'Песок мелкий неоднородный', '31,5', '28,0', '24,4', '0,87'],
+        ['1 из под фундамента-1', '1 из под фундамента', '2,0', 'Песок мелкий неоднородный', '63,0', '29,6', '23,6', '0,80'],
+        ['1 из под фундамента-2', '1 из под фундамента', '2,5', 'Песок средней крупности однородный', '16,0', '28,3', '27,0', '0,95'],
+        ['1 из под фундамента-2', '1 из под фундамента', '2,5', 'Песок средней крупности однородный', '31,5', '26,1', '23,1', '0,88'],
+        ['1 из под фундамента-2', '1 из под фундамента', '2,5', 'Песок средней крупности однородный', '63,0', '26,7', '21,9', '0,82'],
+        ['1 напротив фундамента-1', '1 напротив фундамента', '2,0', 'Песок мелкий однородный', '16,0', '27,3', '25,4', '0,93'],
+        ['1 напротив фундамента-1', '1 напротив фундамента', '2,0', 'Песок мелкий однородный', '31,5', '25,4', '21,6', '0,85'],
+        ['1 напротив фундамента-1', '1 напротив фундамента', '2,0', 'Песок мелкий однородный', '63,0', '26,7', '20,5', '0,77'],
+        ['1 напротив фундамента-2', '1 напротив фундамента', '2,5', 'Песок мелкий однородный', '16,0', '31,1', '27,8', '0,89'],
+        ['1 напротив фундамента-2', '1 напротив фундамента', '2,5', 'Песок мелкий однородный', '31,5', '31,4', '26,0', '0,83'],
+        ['1 напротив фундамента-2', '1 напротив фундамента', '2,5', 'Песок мелкий однородный', '63,0', '30,1', '23,0', '0,76'],
+        ['10 напротив фундамента-1', '10 напротив фундамента', '2,6', 'Песок мелкий однородный', '16,0', '28,3', '25,9', '0,91'],
+        ['10 напротив фундамента-1', '10 напротив фундамента', '2,6', 'Песок мелкий однородный', '31,5', '29,5', '24,0', '0,81'],
+        ['10 напротив фундамента-1', '10 напротив фундамента', '2,6', 'Песок мелкий однородный', '63,0', '30,2', '22,3', '0,74'],
+        ['Ш10-1', 'Ш10', '2,6', 'Песок средней крупности однородный', '16,0', '33,2', '31,1', '0,94'],
+        ['Ш10-1', 'Ш10', '2,6', 'Песок средней крупности однородный', '31,5', '32,4', '28,7', '0,89'],
+        ['Ш10-1', 'Ш10', '2,6', 'Песок средней крупности однородный', '63,0', '33,0', '26,3', '0,80'],
+        ['']]
+
+
+save_report(titles, data, scales, data_report, customer_data_info, customer_data,
+                                        statement_title, r"C:\Users\Пользователь\Desktop\1", "dg",
+                                        "Общая ведомость.pdf")

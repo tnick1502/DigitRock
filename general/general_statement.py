@@ -54,11 +54,14 @@ def convert_data(data):
     for i in range(len(data)):
         try:
             line = data[i]
-            borehole = float(line[1])
-            if borehole % 1 < 0.001:
-                line[1] = str(int(borehole))
-            else:
-                line[1] = str(borehole)
+            try:
+                borehole = float(line[1])
+                if borehole % 1 < 0.001:
+                    line[1] = str(int(borehole))
+                else:
+                    line[1] = str(borehole)
+            except ValueError:
+                pass
 
             line[2] = line[2].replace(".", ",")# zap(line[2], 1, none='-')
 
@@ -276,10 +279,15 @@ class StatementGenerator(QDialog):
                     data_report = self.customer["data"]
                     customer_data_info = ['Заказчик:', 'Объект:']
                     # Сами данные (подробнее см. Report.py)
-                    customer_data = [self.customer[i] + "              " for i in ["customer", "object_name"]]
+                    customer_data = [self.customer[i] + "                  " for i in ["customer", "object_name"]]
 
                     statement_title += f" №{self.customer['object_number']}СВД"
-
+                    print(titles)
+                    print(scales)
+                    print(data_report)
+                    print(customer_data_info)
+                    print(customer_data)
+                    print(statement_title)
                     try:
                         if save_file_pass:
                             save_report(titles, data, scales, data_report, customer_data_info, customer_data,

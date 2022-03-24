@@ -3,7 +3,7 @@ HOST = "http://localhost:5000/"
 
 new_show = {
         "laboratory": "mdgt",
-        "password": "it_user",
+        "password": "it_userг",
 
         "test_name": "triaxial",
         "object": "233445",
