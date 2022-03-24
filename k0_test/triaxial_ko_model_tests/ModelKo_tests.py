@@ -1,5 +1,5 @@
 import math
-from k0_test.triaxial_ko_model import ModelK0
+from k0_test.triaxial_k0_model import ModelK0
 import pytest
 
 """ Константы для тестирования """

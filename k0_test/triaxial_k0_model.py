@@ -21,7 +21,7 @@ class ModelK0:
     def __init__(self):
         """Определяем основную структуру данных"""
         # Структура дынных
-        self._test_data = AttrDict({"sigma_1": None, "sigma_3": None})
+        self.test_data = AttrDict({"sigma_1": None, "sigma_3": None})
 
         # Положение для выделения опыта из общего массива
         self._test_cut_position = AttrDict({"left": None, "right": None})
@@ -34,11 +34,11 @@ class ModelK0:
         if "sigma_1" not in test_data or "sigma_3" not in test_data:
             raise RuntimeWarning("test_data должен содержать sigma_1 и sigma_3")
 
-        self._test_data.sigma_1 = test_data["sigma_1"]
-        self._test_data.sigma_3 = test_data["sigma_3"]
+        self.test_data.sigma_1 = test_data["sigma_1"]
+        self.test_data.sigma_3 = test_data["sigma_3"]
 
         self._test_cut_position.left = 0
-        self._test_cut_position.right = len(self._test_data.sigma_3)
+        self._test_cut_position.right = len(self.test_data.sigma_3)
 
         self._test_processing()
 
@@ -64,8 +64,8 @@ class ModelK0:
     def _test_processing(self):
         """Обработка опыта"""
         try:
-            sigma_1_cut = self._test_data.sigma_1[self._test_cut_position.left: self._test_cut_position.right]
-            sigma_3_cut = self._test_data.sigma_3[self._test_cut_position.left: self._test_cut_position.right]
+            sigma_1_cut = self.test_data.sigma_1[self._test_cut_position.left: self._test_cut_position.right]
+            sigma_3_cut = self.test_data.sigma_3[self._test_cut_position.left: self._test_cut_position.right]
             self._test_result.K0, self._test_result.M = ModelK0.define_ko(sigma_3_cut, sigma_1_cut)
         except:
             #app_logger.exception("Ошибка обработки данных РК")
@@ -73,11 +73,11 @@ class ModelK0:
 
     def get_plot_data(self):
         """Возвращает данные для построения"""
-        if self._test_data.sigma_1 is None or self._test_data.sigma_3 is None:
+        if self.test_data.sigma_1 is None or self.test_data.sigma_3 is None:
             return None
         else:
-            sigma_1_cut = self._test_data.sigma_1[self._test_cut_position.left: self._test_cut_position.right]
-            sigma_3_cut = self._test_data.sigma_3[self._test_cut_position.left: self._test_cut_position.right]
+            sigma_1_cut = self.test_data.sigma_1[self._test_cut_position.left: self._test_cut_position.right]
+            sigma_3_cut = self.test_data.sigma_3[self._test_cut_position.left: self._test_cut_position.right]
 
             first_point = sigma_3_cut[0] + (sigma_3_cut[1] - sigma_3_cut[0]) * np.random.uniform(0., 1.)
             k0_line_x = np.linspace(first_point, sigma_3_cut[-1]*1.05)
@@ -286,7 +286,7 @@ class ModelK0SoilTest(ModelK0):
         return sigma_1, sigma_3_noise
 
 
-_test_params = {"K0": 0.42, "M": 0.1, "sigma_1_step": 0.2, "sigma_1_max": 2.0}
-model = ModelK0SoilTest()
-model.set_test_params(_test_params)
-model.plotter()
+# _test_params = {"K0": 0.42, "M": 0.1, "sigma_1_step": 0.2, "sigma_1_max": 2.0}
+# model = ModelK0SoilTest()
+# model.set_test_params(_test_params)
+# model.plotter()

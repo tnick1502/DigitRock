@@ -100,6 +100,10 @@ class ModelsShear(Models):
 class ModelsShearDilatancy(Models):
     pass
 
+@singleton
+class ModelsK0(Models):
+    pass
+
 statment = Statment()
 
 E_models = ModelsE()
@@ -122,5 +126,5 @@ Shear_Dilatancy_models = ModelsShearDilatancy()
 
 VibrationFC_models = ModelsVibrationFC()
 
-
+K0_models = ModelsK0()
 

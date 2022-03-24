@@ -1007,6 +1007,25 @@ class VibrationStrangthStatment(InitialStatment):
                                      models=VibrationFC_models, models_type=CyclicVibrationStrangthMohr)
 
 
+class K0Statment(InitialStatment):
+    """Класс обработки файла задания для трехосника"""
+    def __init__(self):
+        data_test_parameters = {"K0_mode": {"label": "Тип определения K0",
+                                            "vars": ["Не выбрано",
+                                                     "K0: По ГОСТ-56353", "K0: K0nc из ведомости",
+                                                     "K0: K0 из ведомости", "K0: Формула Джекки",
+                                                     "K0: K0 = 1", "K0: Формула Джекки c учетом переупл."]}}
+
+        fill_keys = {
+            "laboratory_number": "Лаб. ном.",
+            "E50": "Модуль деформации E50, МПа",
+            "c": "Сцепление с, МПа",
+            "fi": "Угол внутреннего трения, град",
+            "e": "Коэффициент пористости, е",
+            "reference_pressure": "Референтное давление, МПа",
+            "K0": "K0"}
+
+        super().__init__(data_test_parameters, fill_keys)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
