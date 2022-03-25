@@ -214,9 +214,11 @@ class ModelK0SoilTest(ModelK0):
 
     def set_draw_params(self, params):
         """Считывание параметров отрисовки(для передачи на слайдеры)"""
-        self._draw_params.G0_ratio = params["G0_ratio"]
-        self._draw_params.threshold_shear_strain_ratio = params["threshold_shear_strain_ratio"]
-        self._draw_params.frequency_step = int(params["frequency_step"])
+        # self._draw_params.G0_ratio = params["G0_ratio"]
+        # self._draw_params.threshold_shear_strain_ratio = params["threshold_shear_strain_ratio"]
+        self._test_params.K0 = params["K0"]
+        self._test_params.M = params["M"]
+
         self._test_modeling()
 
     def _test_modeling(self):

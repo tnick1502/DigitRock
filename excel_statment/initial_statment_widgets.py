@@ -12,7 +12,7 @@ from excel_statment.functions import read_general_prameters, k0_test_type_column
 from excel_statment.initial_tables import TableCastomer, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties, ComboBox_Initial_ParametersV2
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, CyclicProperties, \
-    DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties, ShearProperties
+    DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties, ShearProperties, K0Properties
 from loggers.logger import app_logger, log_this
 from singletons import statment, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, Shear_models, Shear_Dilatancy_models, VibrationFC_models
 
@@ -1027,6 +1027,52 @@ class K0Statment(InitialStatment):
 
         super().__init__(data_test_parameters, fill_keys)
 
+    @log_this(app_logger, "debug")
+    def file_open(self):
+        """Открытие и проверка заполненности всего файла веддомости"""
+        if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
+            combo_params = self.open_line.get_data()
+
+            columns_marker = [("FV", 177)]
+
+            marker, customer = read_general_prameters(self.path)
+
+            try:
+                assert column_fullness_test(
+                    self.path, columns=k0_test_type_column(combo_params["K0_mode"]),
+                    initial_columns=columns_marker), "Заполните K0 в ведомости"
+                assert column_fullness_test(self.path, columns=list(zip(*c_fi_E_PropertyPosition["Резонансная колонка"])),
+                                            initial_columns=columns_marker), \
+                    "Заполните параметры прочности и деформируемости (BD, BC, BE)"
+
+                assert not marker, "Проверьте " + customer
+
+            except AssertionError as error:
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
+            else:
+                combo_params["test_mode"] = "Резонансная колонка"
+
+                self.load_statment(
+                    statment_name="Резонансная колонка.pickle",
+                    properties_type=K0Properties,
+                    general_params=combo_params)
+
+                keys = list(statment.tests.keys())
+                for test in keys:
+                    if not statment[test].mechanical_properties.reference_pressure:
+                        del statment.tests[test]
+
+                if len(statment) < 1:
+                    QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
+                                        + str(columns_marker), QMessageBox.Ok)
+                else:
+                    self.table_physical_properties.set_data()
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
+
+                    self.load_models(models_name="rc_models.pickle",
+                                     models=RC_models, models_type=ModelRezonantColumnSoilTest)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

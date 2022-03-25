@@ -1906,6 +1906,79 @@ class ShearProperties(MechanicalProperties):
               type_ground == 8 or type_ground == 9) and (Il > 1.0):
             return [25, 75, 125]
 
+
+class K0Properties(MechanicalProperties):
+    Eoed = DataTypeValidation(float, int)
+    Cv = DataTypeValidation(float, int)
+    Ca = DataTypeValidation(float, int)
+    p_max = DataTypeValidation(float, int)
+    m = DataTypeValidation(float, int)
+
+    def __init__(self):
+        for key in ConsolidationProperties.__dict__:
+            if isinstance(getattr(ConsolidationProperties, key), DataTypeValidation):
+                object.__setattr__(self, key, None)
+
+    @log_this(app_logger, "debug")
+    def defineProperties(self, physical_properties, data_frame: pd.DataFrame, string: int,
+                         test_mode=None, K0_mode=None) -> None:
+        """Считывание строки свойств"""
+
+        self.Eoed = float_df(data_frame.iat[string, MechanicalPropertyPosition["Eoed"][1]])
+
+        if self.Eoed:
+            Cv = float_df(data_frame.iat[string, MechanicalPropertyPosition["Cv"][1]])
+            Ca = float_df(data_frame.iat[string, MechanicalPropertyPosition["Ca"][1]])
+
+            self.m = MechanicalProperties.define_m(physical_properties.e, physical_properties.Il)
+            self.Cv = Cv if Cv else np.round(MechanicalProperties.define_Cv(
+                MechanicalProperties.define_kf(physical_properties.type_ground, physical_properties.e)), 3)
+            self.Ca = Ca if Ca else np.round(np.random.uniform(0.001, 0.003), 5)
+
+            if self.Cv > 1.5:
+                self.Cv = np.random.uniform(1, 1.5)
+
+            self.p_max = ConsolidationProperties.spec_round(ConsolidationProperties.define_loading_pressure(
+                float_df(data_frame.iat[string, MechanicalPropertyPosition["p_max"][1]]),
+                build_press=float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]]),
+                pit_depth=float_df(data_frame.iat[string, MechanicalPropertyPosition["pit_depth"][1]]),
+                depth=physical_properties.depth), 3)
+
+    @staticmethod
+    def define_loading_pressure(pmax, build_press: float, pit_depth: float, depth: float):
+        """Функция рассчета максимального давления"""
+        if pmax:
+            return pmax
+        if build_press:
+            if not pit_depth:
+                pit_depth = 0
+            sigma_max = (2 * (depth - pit_depth) * 10) / 1000 + build_press if (depth - pit_depth) > 0 else (2 * 10 * depth) / 1000
+            return sigma_max
+        else:
+            if depth == 0.0:
+                return 25 / 1000
+            else:
+                return (2 * 10 * depth) / 1000
+
+    @staticmethod
+    def spec_round(x, precision) -> float:
+        """Rounds value as this:
+            0.16 -> 0.16
+            0.14 -> 0.14
+            0.143 -> 0.145
+            0.146 -> 0.150
+        """
+        order = 10 ** precision
+
+        condition = round(x % 10 ** (-(precision - 1)) * order, 1)
+        '''digit at precision, for 0.146 and precision = 3 condition = 6'''
+
+        if 0 < condition <= 5:
+            return round(x // (10 / order) / (order / 10) + 5 / order, precision)
+        if condition > 5:
+            return round(x // (10 / order) / (order / 10) + 1 / (order / 10), precision)
+        return round(x, precision)
+
 PropertiesDict = {
     "PhysicalProperties": PhysicalProperties,
     "MechanicalProperties": MechanicalProperties,
