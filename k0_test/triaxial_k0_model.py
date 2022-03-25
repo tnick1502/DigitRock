@@ -98,16 +98,16 @@ class ModelK0:
             figure = plt.figure()
             figure.subplots_adjust(right=0.98, top=0.98, bottom=0.1, wspace=0.2, hspace=0.2, left=0.08)
 
-            ax_G = figure.add_subplot(1, 1, 1)
-            ax_G.set_xlabel("Вертикальное напряжение __, МПа")
-            ax_G.set_ylabel("Горизонтальное напряжение __, МПа")
+            ax_K0 = figure.add_subplot(1, 1, 1)
+            ax_K0.set_xlabel("Вертикальное напряжение __, МПа")
+            ax_K0.set_ylabel("Горизонтальное напряжение __, МПа")
 
-            ax_G.scatter(plot_data["sigma_3"], plot_data["sigma_1"], label="test data", color="tomato")
-            ax_G.plot(plot_data["k0_line_x"], plot_data["k0_line_y"], label="approximate data")
+            ax_K0.scatter(plot_data["sigma_3"], plot_data["sigma_1"], label="test data", color="tomato")
+            ax_K0.plot(plot_data["k0_line_x"], plot_data["k0_line_y"], label="approximate data")
 
-            ax_G.scatter([], [], label="$K0$" + " = " + str(res["K0"]), color="#eeeeee")
+            ax_K0.scatter([], [], label="$K0$" + " = " + str(res["K0"]), color="#eeeeee")
 
-            ax_G.legend()
+            ax_K0.legend()
 
             if save_path:
                 try:
@@ -210,6 +210,13 @@ class ModelK0SoilTest(ModelK0):
             pass
             # statment[statment.current_test].mechanical_properties.K0
 
+        self._test_modeling()
+
+    def set_draw_params(self, params):
+        """Считывание параметров отрисовки(для передачи на слайдеры)"""
+        self._draw_params.G0_ratio = params["G0_ratio"]
+        self._draw_params.threshold_shear_strain_ratio = params["threshold_shear_strain_ratio"]
+        self._draw_params.frequency_step = int(params["frequency_step"])
         self._test_modeling()
 
     def _test_modeling(self):

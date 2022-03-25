@@ -53,14 +53,10 @@ class K0UI(QWidget):
         self.figure.subplots_adjust(right=0.98, top=0.98, bottom=0.14, wspace=0.2, hspace=0.2, left=0.08)
         self.canvas = FigureCanvas(self.figure)
 
-        self.ax_G = self.figure.add_subplot(1, 2, 2)
-        self.ax_G.set_xlabel("Деформация сдвига γ, д.е.")
-        self.ax_G.set_xscale("log")
-        self.ax_G.set_ylabel("Модуль сдвига G, МПа")
+        self.ax_K0 = self.figure.add_subplot(1, 1, 1)
+        self.ax_K0.set_xlabel("Вертикальное напряжение __, МПа")
+        self.ax_K0.set_ylabel("Горизонтальное напряжение __, МПа")
 
-        self.ax_rezonant = self.figure.add_subplot(1, 2, 1)
-        self.ax_rezonant.set_xlabel("Частота f, Гц")
-        self.ax_rezonant.set_ylabel("Деформация сдвига γ, д.е.")
         self.canvas.draw()
 
         self.canvas_frame_layout.setSpacing(0)
@@ -75,26 +71,16 @@ class K0UI(QWidget):
     def plot(self, plot_data, results):
         """Построение графиков опыта"""
         try:
-            self.ax_G.clear()
-            self.ax_G.set_xscale("log")
-            self.ax_G.set_xlabel("Деформация сдвига γ, д.е.")
-            self.ax_G.set_ylabel("Модуль сдвига G, МПа")
+            self.ax_K0.clear()
+            self.ax_K0.set_xlabel("Вертикальное напряжение __, МПа")
+            self.ax_K0.set_ylabel("Горизонтальное напряжение __, МПа")
 
-            self.ax_rezonant.clear()
-            self.ax_rezonant.set_xlabel("Частота f, Гц")
-            self.ax_rezonant.set_ylabel("Деформация сдвига γ, д.е.")
+            self.ax_K0.scatter(plot_data["sigma_3"], plot_data["sigma_1"], label="test data", color="tomato")
+            self.ax_K0.plot(plot_data["ko_line_x"], plot_data["ko_line_y"], label="approximate data")
 
-            self.ax_G.scatter(plot_data["shear_strain"], plot_data["G"], label="test data", color="tomato")
-            self.ax_G.plot(plot_data["shear_strain_approximate"], plot_data["G_approximate"], label="approximate data")
+            self.ax_K0.scatter([], [], label="$K0$" + " = " + str(results["K0"]), color="#eeeeee")
 
-            self.ax_G.scatter([], [], label="$G_{0}$" + " = " + str(results["G0"]), color="#eeeeee")
-            self.ax_G.scatter([], [], label="$γ_{0.7}$" + " = " + str(results["threshold_shear_strain"]) +
-                                            " " + "$⋅10^{-4}$", color="#eeeeee")
-            self.ax_G.legend()
-
-            for i in range(len(plot_data["frequency"])):
-                self.ax_rezonant.plot(plot_data["frequency"][i], plot_data["resonant_curves"][i])
-                self.ax_rezonant.scatter(plot_data["frequency"][i], plot_data["resonant_curves"][i], s=10)
+            self.ax_K0.legend()
 
             self.canvas.draw()
 
@@ -104,7 +90,7 @@ class K0UI(QWidget):
     def save_canvas(self,):
         """Сохранение графиков для передачи в отчет"""
 
-        self.ax_G.get_legend().remove()
+        self.ax_K0.get_legend().remove()
         self.canvas.draw()
 
         path = BytesIO()
@@ -114,7 +100,7 @@ class K0UI(QWidget):
         path.seek(0)
         self.figure.set_size_inches(size)
 
-        self.ax_G.legend()
+        self.ax_K0.legend()
         self.canvas.draw()
 
         return path
@@ -298,14 +284,12 @@ class K0SoilTestUI(K0UI):
     def _create_ST_UI(self):
         """Создание данных интерфейса"""
         self.sliders = TriaxialStaticLoading_Sliders({
-            "G0_ratio": "Коэффициент G0",
-            "threshold_shear_strain_ratio": "Коэффициент жесткости",
-            "frequency_step": "Шаг частоты"})
+            "K0": "Коэффициент K0",
+            "M": "Коэффициент M"})
         self.sliders.set_sliders_params(
             {
-                "G0_ratio": {"value": 1, "borders": [0.1, 5]},
-                "threshold_shear_strain_ratio": {"value": 1, "borders": [0.1, 5]},
-                "frequency_step": {"value": 3, "borders": [1, 5]}
+                "K0": {"value": 0.5, "borders": [0.1, 1]},
+                "M": {"value": 0.1, "borders": [0, 1]}
             })
         self.layout.addWidget(self.sliders)
 

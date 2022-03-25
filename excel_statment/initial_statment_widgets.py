@@ -1027,6 +1027,7 @@ class K0Statment(InitialStatment):
 
         super().__init__(data_test_parameters, fill_keys)
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ShipmentDialog()

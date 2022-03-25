@@ -113,8 +113,8 @@ class K0SoilTestWidget(QWidget):
 
     def _cut_sliders_moove(self):
         try:
-            if RC_models[statment.current_test].test_data.G_array is not None:
-                RC_models[statment.current_test].set_borders(int(self.test_widget.cut_slider.low()),
+            if K0_models[statment.current_test].test_data.G_array is not None:
+                K0_models[statment.current_test].set_borders(int(self.test_widget.cut_slider.low()),
                                                              int(self.test_widget.cut_slider.high()))
                 self._plot()
         except KeyError:
@@ -177,14 +177,14 @@ class PredictRCTestResults(QDialog):
         self.save_button = QPushButton()
         self.combo_box = QComboBox()
         self.table = QTableWidget()
-        self.sliders = TriaxialStaticLoading_Sliders({"G0_ratio": "Коэффициент G0",
-                                                      "threshold_shear_strain_ratio": "Коэффициент жесткости"})
+        self.sliders = TriaxialStaticLoading_Sliders({"K0": "Коэффициент G0",
+                                                      "M": "Коэффициент M"})
         self.buttonBox = QDialogButtonBox()
         self.create_IU()
         #
 
-        self._G0_ratio = 1
-        self._threshold_shear_strain_ratio = 1
+        self._K0 = 0.5
+        self._M = 0.1
 
         self._original_keys_for_sort = list(statment.tests.keys())
         self.resize(1400, 800)
@@ -219,8 +219,8 @@ class PredictRCTestResults(QDialog):
 
         self.sliders.set_sliders_params(
             {
-                "G0_ratio": {"value": 1, "borders": [0.1, 5]},
-                "threshold_shear_strain_ratio": {"value": 1, "borders": [0.1, 5]}
+                "K0": {"value": 0.5, "borders": [0.1, 1]},
+                "M": {"value": 0.1, "borders": [0, 1]}
             })
 
         self.l.addWidget(self.sliders)
@@ -274,9 +274,8 @@ class PredictRCTestResults(QDialog):
                                      str(statment[lab_number].mechanical_properties.reference_pressure),
                                      str(statment[lab_number].physical_properties.e),
                                      str(np.round(statment[lab_number].mechanical_properties.E50, 1)),
-                                     str(np.round(statment[lab_number].mechanical_properties.G0 * self._G0_ratio, 1)),
-                                     str(np.round(statment[lab_number].mechanical_properties.threshold_shear_strain *
-                                                  self._threshold_shear_strain_ratio, 2))]):
+                                     str(np.round(statment[lab_number].mechanical_properties.G0, 1)),
+                                     str(np.round(statment[lab_number].mechanical_properties.threshold_shear_strain, 2))]):
                 self.table.setItem(string_number, i, QTableWidgetItem(val))
 
         self._table_is_full = True
@@ -294,8 +293,8 @@ class PredictRCTestResults(QDialog):
             self._fill_table()
 
     def _sliders_moove(self, param):
-        self._G0_ratio = param["G0_ratio"]
-        self._threshold_shear_strain_ratio = param["threshold_shear_strain_ratio"]
+        self._K0 = param["K0"]
+        self._M = param["M"]
         self._fill_table()
 
     def _save_pdf(self):
