@@ -5,7 +5,7 @@ from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTe
 import numpy as np
 from static_loading.mohr_circles_test_model import ModelMohrCirclesSoilTest
 from typing import List
-from static_loading.deviator_loading_functions import curve
+from vibration_strength.deviator_loading_functions import curve
 from singletons import statment
 import os
 

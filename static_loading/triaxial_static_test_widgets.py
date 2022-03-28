@@ -838,16 +838,16 @@ class StatickSoilTestApp(QWidget):
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 data = {
-                    "labolatory": "mdgt",
+                    "laboratory": "mdgt",
                     "password": "it_user",
 
                     "test_name": "FC",
-                    "object": statment.general_data.object_number,
-                    "labolatory_number": statment.current_test,
+                    "object": str(statment.general_data.object_number),
+                    "laboratory_number": str(statment.current_test),
                     "test_type": "FC",
 
                     "data": {
-                        "Лаболаторный номер": statment.current_test,
+                        "Лаболаторный номер": str(statment.current_test),
                         "Модуль деформации E, МПа:": str(test_result["E"][0]),
                         "Коэффициент поперечной деформации ν, д.е.:": str(test_result["poissons_ratio"]),
                         "Эффективное сцепление с', МПа:": str(test_result["c"]),
