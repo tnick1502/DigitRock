@@ -228,7 +228,7 @@ class InitialStatment(QWidget):
             statment.general_data.shipment_number = window.get_data()
 
             set_cell_data(self.path, (GeneralDataColumns["shipment_number"][0],
-                                      (GeneralDataColumns["shipment_number"][1])),
+                                      (2, 9)),
                           statment.general_data.shipment_number, sheet="Лист1", color="FF6961")
         statment.save_dir.set_directory(self.path, statment_name.split(".")[0], statment.general_data.shipment_number)
 

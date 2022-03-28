@@ -303,8 +303,8 @@ class MechanicalProperties:
                 self.sigma_3 = MechanicalProperties.round_sigma_3(
                     MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
 
-            if self.sigma_3 < 50:
-                self.sigma_3 = 50
+            if self.sigma_3 < 100:
+                self.sigma_3 = 100
 
             if self.fi == 0:
                 self.qf = self.c * 2 * 1000 + np.random.uniform(-0.8, 0.8)
