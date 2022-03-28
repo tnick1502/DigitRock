@@ -272,7 +272,7 @@ class MechanicalProperties:
         else:
             self.c, self.fi, self.E50 = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
 
-        if self.c and self.fi and self.E50:
+        if self.c is not None and self.fi is not None and self.E50 is not None:
 
             self.E50 *= 1000
 
@@ -282,6 +282,7 @@ class MechanicalProperties:
             self.m = MechanicalProperties.define_m(physical_properties.e, physical_properties.Il)
             self.Cv = Cv if Cv else np.round(MechanicalProperties.define_Cv(
                 MechanicalProperties.define_kf(physical_properties.type_ground, physical_properties.e)), 3)
+
             self.Ca = Ca if Ca else np.round(np.random.uniform(0.01, 0.03), 5)
 
             self.K0 = MechanicalProperties.define_K0(data_frame, K0_mode, string, physical_properties.Il,
@@ -302,10 +303,13 @@ class MechanicalProperties:
                 self.sigma_3 = MechanicalProperties.round_sigma_3(
                     MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
 
-            if self.sigma_3 < 100:
-                self.sigma_3 = 100
+            if self.sigma_3 < 50:
+                self.sigma_3 = 50
 
-            self.qf = np.round(float(MechanicalProperties.define_qf(self.sigma_3, self.c, self.fi) * np.random.uniform(0.95, 1.05)), 1)
+            if self.fi == 0:
+                self.qf = self.c * 2 * 1000 + np.random.uniform(-0.8, 0.8)
+            else:
+                self.qf = np.round(float(MechanicalProperties.define_qf(self.sigma_3, self.c, self.fi) * np.random.uniform(0.95, 1.05)), 1)
 
             self.sigma_1 = np.round(self.qf + self.sigma_3, 1)
 
@@ -368,10 +372,15 @@ class MechanicalProperties:
                 self.pressure_array["calculated_by_pressure"] = \
                     MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3)
 
-            if test_mode == "Трёхосное сжатие КН" or test_mode == "Вибропрочность":
+            if test_mode == "Вибропрочность":
+                self.Kfi = np.random.uniform(0.85, 1.05)
+                self.Kc = np.random.uniform(0.7, 0.9)
+
+            if test_mode == "Трёхосное сжатие КН":
                 self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
             elif test_mode == "Трёхосное сжатие НН":
-                self.u = [np.round(i * np.random.uniform(0.85, 0.95), 1) for i in self.pressure_array["current"]]
+                self.u = np.round(np.random.uniform(0.85, 0.95) * self.sigma_3, 1)
+                #self.u = [np.round(i * np.random.uniform(0.85, 0.95), 1) for i in self.pressure_array["current"]]
 
     @staticmethod
     def round_sigma_3(sigma_3, param=5):

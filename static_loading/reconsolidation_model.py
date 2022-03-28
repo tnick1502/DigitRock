@@ -316,7 +316,6 @@ class ModelTriaxialReconsolidation:
 
         return skempton_dict
 
-
 class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
     """
     Модель реконсолидации с определением коэффициента Скемтона на последнем этапе
@@ -344,7 +343,7 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                                 "skempton_initial": None,
                                 "skempton_end": None})
 
-    def set_test_params(self):
+    def set_test_params(self, vpd_flag=True):
         """Записываются параметры для моделирования реконсолидации, запускается процессов моделирования эксперимента и
         нахождения коэффициента кемптона"""
 
@@ -367,14 +366,15 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
             self.params.skempton_end = 0.98
 
         # Получаешь self.params входные данные для моделирования входных данных эксперимента
-        self._test_modeling()
+        self._test_modeling(vpd_flag)
         self._test_processing()
 
-    def _test_modeling(self):
+    def _test_modeling(self, vpd_flag):
         """Получение модели результатов опыта"""
         self.params.param_for_b_test = ModelTriaxialReconsolidationSoilTest.define_input(self.params.sigma_ref,
                                                                                          self.params.skempton_initial,
-                                                                                         self.params.skempton_end, u_vfs_end=75)
+                                                                                         self.params.skempton_end, u_vfs_end=75,
+                                                                                         vpd_flag=vpd_flag)
 
         self._test_data_all = ModelTriaxialReconsolidationSoilTest.create_b_test(self.params.param_for_b_test)
         self._test_data.pore_pressure = self._test_data_all['PorePress_kPa']
@@ -400,7 +400,8 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
 
     @staticmethod
     def define_input(sigma_ref, skempton_initial=np.random.uniform(0.4, 0.6),
-                     skempton_end=np.random.uniform(0.95, 0.98), u_vfs_end=0, flag_define_deformation=False):
+                     skempton_end=np.random.uniform(0.95, 0.98), u_vfs_end=0, flag_define_deformation=False,
+                     vpd_flag=True):
         """
         Определяет входные параметры для моделирования реконсолидации create_b_test(input_dict)
         :param sigma_ref: Бытовое давление (устанавливаемое давление в камере в конце вфс) в кПа
@@ -465,7 +466,7 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         max_count_step_vpd = int((max_press_exp - np.random.randint(1, 5) *
                                   sigma_VPD_step - sigma_ref) / sigma_VPD_step)
 
-        if max_count_step_vpd > 1:
+        if max_count_step_vpd > 1 and vpd_flag:
             if max_count_step_vpd == 2:
                 # Этап впд может как проводиться, так и не провдиться
                 # Давление в конце реконсолидации

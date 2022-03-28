@@ -28,7 +28,7 @@ import os
 from version_control.configs import actual_version
 __version__ = actual_version
 
-class StatickSoilTestApp(QWidget):
+class VibrationStrangthSoilTestApp(QWidget):
 
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""

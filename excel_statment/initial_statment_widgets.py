@@ -364,6 +364,15 @@ class TriaxialStaticStatment(InitialStatment):
                     "K0: Формула Джекки c учетом переупл."]
             },
 
+            "pressure_mode": {
+                "label": "Давление на кругах",
+                "vars": [
+                    "Автоматически",
+                    "Расчетное давление",
+                    "По ГОСТу",
+                    "Ручные ступени давления"]
+            },
+
             "waterfill": {
                 "label": "Водонасыщение",
                 "vars": [
@@ -419,7 +428,6 @@ class TriaxialStaticStatment(InitialStatment):
                     properties_type=MechanicalProperties,
                     general_params=combo_params)
 
-
                 statment.general_parameters.reconsolidation = False
 
                 keys = list(statment.tests.keys())
@@ -431,6 +439,31 @@ class TriaxialStaticStatment(InitialStatment):
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
+
+                    if combo_params["pressure_mode"] == "Расчетное давление":
+                        keys = list(statment.tests.keys())
+                        for test in keys:
+                            if statment[test].mechanical_properties.pressure_array["calculated_by_pressure"] is not None:
+                                statment[test].mechanical_properties.pressure_array["current"] = \
+                                    statment[test].mechanical_properties.pressure_array["calculated_by_pressure"]
+                    elif combo_params["pressure_mode"] == "По ГОСТу":
+                        keys = list(statment.tests.keys())
+                        for test in keys:
+                            if statment[test].mechanical_properties.pressure_array[
+                                "state_standard"] is not None:
+                                statment[test].mechanical_properties.pressure_array["current"] = \
+                                    statment[test].mechanical_properties.pressure_array["state_standard"]
+                    elif combo_params["pressure_mode"] == "Ручные ступени давления":
+                        keys = list(statment.tests.keys())
+                        for test in keys:
+                            if statment[test].mechanical_properties.pressure_array[
+                                "set_by_user"] is not None:
+                                statment[test].mechanical_properties.pressure_array["current"] = \
+                                    statment[test].mechanical_properties.pressure_array["set_by_user"]
+                    else:
+                        pass
+
+
                     self.table_physical_properties.set_data()
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)

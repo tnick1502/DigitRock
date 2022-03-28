@@ -49,8 +49,9 @@ class ModelTriaxialStaticLoad:
         self.deviator_loading.set_test_data(test_data["deviator_loading"])
 
     def get_processing_parameters(self):
+        cons = self.consolidation.get_processing_parameters() if self.consolidation is not None else None
         return {
-            "consolidation": self.consolidation.get_processing_parameters(),
+            "consolidation": cons,
             "deviator_loading": self.deviator_loading.get_processing_parameters()
         }
 
@@ -321,51 +322,42 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         self.deviator_loading = ModelTriaxialDeviatorLoadingSoilTest()# ModelResistanseSoilTest()
         self.test_params = None
 
-    def set_test_params(self, reconsolidation=True):
+    def set_test_params(self, reconsolidation=True, consolidation=True):
         """Получение массивов опытов и передача в соответствующий класс"""
-        #test_params.physical_properties.e = test_params.physical_properties.e if test_params.physical_properties.e else np.random.uniform(
-            #0.6, 0.7)
         if reconsolidation:
             self.reconsolidation.set_test_params()
-            velocity = None
-            while velocity is None:
-                self.consolidation.set_delta_h_reconsolidation(self.reconsolidation.get_test_results()["delta_h_reconsolidation"])
-                self.consolidation.set_test_params()
-                velocity = self.consolidation.get_test_results()["velocity"]
-            self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
-                                                       self.consolidation.get_delta_h_consolidation())
-            poisons_ratio = 0
-            poisons_ratio_global = statment[statment.current_test].mechanical_properties.poisons_ratio
-            iteration = 0
-
-            while (poisons_ratio > poisons_ratio_global + 0.03 or poisons_ratio < poisons_ratio_global - 0.03):
-                self.deviator_loading.set_test_params()
-                iteration += 1
-                poisons_ratio = self.deviator_loading.get_test_results()["poissons_ratio"]
-                if iteration == 5:
-                    break
-
-            if iteration == 0:
-                self.deviator_loading.set_test_params()
-
+            delta_h_reconsolidation = self.reconsolidation.get_test_results()["delta_h_reconsolidation"]
         else:
             self.reconsolidation = None
+            delta_h_reconsolidation = 0
+
+        if consolidation:
             velocity = None
             while velocity is None:
-                self.consolidation.set_delta_h_reconsolidation(0)
+                self.consolidation.set_delta_h_reconsolidation(delta_h_reconsolidation)
                 self.consolidation.set_test_params()
                 velocity = self.consolidation.get_test_results()["velocity"]
-            self.deviator_loading.set_velocity_delta_h(self.consolidation.get_test_results()["velocity"],
-                                                       self.consolidation.get_delta_h_consolidation())
-            poisons_ratio = 0
-            poisons_ratio_global = statment[statment.current_test].mechanical_properties.poisons_ratio
-            iteration = 0
+                delta_h_consolidation = self.consolidation.get_delta_h_consolidation()
+        else:
+            self.consolidation = None
+            velocity = 1
+            delta_h_consolidation = 0
 
-            while (
-                    (poisons_ratio > poisons_ratio_global + 0.02) or (poisons_ratio < poisons_ratio_global - 0.02)) and iteration < 10:
-                self.deviator_loading.set_test_params()
-                iteration += 1
-                poisons_ratio = self.deviator_loading.get_test_results()["poissons_ratio"]
+        self.deviator_loading.set_velocity_delta_h(velocity, delta_h_consolidation)
+
+        poisons_ratio = 0
+        poisons_ratio_global = statment[statment.current_test].mechanical_properties.poisons_ratio
+        iteration = 0
+
+        while (poisons_ratio > poisons_ratio_global + 0.03 or poisons_ratio < poisons_ratio_global - 0.03):
+            self.deviator_loading.set_test_params()
+            iteration += 1
+            poisons_ratio = self.deviator_loading.get_test_results()["poissons_ratio"]
+            if iteration == 5:
+                break
+
+        if iteration == 0:
+            self.deviator_loading.set_test_params()
 
     def get_test_params(self):
         return self.test_params
@@ -388,23 +380,23 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
     def save_log_file(self, file_path):
         """Метод генерирует логфайл прибора"""
-        try:
+
+        if self.reconsolidation is not None:
             reconsolidation_dict = self.reconsolidation.get_dict()
-            consolidation_dict = self.consolidation.get_dict(self.reconsolidation.get_effective_stress_after_reconsolidation())
+            effective_stress_after_reconsolidation = self.reconsolidation.get_effective_stress_after_reconsolidation()
+        else:
+            reconsolidation_dict = None
+            effective_stress_after_reconsolidation = 0
 
-            deviator_loading_dict = self.deviator_loading.get_dict()
+        if self.consolidation is not None:
+            consolidation_dict = self.consolidation.get_dict(effective_stress_after_reconsolidation)
+        else:
+            consolidation_dict = None
 
-            main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
-                                                                                             consolidation_dict,
-                                                                                             deviator_loading_dict)
-        except AttributeError:
-            consolidation_dict = self.consolidation.get_dict(0)
-
-            deviator_loading_dict = self.deviator_loading.get_dict()
-
-            main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(None,
-                                                                                             consolidation_dict,
-                                                                                             deviator_loading_dict)
+        deviator_loading_dict = self.deviator_loading.get_dict()
+        main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
+                                                                                         consolidation_dict,
+                                                                                         deviator_loading_dict)
 
         ModelTriaxialStaticLoadSoilTest.text_file(file_path, main_dict)
         create_json_file('/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json",
@@ -439,9 +431,6 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
         save_cvi_E(file_path=os.path.join(file_path,file_name), data=data)
 
-
-
-
     @property
     def test_duration(self):
         time_in_min = 0
@@ -453,6 +442,13 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
     @staticmethod
     def addition_of_dictionaries(data1, data2, initial=True, skip_keys=None):
+        if data1 is None and data2 is None:
+            return None
+        elif data1 is None:
+            return copy.deepcopy(data2)
+        elif data2 is None:
+            return copy.deepcopy(data1)
+
         dictionary_1 = copy.deepcopy(data1)
         dictionary_2 = copy.deepcopy(data2)
         if skip_keys is None:
@@ -558,11 +554,12 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
     @staticmethod
     def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading):
-        if b_test:
-            data = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(b_test, consolidation, initial=True,
-                                        skip_keys=["SampleHeight_mm", "SampleDiameter_mm"])
-        else:
-            data = consolidation
+
+        print(b_test, consolidation)
+
+        data = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(b_test, consolidation, initial=True,
+                                                                        skip_keys=["SampleHeight_mm",
+                                                                                   "SampleDiameter_mm"])
 
         dictionary = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(copy.deepcopy(data), deviator_loading, initial=True,
                                               skip_keys=["SampleHeight_mm", "SampleDiameter_mm", "Action_Changed"])

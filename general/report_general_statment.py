@@ -1032,9 +1032,9 @@ def save_report(titles1, data1, scales1, data_report1, customer_data_info1, cust
     from reportlab import xrange
     global pod_mass
     if type_format == 1:
-        pod_mass = [data[d:d + 21] for d in xrange(0, len(data), 21)]
+        pod_mass = [data[d:d + 21] for d in xrange(0, len(data), 10)]
     else:
-        pod_mass = [data[d:d + 23] for d in xrange(0, len(data), 23)]
+        pod_mass = [data[d:d + 23] for d in xrange(0, len(data), 10)]
 
     # Делитель таблицы
     all_table = []

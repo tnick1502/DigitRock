@@ -24,6 +24,7 @@ from shear import ShearSoilTestApp
 from vibration_creep.vibration_creep_widgets import VibrationCreepSoilTestApp
 from consolidation.consolidation_widget import ConsolidationSoilTestApp
 from resonant_column.resonant_column_widgets import RezonantColumnSoilTestApp
+from vibration_strength.vibration_strangth_widgets import VibrationStrangthSoilTestApp
 
 icon_path = "project_data/icons/"
 
@@ -34,6 +35,7 @@ prog_dict = {
     "shear": ShearSoilTestApp,
     "consolidation": ConsolidationSoilTestApp,
     "resonant_column": RezonantColumnSoilTestApp,
+    "vibration_strangth": VibrationStrangthSoilTestApp
 }
 
 prog_name = {
@@ -43,6 +45,7 @@ prog_name = {
     "shear": "Сдвиг",
     "consolidation": "Консолидация",
     "resonant_column": "Резонансная колонка",
+    "vibration_strangth": "Вибропрочность",
 }
 
 prog_geometry = {
@@ -86,6 +89,12 @@ prog_geometry = {
         "top": 30,
         "width": 1800,
         "height": 1000
+    },
+    "vibration_strangth": {
+            "left": 100,
+            "top": 30,
+            "width": 1500,
+            "height": 950
     }
 }
 
@@ -96,7 +105,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.title = "DigitRock SoilTest " + "{:.2f}".format(actual_version)
         self.left = 100
         self.top = 50
-        self.width = 900
+        self.width = 1350
         self.height = 950
         self.setWindowTitle(self.title)
         #self.setWindowIcon(QIcon(icons + "ST.png"))
@@ -124,7 +133,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.info_button.clicked.connect(self.info)
         self.layout.addWidget(self.info_button, 0, 0, 1, -1)
 
-        col, string = 0, 1
+        col, string = 0, 0
 
         for key in prog_dict:
             setattr(self, key, QPushButton(prog_name[key]))
@@ -139,10 +148,12 @@ class App(QMainWindow):  # Окно и виджеты на нем
             btn.setIconSize(QSize(280, 280))
 
             self.layout.addWidget(btn, string, col)
-            col += 1
-            if col == 2:
-                col = 0
-                string += 1
+
+            string += 1
+            if string == 3:
+                string = 0
+                col += 1
+
 
         self.setCentralWidget(self.table_widget)
         self.show()

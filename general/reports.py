@@ -13,6 +13,7 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.utils import ImageReader
 
 from excel_statment.params import accreditation
+from general.general_functions import AttrDict
 
 import ctypes
 import io
@@ -133,8 +134,7 @@ def SaveCode(version):  # Создает защитный код и записы
 
 
 
-def main_frame(canvas, path, Data_customer, code, list):
-
+def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
     #if Data_customer.accreditation == "ООО":
         #accreditation = "ON"
     #elif Data_customer.accreditation == "ОАО" or Data_customer.accreditation == "АО":
@@ -212,42 +212,100 @@ def main_frame(canvas, path, Data_customer, code, list):
     else:
         s = 0
 
-    dat3 = [[A[0 + s][0], A[0 + s][1]],
-            ['', A[0 + s][2]],
-            [A[1 + s][0], A[1 + s][1]],
-            [A[2 + s][0], A[2 + s][1]],
-            [A[3 + s][0], A[3 + s][1]]]
-    t = Table(dat3, colWidths=100 * mm, rowHeights = 4 * mm)
-    t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
-                 ("FONTSIZE", (0, 0), (-1, -1), 8),
-                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                 ("LEFTPADDING", (1, 0), (1, -1), 1.4*mm),
-                ("LEFTPADDING", (0, 0), (0, -1), 0.3 * mm),
-                 ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-                 ("ALIGN", (0, 0), (-1, -1), "LEFT"), ])
 
-    t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 12 * mm)
+    if qr_code:
+        dat3 = [[A[0 + s][0], A[0 + s][1]],
+                ['', A[0 + s][2]],
+                [A[1 + s][0], A[1 + s][1]],
+                [A[2 + s][0], A[2 + s][1]],
+                [A[3 + s][0], A[3 + s][1]]]
+        t = Table(dat3, colWidths=68 * mm, rowHeights = 4 * mm)
+        t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
+                     ("FONTSIZE", (0, 0), (-1, -1), 7),
+                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                     ("LEFTPADDING", (1, 0), (1, -1), 1.4*mm),
+                    ("LEFTPADDING", (0, 0), (0, -1), 0.3 * mm),
+                     ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                     ("ALIGN", (0, 0), (-1, -1), "LEFT"), ])
 
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 25 * mm, 12 * mm)
 
+        t = Table([["Номер документа №:", "", "", "", code, "", "", "Дата:", "",
+                    str(data.strftime("%d.%m.%Y")), "", "Лист:", "", list, "", "", "", "", "", ""]], colWidths=9.25 * mm, rowHeights=5 * mm)
 
+        canvas.line((47) * mm, (280) * mm, (179) * mm, (280) * mm)
 
-    # Нижняя таблица
-    t = Table([["Номер документа №:", "", "", "", code, "", "", "", "", "", "", "Дата:", "", str(data.strftime("%d.%m.%Y")), "", "", "Лист:", "", list, ""]], colWidths = 9.25 * mm, rowHeights = 5 * mm)
-    t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'TimesK'),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("SPAN", (0, 0), (3, 0)),
-                ("SPAN", (4, 0), (10, 0)),
-                ("SPAN", (11, 0), (12, 0)),
-                ("SPAN", (13, 0), (15, 0)),
-                ("SPAN", (16, 0), (17, 0)),
-                ("SPAN", (18, 0), (19, 0)),
-                ('BOX', (0, 0), (-1, -1), 0.3 * mm, "black"),
-                ('INNERGRID', (0, 0), (-1, -1), 0.3 * mm, "black")])
-    t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 20 * mm, 5 * mm)
+        t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'TimesK'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("SPAN", (0, 0), (3, 0)),
+                    ("SPAN", (4, 0), (6, 0)),
+                    ("SPAN", (7, 0), (8, 0)),
+                    ("SPAN", (9, 0), (10, 0)),
+                    ("SPAN", (11, 0), (12, 0)),
+                    ("SPAN", (13, 0), (14, 0)),
+                    #("SPAN", (13, 0), (-1, 0)),
+                    ('BOX', (0, 0), (14, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 0), (14, -1), 0.3 * mm, "black")])
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 20 * mm, 5 * mm)
+
+        canvas.line((158.75) * mm, (10) * mm, (158.75) * mm, (51.25) * mm)
+        canvas.line((158.75) * mm, (51.25) * mm, (210-5) * mm, (51.25) * mm)
+
+        t = Table([["Аутентификация протокола"], ["Сервис georeport.ru"]], colWidths=46.25 * mm,
+                  rowHeights=4* mm)
+        t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 7),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (1, 0), (1, -1), 1.4 * mm),
+                    ("LEFTPADDING", (0, 0), (0, -1), 0.3 * mm),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"), ])
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 158.75 * mm, 51.25 - 8 + 28* mm)
+
+        canvas.drawImage(qr_code, (8.25*0.5 + 158.75 + 0.5) * mm, 6.5 * mm,
+                         width=37 * mm, height=37 * mm)
+
+    else:
+        dat3 = [[A[0 + s][0], A[0 + s][1]],
+                ['', A[0 + s][2]],
+                [A[1 + s][0], A[1 + s][1]],
+                [A[2 + s][0], A[2 + s][1]],
+                [A[3 + s][0], A[3 + s][1]]]
+        t = Table(dat3, colWidths=100 * mm, rowHeights=4 * mm)
+        t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (1, 0), (1, -1), 1.4 * mm),
+                    ("LEFTPADDING", (0, 0), (0, -1), 0.3 * mm),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                    ("ALIGN", (0, 0), (-1, -1), "LEFT"), ])
+
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 25 * mm, 12 * mm)
+
+        # Нижняя таблица
+        t = Table([["Номер документа №:", "", "", "", code, "", "", "", "", "", "", "Дата:", "",
+                    str(data.strftime("%d.%m.%Y")), "", "", "Лист:", "", list, ""]], colWidths=9.25 * mm,
+                  rowHeights=5 * mm)
+        t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'TimesK'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("SPAN", (0, 0), (3, 0)),
+                    ("SPAN", (4, 0), (10, 0)),
+                    ("SPAN", (11, 0), (12, 0)),
+                    ("SPAN", (13, 0), (15, 0)),
+                    ("SPAN", (16, 0), (17, 0)),
+                    ("SPAN", (18, 0), (19, 0)),
+                    ('BOX', (0, 0), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 0), (-1, -1), 0.3 * mm, "black")])
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 20 * mm, 5 * mm)
 
 def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname = "ц"):  # Верхняя таблица данных
 
@@ -1826,6 +1884,90 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
 
+def result_table_CF_NN(canvas, Res, pick, scale = 0.8):
+
+
+    try:
+        a = svg2rlg(pick[0])
+        a.scale(scale, scale)
+        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        b = svg2rlg(pick[1])
+        b.scale(scale, scale)
+        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+    except AttributeError:
+        a = ImageReader(pick[0])
+        #canvas.drawImage(a, 31 * mm, 81 * mm,
+                            # width=80* mm, height=80 * mm)
+        b = ImageReader(pick[1])
+        canvas.drawImage(b, 115 * mm, 81 * mm,
+                             width=80 * mm, height=40 * mm)
+
+
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    r = 22
+    table_move = 3
+    for i in range(table_move):
+        tableData.append([""])
+
+
+    tableData.append([Paragraph('''<p>Напряжение σ<sub rise="0.5" size="5">3</sub>, МПа</p>''', CentralStyle),
+                      Paragraph('''<p>Девиатор q, МПа</p>''', CentralStyle)])
+    tableData.append(["", "", ""])
+
+    if len(Res["sigma_3_mohr"]) == 1:
+        tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", "", ""])
+        tableData.append(["-", "-", "", "", "", ""])
+        tableData.append(["-", "-", "", "", "", ""])
+    else:
+        tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", "", ""])
+        tableData.append([zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), "", "", "", ""])
+        tableData.append([zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_1_mohr"][2], 3), "", "", "", ""])
+
+
+    for i in range(r):
+        tableData.append([""])
+
+    tableData.append(
+        [Paragraph('''<p>Недренированная прочность с<sub rise="0.5" size="5">u</sub>, МПа:</p>''', LeftStyle), "", "", "",
+         zap(Res["c"], 3), ""])
+
+    #tableData.append(
+        #[Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
+         #zap(Res["m"], 2), ""])
+
+    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+    t.setStyle([('SPAN', (0, 0), (-1, 0)),
+
+                ('SPAN', (0, 1), (-1, table_move)),
+
+                #('SPAN', (0, table_move + 1), (2, table_move + 1)),
+
+                ('SPAN', (2, 1), (-1, -4)),
+
+                ('SPAN', (0, 6 + table_move), (-1, r + table_move + 5)),
+
+                ('SPAN', (0, table_move+1), (0, table_move+2)),
+                ('SPAN', (1, table_move+1), (1, table_move + 2)),
+
+                ('SPAN', (0, -1), (3, -1)),
+                ('SPAN', (-2, -1), (-1, -1)),
+
+                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+
+                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, ((40-((r - 30)*4)) - table_move*6) * mm)
+
+
 def result_table_m(canvas, Res, pick, scale = 0.8):
 
     a = svg2rlg(pick)
@@ -2312,7 +2454,7 @@ def ResultStampPart2(canvas, R):
 
 
 
-def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
 
 
     # Подгружаем шрифты
@@ -2333,7 +2475,7 @@ def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
 
     code = SaveCode(version)
 
-    main_frame(canvas, path,  Data_customer, code, "1/1")
+    main_frame(canvas, path,  Data_customer, code, "1/1", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ИСПЫТАНИЯ ГРУНТА МЕТОДОМ МАЛОАМПЛИТУДНЫХ ДИНАМИЧЕСКИХ",
                                 "КОЛЕБАНИЙ В РЕЗОНАНСНОЙ КОЛОНКЕ (ГОСТ Р 56353-2015)"], "/РК")
@@ -2347,7 +2489,7 @@ def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
 
     canvas.save()
 
-def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -2357,7 +2499,7 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     code = SaveCode(version)
 
-    main_frame(canvas, path,  Data_customer, code, "1/2")
+    main_frame(canvas, path,  Data_customer, code, "1/2", qr_code=qr_code)
     if test_parameter["type"] == "Сейсморазжижение":
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
@@ -2377,7 +2519,7 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     canvas.showPage()
 
-    main_frame(canvas, path, Data_customer, code, "2/2")
+    main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     if test_parameter["type"] == "Сейсморазжижение":
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
@@ -2399,7 +2541,7 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     canvas.save()
 
-def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -2423,7 +2565,7 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     #result_table_consolidation(canvas, res, [picks[0], picks[1]])
 
     #canvas.showPage()
-    main_frame(canvas, path, Data_customer, code, "1/1")
+    main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КОНСОЛИДАЦИИ ГРУНТОВ МЕТОДОМ",
                              "КОМПРЕССИОННОГО СЖАТИЯ (ГОСТ 12248.4-2020)"], "/ВК")
@@ -2438,7 +2580,7 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     canvas.save()
 
 
-def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type=None, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type=None, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -2449,7 +2591,7 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
     code = SaveCode(version)
 
     #canvas.showPage()
-    main_frame(canvas, path, Data_customer, code, "1/1")
+    main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
     if res["Eur"]:
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
@@ -2470,6 +2612,8 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E")
     elif report_type == "standart_E50":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50")
+    elif report_type == "E_E50":
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all")
     elif report_type == "user_define_1":
         result_table_deviator_user_1(canvas, res, [picks[2], picks[3]])
     else:
@@ -2479,7 +2623,7 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
 
     canvas.save()
 
-def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type=None, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type=None, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -2492,9 +2636,9 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     code = SaveCode(version)
 
     if report_type == "plaxis":
-        main_frame(canvas, path, Data_customer, code, "1/3")
+        main_frame(canvas, path, Data_customer, code, "1/3", qr_code=qr_code)
     else:
-        main_frame(canvas, path, Data_customer, code, "2/2")
+        main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
@@ -2503,7 +2647,6 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     test_parameter["K0"] = K0[0]
     test_mode_consolidation(canvas, test_parameter)
 
-    print(report_type)
     if report_type == "standart_E":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E")
     elif report_type == "standart_E50":
@@ -2517,9 +2660,9 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
 
     canvas.showPage()
     if report_type == "plaxis":
-        main_frame(canvas, path, Data_customer, code, "2/3")
+        main_frame(canvas, path, Data_customer, code, "2/3", qr_code=qr_code)
     else:
-        main_frame(canvas, path, Data_customer, code, "2/2")
+        main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
@@ -2534,7 +2677,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     if report_type == "plaxis":
         canvas.showPage()
 
-        main_frame(canvas, path, Data_customer, code, "3/3")
+        main_frame(canvas, path, Data_customer, code, "3/3", qr_code=qr_code)
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                                  "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
@@ -2549,7 +2692,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
 
     canvas.save()
 
-def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -2561,7 +2704,7 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
 
     code = SaveCode(version)
 
-    main_frame(canvas, path, Data_customer, code, "1/1")
+    main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
@@ -2574,8 +2717,37 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
 
     canvas.save()
 
+def report_FC_NN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+    test_parameter = dict(test_parameter)
+    test_parameter["K0"] = test_parameter["K0"][1]
+    name = "НН"
+    canvas = Canvas(Name, pagesize=A4)
 
-def report_vibration_strangth(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    code = SaveCode(version)
+
+    main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
+    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
+                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
+
+    parameter_table(canvas, Data_phiz, Lab)
+    if len(res["sigma_3_mohr"]) == 1:
+        test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3)
+    else:
+        test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
+    test_mode_consolidation(canvas, test_parameter)
+
+    result_table_CF_NN(canvas, res, [picks[0],picks[1]])
+
+    canvas.save()
+
+
+
+def report_vibration_strangth(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -2587,7 +2759,7 @@ def report_vibration_strangth(Name, Data_customer, Data_phiz, Lab, path, test_pa
 
     code = SaveCode(version)
 
-    main_frame(canvas, path, Data_customer, code, "1/2")
+    main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
@@ -2600,7 +2772,7 @@ def report_vibration_strangth(Name, Data_customer, Data_phiz, Lab, path, test_pa
 
     canvas.showPage()
 
-    main_frame(canvas, path, Data_customer, code, "2/2")
+    main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
@@ -2616,7 +2788,7 @@ def report_vibration_strangth(Name, Data_customer, Data_phiz, Lab, path, test_pa
 
 
 
-def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -2629,7 +2801,7 @@ def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
 
     code = SaveCode(version)
 
-    main_frame(canvas, path, Data_customer, code, "1/1")
+    main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
@@ -2642,7 +2814,7 @@ def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
 
     canvas.save()
 
-def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -2652,7 +2824,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     code = SaveCode(version)
 
-    main_frame(canvas, path, Data_customer, code, "1/2")
+    main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
@@ -2664,7 +2836,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     canvas.showPage()
 
-    main_frame(canvas, path, Data_customer, code, "2/2")
+    main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
@@ -2676,7 +2848,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     canvas.save()
 
-def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
 
     pick_vc_array = picks[0]
@@ -2690,7 +2862,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     code = SaveCode(version)
 
-    main_frame(canvas, path, Data_customer, code, f"1/{1+len(test_parameter['frequency'])}")
+    main_frame(canvas, path, Data_customer, code, f"1/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
@@ -2705,7 +2877,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     canvas.showPage()
 
     for i in range(len(test_parameter["frequency"])):
-        main_frame(canvas, path, Data_customer, code, f"{i+2}/{1+len(test_parameter['frequency'])}")
+        main_frame(canvas, path, Data_customer, code, f"{i+2}/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                                  "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
@@ -2718,7 +2890,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
         result_vibration_creep(canvas, [res_dynamic[i]], [pick_vc_array[i], pick_c_array[i]], test_parameter)
         canvas.showPage()
 
-    #main_frame(canvas, path, Data_customer, code, f"{2+len(test_parameter['frequency'])}/{2+len(test_parameter['frequency'])}")
+    #main_frame(canvas, path, Data_customer, code, f"{2+len(test_parameter['frequency'])}/{2+len(test_parameter['frequency'])}", qr_code=qr_code)
     #sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             #["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                              #"СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"],
@@ -2733,7 +2905,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     canvas.save()
 
 
-def report_cyclic_damping(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_cyclic_damping(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -2743,7 +2915,7 @@ def report_cyclic_damping(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     code = SaveCode(version)
 
-    main_frame(canvas, path,  Data_customer, code, "1/1")
+    main_frame(canvas, path,  Data_customer, code, "1/1", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ДЕМПФИРУЮЩИХ СВОЙСТ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
                              "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"],
@@ -2994,7 +3166,7 @@ def StatmentReport(name, Data, path):  # p1 - папка сохранения о
     canvas.save()
 
 
-def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -3007,7 +3179,7 @@ def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_param
     code = SaveCode(version)
 
     #canvas.showPage()
-    main_frame(canvas, path, Data_customer, code, "1/1")
+    main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
 
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ УГЛА ДИЛАТАНСИИ МЕТОДОМ",
@@ -3026,7 +3198,7 @@ def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_param
     canvas.save()
 
 
-def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -3036,7 +3208,7 @@ def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
 
     code = SaveCode(version)
 
-    main_frame(canvas, path, Data_customer, code, "1/1")
+    main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЕ ГРУНТОВ МЕТОДОМ ОДНОПЛОСКОСТНОГО",
                              "СРЕЗА (ГОСТ 12248.1-2020)"], "/" + name)
@@ -3052,42 +3224,23 @@ def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
 
 
 if __name__ == '__main__':
-    print(cm)
-    '''path2 = "//192.168.0.1/files/Прикладные программы/"
-    path3 = "Z:/files/Прикладные программы/"
-    path = path2
-    Nop = 2
-    Akred = "AN"
-    p1 = "C:/Users/Пользователь/Desktop/Новая папка (2)/Новая папка (2)"
-    p2 = "C:/Users/Пользователь/Desktop/Новая папка (2)/Новая папка (2)/Образец ведомости.xlsx"
-    M = [[0.02, 0.08, 0.17, 0.25, 0.33, 0.5, 1, 2, 4, 8, '...', 26], [
-        [0.5185186, 0.6084657, 0.6465609, 0.6598639, 0.6657329352941176, 0.6793650999999999, 0.7054411268656716,
-         0.7173721166666667, 0.7325765145695364, 0.7563925171548117, '...', 0.7873782045020464],
-        [0.09836396506228601, 0.0884800453456501, 0.08326682409541425, 0.08250831291552266, 0.08149479323937826,
-         0.07997605411287687, 0.07715619486880514, 0.07533563520983763, 0.07419445120256152, 0.07213222369517026, '...',
-         0.06845857378844353]], [[0.5185186, 0.6084657, 0.6465609, 0.6598639, 0.6657329352941176, 0.6793650999999999, 0.7054411268656716,
-              0.7173721166666667, 0.7325765145695364, 0.7563925171548117, '...', 0.7873782045020464],[0.09836396506228601, 0.0884800453456501, 0.08326682409541425, 0.08250831291552266, 0.08149479323937826,
-              0.07997605411287687, 0.07715619486880514, 0.07533563520983763, 0.07419445120256152, 0.07213222369517026,
-              '...', 0.06845857378844353]], [[0.3809524, 0.45855376666666664, 0.47971783333333334, 0.4920635, 0.5015873, 0.5140629789473684,
-              0.5308641833333333, 0.5412663006802721, 0.552496740625, 0.5649834725212465],[0.13202479794421462, 0.1174062381356648, 0.1122265402417589, 0.10941082345525065, 0.10733340482757983,
-              0.1047285545391993, 0.10252601817537872, 0.09985677163422917, 0.10000753362116065, 0.09577979975504072]],[[0.3650794, 0.4497355, 0.4772487, 0.48941799999999996, 0.4965986857142857, 0.506974559090909,
-           0.5227771999999999, 0.5238096, 0.5450685058295963, 0.5586246996978852],[0.13970535027324316, 0.11970830127324335, 0.11280716474926536, 0.11000223270756844, 0.10841162950287685,
-           0.10619284885579205, 0.10298282466655533, 0.10305032418441566, 0.09878286004707958, 0.09710987898258577]], [[0.5343916, 0.6014109666666666, 0.62433865, 0.6349207, 0.6402117, 0.67063495, 0.6838988559633027,
-              0.6972766349693251, 0.7037038],[0.0980934376418138, 0.08951794315568584, 0.08623056209522303, 0.084793380854133, 0.08409260987775251,
-              0.08027776173501357, 0.07962357189217556, 0.07822641948679973, 0.07751195111558946]], [[0.2486773, 0.30511463333333333, 0.32804235000000004, 0.34060845624999997, 0.351851875, 0.3672316711864407,
-              0.3791666875, 0.38799604375, 0.3981769950155763],[0.21079651858416149, 0.17644867484430518, 0.16519593776950944, 0.15871139149222033, 0.15301061768470814,
-              0.14853145527789252, 0.14447499695691826, 0.14088489087613515, 0.13698796070154876]]]
-    R = [[1, 0.13690691777230923, 0.11673061401456442, 0.8526275802125635, 0.12786124522291376],
-         [1, 0.13690691777230923, 0.11673061401456442, 0.8526275802125635, 0.12786124522291376],
-         [1, 0.13690691777230923, 0.11673061401456442, 0.8526275802125635, 0.12786124522291376],
-         [2, 0.1190375606593736, '-', '-', 0.11117254687976105],
-         [3, 0.07213222369517026, '-', '-', 0.06736632518234707],
-         [4, 0.09577979975504072, '-', '-', 0.0894514657341721], [5, 0.11005566971626911, '-', '-', 0.1027841047241081],
-         [6, 0.20143775924192464, '-', '-', 0.18812842441184086],
-         [7, 0.07751195111558946, '-', '-', 0.0723906048763698],
-         [8, 0.13698796070154876, '-', '-', 0.12793693350819318],
-         [9, 0.09710987898258577, '-', '-', 0.0906936643684433],
-         ('Ср. знач', 0.11632885795997908, '-', 0.9339283018229992, 0.10178921539491283)]'''
+    path = "C:/Users/Пользователь/PycharmProjects/DigitRock/project_data/"
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    canvas = Canvas("C:/Users/Пользователь/Desktop/Загрузки/test.pdf", pagesize=A4)
+
+    code = SaveCode(1.1)
+    import datetime
+    customer = AttrDict({'accreditation_key': '2',
+     'object_name': 'Жилой комплекс с подземной автостоянкой и сопутствующими инфраструктурными объектами по адресу: г. Москва, Ильменский проезд, вл. 4',
+     'customer': 'ООО "СТФ-СТРОЙ"', 'accreditation': 'ООО', 'object_number': '762-21',
+     'start_date': datetime.datetime(2021, 12, 15, 0, 0), 'end_date': datetime.datetime(2021, 12, 28, 0, 0),
+     'shipment_number': '1', 'path': 'C:/Users/Пользователь/Desktop/test/762-21 Ильменский, 4 -G0.xlsx'})
+
+    main_frame(canvas, path, customer, code, "1/1", qr_code = "C:/Users/Пользователь/PycharmProjects/DigitRock/authentication/qr.png")
+
+    canvas.save()
 
 
-    #RCReport(p1, p2, Nop, path, {"G0": 12, "gam":3})

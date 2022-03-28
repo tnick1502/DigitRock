@@ -282,9 +282,10 @@ class CyclicVibrationStrangthMohr(ModelMohrCirclesSoilTest):
     def _test_modeling(self):
         c = statment[statment.current_test].mechanical_properties.c
         fi = statment[statment.current_test].mechanical_properties.fi
+        statment[statment.current_test].mechanical_properties.u = [np.random.uniform(0.2, 0.4) * i for i in statment[statment.current_test].mechanical_properties.pressure_array["current"]]
 
-        statment[statment.current_test].mechanical_properties.c *= np.random.uniform(0.6, 0.8)
-        statment[statment.current_test].mechanical_properties.fi *= np.random.uniform(0.6, 0.8)
+        statment[statment.current_test].mechanical_properties.c *= statment[statment.current_test].mechanical_properties.Kc
+        statment[statment.current_test].mechanical_properties.fi *= statment[statment.current_test].mechanical_properties.Kfi
 
         statment[statment.current_test].mechanical_properties.frequency = 5
         statment[statment.current_test].mechanical_properties.sigma_d = 5
@@ -304,6 +305,7 @@ class CyclicVibrationStrangthMohr(ModelMohrCirclesSoilTest):
 
         statment[statment.current_test].mechanical_properties.c = c
         statment[statment.current_test].mechanical_properties.fi = fi
+        statment[statment.current_test].mechanical_properties.u = None
 
     def save_log_files(self, directory, name):
         """Метод генерирует файлы испытания для всех кругов"""
