@@ -1218,6 +1218,10 @@ def curve_shear_dilatancy(qf, e50, **kwargs):
         local = (-x_given * (1 - 2 * kwargs["m_given"])) / x_given * (xc - len_x_dilatacy / 2) * 0.8
         kwargs["v_d_xc"] = local + abs(local) * 0.2
 
+    # Ограничение на "угол" дилатансии
+    if kwargs["angle_of_dilatacy"] == 0:
+        kwargs["angle_of_dilatacy"] = 0.001
+
     # Ограничение на "угол" дилатансии, связанное с положеним точки хс и x_given
     # при положительных v_d_xc и малых значениях "угла" дилатансии
     if kwargs["angle_of_dilatacy"] < (kwargs["v_d_xc"] - (-x_given * (1 - 2 * kwargs["m_given"]))) / (
