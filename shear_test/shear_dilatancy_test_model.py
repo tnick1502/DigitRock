@@ -960,11 +960,31 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
     def xc_from_qf_e_if_is(sigma_3, type_ground, e, Ip, Il, Ir, test_mode):
         """Функция находит деформацию пика девиаорного нагружения в зависимости от qf и E50, если по параметрам материала
         пик есть, если нет, возвращает xc = 0.15. Обжимающее напряжение должно быть в кПа"""
-        if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
+        sigma3mor = sigma_3 / 1000  # так как дается в КПа, а необходимо в МПа
+        if (ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD) and type_ground > 5:
             # if sigma_3 <= 0.1:
             #     return 0
             # else:
-            return np.random.choice([0, 1], p=[0.7, 0.3])
+            def scheme(sigma3mor):
+                if sigma3mor <= 0.1:
+                    kr_fgs = np.random.choice([0, 1], p=[0.7, 0.3])
+                else:
+                    kr_fgs = 1
+                return kr_fgs
+
+            if Il <= 0.25:
+                kr_fgs = scheme(sigma3mor)
+                return kr_fgs
+            elif Il > 0.25 and Il <= 0.3:
+                a = scheme(sigma3mor)
+                kr_fgs = np.random.choice([a, 0], p=[0.3, 0.7])
+                return kr_fgs
+            elif Il > 0.3:
+                kr_fgs = 0
+                return kr_fgs
+
+
+
         none_to_zero = lambda x: 0 if not x else x
         Ip = Ip if Ip else 0
         Il = Il if Il else 0.5
@@ -1000,7 +1020,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         else:
             dens_sand = 0
 
-        sigma3mor = sigma_3 / 1000  # так как дается в КПа, а необходимо в МПа
+
         # if type_ground == 3 or type_ground == 4:  # Процентное содержание гранул размером 10 и 5 мм больше половины
         #     kr_fgs = 1
         if none_to_zero(Ip) == 0:  # число пластичности. Пески (и торф?)
@@ -1096,6 +1116,14 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         if xc:
             xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
+            if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
+                if sigma_3 <= 200:
+                    k = 1
+                elif sigma_3 >= 200 and sigma_3 < 500:
+                    k = 0.002*sigma_3 + 0.6
+                else:
+                    k = 1.6
+                xc = xc*k
 
         else:
             xc = 0.15
