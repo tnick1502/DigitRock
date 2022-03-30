@@ -66,7 +66,7 @@ class ModelK0:
         try:
             sigma_1_cut = self.test_data.sigma_1[self._test_cut_position.left: self._test_cut_position.right]
             sigma_3_cut = self.test_data.sigma_3[self._test_cut_position.left: self._test_cut_position.right]
-            self._test_result.K0, self._test_result.M = ModelK0.define_ko(sigma_1_cut, sigma_3_cut)
+            self._test_result.K0, self._test_result.sigma_p = ModelK0.define_ko(sigma_1_cut, sigma_3_cut)
         except:
             #app_logger.exception("Ошибка обработки данных РК")
             pass
@@ -81,7 +81,7 @@ class ModelK0:
 
             first_point = sigma_3_cut[0] + (sigma_3_cut[1] - sigma_3_cut[0]) * np.random.uniform(0., 1.)
             k0_line_x = np.linspace(first_point, sigma_3_cut[-1]*1.05)
-            k0_line_y = 1/self._test_result.K0 * (k0_line_x - self._test_result.M)
+            k0_line_y = 1/self._test_result.K0 * (k0_line_x - self._test_result.sigma_p)
             return {
                 "sigma_1": sigma_1_cut,
                 "sigma_3": sigma_3_cut,
@@ -155,8 +155,8 @@ class ModelK0:
         sigma_1 = np.asarray(sigma_1)
         sigma_3 = np.asarray(sigma_3)
 
-        defined_k0, defined_m = ModelK0.lse_linear_estimation(sigma_1, sigma_3)
-        return (defined_k0, defined_m) if no_round else (round(defined_k0, 2), round(defined_m, 2))
+        defined_k0, defined_sigma_p = ModelK0.lse_linear_estimation(sigma_1, sigma_3)
+        return (defined_k0, defined_sigma_p) if no_round else (round(defined_k0, 2), round(defined_sigma_p, 2))
 
     @staticmethod
     def lse_linear_estimation(__x, __y):
@@ -236,7 +236,7 @@ class ModelK0SoilTest(ModelK0):
         sgima_3_synth = self._test_params.K0 * (sgima_1_synth - self._test_params.sigma_p) + self._test_params.sigma_3_p
 
         sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_synth, sgima_3_synth,
-                                                     self._test_params.K0, self._test_params.sigma_p)
+                                                     self._test_params.K0, self._test_params.sigma_3_p)
 
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
 
@@ -275,7 +275,7 @@ class ModelK0SoilTest(ModelK0):
             # возвращаем зафиксированную точку для подачи в МНК
             x = np.insert(x, fixed_point_index, sigma_3_noise[fixed_point_index])
             x[0] = sigma_3_p  # оставляем первую точку на месте
-            _K0_new, _M_new = ModelK0.define_ko(sigma_1, x, no_round=True)
+            _K0_new, _sigma_p_new = ModelK0.define_ko(sigma_1, x, no_round=True)
             return abs(_K0_new - K0)
 
         initial = np.delete(sigma_3_noise, fixed_point_index)
@@ -294,7 +294,7 @@ class ModelK0SoilTest(ModelK0):
         sigma_3_noise = np.insert(res, fixed_point_index, sigma_3_noise[fixed_point_index])
         sigma_3_noise[0] = sigma_3_p
         # Проверка:
-        K0_new, M_new = ModelK0.define_ko(sigma_1, sigma_3_noise)
+        K0_new, sigma_p_new = ModelK0.define_ko(sigma_1, sigma_3_noise)
 
         print(f"Было:\n{K0}\n"
               f"Стало:\n{K0_new}")

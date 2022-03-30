@@ -24,7 +24,15 @@ def test_lse_linear_estimation():
     """ Проверка МНК на данных с протокола 762-21/48-1/БП"""
     _test_x = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2]
     _test_y = [0, 0.082, 0.190, 0.280, 0.362, 0.429, 0.524, 0.580, 0.712, 0.774, 0.854]
-    k, b = ModelK0.lse_linear_estimation(_test_x, _test_y)
+    k, __ = ModelK0.lse_linear_estimation(_test_x, _test_y)
+    assert math.trunc(k * 100) / 100 == 0.42
+
+
+def test_define_ko():
+    """ Проверка МНК на данных с протокола 762-21/48-1/БП"""
+    _test_x = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2]
+    _test_y = [0, 0.082, 0.190, 0.280, 0.362, 0.429, 0.524, 0.580, 0.712, 0.774, 0.854]
+    k, b = ModelK0.define_ko(_test_x, _test_y, no_round=True)
     assert math.trunc(k * 100) / 100 == 0.42
 
 
