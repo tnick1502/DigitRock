@@ -4,6 +4,7 @@ import numpy as np
 from numpy.linalg import lstsq
 import matplotlib.pyplot as plt
 from scipy.optimize import Bounds, minimize
+from scipy.interpolate import make_interp_spline
 
 from general.general_functions import AttrDict
 
@@ -80,7 +81,7 @@ class ModelK0:
             sigma_3_cut = self.test_data.sigma_3[self._test_cut_position.left: self._test_cut_position.right]
 
             first_point = sigma_3_cut[0] + (sigma_3_cut[1] - sigma_3_cut[0]) * np.random.uniform(0., 1.)
-            k0_line_x = np.linspace(first_point, sigma_3_cut[-1]*1.05)
+            k0_line_x = np.linspace(first_point, sigma_3_cut[-1] * 1.001)
             k0_line_y = 1/self._test_result.K0 * (k0_line_x - self._test_result.sigma_p)
             return {
                 "sigma_1": sigma_1_cut,
@@ -196,20 +197,24 @@ class ModelK0SoilTest(ModelK0):
         super().__init__()
 
         self._test_params = AttrDict({"K0": None,
-                                      "sigma_p": None,
-                                      "sigma_3_p": None,
+                                      "OCR": None,
+                                      "depth": None,
                                       "sigma_1_step": None,
                                       "sigma_1_max": None})
 
     def set_test_params(self, test_params=None):
         if test_params:
             self._test_params.K0 = test_params["K0"]
-            self._test_params.sigma_p = test_params["sigma_p"]
 
             try:
-                self._test_params.sigma_3_p = test_params["sigma_3_p"]
+                self._test_params.OCR = test_params["OCR"]
             except KeyError:
-                self._test_params.sigma_3_p = 0
+                self._test_params.OCR = np.random.uniform(1, 2.5)
+
+            try:
+                self._test_params.depth = test_params["depth"]
+            except KeyError:
+                self._test_params.depth = 1
 
             self._test_params.sigma_1_step = test_params["sigma_1_step"]
             self._test_params.sigma_1_max = test_params["sigma_1_max"]
@@ -224,21 +229,47 @@ class ModelK0SoilTest(ModelK0):
         # self._draw_params.G0_ratio = params["G0_ratio"]
         # self._draw_params.threshold_shear_strain_ratio = params["threshold_shear_strain_ratio"]
         self._test_params.K0 = params["K0"]
-        self._test_params.sigma_p = params["sigma_p"]
+        self._test_params.OCR = params["OCR"]
 
         self._test_modeling()
 
     def _test_modeling(self):
-        delta_sigma_1 = self._test_params.sigma_1_max  # + self._test_params.sigma_p - self._test_params.sigma_p
+        # определяем точку перегиба
+        _sigma_p, _sigma_3_p = self.define_sigma_p()
+
+        # формируем прямолинейный участок
+        delta_sigma_1 = self._test_params.sigma_1_max - _sigma_p  # + self._test_params.sigma_p - self._test_params.sigma_p
         num = int(delta_sigma_1/self._test_params.sigma_1_step) + 1
+        sgima_1_synth = np.linspace(0, self._test_params.sigma_1_max - _sigma_p, num) + _sigma_p
+        sgima_3_synth = self._test_params.K0 * (sgima_1_synth - _sigma_p) + _sigma_3_p
 
-        sgima_1_synth = np.linspace(0, self._test_params.sigma_1_max, num) + self._test_params.sigma_p
-        sgima_3_synth = self._test_params.K0 * (sgima_1_synth - self._test_params.sigma_p) + self._test_params.sigma_3_p
-
+        # накладываем шум на прямолинейный участок
         sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_synth, sgima_3_synth,
-                                                     self._test_params.K0, self._test_params.sigma_3_p)
+                                                     self._test_params.K0, _sigma_3_p)
+
+        # формируем криволинейный участок если есть бытовое давление
+        if _sigma_p > 0:
+            bounds = ([(2, 0.0)], [(1, 1/self._test_params.K0)])
+            spl = make_interp_spline([0, sgima_3_synth[0]], [0, sgima_1_synth[0]], k=3, bc_type=bounds)
+
+            sigma_3_spl = np.linspace(0, sgima_3_synth[0], int(delta_sigma_1/self._test_params.sigma_1_step) + 1)
+            sigma_1_spl = spl(sigma_3_spl)
+
+            # соединяем
+            sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1))
+            sigma_3 = np.hstack((sigma_3_spl[:-1], sigma_3))
 
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
+
+    def define_sigma_p(self):
+        # бытовое давление (точка перегиба) определяется из OCR через ro*g*h, где h - глубина залгания грунта
+        sigma_p = self._test_params.OCR * 2 * 10 * self._test_params.depth
+        # сигма 3 при этом давлении неизвестно, но мы знаем, что наклон точно больше, чем наклон прямолинейного участка
+        sigma_3_p = self._test_params.K0 * (1/np.random.uniform(2.5, 3.0)) * sigma_p
+
+        # значения получаем в кпа, поэтому делим на 1000
+
+        return sigma_p/1000, sigma_3_p/1000
 
     @staticmethod
     def lse_faker(sigma_1: np.array, sigma_3: np.array, K0: float, sigma_3_p: float):
