@@ -619,12 +619,6 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
 
         self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.tau_max*residual_strength
-        print("%",residual_strength)
-        print('znach', self._draw_params.residual_strength)#* np.random.uniform(1.5, 1.4)
-
-
-
-
 
 
         self._draw_params.qocr = 0
@@ -698,6 +692,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         # dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(self._draw_params.dilatancy)) /
         #                      (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
         dilatancy = self._draw_params.dilatancy
+        
 
         if self._test_params.tau_max >= 150:
 
@@ -1112,17 +1107,18 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
     def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E, test_mode):
 
         xc = ModelShearDilatancySoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
-                                                            data_phiz.Ip, data_phiz.Il, data_phiz.Ir, test_mode)
+                                                           data_phiz.Ip, data_phiz.Il, data_phiz.Ir, test_mode)
+
+        if sigma_3 <= 200:
+            k = 1
+        elif sigma_3 >= 200 and sigma_3 < 500:
+            k = 0.002 * sigma_3 + 0.6
+        else:
+            k = 1.6
 
         if xc:
             xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
             if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
-                if sigma_3 <= 200:
-                    k = 1
-                elif sigma_3 >= 200 and sigma_3 < 500:
-                    k = 0.002*sigma_3 + 0.6
-                else:
-                    k = 1.6
                 xc = xc*k
 
         else:
@@ -1136,6 +1132,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         if xc <= 0.03:
             xc = np.random.uniform(0.025, 0.03)
+            if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
+                xc = xc*k
 
         return xc, residual_strength
 
