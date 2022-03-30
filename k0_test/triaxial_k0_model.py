@@ -27,7 +27,7 @@ class ModelK0:
         self._test_cut_position = AttrDict({"left": None, "right": None})
 
         # Результаты опыта
-        self._test_result = AttrDict({"K0": None, "M": None})
+        self._test_result = AttrDict({"K0": None, "sigma_p": None})
 
     def set_test_data(self, test_data):
         """Получение и обработка массивов данных, считанных с файла прибора"""
@@ -66,7 +66,7 @@ class ModelK0:
         try:
             sigma_1_cut = self.test_data.sigma_1[self._test_cut_position.left: self._test_cut_position.right]
             sigma_3_cut = self.test_data.sigma_3[self._test_cut_position.left: self._test_cut_position.right]
-            self._test_result.K0, self._test_result.M = ModelK0.define_ko(sigma_3_cut, sigma_1_cut)
+            self._test_result.K0, self._test_result.M = ModelK0.define_ko(sigma_1_cut, sigma_3_cut)
         except:
             #app_logger.exception("Ошибка обработки данных РК")
             pass
@@ -141,7 +141,7 @@ class ModelK0:
         return test_data
 
     @staticmethod
-    def define_ko(sigma_3, sigma_1, no_round=False):
+    def define_ko(sigma_1, sigma_3, no_round=False):
         """
         сигма3 = к0 * сигма1 + М
         поэтому мы меняем местами сигму3 и сигму1
@@ -196,14 +196,21 @@ class ModelK0SoilTest(ModelK0):
         super().__init__()
 
         self._test_params = AttrDict({"K0": None,
-                                      "M": None,
+                                      "sigma_p": None,
+                                      "sigma_3_p": None,
                                       "sigma_1_step": None,
                                       "sigma_1_max": None})
 
     def set_test_params(self, test_params=None):
         if test_params:
             self._test_params.K0 = test_params["K0"]
-            self._test_params.M = test_params["M"]
+            self._test_params.sigma_p = test_params["sigma_p"]
+
+            try:
+                self._test_params.sigma_3_p = test_params["sigma_3_p"]
+            except KeyError:
+                self._test_params.sigma_3_p = 0
+
             self._test_params.sigma_1_step = test_params["sigma_1_step"]
             self._test_params.sigma_1_max = test_params["sigma_1_max"]
         else:
@@ -217,23 +224,24 @@ class ModelK0SoilTest(ModelK0):
         # self._draw_params.G0_ratio = params["G0_ratio"]
         # self._draw_params.threshold_shear_strain_ratio = params["threshold_shear_strain_ratio"]
         self._test_params.K0 = params["K0"]
-        self._test_params.M = params["M"]
+        self._test_params.sigma_p = params["sigma_p"]
 
         self._test_modeling()
 
     def _test_modeling(self):
-        delta_sigma_1 = self._test_params.sigma_1_max  # + self._test_params.M - self._test_params.M
+        delta_sigma_1 = self._test_params.sigma_1_max  # + self._test_params.sigma_p - self._test_params.sigma_p
         num = int(delta_sigma_1/self._test_params.sigma_1_step) + 1
-        sgima_1_synth = np.linspace(self._test_params.M, self._test_params.sigma_1_max+self._test_params.M, num)
-        sgima_3_synth = self._test_params.K0 * sgima_1_synth + self._test_params.M
+
+        sgima_1_synth = np.linspace(0, self._test_params.sigma_1_max, num) + self._test_params.sigma_p
+        sgima_3_synth = self._test_params.K0 * (sgima_1_synth - self._test_params.sigma_p) + self._test_params.sigma_3_p
 
         sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_synth, sgima_3_synth,
-                                                     self._test_params.K0, self._test_params.M)
+                                                     self._test_params.K0, self._test_params.sigma_p)
 
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
 
     @staticmethod
-    def lse_faker(sigma_1: np.array, sigma_3: np.array, K0: float, M: float):
+    def lse_faker(sigma_1: np.array, sigma_3: np.array, K0: float, sigma_3_p: float):
         """
 
         """
@@ -255,6 +263,8 @@ class ModelK0SoilTest(ModelK0):
 
         # накладываем шумы на всю сигму
         for i in range(1, len(sigma_3_noise)):
+            if i == fixed_point_index:
+                continue
             if i % 2 == 0:
                 sigma_3_noise[i] += noise / 4
             else:
@@ -264,9 +274,9 @@ class ModelK0SoilTest(ModelK0):
             """x - массив sigma_3 без зафиксированной точки"""
             # возвращаем зафиксированную точку для подачи в МНК
             x = np.insert(x, fixed_point_index, sigma_3_noise[fixed_point_index])
-            x[0] = M  # оставляем первую точку на месте
-            _K0_new, _M_new = ModelK0.define_ko(x, sigma_1, no_round=True)
-            return abs(abs((_M_new - M)) + abs((_K0_new - K0)))
+            x[0] = sigma_3_p  # оставляем первую точку на месте
+            _K0_new, _M_new = ModelK0.define_ko(sigma_1, x, no_round=True)
+            return abs(_K0_new - K0)
 
         initial = np.delete(sigma_3_noise, fixed_point_index)
         bnds = Bounds(np.zeros_like(initial), np.ones_like(initial) * np.inf)
@@ -282,12 +292,12 @@ class ModelK0SoilTest(ModelK0):
 
         # Результат:
         sigma_3_noise = np.insert(res, fixed_point_index, sigma_3_noise[fixed_point_index])
-        sigma_3_noise[0] = M
+        sigma_3_noise[0] = sigma_3_p
         # Проверка:
-        K0_new, M_new = ModelK0.define_ko(sigma_3_noise, sigma_1)
+        K0_new, M_new = ModelK0.define_ko(sigma_1, sigma_3_noise)
 
-        print(f"Было:\n{K0}, {M}\n"
-              f"Стало:\n{K0_new}, {M_new}")
+        print(f"Было:\n{K0}\n"
+              f"Стало:\n{K0_new}")
 
         if K0 != K0_new:
             raise RuntimeWarning("Слишком большая ошибка в К0")
