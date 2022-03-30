@@ -293,9 +293,3 @@ class ModelK0SoilTest(ModelK0):
             raise RuntimeWarning("Слишком большая ошибка в К0")
 
         return sigma_1, sigma_3_noise
-
-
-# _test_params = {"K0": 0.42, "M": 0.1, "sigma_1_step": 0.2, "sigma_1_max": 2.0}
-# model = ModelK0SoilTest()
-# model.set_test_params(_test_params)
-# model.plotter()
