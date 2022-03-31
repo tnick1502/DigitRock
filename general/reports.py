@@ -625,7 +625,7 @@ def test_mode_vibration_creep(canvas, test_parameter):
                 #Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(str(ro).replace(".", ","), 2)],
                [Paragraph('''<p>σ'<sub rise="2.5" size="6">3</sub>, кПа:</p>''', LeftStyle), "", zap(test_parameter["sigma_3"], 0),
                 "", "", "",
-                Paragraph('''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''', LeftStyle), "", zap(test_parameter["t"], 0)]],
+                Paragraph('''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''', LeftStyle), "", zap(test_parameter["t"], 1)]],
               colWidths=19.444444* mm, rowHeights=4 * mm)
 
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
