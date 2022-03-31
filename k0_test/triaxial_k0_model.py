@@ -240,20 +240,26 @@ class ModelK0SoilTest(ModelK0):
 
     def set_test_params(self, test_params=None):
         if test_params:
-            self._test_params.K0 = test_params["K0"]
-
+            try:
+                self._test_params.K0 = test_params["K0"]
+            except KeyError:
+                self._test_params.K0 = 0.5
             try:
                 self._test_params.OCR = test_params["OCR"]
             except KeyError:
                 self._test_params.OCR = np.random.uniform(1, 2.5)
-
             try:
                 self._test_params.depth = test_params["depth"]
             except KeyError:
                 self._test_params.depth = 1
-
-            self._test_params.sigma_1_step = test_params["sigma_1_step"]
-            self._test_params.sigma_1_max = test_params["sigma_1_max"]
+            try:
+                self._test_params.sigma_1_step = test_params["sigma_1_step"]
+            except KeyError:
+                self._test_params.sigma_1_step = 0.200
+            try:
+                self._test_params.sigma_1_max = test_params["sigma_1_max"]
+            except KeyError:
+                self._test_params.sigma_1_max = 2.0
         else:
             pass
             # statment[statment.current_test].mechanical_properties.K0
