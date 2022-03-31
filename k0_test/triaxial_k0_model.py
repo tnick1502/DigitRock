@@ -348,7 +348,6 @@ class ModelK0SoilTest(ModelK0):
             __sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1_line))
 
             _K0_new, _sigma_p_new = ModelK0.define_ko(__sigma_1, x, no_round=True)
-            print(_K0_new)
             return abs(_K0_new - K0)
 
         initial = np.delete(sigma_3_noise, fixed_point_index)

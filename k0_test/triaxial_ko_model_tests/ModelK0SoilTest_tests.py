@@ -12,3 +12,5 @@ def test_model_k0_simple():
     if PLOT:
 
         model.plotter()
+
+    assert model.get_test_results()["K0"] == 0.62
