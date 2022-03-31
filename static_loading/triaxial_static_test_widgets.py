@@ -855,13 +855,13 @@ class StatickSoilTestApp(QWidget):
                     }
                 }
 
-                #qr = request_qr(data)
+                qr = request_qr(data)
 
                 report_FCE(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
-                            *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))#, qr_code=qr)
+                            *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 

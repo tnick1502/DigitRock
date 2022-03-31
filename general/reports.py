@@ -2638,7 +2638,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     if report_type == "plaxis":
         main_frame(canvas, path, Data_customer, code, "1/3", qr_code=qr_code)
     else:
-        main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
+        main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
