@@ -77,18 +77,24 @@ class ModelK0:
         if self.test_data.sigma_1 is None or self.test_data.sigma_3 is None:
             return None
         else:
-            sigma_1_cut = self.test_data.sigma_1[self._test_cut_position.left: self._test_cut_position.right]
-            sigma_3_cut = self.test_data.sigma_3[self._test_cut_position.left: self._test_cut_position.right]
+            line_shift = 0.050  # сдвиги для отображения кривой
 
-            first_point = sigma_3_cut[0] + (sigma_3_cut[1] - sigma_3_cut[0]) * np.random.uniform(0., 1.)
-            k0_line_x = np.linspace(first_point, sigma_3_cut[-1] * 1.001)
-            k0_line_y = 1/self._test_result.K0 * (k0_line_x - self._test_result.sigma_p)
-            return {
-                "sigma_1": sigma_1_cut,
-                "sigma_3": sigma_3_cut,
-                "k0_line_x": k0_line_x,
-                "k0_line_y": k0_line_y
-            }
+            index_sigma_p, = np.where(self.test_data.sigma_1 >= self._test_result.sigma_p)
+            index_sigma_p = index_sigma_p[0] if len(index_sigma_p) > 0 else 0
+
+            sigma_1_cut = self.test_data.sigma_1[index_sigma_p:]
+            sigma_3_cut = self.test_data.sigma_3[index_sigma_p:]
+
+            first_point = sigma_1_cut[0] + line_shift
+            k0_line_sigma_1 = np.linspace(first_point, sigma_1_cut[-1] + line_shift)
+            b = sigma_3_cut[0] - sigma_1_cut[0] * self._test_result.K0
+
+            k0_line_sigma_3 = self._test_result.K0 * k0_line_sigma_1 + b
+
+            return {"sigma_1": self.test_data.sigma_1,
+                    "sigma_3": self.test_data.sigma_3,
+                    "k0_line_x": k0_line_sigma_3,
+                    "k0_line_y": k0_line_sigma_1}
 
     def plotter(self, save_path=None):
         """Построение графиков опыта. Если передать параметр save_path, то графики сохраняться туда"""
@@ -145,8 +151,6 @@ class ModelK0:
     def define_ko(sigma_1, sigma_3, no_round=False):
         """
         сигма3 = к0 * сигма1 + М
-        поэтому мы меняем местами сигму3 и сигму1
-        при печати мы будем делать обратную замену
 
         :param sigma_3: array-like
         :param sigma_1: array-like
@@ -156,8 +160,38 @@ class ModelK0:
         sigma_1 = np.asarray(sigma_1)
         sigma_3 = np.asarray(sigma_3)
 
-        defined_k0, defined_sigma_p = ModelK0.lse_linear_estimation(sigma_1, sigma_3)
-        return (defined_k0, defined_sigma_p) if no_round else (round(defined_k0, 2), round(defined_sigma_p, 2))
+        lse_pnts = 4
+
+        if len(sigma_1) <= lse_pnts:
+            defined_k0, *__ = ModelK0.lse_linear_estimation(sigma_1, sigma_3)
+            defined_sigma_p = sigma_1[-lse_pnts]
+            return (defined_k0, defined_sigma_p) if no_round else (round(defined_k0, 2), defined_sigma_p)
+
+        # Итеративнй поиск прямолинейного участка с конца:
+        #   1. Считаем к0 по последним lse_pnts точкам
+        #   2. Сравниваем МНК ошибку с предыдущей
+        #   3. Если ошибка выросла более чем на 100%, то завершаем поиск прямой
+        #
+
+        current_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
+        prev_residuals = residuals
+
+        while lse_pnts < len(sigma_1):
+            lse_pnts = lse_pnts + 1
+            current_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
+
+            if residuals > prev_residuals and abs(residuals - prev_residuals)/prev_residuals*100 > 100:
+                lse_pnts = lse_pnts - 1
+                break
+            prev_residuals = residuals
+
+        # Считаем полученный к0 по отобранным точкам
+        defined_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
+
+        # Сигма точки перегиба можем взять прям из данных
+        defined_sigma_p = sigma_1[-lse_pnts]
+
+        return (defined_k0, defined_sigma_p) if no_round else (round(defined_k0, 2), defined_sigma_p)
 
     @staticmethod
     def lse_linear_estimation(__x, __y):
@@ -166,7 +200,7 @@ class ModelK0:
 
         :param __x: array-like, координаты х
         :param __y: array-like, координаты y
-        :return: float, коэффициенты k и b
+        :return: float, коэффициенты k, b и ошибка
         """
 
         __x = np.asarray(__x)
@@ -174,9 +208,11 @@ class ModelK0:
 
         A = np.vstack([__x, np.ones(len(__x))]).T
 
-        k, b = lstsq(A, __y, rcond=None)[0]
+        res = lstsq(A, __y, rcond=None)
+        k, b = res[0]
+        residuals = res[1]
 
-        return k, b
+        return k, b, residuals
 
 
 class ModelK0SoilTest(ModelK0):
@@ -240,14 +276,13 @@ class ModelK0SoilTest(ModelK0):
         # формируем прямолинейный участок
         delta_sigma_1 = self._test_params.sigma_1_max - _sigma_p  # + self._test_params.sigma_p - self._test_params.sigma_p
         num = int(delta_sigma_1/self._test_params.sigma_1_step) + 1
-        sgima_1_synth = np.linspace(0, self._test_params.sigma_1_max - _sigma_p, num) + _sigma_p
+        sgima_1_synth = np.linspace(_sigma_p, self._test_params.sigma_1_max, num)
         sgima_3_synth = self._test_params.K0 * (sgima_1_synth - _sigma_p) + _sigma_3_p
 
-        # накладываем шум на прямолинейный участок
-        sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_synth, sgima_3_synth,
-                                                     self._test_params.K0, _sigma_3_p)
-
         # формируем криволинейный участок если есть бытовое давление
+        sigma_1_spl = np.asarray([])
+        sigma_3_spl = np.asarray([])
+
         if _sigma_p > 0:
             bounds = ([(2, 0.0)], [(1, 1/self._test_params.K0)])
             spl = make_interp_spline([0, sgima_3_synth[0]], [0, sgima_1_synth[0]], k=3, bc_type=bounds)
@@ -255,9 +290,10 @@ class ModelK0SoilTest(ModelK0):
             sigma_3_spl = np.linspace(0, sgima_3_synth[0], int(delta_sigma_1/self._test_params.sigma_1_step) + 1)
             sigma_1_spl = spl(sigma_3_spl)
 
-            # соединяем
-            sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1))
-            sigma_3 = np.hstack((sigma_3_spl[:-1], sigma_3))
+        # накладываем шум на прямолинейный участок и объединяем
+        sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_synth, sgima_3_synth,
+                                                     sigma_1_spl, sigma_3_spl,
+                                                     self._test_params.K0, _sigma_3_p)
 
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
 
@@ -272,7 +308,8 @@ class ModelK0SoilTest(ModelK0):
         return sigma_p/1000, sigma_3_p/1000
 
     @staticmethod
-    def lse_faker(sigma_1: np.array, sigma_3: np.array, K0: float, sigma_3_p: float):
+    def lse_faker(sigma_1_line: np.array, sigma_3_line: np.array,
+                  sigma_1_spl: np.array, sigma_3_spl: np.array, K0: float, sigma_3_p: float):
         """
 
         """
@@ -282,9 +319,9 @@ class ModelK0SoilTest(ModelK0):
         # после добавления шума
         fixed_point_index = 1
 
-        noise = abs(sigma_3[fixed_point_index] - sigma_3[0]) * 0.4
+        noise = abs(sigma_3_line[fixed_point_index] - sigma_3_line[0]) * 0.4
 
-        sigma_3_noise = copy.deepcopy(sigma_3)
+        sigma_3_noise = copy.deepcopy(sigma_3_line)
 
         # добавляем шум к зафиксированной точке
         if np.random.randint(0, 2) == 0:
@@ -306,7 +343,12 @@ class ModelK0SoilTest(ModelK0):
             # возвращаем зафиксированную точку для подачи в МНК
             x = np.insert(x, fixed_point_index, sigma_3_noise[fixed_point_index])
             x[0] = sigma_3_p  # оставляем первую точку на месте
-            _K0_new, _sigma_p_new = ModelK0.define_ko(sigma_1, x, no_round=True)
+
+            x = np.hstack((sigma_3_spl[:-1], x))
+            __sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1_line))
+
+            _K0_new, _sigma_p_new = ModelK0.define_ko(__sigma_1, x, no_round=True)
+            print(_K0_new)
             return abs(_K0_new - K0)
 
         initial = np.delete(sigma_3_noise, fixed_point_index)
@@ -324,8 +366,13 @@ class ModelK0SoilTest(ModelK0):
         # Результат:
         sigma_3_noise = np.insert(res, fixed_point_index, sigma_3_noise[fixed_point_index])
         sigma_3_noise[0] = sigma_3_p
+
+        # Соединение
+        _sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1_line))
+        _sigma_3 = np.hstack((sigma_3_spl[:-1], sigma_3_noise))
+
         # Проверка:
-        K0_new, sigma_p_new = ModelK0.define_ko(sigma_1, sigma_3_noise)
+        K0_new, sigma_p_new = ModelK0.define_ko(_sigma_1, _sigma_3)
 
         print(f"Было:\n{K0}\n"
               f"Стало:\n{K0_new}")
@@ -333,4 +380,4 @@ class ModelK0SoilTest(ModelK0):
         if K0 != K0_new:
             raise RuntimeWarning("Слишком большая ошибка в К0")
 
-        return sigma_1, sigma_3_noise
+        return _sigma_1, _sigma_3
