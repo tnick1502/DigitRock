@@ -446,7 +446,9 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         # Плавность экспоненциального роста коэффициента Скемптона на этапе (пологая - 1...3, резкая - 10...20 )
         slant_skempton = np.random.uniform(1, 3)
         # Масимальное давление, которое выдерживает камера испытательной машины
-        max_press_exp = 2000
+        max_press_exp = 900
+        if sigma_ref > 800:
+            max_press_exp = 2000
         # Доля от sigma_VFS_step и sigma_VPD_step, при которой происходит слияние промежуточной точки и финальной
         tolerance_merge_sigma = 0.25
 
