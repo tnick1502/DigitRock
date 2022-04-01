@@ -73,7 +73,7 @@ prog_geometry = {
     "shear": {
         "left": 100,
         "top": 30,
-        "width": 1500,
+        "width": 1600,
         "height": 950
     },
 

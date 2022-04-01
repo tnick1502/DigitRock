@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import shutil
 import threading
 
+from excel_statment.initial_tables import LinePhysicalProperties
 from shear_test.shear_widgets import ShearWidget, ShearWidgetSoilTest
 from excel_statment.initial_statment_widgets import ShearStatment
 from excel_statment.position_configs import c_fi_E_PropertyPosition
@@ -36,7 +37,8 @@ class ShearProcessingWidget(QWidget):
         self.log_file_path = None
 
         self.item_identification = ModelShearItemUI()
-        self.item_identification.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.item_identification.setFixedWidth(300)
+        #self.item_identification.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         self.line = QHBoxLayout()
         self.line.addWidget(self.item_identification)
@@ -283,10 +285,6 @@ class ShearDilatancySoilTestWidget(ShearProcessingWidget):
         self.deviator_loading.setFixedHeight(530+180)
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
 
-        self.refresh_test_button = QPushButton("Обновить опыт")
-        self.refresh_test_button.clicked.connect(self.refresh)
-        self.layout_wiget.insertWidget(0, self.refresh_test_button)
-
     def refresh(self):
         try:
             Shear_Dilatancy_models[statment.current_test].set_test_params()
@@ -464,6 +462,16 @@ class ShearSoilTestApp(QWidget):
         self.save_massage = True
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
+        self.physical_line_1 = LinePhysicalProperties()
+        self.tab_2.line.addWidget(self.physical_line_1)
+        self.physical_line_1.refresh_button.clicked.connect(self.tab_2.refresh)
+        self.physical_line_1.save_button.clicked.connect(self.save_report_and_continue)
+
+        self.physical_line_2 = LinePhysicalProperties()
+        self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
+        self.physical_line_2.refresh_button.clicked.connect(self.tab_3.refresh)
+        self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
+
     def keyPressEvent(self, event):
         if statment.current_test:
             list = [x for x in statment]
@@ -482,9 +490,11 @@ class ShearSoilTestApp(QWidget):
                                                            ShearStatment.SHEAR_NN, ShearStatment.SHEAR_DD]:
             self.tab_3.item_identification.set_data()
             self.tab_3.set_params()
+            self.physical_line_2.set_data()
         elif self.tab_1.shear_test_type_from_open_line() == ShearStatment.SHEAR_DILATANCY:
             self.tab_2.item_identification.set_data()
             self.tab_2.set_params()
+            self.physical_line_1.set_data()
 
     def save_report(self):
         try:
@@ -667,6 +677,21 @@ class ShearSoilTestApp(QWidget):
             test_mode = self.tab_1.open_line.get_data()["test_mode"]
             self.tab_1.set_optional_parameter(test_mode)
         self.previous_test_type = self.tab_1.open_line.get_data()["test_mode"]
+
+    def save_report_and_continue(self):
+        try:
+            self.save_report()
+        except:
+            pass
+        keys = [key for key in statment]
+        for i, val in enumerate(keys):
+            if (val == statment.current_test) and (i < len(keys) - 1):
+                statment.current_test = keys[i+1]
+                self.set_test_parameters(True)
+                break
+            else:
+                pass
+
 
 
 if __name__ == '__main__':

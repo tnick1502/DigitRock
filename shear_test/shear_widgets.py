@@ -140,10 +140,9 @@ class ShearWidget(QWidget):
         self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.1}
 
         self.item_identification = ModelShearItemUI()
-        self.item_identification.setFixedHeight(330)
-        self.item_identification.setFixedWidth(450)
+        self.item_identification.setFixedHeight(400)
+        self.item_identification.setFixedWidth(350)
         self.mohr_test_manager = MohrTestManager()
-        self.mohr_test_manager.setFixedHeight(330)
         self._create_UI()
 
         self.mohr_test_manager.add_test_button.clicked.connect(self._add_test)
@@ -153,8 +152,10 @@ class ShearWidget(QWidget):
         # self.layout_wiget.setContentsMargins(5, 5, 5, 5)
 
         self.line_1_layout = QHBoxLayout()
+        self.line_1_1_layout = QVBoxLayout()
         self.line_1_layout.addWidget(self.item_identification)
-        self.line_1_layout.addWidget(self.mohr_test_manager)
+        self.line_1_1_layout.addWidget(self.mohr_test_manager)
+        self.line_1_layout.addLayout(self.line_1_1_layout)
         self.layout_wiget.addLayout(self.line_1_layout)
         self.line_2_layout = QHBoxLayout()
 
