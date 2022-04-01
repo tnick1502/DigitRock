@@ -920,7 +920,10 @@ class StaticSoilTestDialog(QDialog):
         try:
             plot_data = self._model.deviator_loading.get_plot_data()
             res = self._model.deviator_loading.get_test_results()
-            self.deviator_loading.plot(plot_data, res)
+
+            self.deviator_loading._plot_E_E50(plot_data, res)
+            self.deviator_loading._plot_volume_strain(plot_data, res)
+
         except KeyError:
             pass
 
