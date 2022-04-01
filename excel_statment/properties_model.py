@@ -1345,7 +1345,7 @@ class VibrationCreepProperties(MechanicalProperties):
 
             t = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])
             if not t:
-                self.t = np.round(self.E50*5*(10/76000)/2)
+                self.t = np.round(self.E50*5*(10/76000)/2, 1)
 
                 if self.t < 5:
                     self.t = 5
@@ -1353,7 +1353,7 @@ class VibrationCreepProperties(MechanicalProperties):
                 if self.t > 25:
                     self.t = 25
             else:
-                self.t = np.round(t/2)
+                self.t = np.round(t/2, 1)
 
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
             if physical_properties.type_ground in [1, 2, 3, 4, 5]:

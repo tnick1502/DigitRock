@@ -692,7 +692,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         # dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(self._draw_params.dilatancy)) /
         #                      (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
         dilatancy = self._draw_params.dilatancy
-        
+
 
         if self._test_params.tau_max >= 150:
 
