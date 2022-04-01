@@ -4,6 +4,7 @@ PLOT = False
 
 
 def test_model_k0_simple():
+    """ Данные с протокола 762-21/53-6/БП"""
     print('\n')
     _test_params = {"K0": 0.62, "OCR": 1.3, "depth": 23, "sigma_1_step": 0.150, "sigma_1_max": 1.2}
     model = ModelK0SoilTest()
@@ -17,6 +18,8 @@ def test_model_k0_simple():
 
 
 def test_model_k0_zero_depth():
+    """ Тест от Люды с нулевой глубиной"""
+    print('\n')
     _test_params = {"K0": 0.62, "OCR": 1.3, "depth": 0, "sigma_1_step": 0.150, "sigma_1_max": 1.2}
     model = ModelK0SoilTest()
     model.set_test_params(_test_params)
