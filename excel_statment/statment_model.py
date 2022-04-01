@@ -167,6 +167,7 @@ class SaveDir:
         for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
             if os.path.exists(path):
                 shutil.rmtree(path)
+        self.check_dirs()
 
     def set_directory(self, dir, mode, postfix=""):
         """Получение пути к файлу ведомости excel"""
