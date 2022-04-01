@@ -120,11 +120,11 @@ class CyclicLoadingUI(QWidget):
         chart_frame_layout.setSpacing(0)
         chart_frame_layout.addWidget(canvas)
 
-        if params["toolbar"]:
+        """if params["toolbar"]:
             setattr(self, "{name_widget}_canvas_toolbar".format(name_widget=name),
                     NavigationToolbar(canvas, self))
             toolbar = getattr(self, "{name_widget}_canvas_toolbar".format(name_widget=name))
-            chart_frame_layout.addWidget(toolbar)
+            chart_frame_layout.addWidget(toolbar)"""
 
         chart_frame.setLayout(chart_frame_layout)
 
