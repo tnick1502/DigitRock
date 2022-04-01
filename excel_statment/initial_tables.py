@@ -1,11 +1,16 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QHeaderView, QTableWidgetItem, QVBoxLayout, QTableWidget, QHBoxLayout, \
-    QLineEdit, QGroupBox, QPushButton, QComboBox, QLabel, QRadioButton
+    QLineEdit, QGroupBox, QPushButton, QComboBox, QLabel, QRadioButton, QStyledItemDelegate, QAbstractItemView
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5 import QtGui
 from datetime import datetime
 from singletons import statment
 from loggers.logger import app_logger, log_this
 from excel_statment.params import accreditation
+
+class AlignDelegate(QStyledItemDelegate):
+    def initStyleOption(self, option, index):
+        super(AlignDelegate, self).initStyleOption(option, index)
+        option.displayAlignment = Qt.AlignCenter
 
 class Table(QTableWidget):
     """Расширенный класс таблиц"""
@@ -344,6 +349,316 @@ class TableCastomer(QWidget):
                     accreditation[statment.general_data.accreditation][statment.general_data.accreditation_key][1]))
             else:
                 self.table.setItem(i, 1, QTableWidgetItem(str(getattr(statment.general_data, key))))
+
+class LineTablePhysicalProperties(QTableWidget):
+    """Класс отрисовывает таблицу физических свойств"""
+    def __init__(self):
+        super().__init__()
+        self.horizontalHeader().setSectionsMovable(True)
+        self._clear_table()
+
+    def _clear_table(self):
+        """Очистка таблицы и придание соответствующего вида"""
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        while (self.rowCount() > 0):
+            self.removeRow(0)
+
+        self.setRowCount(5)
+        self.setColumnCount(12)
+        #self.table.horizontalHeader().resizeSection(1, 200)
+        self.horizontalHeader().hide()
+        self.verticalHeader().hide()
+
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        for i, val in enumerate(["№ опыта", "Лаб. ном.", "Скважина", "Глубина", "Наименование"]):
+            self.setItem(i, 0, QTableWidgetItem(replaceNone(val)))
+
+        for i, val in enumerate(["Стр. индекс", "УГВ", "rs", "r", "rd"]):
+            self.setItem(i, 2, QTableWidgetItem(replaceNone(val)))
+
+        for i, val in enumerate(["n", "e", "W", "Sr", "Wl"]):
+                self.setItem(i, 4, QTableWidgetItem(replaceNone(val)))
+
+        for i, val in enumerate(["Wp", "Ip", "Il", "Ir", "10"]):
+                self.setItem(i, 6, QTableWidgetItem(replaceNone(val)))
+
+        for i, val in enumerate(["5", "2", "1", "0.5", "0.25"]):
+            self.setItem(i, 8, QTableWidgetItem(replaceNone(val)))
+
+        for i, val in enumerate(["0.1", "0.05", "0.01", "0.002", "<0.002"]):
+            self.setItem(i, 10, QTableWidgetItem(replaceNone(val)))
+
+        header = self.horizontalHeader()
+        header.setMaximumSectionSize(80)
+
+        header.setSectionResizeMode(0, QHeaderView.Fixed)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+
+        header.setSectionResizeMode(2, QHeaderView.Fixed)
+        header.setSectionResizeMode(3, QHeaderView.Fixed)
+        header.setSectionResizeMode(4, QHeaderView.Fixed)
+        header.setSectionResizeMode(5, QHeaderView.Fixed)
+        header.setSectionResizeMode(6, QHeaderView.Fixed)
+        header.setSectionResizeMode(7, QHeaderView.Fixed)
+        header.setSectionResizeMode(8, QHeaderView.Fixed)
+        header.setSectionResizeMode(9, QHeaderView.Fixed)
+        header.setSectionResizeMode(10, QHeaderView.Fixed)
+        header.setSectionResizeMode(11, QHeaderView.Fixed)
+
+    def set_data(self):
+        """Функция для получения данных"""
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        self._clear_table()
+
+        dict = statment[statment.current_test].physical_properties.__dict__
+
+        for x in ["granulometric_10", "granulometric_5", "granulometric_2", "granulometric_1", "granulometric_05",
+                  "granulometric_025", "granulometric_01", "granulometric_005", "granulometric_001",
+                  "granulometric_0002", "granulometric_0000", "ground_water_depth", "stratigraphic_index",  "ige", "Sr", "Ir"]:
+            dict.pop(x)
+
+        for g, key in enumerate([str(statment[statment.current_test].physical_properties.__dict__[m]) for m in
+                                 dict]):
+            if key == "True":
+                pass
+            elif key == "False":
+                pass
+            elif g == 0:
+                i = 1
+                keys = [i for i in statment]
+                for x in keys:
+                    if statment.current_test == x:
+                        break
+                    else:
+                        i += 1
+
+                self.setItem(0, 0, QTableWidgetItem(str(i)))
+            else:
+                self.setItem(0, g + 1, QTableWidgetItem(replaceNone(key)))
+
+class TablePhysicalPropertiesGeneral(QTableWidget):
+    """Класс отрисовывает таблицу физических свойств"""
+    def __init__(self):
+        super().__init__()
+        self.horizontalHeader().setSectionsMovable(True)
+        self._clear_table()
+
+    def _clear_table(self):
+        """Очистка таблицы и придание соответствующего вида"""
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        while (self.rowCount() > 0):
+            self.removeRow(0)
+
+        self.setRowCount(7)
+        self.setColumnCount(2)
+        #self.table.horizontalHeader().resizeSection(1, 200)
+        self.horizontalHeader().hide()
+        self.verticalHeader().hide()
+
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        for i, val in enumerate(["№ опыта", "Лаб. ном.", "Скважина", "Глубина", "Наименование грунта", "Стр. индекс", "УГВ"]):
+            self.setItem(i, 0, QTableWidgetItem(replaceNone(val)))
+
+        header = self.horizontalHeader()
+        header.setMaximumSectionSize(90)
+
+        self.setSpan(4, 0, 2, 1)
+        self.setSpan(4, 1, 2, 1)
+
+        header.setSectionResizeMode(0, QHeaderView.Fixed)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+
+    def set_data(self):
+        """Функция для получения данных"""
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        self._clear_table()
+        try:
+            self.setItem(0, 1, QTableWidgetItem(
+                str(statment[statment.current_test].physical_properties.sample_number + 1)))
+            self.setItem(1, 1, QTableWidgetItem(
+                str(statment[statment.current_test].physical_properties.laboratory_number)))
+            self.setItem(2, 1, QTableWidgetItem(
+                str(statment[statment.current_test].physical_properties.borehole)))
+            self.setItem(3, 1, QTableWidgetItem(
+                str(statment[statment.current_test].physical_properties.depth)))
+            self.setItem(4, 1, QTableWidgetItem(
+                str(statment[statment.current_test].physical_properties.soil_name)))
+            self.setItem(5, 1, QTableWidgetItem(
+                str(statment[statment.current_test].physical_properties.stratigraphic_index)))
+            self.setItem(6, 1, QTableWidgetItem(
+                str(statment[statment.current_test].physical_properties.ground_water_depth)))
+        except:
+            pass
+
+class TablePhysicalPropertiesProp(QTableWidget):
+    """Класс отрисовывает таблицу физических свойств"""
+    def __init__(self):
+        super().__init__()
+        self.horizontalHeader().setSectionsMovable(True)
+        self._clear_table()
+
+        delegate = AlignDelegate(self)
+        for i in range(11):
+            self.setItemDelegateForColumn(i, delegate)
+
+    def _clear_table(self):
+        """Очистка таблицы и придание соответствующего вида"""
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        while (self.rowCount() > 0):
+            self.removeRow(0)
+
+        self.setRowCount(1)
+        self.setColumnCount(11)
+        #self.table.horizontalHeader().resizeSection(1, 200)
+        self.verticalHeader().hide()
+
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        self.setHorizontalHeaderLabels(
+            ["rs", "r", "rd", "n", "e", "W", "Wl", "Wp", "Ip", "Il", "Ir"])
+
+    def set_data(self):
+        """Функция для получения данных"""
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        self._clear_table()
+        try:
+            self.setItem(0, 0, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.rs))))
+            self.setItem(0, 1, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.r))))
+            self.setItem(0, 2, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.rd))))
+            self.setItem(0, 3, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.n))))
+            self.setItem(0, 4, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.e))))
+            self.setItem(0, 5, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.W))))
+            self.setItem(0, 6, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.Wl))))
+            self.setItem(0, 7, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.Wp))))
+            self.setItem(0, 8, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.Ip))))
+            self.setItem(0, 9, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.Il))))
+            self.setItem(0, 10, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.Ir))))
+        except:
+            pass
+
+class TablePhysicalPropertiesGran(QTableWidget):
+    """Класс отрисовывает таблицу физических свойств"""
+    def __init__(self):
+        super().__init__()
+        self.horizontalHeader().setSectionsMovable(True)
+        self._clear_table()
+
+        delegate = AlignDelegate(self)
+        for i in range(11):
+            self.setItemDelegateForColumn(i, delegate)
+
+    def _clear_table(self):
+        """Очистка таблицы и придание соответствующего вида"""
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        while (self.rowCount() > 0):
+            self.removeRow(0)
+
+        self.setRowCount(1)
+        self.setColumnCount(11)
+        #self.table.horizontalHeader().resizeSection(1, 200)
+        self.verticalHeader().hide()
+
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        self.setHorizontalHeaderLabels(
+            ["10", "5", "2", "1", "0.5", "0.25", "0.1", "0.05", "0.01", "0.002", "<0.002"])
+
+    def set_data(self):
+        """Функция для получения данных"""
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        self._clear_table()
+
+        try:
+            self.setItem(0, 0, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.granulometric_10))))
+            self.setItem(0, 1, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.granulometric_5))))
+            self.setItem(0, 2, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.granulometric_2))))
+            self.setItem(0, 3, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.granulometric_1))))
+            self.setItem(0, 4, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.granulometric_05))))
+            self.setItem(0, 5, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.granulometric_025))))
+            self.setItem(0, 6, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.granulometric_01))))
+            self.setItem(0, 7, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.granulometric_005))))
+            self.setItem(0, 8, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.granulometric_001))))
+            self.setItem(0, 9, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.granulometric_0002))))
+            self.setItem(0, 10, QTableWidgetItem(
+                replaceNone(str(statment[statment.current_test].physical_properties.granulometric_0000))))
+        except:
+            pass
+
+class LinePhysicalProperties(QGroupBox):
+    def __init__(self):
+        super().__init__()
+        self.add_UI()
+        self._checked = None
+
+    def add_UI(self):
+        """Дополнительный интерфейс"""
+        self.setTitle('Физические свойства')
+        self.main_layout = QHBoxLayout()
+        self.setLayout(self.main_layout)
+        self.setFixedHeight(180)
+        self.main_layout.setContentsMargins(5, 5, 5, 5)
+
+        self.table_general = TablePhysicalPropertiesGeneral()
+        self.table_general.setFixedWidth(400)
+        self.table_physical = TablePhysicalPropertiesProp()
+        self.table_gran = TablePhysicalPropertiesGran()
+
+        self.refresh_button = QPushButton("Обновить модель")
+        self.save_button = QPushButton("Сохранить и продолжить")
+
+        self.tables_vertical_layout = QVBoxLayout()
+        self.button_horizontal_layout = QHBoxLayout()
+        self.button_horizontal_layout.addStretch(-1)
+
+        self.button_horizontal_layout.addWidget(self.refresh_button)
+        self.button_horizontal_layout.addWidget(self.save_button)
+
+        self.tables_vertical_layout.addWidget(self.table_physical)
+        self.tables_vertical_layout.addWidget(self.table_gran)
+        self.tables_vertical_layout.addLayout(self.button_horizontal_layout)
+
+        self.main_layout.addWidget(self.table_general)
+        self.main_layout.addLayout(self.tables_vertical_layout)
+
+    def set_data(self):
+        self.table_general.set_data()
+        self.table_gran.set_data()
+        self.table_physical.set_data()
+
+
 
 
 if __name__ == "__main__":

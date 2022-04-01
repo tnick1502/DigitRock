@@ -10,6 +10,7 @@ import threading
 from general.general_functions import create_path
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from excel_statment.initial_statment_widgets import TriaxialStaticStatment
+from excel_statment.initial_tables import LinePhysicalProperties
 from general.save_widget import Save_Dir
 from excel_statment.functions import set_cell_data
 from excel_statment.position_configs import c_fi_E_PropertyPosition
@@ -40,11 +41,13 @@ class StaticProcessingWidget(QWidget):
 
         self.item_identification = ModelTriaxialItemUI()
         self.item_identification.setFixedHeight(330)
-        self.item_identification.setFixedWidth(450)
+        self.item_identification.setFixedWidth(350)
         self.reconsolidation = ModelTriaxialReconsolidationUI()
         self.line = QHBoxLayout()
         self.line.addWidget(self.item_identification)
-        self.line.addWidget(self.reconsolidation)
+        self.line_for_phiz = QVBoxLayout()
+        self.line.addLayout(self.line_for_phiz)
+
 
         self.consolidation = ModelTriaxialConsolidationUI()
         self.point_identificator = None
@@ -52,6 +55,7 @@ class StaticProcessingWidget(QWidget):
         self.consolidation.setFixedHeight(500)
         self.deviator_loading = ModelTriaxialDeviatorLoadingUI()
         self.deviator_loading.setFixedHeight(500)
+        self.reconsolidation.setFixedHeight(300)
 
         self.deviator_loading.combo_box.activated.connect(self._combo_plot_deviator_changed)
 
@@ -69,6 +73,7 @@ class StaticProcessingWidget(QWidget):
         self.layout_wiget.addLayout(self.line)
         self.layout_wiget.addWidget(self.deviator_loading)
         self.layout_wiget.addWidget(self.consolidation)
+        self.layout_wiget.addWidget(self.reconsolidation)
         #self.layout_wiget.addWidget(self.deviator_loading)
 
         self.wiget = QWidget()
@@ -474,11 +479,6 @@ class StaticSoilTestWidget(StaticProcessingWidget):
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.consolidation_sliders.signal[object].connect(self._consolidation_sliders_moove)
 
-
-        self.refresh_test_button = QPushButton("Обновить опыт")
-        self.refresh_test_button.clicked.connect(self.refresh)
-        self.layout_wiget.insertWidget(1, self.refresh_test_button)
-
     def refresh(self):
         try:
             E_models[statment.current_test].set_test_params()
@@ -673,6 +673,18 @@ class StatickSoilTestApp(QWidget):
         self.tab_4.jornal_button.clicked.connect(self.jornal)
 
         self.save_massage = True
+
+        self.physical_line_1 = LinePhysicalProperties()
+        self.tab_2.line_for_phiz.addWidget(self.physical_line_1)
+        self.tab_2.line_for_phiz.addStretch(-1)
+        self.physical_line_1.refresh_button.clicked.connect(self.tab_2.refresh)
+        self.physical_line_1.save_button.clicked.connect(self.save_report_and_continue)
+
+        self.physical_line_2 = LinePhysicalProperties()
+        self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
+        self.physical_line_2.refresh_button.clicked.connect(self.tab_3.refresh)
+        self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
+
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
     def keyPressEvent(self, event):
@@ -694,17 +706,22 @@ class StatickSoilTestApp(QWidget):
             self.tab_3.item_identification.set_data()
             self.tab_2.set_params()
             self.tab_3.set_params()
+            self.physical_line_1.set_data()
+            self.physical_line_2.set_data()
         elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)' or \
                 statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or \
                 statment.general_parameters.test_mode == 'Трёхосное сжатие КН':
             self.tab_3.item_identification.set_data()
             self.tab_3.set_params()
+            self.physical_line_2.set_data()
         elif statment.general_parameters.test_mode == 'Трёхосное сжатие (E)':
             self.tab_2.item_identification.set_data()
             self.tab_2.set_params()
+            self.physical_line_1.set_data()
         elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
             self.tab_2.item_identification.set_data()
             self.tab_2.set_params()
+            self.physical_line_1.set_data()
 
     def save_report(self):
         try:
@@ -1098,6 +1115,20 @@ class StatickSoilTestApp(QWidget):
 
         except:
             app_logger.exception(f"Не выгнан {statment.current_test}")
+
+    def save_report_and_continue(self):
+        try:
+            self.save_report()
+        except:
+            pass
+        keys = [key for key in statment]
+        for i, val in enumerate(keys):
+            if (val == statment.current_test) and (i < len(keys) - 1):
+                statment.current_test = keys[i+1]
+                self.set_test_parameters(True)
+                break
+            else:
+                pass
 
     def save_all_reports(self):
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)

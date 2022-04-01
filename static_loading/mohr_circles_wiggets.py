@@ -140,11 +140,11 @@ class MohrWidget(QWidget):
         self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.1}
 
         self.item_identification = ModelTriaxialItemUI()
-        self.item_identification.setFixedHeight(330)
+        self.item_identification.setFixedHeight(400)
         self.item_identification.setFixedWidth(350)
         self.mohr_test_manager = MohrTestManager()
-        self.mohr_test_manager.setFixedHeight(330)
         self.m_widget = MWidgetUI(self._model)
+        self.m_widget.setFixedHeight(350)
         self._create_UI()
 
         self.mohr_test_manager.add_test_button.clicked.connect(self._add_test)
@@ -154,15 +154,18 @@ class MohrWidget(QWidget):
         # self.layout_wiget.setContentsMargins(5, 5, 5, 5)
 
         self.line_1_layout = QHBoxLayout()
+        self.line_1_1_layout = QVBoxLayout()
         self.line_1_layout.addWidget(self.item_identification)
-        self.line_1_layout.addWidget(self.mohr_test_manager)
-        self.line_1_layout.addWidget(self.m_widget)
+        self.line_1_1_layout.addWidget(self.mohr_test_manager)
+        self.line_1_layout.addLayout(self.line_1_1_layout)
         self.layout_wiget.addLayout(self.line_1_layout)
         self.line_2_layout = QHBoxLayout()
 
         self.box_graph = QGroupBox("Построение графиков")
         self.graph_canvas_layout = QHBoxLayout()
         self.box_graph.setLayout(self.graph_canvas_layout)
+        self.box_graph.setFixedWidth(1050)
+        self.box_graph.setFixedHeight(350)
 
         # Графики
         self.deviator_frame = QFrame()
@@ -208,15 +211,18 @@ class MohrWidget(QWidget):
 
         self.layout_wiget.addLayout(self.line_2_layout)
         self.layout_wiget.addStretch(-1)
+        self.line_2_layout.addWidget(self.m_widget)
 
     def resizeEvent(self, event):
-        self.width = self.rect().width()
+        pass
+        """self.width = self.rect().width()
         self.height = self.rect().height()
         if self.width >= 1300:
             self.width = 1300
         w = self.width - 25
+        print("wwwwwwwwwwwwwwwww ", w)
         self.box_graph.setFixedWidth(w)
-        self.box_graph.setFixedHeight(int(w / 3))
+        self.box_graph.setFixedHeight(int(w / 3))"""
 
     def _add_test(self):
         path = QFileDialog.getOpenFileName(self, 'Open file')[0]
@@ -401,9 +407,6 @@ class MohrWidgetSoilTest(MohrWidget):
     def __init__(self, model="FC_models"):
         super().__init__(model)
         self.add_UI()
-        self.refresh_test_button = QPushButton("Обновить опыт")
-        self.refresh_test_button.clicked.connect(self.refresh)
-        self.layout_wiget.insertWidget(0, self.refresh_test_button)
         self.mohr_test_manager.add_test_button.hide()
 
     def add_UI(self):
@@ -695,7 +698,7 @@ class MWidgetUI(QGroupBox):
         self.setLayout(self.layout)
         self.setFixedWidth(300)
         #self.setFixedHeight(120)
-        self.layout.setContentsMargins(5, 5, 5, 5)
+        #self.layout.setContentsMargins(5, 5, 5, 5)
 
         self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.2, "wspace": 0.12, "hspace": 0.07, "left": 0.2}
 
