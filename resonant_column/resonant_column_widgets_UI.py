@@ -11,7 +11,7 @@ import os
 import sys
 from io import BytesIO
 
-from general.initial_tables import Table, TableVertical
+from excel_statment.initial_tables import Table, TableVertical
 from general.general_widgets import Float_Slider, RangeSlider
 from general.general_functions import read_json_file
 from configs.styles import style
@@ -238,14 +238,15 @@ class RezonantColumnIdentificationUI(TableVertical):
 
     def __init__(self):
         """Определяем основную структуру данных"""
-        super().__init__({
-        "laboratory_number": "Лаб. ном.",
-        "E50": "Модуль деформации E50, МПа",
-        "c": "Сцепление с, МПа",
-        "fi": "Угол внутреннего трения, град",
-        "e": "Коэффициент пористости, е",
-        "reference_pressure": "Референтное давление, МПа",
-        "K0": "K0"})
+        fill_keys = {
+            "laboratory_number": "Лаб. ном.",
+            "E50": "Модуль деформации E50, МПа",
+            "c": "Сцепление с, МПа",
+            "fi": "Угол внутреннего трения, град",
+            "e": "Коэффициент пористости, е",
+            "reference_pressure": "Референтное давление, МПа",
+            "K0": "K0"}
+        super().__init__(fill_keys=fill_keys, size={"size": 100, "size_fixed_index": [1]})
 
 class RezonantColumnOpenTestUI(QWidget):
     """Виджет для открытия файла прибора и определения параметров опыта"""

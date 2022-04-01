@@ -10,6 +10,7 @@ import threading
 
 from resonant_column.resonant_column_widgets_UI import RezonantColumnUI, RezonantColumnOpenTestUI, \
     RezonantColumnSoilTestUI, RezonantColumnIdentificationUI
+from excel_statment.initial_tables import LinePhysicalProperties
 from resonant_column.rezonant_column_hss_model import ModelRezonantColumn, ModelRezonantColumnSoilTest
 from excel_statment.initial_statment_widgets import TableCastomer
 from general.report_general_statment import save_report
@@ -95,12 +96,9 @@ class RezonantColumnSoilTestWidget(QWidget):
         self.line_1 = QHBoxLayout()
         self.identification_widget = RezonantColumnIdentificationUI()
         self.test_widget = RezonantColumnSoilTestUI()
-        self.refresh_button = QPushButton("Обновить")
-        self.refresh_button.setFixedHeight(120)
+        self.identification_widget.setFixedHeight(180)
+        self.identification_widget.setFixedWidth(300)
         self.line_1.addWidget(self.identification_widget)
-        self.line_1.addWidget(self.refresh_button)
-
-        self.refresh_button.clicked.connect(self._refresh)
         self.layout.addLayout(self.line_1)
         self.layout.addWidget(self.test_widget)
         self.save_widget = Save_Dir()
@@ -440,7 +438,11 @@ class RezonantColumnSoilTestApp(QWidget):
 
         self.tab_1.statment_directory[str].connect(lambda x:
                                                    self.tab_2.save_widget.update())
+        self.physical_line = LinePhysicalProperties()
+
         self.tab_1.signal[bool].connect(self.tab_2.set_test_params)
+        self.tab_1.signal[bool].connect(lambda x: self.physical_line.set_data())
+
         self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_data)
         self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
         self.tab_2.save_widget.save_all_button.clicked.connect(self.save_all_reports)
@@ -451,6 +453,10 @@ class RezonantColumnSoilTestApp(QWidget):
         self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
 
         self.tab_2.save_widget.general_statment_button.clicked.connect(self.general_statment)
+
+        self.tab_2.line_1.addWidget(self.physical_line)
+        self.physical_line.refresh_button.clicked.connect(self.tab_2._refresh)
+        self.physical_line.save_button.clicked.connect(self.save_report_and_continue)
 
     def _predict(self):
         if len(statment):
@@ -544,6 +550,21 @@ class RezonantColumnSoilTestApp(QWidget):
         t = threading.Thread(target=save)
         progress.show()
         t.start()
+
+    def save_report_and_continue(self):
+        try:
+            self.save_report()
+        except:
+            pass
+        keys = [key for key in statment]
+        for i, val in enumerate(keys):
+            if (val == statment.current_test) and (i < len(keys) - 1):
+                statment.current_test = keys[i+1]
+                self.tab_2.set_test_params(True)
+                self.physical_line.set_data()
+                break
+            else:
+                pass
 
     def general_statment(self):
         try:
