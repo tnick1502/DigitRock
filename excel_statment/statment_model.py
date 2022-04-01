@@ -5,6 +5,7 @@ import os
 import pyexcel as p
 import pickle
 import xlrd
+import shutil
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, PropertiesDict, ConsolidationProperties, CyclicProperties
 from descriptors import DataTypeValidation
@@ -161,6 +162,11 @@ class SaveDir:
         create_path(self._save_directory)
         for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
             create_path(path)
+
+    def clear_dirs(self):
+        for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
+            if os.path.exists(path):
+                shutil.rmtree(path)
 
     def set_directory(self, dir, mode, postfix=""):
         """Получение пути к файлу ведомости excel"""
