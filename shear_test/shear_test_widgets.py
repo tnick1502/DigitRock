@@ -499,7 +499,7 @@ class ShearSoilTestApp(QWidget):
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
-            file_path_name = statment.current_test.replace("/", "-").replace("*", "")
+            file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
 
             # if statment.general_parameters.equipment == "АСИС ГТ.2.0.5 (150х300)":
             #     h, d = 300, 150
@@ -634,6 +634,7 @@ class ShearSoilTestApp(QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_all_reports(self):
+        statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
         progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)

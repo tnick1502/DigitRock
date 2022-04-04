@@ -325,7 +325,7 @@ class VibrationCreepSoilTestApp(QWidget):
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
-            file_path_name = statment.current_test.replace("/", "-").replace("*", "")
+            file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
 
             VC_models.dump(os.path.join(statment.save_dir.save_directory,
                                         f"VC_models{statment.general_data.get_shipment_number()}.pickle"))
@@ -456,6 +456,7 @@ class VibrationCreepSoilTestApp(QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_all_reports(self):
+        statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
         progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)

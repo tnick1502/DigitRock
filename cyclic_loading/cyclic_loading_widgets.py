@@ -648,7 +648,7 @@ class CyclicSoilTestApp(QWidget):
 
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
-            file_path_name = statment.current_test.replace("/", "-").replace("*", "")
+            file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
 
             save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
@@ -779,6 +779,7 @@ class CyclicSoilTestApp(QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_all_reports(self):
+        statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
         progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)

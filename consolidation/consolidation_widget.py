@@ -293,7 +293,7 @@ class ConsolidationSoilTestApp(QWidget):
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
-            file_path_name = statment.current_test.replace("/", "-").replace("*", "")
+            file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
 
             if statment[statment.current_test].mechanical_properties.p_max >= 1:
                 equipment = "GIG, Absolut Digimatic ID-S"
@@ -360,6 +360,7 @@ class ConsolidationSoilTestApp(QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_all_reports(self):
+        statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
         progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
