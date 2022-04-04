@@ -22,6 +22,8 @@ from loggers.logger import app_logger, log_this, handler
 from excel_statment.functions import set_cell_data
 from singletons import RC_models, statment
 from version_control.configs import actual_version
+
+from general.tab_view import AppMixin, TabMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
 
@@ -82,7 +84,7 @@ class RezonantColumnProcessingWidget(QWidget):
         res = self._model.get_test_results()
         self.test_processing_widget.plot(plots, res)
 
-class RezonantColumnSoilTestWidget(QWidget):
+class RezonantColumnSoilTestWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора"""
     def __init__(self):
         """Определяем основную структуру данных"""
@@ -411,7 +413,7 @@ class RezonantColumnProcessingApp(QWidget):
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
 
-class RezonantColumnSoilTestApp(QWidget):
+class RezonantColumnSoilTestApp(AppMixin, QWidget):
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
         super().__init__(parent=parent)
@@ -426,6 +428,8 @@ class RezonantColumnSoilTestApp(QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = RezonantColumnStatment()
         self.tab_2 = RezonantColumnSoilTestWidget()
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Обработка")

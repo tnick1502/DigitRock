@@ -8,8 +8,9 @@ from general.general_functions import create_path
 from singletons import statment
 from general.general_statement import StatementGenerator
 from loggers.logger import app_logger
+from general.tab_view import TabMixin
 
-class Save_Dir(QWidget):
+class Save_Dir(TabMixin, QWidget):
     """Класс создает интерфейс для сохранения отчетов.
     Сигнал с директорией файла ведомости передается из класса открытия,
      после чего в этой директории создаются соответствующие папки.

@@ -23,6 +23,7 @@ from loggers.logger import app_logger, log_this, handler
 from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogTriaxialStatic
 import os
+from general.tab_view import TabMixin, AppMixin
 from version_control.configs import actual_version
 __version__ = actual_version
 
@@ -258,7 +259,7 @@ class Shear_Sliders(QWidget):
 
         self._sliders_moove()
 
-class ShearDilatancySoilTestWidget(ShearProcessingWidget):
+class ShearDilatancySoilTestWidget(TabMixin, ShearProcessingWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
@@ -420,7 +421,7 @@ class ShearProcessingApp(QWidget):
         read_parameters = self.tab_1.open_line.get_data()
         self.tab_4.set_directory(signal, read_parameters["test_type"])
 
-class ShearSoilTestApp(QWidget):
+class ShearSoilTestApp(AppMixin, QWidget):
 
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
@@ -434,8 +435,12 @@ class ShearSoilTestApp(QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = ShearStatment()
         self.tab_2 = ShearDilatancySoilTestWidget()
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
         self.tab_3 = ShearWidgetSoilTest()
         self.tab_4 = Save_Dir()
+        self.tab_4.popIn.connect(self.addTab)
+        self.tab_4.popOut.connect(self.removeTab)
         # self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")

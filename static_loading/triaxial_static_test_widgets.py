@@ -8,6 +8,7 @@ import shutil
 import threading
 
 from general.general_functions import create_path
+from general.tab_view import TabMixin
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from excel_statment.initial_statment_widgets import TriaxialStaticStatment
 from excel_statment.initial_tables import LinePhysicalProperties
@@ -26,6 +27,7 @@ from tests_log.equipment import static
 from tests_log.test_classes import TestsLogTriaxialStatic
 import os
 from version_control.configs import actual_version
+from general.tab_view import AppMixin
 __version__ = actual_version
 from authentication.request_qr import request_qr
 
@@ -443,7 +445,7 @@ class TriaxialStaticLoading_Sliders(QWidget):
 
         self._sliders_moove()
 
-class StaticSoilTestWidget(StaticProcessingWidget):
+class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
@@ -628,7 +630,7 @@ class StatickProcessingApp(QWidget):
         read_parameters = self.tab_1.open_line.get_data()
         self.tab_4.set_directory(signal, read_parameters["test_type"])
 
-class StatickSoilTestApp(QWidget):
+class StatickSoilTestApp(AppMixin, QWidget):
 
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
@@ -641,9 +643,17 @@ class StatickSoilTestApp(QWidget):
         self.layout = QHBoxLayout(self)
 
         self.tab_widget = QTabWidget()
+
         self.tab_1 = TriaxialStaticStatment()
+
         self.tab_2 = StaticSoilTestWidget()
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
+
         self.tab_3 = MohrWidgetSoilTest()
+        self.tab_3.popIn.connect(self.addTab)
+        self.tab_3.popOut.connect(self.removeTab)
+
         self.tab_4 = Save_Dir(
             {
                 "standart_E": "Стандардный E",
@@ -652,6 +662,9 @@ class StatickSoilTestApp(QWidget):
                 "plaxis": "Plaxis/Midas",
                 "user_define_1": "Пользовательский с ε50"
             })
+
+        self.tab_4.popIn.connect(self.addTab)
+        self.tab_4.popOut.connect(self.removeTab)
         # self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
@@ -684,6 +697,7 @@ class StatickSoilTestApp(QWidget):
         self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
         self.physical_line_2.refresh_button.clicked.connect(self.tab_3.refresh)
         self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
+
 
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
@@ -1161,7 +1175,6 @@ class StatickSoilTestApp(QWidget):
         else:
             self.dialog = TestsLogWidget(static, TestsLogTriaxialStatic, self.tab_1.path)
             self.dialog.show()
-
 
 
 

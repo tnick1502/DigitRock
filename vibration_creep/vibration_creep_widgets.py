@@ -23,10 +23,11 @@ from general.report_general_statment import save_report
 from singletons import E_models, VC_models, statment
 from loggers.logger import app_logger, handler
 from version_control.configs import actual_version
+from general.tab_view import TabMixin, AppMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
 
-class VibrationCreepSoilTestWidget(QWidget):
+class VibrationCreepSoilTestWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
     ModelTriaxialCyclicLoadingUI"""
     def __init__(self):
@@ -259,7 +260,7 @@ class PredictVCTestResults(QDialog):
 
         return (titles, data_structure, scale)
 
-class VibrationCreepSoilTestApp(QWidget):
+class VibrationCreepSoilTestApp(AppMixin, QWidget):
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
         super().__init__(parent=parent)
@@ -272,8 +273,14 @@ class VibrationCreepSoilTestApp(QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = VibrationCreepStatment()
         self.tab_2 = StaticSoilTestWidget()
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
         self.tab_3 = VibrationCreepSoilTestWidget()
+        self.tab_3.popIn.connect(self.addTab)
+        self.tab_3.popOut.connect(self.removeTab)
         self.tab_4 = Save_Dir()
+        self.tab_4.popIn.connect(self.addTab)
+        self.tab_4.popOut.connect(self.removeTab)
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Опыт E")

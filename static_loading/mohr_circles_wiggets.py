@@ -26,6 +26,7 @@ from general.general_functions import read_json_file, AttrDict
 from singletons import FC_models, VibrationFC_models, E_models, statment
 from loggers.logger import app_logger, log_this
 from static_loading.triaxial_static_widgets_UI import ModelTriaxialDeviatorLoadingUI
+from general.tab_view import TabMixin
 
 #plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
 plt.style.use('bmh')
@@ -402,7 +403,7 @@ class MohrWidget(QWidget):
 
         return c
 
-class MohrWidgetSoilTest(MohrWidget):
+class MohrWidgetSoilTest(TabMixin, MohrWidget):
     """Класс для табличного отображения параметров кругов Мора"""
     def __init__(self, model="FC_models"):
         super().__init__(model)

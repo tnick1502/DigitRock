@@ -25,6 +25,7 @@ from configs.plot_params import plotter_params
 from general.general_functions import read_json_file, AttrDict
 from singletons import Shear_models, Shear_Dilatancy_models, statment
 from loggers.logger import app_logger, log_this
+from general.tab_view import TabMixin
 from shear_test.shear_dilatancy_widgets_UI import ModelShearDilatancyUI
 
 #plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
@@ -342,7 +343,7 @@ class ShearWidgetSoilTest(ShearWidget):
         self.add_UI()
         self.refresh_test_button = QPushButton("Обновить опыт")
         self.refresh_test_button.clicked.connect(self.refresh)
-        self.layout_wiget.insertWidget(0, self.refresh_test_button)
+        #self.layout_wiget.insertWidget(0, self.refresh_test_button)
         self.mohr_test_manager.add_test_button.hide()
 
     def add_UI(self):

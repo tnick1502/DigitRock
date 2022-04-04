@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import shutil
 import threading
 
+from general.tab_view import AppMixin
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
 from excel_statment.initial_statment_widgets import ConsolidationStatment
@@ -24,10 +25,11 @@ from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogTriaxialStatic, TestsLogCyclic
 import os
 from version_control.configs import actual_version
+from general.tab_view import TabMixin
 __version__ = actual_version
 
 
-class ConsilidationSoilTestWidget(QWidget):
+class ConsilidationSoilTestWidget(TabMixin, QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
@@ -235,7 +237,7 @@ class ConsilidationSoilTestWidget(QWidget):
         except KeyError:
             pass
 
-class ConsolidationSoilTestApp(QWidget):
+class ConsolidationSoilTestApp(AppMixin,QWidget):
 
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
@@ -264,6 +266,9 @@ class ConsolidationSoilTestApp(QWidget):
         self.tab_2.save_wigdet.save_button.clicked.connect(self.save_report)
         self.tab_2.save_wigdet.save_all_button.clicked.connect(self.save_all_reports)
         self.tab_2.save_wigdet.jornal_button.clicked.connect(self.jornal)
+
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
 
         self.save_massage = True
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)

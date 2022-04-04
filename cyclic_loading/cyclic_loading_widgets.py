@@ -30,6 +30,7 @@ from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogCyclic
 from version_control.configs import actual_version
 from general.general_statement import StatementGenerator
+from general.tab_view import AppMixin, TabMixin
 __version__ = actual_version
 
 class CyclicProcessingWidget(QWidget):
@@ -120,7 +121,7 @@ class CyclicProcessingWidget(QWidget):
         else:
             QMessageBox.critical(self, "Ошибка", "Проверьте заполнение параметров", QMessageBox.Ok)
 
-class CyclicSoilTestWidget(QWidget):
+class CyclicSoilTestWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
     ModelTriaxialCyclicLoadingUI"""
     def __init__(self):
@@ -557,7 +558,7 @@ class CyclicProcessingApp(QWidget):
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
 
-class CyclicSoilTestApp(QWidget):
+class CyclicSoilTestApp(AppMixin, QWidget):
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
         super().__init__(parent=parent)
@@ -571,8 +572,14 @@ class CyclicSoilTestApp(QWidget):
 
         self.tab_widget = QTabWidget()
         self.tab_1 = CyclicStatment()
+
         self.tab_2 = CyclicSoilTestWidget()
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
+
         self.tab_3 = Save_Dir()
+        self.tab_3.popIn.connect(self.addTab)
+        self.tab_3.popOut.connect(self.removeTab)
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Обработка")
