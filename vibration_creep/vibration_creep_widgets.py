@@ -304,7 +304,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
         self.button_predict = QPushButton("Прогнозирование")
         self.button_predict.setFixedHeight(50)
         self.button_predict.clicked.connect(self._predict)
-        self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
+        self.tab_1.layuot_for_button.addWidget(self.button_predict)
 
         self.save_massage = True
 

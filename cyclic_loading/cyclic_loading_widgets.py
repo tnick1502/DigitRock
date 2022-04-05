@@ -611,7 +611,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         self.button_predict_liquefaction = QPushButton("Прогнозирование разжижаемости")
         self.button_predict_liquefaction.setFixedHeight(50)
         self.button_predict_liquefaction.clicked.connect(self._predict)
-        self.tab_1.splitter_table_vertical.addWidget(self.button_predict_liquefaction)
+        self.tab_1.layuot_for_button.addWidget(self.button_predict_liquefaction)
 
         self.tab_3.general_statment_button.clicked.connect(self.general_statment)
 

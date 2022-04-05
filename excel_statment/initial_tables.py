@@ -201,8 +201,19 @@ class TablePhysicalProperties(QTableWidget):
             ["Лаб. ном.", "Скважина", "Глубина", "Наименование грунта", "ИГЭ", "rs", "r", "rd", "n", "e", "W", "Sr",
              "Wl", "Wp", "Ip", "Il", "Ir", "Стр. индекс", "УГВ",
              "10", "5", "2", "1", "0.5", "0.25", "0.1", "0.05", "0.01", "0.002", "<0.002"])
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        #self.table.horizontalHeader().resizeSection(1, 500)
+
+        self.verticalHeader().setMinimumSectionSize(30)
+
+        self.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+        header = self.horizontalHeader()
+        #header.setMaximumSectionSize(30)
+        header.resizeSection(0, 60)
+        header.resizeSection(1, 60)
+        header.resizeSection(2, 60)
+        for i in range(4, 30):
+            header.resizeSection(i, 30)
+        header.setSectionResizeMode(3, QHeaderView.Stretch)
 
     def set_row_color(self, row, color=(129, 216, 208)):#color=(62, 180, 137)):
         """Раскрашиваем строку"""
