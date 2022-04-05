@@ -316,9 +316,16 @@ class ModelK0SoilTest(ModelK0):
             bounds = ([(2, 0.0)], [(1, 1/self._test_params.K0)])
             spl = make_interp_spline([0, sgima_3_synth[0]], [0, sgima_1_synth[0]], k=3, bc_type=bounds)
 
-            sigma_3_spl = np.linspace(0, sgima_3_synth[0], int(sgima_1_synth[0]/self._test_params.sigma_1_step) + 1)
+            sigma_3_spl = np.linspace(0, sgima_3_synth[0], 50)
             sigma_1_spl = spl(sigma_3_spl)
             sigma_1_spl[0] = 0
+
+
+        #
+        plt.figure()
+        plt.plot(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
+        plt.show()
+        #
 
         # 4 - уточнение сетки
         #   Строим сплайн для всей кривой
