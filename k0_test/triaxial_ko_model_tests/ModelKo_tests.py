@@ -6,7 +6,7 @@ import pytest
 """ Константы для тестирования """
 TESTING_DICTS = [{}]
 
-PLOT = True
+PLOT = False
 
 
 @pytest.mark.parametrize("__test_data", TESTING_DICTS)

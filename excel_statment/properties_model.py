@@ -1908,15 +1908,14 @@ class ShearProperties(MechanicalProperties):
 
 
 class K0Properties(MechanicalProperties):
-    Eoed = DataTypeValidation(float, int)
-    Cv = DataTypeValidation(float, int)
-    Ca = DataTypeValidation(float, int)
-    p_max = DataTypeValidation(float, int)
-    m = DataTypeValidation(float, int)
+    sigma_1_step = DataTypeValidation(float, int)
+    sigma_1_max = DataTypeValidation(float, int)
+    sigma_p = DataTypeValidation(float, int)
+    sigma_3_p = DataTypeValidation(float, int)
 
     def __init__(self):
-        for key in ConsolidationProperties.__dict__:
-            if isinstance(getattr(ConsolidationProperties, key), DataTypeValidation):
+        for key in K0Properties.__dict__:
+            if isinstance(getattr(K0Properties, key), DataTypeValidation):
                 object.__setattr__(self, key, None)
 
     @log_this(app_logger, "debug")
@@ -1924,60 +1923,27 @@ class K0Properties(MechanicalProperties):
                          test_mode=None, K0_mode=None) -> None:
         """Считывание строки свойств"""
 
-        self.Eoed = float_df(data_frame.iat[string, MechanicalPropertyPosition["Eoed"][1]])
+        self.K0 = float_df(data_frame.iat[string, MechanicalPropertyPosition["K0nc"][1]])
 
-        if self.Eoed:
-            Cv = float_df(data_frame.iat[string, MechanicalPropertyPosition["Cv"][1]])
-            Ca = float_df(data_frame.iat[string, MechanicalPropertyPosition["Ca"][1]])
+        if self.K0:
+            self.OCR = float_df(data_frame.iat[string, MechanicalPropertyPosition["OCR"][1]])
 
-            self.m = MechanicalProperties.define_m(physical_properties.e, physical_properties.Il)
-            self.Cv = Cv if Cv else np.round(MechanicalProperties.define_Cv(
-                MechanicalProperties.define_kf(physical_properties.type_ground, physical_properties.e)), 3)
-            self.Ca = Ca if Ca else np.round(np.random.uniform(0.001, 0.003), 5)
+            self.sigma_p, self.sigma_3_p = K0Properties.define_sigma_p(self.OCR, physical_properties.depth, self.K0)
 
-            if self.Cv > 1.5:
-                self.Cv = np.random.uniform(1, 1.5)
+            self.sigma_1_step = 0.150
+            self.sigma_p = 1.200
 
-            self.p_max = ConsolidationProperties.spec_round(ConsolidationProperties.define_loading_pressure(
-                float_df(data_frame.iat[string, MechanicalPropertyPosition["p_max"][1]]),
-                build_press=float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]]),
-                pit_depth=float_df(data_frame.iat[string, MechanicalPropertyPosition["pit_depth"][1]]),
-                depth=physical_properties.depth), 3)
 
     @staticmethod
-    def define_loading_pressure(pmax, build_press: float, pit_depth: float, depth: float):
-        """Функция рассчета максимального давления"""
-        if pmax:
-            return pmax
-        if build_press:
-            if not pit_depth:
-                pit_depth = 0
-            sigma_max = (2 * (depth - pit_depth) * 10) / 1000 + build_press if (depth - pit_depth) > 0 else (2 * 10 * depth) / 1000
-            return sigma_max
-        else:
-            if depth == 0.0:
-                return 25 / 1000
-            else:
-                return (2 * 10 * depth) / 1000
+    def define_sigma_p(OCR, depth, K0):
+        # бытовое давление (точка перегиба) определяется из OCR через ro*g*h, где h - глубина залгания грунта
+        _sigma_p = OCR * 2 * 10 * depth
+        # сигма 3 при этом давлении неизвестно, но мы знаем, что наклон точно больше, чем наклон прямолинейного участка
+        _sigma_3_p = K0 * (1/np.random.uniform(2.5, 3.0)) * _sigma_p
 
-    @staticmethod
-    def spec_round(x, precision) -> float:
-        """Rounds value as this:
-            0.16 -> 0.16
-            0.14 -> 0.14
-            0.143 -> 0.145
-            0.146 -> 0.150
-        """
-        order = 10 ** precision
+        # значения получаем в кпа, поэтому делим на 1000
+        return _sigma_p/1000, _sigma_3_p/1000
 
-        condition = round(x % 10 ** (-(precision - 1)) * order, 1)
-        '''digit at precision, for 0.146 and precision = 3 condition = 6'''
-
-        if 0 < condition <= 5:
-            return round(x // (10 / order) / (order / 10) + 5 / order, precision)
-        if condition > 5:
-            return round(x // (10 / order) / (order / 10) + 1 / (order / 10), precision)
-        return round(x, precision)
 
 PropertiesDict = {
     "PhysicalProperties": PhysicalProperties,
@@ -1985,7 +1951,8 @@ PropertiesDict = {
     "CyclicProperties": CyclicProperties,
     "RCProperties": RCProperties,
     "VibrationCreepProperties": VibrationCreepProperties,
-    "ShearProperties": ShearProperties
+    "ShearProperties": ShearProperties,
+    "K0Properties": K0Properties
 }
 
 
