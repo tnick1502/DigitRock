@@ -36,7 +36,6 @@ class K0ProcessingWidget(QWidget):
         self._create_Ui()
         # self.open_widget.button_open_file.clicked.connect(self._open_file)
         self.open_widget.button_open_path.clicked.connect(self._open_path)
-        self.test_processing_widget.cut_slider.sliderMoved.connect(self._cut_sliders_moove)
 
     def _create_Ui(self):
         self.layout = QVBoxLayout(self)
@@ -51,19 +50,6 @@ class K0ProcessingWidget(QWidget):
         self.layout.addWidget(self.save_widget)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
-    def _cut_sliders_moove(self):
-        if self._model.test_data.G_array is not None:
-            self._model.set_borders(int(self.test_processing_widget.cut_slider.low()),
-                                    int(self.test_processing_widget.cut_slider.high()))
-            self._plot()
-
-    def _cut_slider_set_len(self, length):
-        """Определение размера слайдера. Через длину массива"""
-        self.test_processing_widget.cut_slider.setMinimum(0)
-        self.test_processing_widget.cut_slider.setMaximum(length)
-        self.test_processing_widget.cut_slider.setLow(0)
-        self.test_processing_widget.cut_slider.setHigh(length)
-
     def _open_path(self):
         """Открытие файла опыта"""
         path = QFileDialog.getExistingDirectory(self, "Select Directory")
@@ -72,7 +58,6 @@ class K0ProcessingWidget(QWidget):
             self._plot()
             try:
                 self._model.open_path(path)
-                self._cut_slider_set_len(len(self._model.test_data.G_array))
                 self.open_widget.set_file_path(path)
             except (ValueError, IndexError, FileNotFoundError):
                 pass
@@ -91,7 +76,6 @@ class K0SoilTestWidget(QWidget):
         """Определяем основную структуру данных"""
         super().__init__()
         self._create_Ui()
-        self.test_widget.cut_slider.sliderMoved.connect(self._cut_sliders_moove)
         self.test_widget.sliders.signal[object].connect(self._params_slider_moove)
 
     def _create_Ui(self):
@@ -111,25 +95,8 @@ class K0SoilTestWidget(QWidget):
         self.layout.addWidget(self.save_widget)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
-    def _cut_sliders_moove(self):
-        try:
-            if K0_models[statment.current_test].test_data.G_array is not None:
-                K0_models[statment.current_test].set_borders(int(self.test_widget.cut_slider.low()),
-                                                             int(self.test_widget.cut_slider.high()))
-                self._plot()
-        except KeyError:
-            pass
-
-    def _cut_slider_set_len(self, length):
-        """Определение размера слайдера. Через длину массива"""
-        self.test_widget.cut_slider.setMinimum(0)
-        self.test_widget.cut_slider.setMaximum(length)
-        self.test_widget.cut_slider.setLow(0)
-        self.test_widget.cut_slider.setHigh(length)
-
     def set_test_params(self, params):
         try:
-            self._cut_slider_set_len(len(K0_models[statment.current_test].test_data.G_array))
             self._plot()
         except KeyError:
             pass
@@ -146,7 +113,6 @@ class K0SoilTestWidget(QWidget):
     def _refresh(self):
         try:
             K0_models[statment.current_test].set_test_params()
-            self._cut_slider_set_len(len(K0_models[statment.current_test].test_data.G_array))
             self._plot()
         except KeyError:
             pass
@@ -159,188 +125,6 @@ class K0SoilTestWidget(QWidget):
             self.test_widget.plot(plots, res)
         except KeyError:
             pass
-
-
-class PredictRCTestResults(QDialog):
-    """Класс отрисовывает таблицу физических свойств"""
-    def __init__(self):
-        super().__init__()
-        self._table_is_full = False
-        self.setWindowTitle("Резонансная колонка")
-
-        # UI init
-        self.layout = None
-        self.table_castomer = None
-        self.l = None
-        self.button_box = None
-        self.button_box_layout = None
-        self.save_button = QPushButton()
-        self.combo_box = QComboBox()
-        self.table = QTableWidget()
-        self.sliders = TriaxialStaticLoading_Sliders({"K0": "Коэффициент G0",
-                                                      "M": "Коэффициент M"})
-        self.buttonBox = QDialogButtonBox()
-        self.create_IU()
-        #
-
-        self._K0 = 0.5
-        self._M = 0.1
-
-        self._original_keys_for_sort = list(statment.tests.keys())
-        self.resize(1400, 800)
-
-        self.sliders.signal[object].connect(self._sliders_moove)
-
-        self.save_button.clicked.connect(self._save_pdf)
-        self.combo_box.activated.connect(lambda s: self._sort_combo_changed(statment))
-
-        self._fill_table()
-
-    def create_IU(self):
-        self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(10)
-
-        self.table_castomer = TableCastomer()
-        self.table_castomer.set_data()
-        self.layout.addWidget(self.table_castomer)
-
-        self.l = QHBoxLayout()
-        self.button_box = QGroupBox("Инструменты")
-        self.button_box_layout = QHBoxLayout()
-        self.button_box.setLayout(self.button_box_layout)
-        self.save_button = QPushButton("Сохранить данные PDF")
-        self.save_button.setFixedHeight(30)
-        self.combo_box.setFixedHeight(30)
-        self.combo_box.addItems(["Сортировка", "reference_pressure", "depth"])
-        self.button_box_layout.addWidget(self.combo_box)
-        self.button_box_layout.addWidget(self.save_button)
-
-        self.l.addStretch(-1)
-
-        self.sliders.set_sliders_params(
-            {
-                "K0": {"value": 0.5, "borders": [0.1, 1]},
-                "M": {"value": 0.1, "borders": [0, 1]}
-            })
-
-        self.l.addWidget(self.sliders)
-
-        self.l.addWidget(self.button_box)
-        self.layout.addLayout(self.l)
-
-        self._clear_table()
-        self.layout.addWidget(self.table)
-
-        self.buttonBox.setOrientation(Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
-        self.buttonBox.setObjectName("buttonBox")
-        self.layout.addWidget(self.buttonBox)
-
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-
-        self.layout.setContentsMargins(5, 5, 5, 5)
-
-    def _clear_table(self):
-        """Очистка таблицы и придание соответствующего вида"""
-        self._table_is_full = False
-
-        while self.table.rowCount() > 0:
-            self.table.removeRow(0)
-
-        self.table.setColumnCount(8)
-        # self.table.horizontalHeader().resizeSection(1, 200)
-        self.table.setHorizontalHeaderLabels(["Лаб. ном.", "Глубина", "Наименование грунта", "Реф.давление, МПа",
-                                              "Коэфф. пористости e", "Е50, МПа", "G0, МПА", "𝛾07, д.е."])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.verticalHeader().setDefaultSectionSize(25)
-        self.table.horizontalHeader().setMinimumSectionSize(150)
-
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(7, QHeaderView.Fixed)
-
-    def _fill_table(self):
-        """Заполнение таблицы параметрами"""
-        self.table.setRowCount(len(statment))
-        for string_number, lab_number in enumerate(statment):
-            for i, val in enumerate([statment[lab_number].physical_properties.laboratory_number,
-                                     str(statment[lab_number].physical_properties.depth),
-                                     statment[lab_number].physical_properties.soil_name,
-                                     str(statment[lab_number].mechanical_properties.reference_pressure),
-                                     str(statment[lab_number].physical_properties.e),
-                                     str(np.round(statment[lab_number].mechanical_properties.E50, 1)),
-                                     str(np.round(statment[lab_number].mechanical_properties.G0, 1)),
-                                     str(np.round(statment[lab_number].mechanical_properties.threshold_shear_strain, 2))]):
-                self.table.setItem(string_number, i, QTableWidgetItem(val))
-
-        self._table_is_full = True
-
-    def _sort_combo_changed(self, __statment):
-        """Изменение способа сортировки combo_box"""
-        if self._table_is_full:
-            if self.combo_box.currentText() == "Сортировка":
-                __statment.sort("origin")
-                self._clear_table()
-            else:
-                __statment.sort(self.combo_box.currentText())
-                self._clear_table()
-
-            self._fill_table()
-
-    def _sliders_moove(self, param):
-        self._K0 = param["K0"]
-        self._M = param["M"]
-        self._fill_table()
-
-    def _save_pdf(self):
-        save_dir = QFileDialog.getExistingDirectory(self, "Select Directory")
-        if save_dir:
-            statement_title = "Прогнозирование парметров G0"
-            titles, data, scales = PredictRCTestResults.transform_data_for_statment(self.get_data())
-            try:
-                save_report(titles, data, scales, statment.general_data.end_date, ['Заказчик:', 'Объект:'],
-                            [statment.general_data.customer, statment.general_data.object_name], statement_title,
-                            save_dir, "---", "Прогноз G0.pdf")
-                QMessageBox.about(self, "Сообщение", "Успешно сохранено")
-            except PermissionError:
-                QMessageBox.critical(self, "Ошибка", "Закройте ведомость", QMessageBox.Ok)
-
-    def get_data(self):
-        for string_number, lab_number in enumerate(statment):
-            statment[lab_number].mechanical_properties.G0 = float(self.table.item(string_number, 6)
-                                                                  .text())
-            statment[lab_number].mechanical_properties.threshold_shear_strain = float(self.table.item(string_number, 7)
-                                                                                      .text())
-
-    @staticmethod
-    def transform_data_for_statment(data):
-        """Трансформация данных для передачи в ведомость"""
-        if not data:
-            pass
-
-        data_structure = []
-
-        for string_number, lab_number in enumerate(statment):
-            data_structure.append([lab_number,
-                                   str(statment[lab_number].physical_properties.depth),
-                                   statment[lab_number].physical_properties.soil_name,
-                                   str(statment[lab_number].mechanical_properties.reference_pressure),
-                                   str(statment[lab_number].physical_properties.e),
-                                   str(np.round(statment[lab_number].mechanical_properties.E50, 1)),
-                                   str(np.round(statment[lab_number].mechanical_properties.G0, 1)),
-                                   str(np.round(statment[lab_number].mechanical_properties.threshold_shear_strain, 2))])
-
-        titles = ["Лаб. номер", "Глубина, м", "Наименование грунта", "Реф.давление, МПа", "Коэфф. пористости e",
-                  "Е50, МПа", "G0, МПА", "𝛾07, д.е."]
-
-        scale = [70, 70, "*", 70, 70, 70, 70, 70]
-
-        return titles, data_structure, scale
 
 
 class K0ProcessingApp(QWidget):
@@ -363,10 +147,10 @@ class K0ProcessingApp(QWidget):
         self.tab_2.save_widget .save_button.clicked.connect(self.save_report)
 
     def _set_save_directory(self, signal):
-        self.tab_2.save_widget.set_directory(signal, "Резонансная колонка")
+        self.tab_2.save_widget.set_directory(signal, "Трехосное сжатие K0")
 
     def _set_save_directory(self, signal):
-        self.tab_4.save.set_directory(signal, "Резонансная колонка")
+        self.tab_4.save.set_directory(signal, "Трехосное сжатие K0")
 
     def save_report(self):
         try:
@@ -454,26 +238,12 @@ class K0SoilTestApp(QWidget):
         self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
         self.tab_2.save_widget.save_all_button.clicked.connect(self.save_all_reports)
 
-        self.button_predict = QPushButton("Прогнозирование")
-        self.button_predict.setFixedHeight(50)
-        self.button_predict.clicked.connect(self._predict)
-        self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
+        # self.button_predict = QPushButton("Прогнозирование")
+        # self.button_predict.setFixedHeight(50)
+        # self.button_predict.clicked.connect(self._predict)
+        # self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
 
         self.tab_2.save_widget.general_statment_button.clicked.connect(self.general_statment)
-
-    def _predict(self):
-        if len(statment):
-            dialog = PredictRCTestResults()
-            dialog.show()
-
-            if dialog.exec() == QDialog.Accepted:
-                dialog.get_data()
-                K0_models.generateTests()
-                K0_models.dump(os.path.join(statment.save_dir.save_directory,
-                                            f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
-                # statment.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]),
-                              # name="Резонансная колонка.pickle")
-                app_logger.info("Новые параметры ведомости и модели сохранены")
 
     @log_this(app_logger, "debug")
     def save_report(self):
@@ -493,7 +263,7 @@ class K0SoilTestApp(QWidget):
 
             test_result = K0_models[statment.current_test].get_test_results()
 
-            results = {"G0": test_result["G0"], "gam07": test_result["threshold_shear_strain"]}
+            results = {"K0": test_result["K0"]}
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date
@@ -508,8 +278,8 @@ class K0SoilTestApp(QWidget):
 
             number = statment[statment.current_test].physical_properties.sample_number + 7
 
-            set_cell_data(self.tab_1.path, ("HL" + str(number), (number, 219)), test_result["G0"], sheet="Лист1")
-            set_cell_data(self.tab_1.path, ("HK" + str(number), (number, 218)), test_result["threshold_shear_strain"], sheet="Лист1")
+            # set_cell_data(self.tab_1.path, ("HL" + str(number), (number, 219)), test_result["G0"], sheet="Лист1")
+            # set_cell_data(self.tab_1.path, ("HK" + str(number), (number, 218)), test_result["threshold_shear_strain"], sheet="Лист1")
 
             shutil.copy(file_name, statment.save_dir.report_directory + "/" + file_name[len(file_name) -
                                                                                       file_name[::-1].index("/"):])
@@ -522,7 +292,7 @@ class K0SoilTestApp(QWidget):
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
             K0_models.dump(os.path.join(statment.save_dir.save_directory,
-                                        f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
+                                        f"k0_models{statment.general_data.get_shipment_number()}.pickle"))
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

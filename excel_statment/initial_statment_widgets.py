@@ -13,8 +13,10 @@ from excel_statment.initial_tables import TableCastomer, ComboBox_Initial_Parame
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, CyclicProperties, \
     DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties, ShearProperties, K0Properties
+from k0_test.triaxial_k0_model import ModelK0SoilTest
 from loggers.logger import app_logger, log_this
-from singletons import statment, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, Shear_models, Shear_Dilatancy_models, VibrationFC_models
+from singletons import statment, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, \
+    Shear_models, Shear_Dilatancy_models, VibrationFC_models, K0_models
 
 from resonant_column.rezonant_column_hss_model import ModelRezonantColumnSoilTest
 from consolidation.consolidation_model import ModelTriaxialConsolidationSoilTest
@@ -1010,20 +1012,15 @@ class VibrationStrangthStatment(InitialStatment):
 class K0Statment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
     def __init__(self):
-        data_test_parameters = {"K0_mode": {"label": "Тип определения K0",
-                                            "vars": ["Не выбрано",
-                                                     "K0: По ГОСТ-56353", "K0: K0nc из ведомости",
-                                                     "K0: K0 из ведомости", "K0: Формула Джекки",
-                                                     "K0: K0 = 1", "K0: Формула Джекки c учетом переупл."]}}
+        data_test_parameters = {}
 
         fill_keys = {
             "laboratory_number": "Лаб. ном.",
-            "E50": "Модуль деформации E50, МПа",
-            "c": "Сцепление с, МПа",
-            "fi": "Угол внутреннего трения, град",
-            "e": "Коэффициент пористости, е",
-            "reference_pressure": "Референтное давление, МПа",
-            "K0": "K0"}
+            "depth": "Глубина, м",
+            "OCR": "OCR",
+            "K0": "K0",
+            "sigma_1_step": "Шаг нагружения, МПа",
+            "sigma_1_max": "Максимальное давление, МПа"}
 
         super().__init__(data_test_parameters, fill_keys)
 
@@ -1038,12 +1035,9 @@ class K0Statment(InitialStatment):
             marker, customer = read_general_prameters(self.path)
 
             try:
-                assert column_fullness_test(
-                    self.path, columns=k0_test_type_column(combo_params["K0_mode"]),
-                    initial_columns=columns_marker), "Заполните K0 в ведомости"
-                assert column_fullness_test(self.path, columns=list(zip(*c_fi_E_PropertyPosition["Резонансная колонка"])),
-                                            initial_columns=columns_marker), \
-                    "Заполните параметры прочности и деформируемости (BD, BC, BE)"
+                # assert column_fullness_test(self.path, columns=list(zip(*c_fi_E_PropertyPosition["Резонансная колонка"])),
+                #                             initial_columns=columns_marker), \
+                #     "Заполните параметры прочности и деформируемости (BD, BC, BE)"
 
                 assert not marker, "Проверьте " + customer
 
@@ -1051,16 +1045,14 @@ class K0Statment(InitialStatment):
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
             else:
-                combo_params["test_mode"] = "Резонансная колонка"
+                combo_params["test_mode"] = "Трехосное сжатие K0"
 
-                self.load_statment(
-                    statment_name="Резонансная колонка.pickle",
-                    properties_type=K0Properties,
-                    general_params=combo_params)
+                self.load_statment(statment_name="Трехосное сжатие K0.pickle",
+                                   properties_type=K0Properties, general_params=combo_params)
 
                 keys = list(statment.tests.keys())
                 for test in keys:
-                    if not statment[test].mechanical_properties.reference_pressure:
+                    if not statment[test].mechanical_properties.K0:
                         del statment.tests[test]
 
                 if len(statment) < 1:
@@ -1071,8 +1063,8 @@ class K0Statment(InitialStatment):
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
 
-                    self.load_models(models_name="rc_models.pickle",
-                                     models=RC_models, models_type=ModelRezonantColumnSoilTest)
+                    self.load_models(models_name="k0_models.pickle", models=K0_models, models_type=ModelK0SoilTest)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

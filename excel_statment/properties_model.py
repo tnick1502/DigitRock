@@ -1931,7 +1931,7 @@ class K0Properties(MechanicalProperties):
             self.sigma_p, self.sigma_3_p = K0Properties.define_sigma_p(self.OCR, physical_properties.depth, self.K0)
 
             self.sigma_1_step = 0.150
-            self.sigma_p = 1.200
+            self.sigma_1_max = 1.200
 
 
     @staticmethod

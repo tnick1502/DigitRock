@@ -287,7 +287,6 @@ class ModelK0SoilTest(ModelK0):
     def set_draw_params(self, params):
         """Считывание параметров отрисовки(для передачи на слайдеры)"""
         self._test_params.K0 = params["K0"]
-        self._test_params.OCR = params["OCR"]
 
         self._test_modeling()
 
@@ -297,18 +296,19 @@ class ModelK0SoilTest(ModelK0):
             1. Точка перегиба - `(_sigma_p, _sigma_3_p)` определеяется через define_sigma_p в K0Properties
             2. Производим синтез прямолинейного участка с наклоном К0. Он должен идти из точки перегиба до
                 `sigma_1_max` с шагом `sigma_1_step`.
-            3. Создаем криволинейный участок кубическим сплайном.
-            4. Накладываем шум на прямолинейный участок через `lse_faker()`.
+            3. Создаем криволинейный участок кубическим сплайном в точку перегиба
+            4. Производим уточнение сетки по сигма1 - она должна идти с заданным шагом
+            5. Накладываем шум на прямолинейный участок через `lse_faker()`.
         """
-        # формируем прямолинейный участок
+        # 2 - формируем прямолинейный участок
         delta_sigma_1 = self._test_params.sigma_1_max - self._test_params.sigma_p
         # + self._test_params.sigma_p - self._test_params.sigma_p
 
         num = int(delta_sigma_1/self._test_params.sigma_1_step) + 1
-        sgima_1_synth = np.linspace(self._test_params.sigma_p, self._test_params.sigma_1_max, num)
+        sgima_1_synth = np.linspace(self._test_params.sigma_p, self._test_params.sigma_1_max, 50)
         sgima_3_synth = self._test_params.K0 * (sgima_1_synth - self._test_params.sigma_p) + self._test_params.sigma_3_p
 
-        # формируем криволинейный участок если есть бытовое давление
+        # 3 - формируем криволинейный участок если есть бытовое давление
         sigma_1_spl = np.asarray([])
         sigma_3_spl = np.asarray([])
 
@@ -316,8 +316,25 @@ class ModelK0SoilTest(ModelK0):
             bounds = ([(2, 0.0)], [(1, 1/self._test_params.K0)])
             spl = make_interp_spline([0, sgima_3_synth[0]], [0, sgima_1_synth[0]], k=3, bc_type=bounds)
 
-            sigma_3_spl = np.linspace(0, sgima_3_synth[0], int(delta_sigma_1/self._test_params.sigma_1_step) + 1)
+            sigma_3_spl = np.linspace(0, sgima_3_synth[0], int(sgima_1_synth[0]/self._test_params.sigma_1_step) + 1)
             sigma_1_spl = spl(sigma_3_spl)
+            sigma_1_spl[0] = 0
+
+        # 4 - уточнение сетки
+        #   Строим сплайн для всей кривой
+        spl = make_interp_spline(np.hstack((sigma_1_spl[:-1], sgima_1_synth)),
+                                 np.hstack((sigma_3_spl[:-1], sgima_3_synth)), k=1, bc_type=None)
+
+        #   Считаем число точек и задаем сетку на Сигма1
+        num = int(self._test_params.sigma_1_max / self._test_params.sigma_1_step) + 1
+        sgima_1_mesh = np.linspace(0, self._test_params.sigma_1_max, num)
+        index_sigma_p, = np.where(sgima_1_mesh >= self._test_params.sigma_p)
+        #   Формируем участки
+        sgima_1_synth = sgima_1_mesh[index_sigma_p[0]:]
+        sgima_3_synth = spl(sgima_1_synth)
+
+        sigma_1_spl = sgima_1_mesh[:index_sigma_p[0] + 1]
+        sigma_3_spl = spl(sigma_1_spl)
 
         # накладываем шум на прямолинейный участок и объединяем
         sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_synth, sgima_3_synth,

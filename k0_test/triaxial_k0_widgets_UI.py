@@ -37,13 +37,6 @@ class K0UI(QWidget):
         self.graph_layout = QVBoxLayout()
         self.graph.setLayout(self.graph_layout)
 
-        self.cut_box = QGroupBox("Обрезка значений")
-        self.cut_box_layout = QVBoxLayout()
-        self.cut_box.setLayout(self.cut_box_layout)
-        self.cut_slider = RangeSlider(Qt.Horizontal)
-        self.cut_box_layout.addWidget(self.cut_slider)
-        self.graph_layout.addWidget(self.cut_box)
-
         self.canvas_frame = QFrame()
         self.canvas_frame.setFrameShape(QFrame.StyledPanel)
         self.canvas_frame.setStyleSheet('background: #ffffff')
@@ -76,7 +69,7 @@ class K0UI(QWidget):
             self.ax_K0.set_ylabel("Горизонтальное напряжение __, МПа")
 
             self.ax_K0.scatter(plot_data["sigma_3"], plot_data["sigma_1"], label="test data", color="tomato")
-            self.ax_K0.plot(plot_data["ko_line_x"], plot_data["ko_line_y"], label="approximate data")
+            self.ax_K0.plot(plot_data["k0_line_x"], plot_data["k0_line_y"], label="approximate data")
 
             self.ax_K0.scatter([], [], label="$K0$" + " = " + str(results["K0"]), color="#eeeeee")
 
@@ -225,12 +218,11 @@ class K0IdentificationUI(TableVertical):
     def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__({"laboratory_number": "Лаб. ном.",
-                          "E50": "Модуль деформации E50, МПа",
-                          "c": "Сцепление с, МПа",
-                          "fi": "Угол внутреннего трения, град",
-                          "e": "Коэффициент пористости, е",
-                          "reference_pressure": "Референтное давление, МПа",
-                          "K0": "K0"})
+                          "depth": "Глубина, м",
+                          "OCR": "OCR",
+                          "K0": "K0",
+                          "sigma_1_step": "Шаг нагружения, МПа",
+                          "sigma_1_max": "Максимальное давление, МПа"})
 
 
 class K0OpenTestUI(QWidget):
@@ -283,13 +275,11 @@ class K0SoilTestUI(K0UI):
 
     def _create_ST_UI(self):
         """Создание данных интерфейса"""
-        self.sliders = TriaxialStaticLoading_Sliders({
-            "K0": "Коэффициент K0",
-            "M": "Коэффициент M"})
+        self.sliders = TriaxialStaticLoading_Sliders({"K0": "Коэффициент K0"
+                                                      })
         self.sliders.set_sliders_params(
             {
-                "K0": {"value": 0.5, "borders": [0.1, 1]},
-                "M": {"value": 0.1, "borders": [0, 1]}
+                "K0": {"value": 0.5, "borders": [0.1, 1]}
             })
         self.layout.addWidget(self.sliders)
 

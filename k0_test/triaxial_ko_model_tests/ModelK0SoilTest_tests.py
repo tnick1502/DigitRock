@@ -1,7 +1,7 @@
 from k0_test.triaxial_k0_model import ModelK0SoilTest
 from excel_statment.properties_model import K0Properties
 
-PLOT = False
+PLOT = True
 
 
 def test_model_k0_simple():
@@ -19,6 +19,10 @@ def test_model_k0_simple():
     if PLOT:
 
         model.plotter()
+
+    test_data = model.test_data
+
+    check_test(test_data, _test_params)
 
     assert model.get_test_results()["K0"] == 0.62
 
@@ -39,4 +43,16 @@ def test_model_k0_zero_depth():
 
         model.plotter()
 
+    test_data = model.test_data
+    check_test(test_data, _test_params)
+
     assert model.get_test_results()["K0"] == 0.62
+
+
+def check_test(__test_data, __test_params):
+    # проверка числа точек
+    assert int(__test_params["sigma_1_max"]/__test_params["sigma_1_step"]) + 1 == len(__test_data["sigma_1"])
+
+    for sigma_1 in __test_data["sigma_1"]:
+        left = sigma_1 % __test_params["sigma_1_step"]
+        assert left > __test_params["sigma_1_step"]*0.95 or left < __test_params["sigma_1_step"]*0.05
