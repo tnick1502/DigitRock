@@ -1,7 +1,7 @@
 from k0_test.triaxial_k0_model import ModelK0SoilTest
 from excel_statment.properties_model import K0Properties
 
-PLOT = True
+PLOT = False
 
 
 def test_model_k0_simple():
@@ -69,7 +69,7 @@ def test_model_k0():
 
     check_test(test_data, _test_params)
 
-    assert model.get_test_results()["K0"] == 0.62
+    assert model.get_test_results()["K0"] == 0.43
 
 
 def check_test(__test_data, __test_params):

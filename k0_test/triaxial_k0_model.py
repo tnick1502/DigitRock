@@ -322,19 +322,20 @@ class ModelK0SoilTest(ModelK0):
 
 
         #
-        plt.figure()
-        plt.plot(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
-        plt.show()
+        #   Пока осталвляем это для дебага
+        _test_x = np.hstack((sigma_3_spl[:-1], sgima_3_synth))
+        _test_y = np.hstack((sigma_1_spl[:-1], sgima_1_synth))
         #
 
         # 4 - уточнение сетки
         #   Строим сплайн для всей кривой
         spl = make_interp_spline(np.hstack((sigma_1_spl[:-1], sgima_1_synth)),
-                                 np.hstack((sigma_3_spl[:-1], sgima_3_synth)), k=1, bc_type=None)
+                                 np.hstack((sigma_3_spl[:-1], sgima_3_synth)), k=1)
 
         #   Считаем число точек и задаем сетку на Сигма1
         num = int(self._test_params.sigma_1_max / self._test_params.sigma_1_step) + 1
         sgima_1_mesh = np.linspace(0, self._test_params.sigma_1_max, num)
+
         index_sigma_p, = np.where(sgima_1_mesh >= self._test_params.sigma_p)
         #   Формируем участки
         sgima_1_synth = sgima_1_mesh[index_sigma_p[0]:]
@@ -346,13 +347,24 @@ class ModelK0SoilTest(ModelK0):
         # накладываем шум на прямолинейный участок и объединяем
         sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_synth, sgima_3_synth,
                                                      sigma_1_spl, sigma_3_spl,
-                                                     self._test_params.K0, self._test_params.sigma_3_p)
+                                                     self._test_params.K0)
+
+
+        #
+        #   Пока осталвляем это для дебага
+        # plt.figure()
+        # plt.plot(_test_x, _test_y)
+        # plt.plot(sgima_3_mesh, sgima_1_mesh)
+        # plt.scatter(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
+        # plt.scatter(sigma_3, sigma_1)
+        # plt.show()
+        #
 
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
 
     @staticmethod
     def lse_faker(sigma_1_line: np.array, sigma_3_line: np.array,
-                  sigma_1_spl: np.array, sigma_3_spl: np.array, K0: float, sigma_3_p: float):
+                  sigma_1_spl: np.array, sigma_3_spl: np.array, K0: float):
         """
             Принцип работы следующий:
                 шумы накладываются на линейный участок графика, по которому определяется К0.
@@ -369,13 +381,17 @@ class ModelK0SoilTest(ModelK0):
         :param sigma_1_spl: Сигма 1 нелинейного участка (включая первую точку линейного участка)
         :param sigma_3_spl: Сигма 3 нелинейного участка (включая первую точку линейного участка)
         :param K0: заданный К0
-        :param sigma_3_p: заданая в точке перегиба сигма 3
         :return: Два массива Сигма 1 и Сигма 3 единой кривой (криволинейный и линейный участки)
         """
 
+        # Точка начала прямолинейного участка должна быть зафиксирована,
+        #   так как происходят некорретные сдвиги по шумам
+        sigma_3_line_fixed = sigma_3_line[0]
+        '''точка начала прямолинейного участка'''
+
         # Если выбирать точку произвольно то
-        # придется присать ограничения cons на расположения точек
-        # после добавления шума
+        #   придется присать ограничения cons на расположения точек
+        #   после добавления шума
         fixed_point_index = 1
 
         noise = abs(sigma_3_line[fixed_point_index] - sigma_3_line[0]) * 0.4
@@ -401,7 +417,7 @@ class ModelK0SoilTest(ModelK0):
             """x - массив sigma_3 без зафиксированной точки"""
             # возвращаем зафиксированную точку для подачи в МНК
             x = np.insert(x, fixed_point_index, sigma_3_noise[fixed_point_index])
-            x[0] = sigma_3_p  # оставляем первую точку на месте
+            x[0] = sigma_3_line_fixed  # оставляем первую точку на месте
 
             x = np.hstack((sigma_3_spl[:-1], x))
             __sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1_line))
@@ -423,7 +439,7 @@ class ModelK0SoilTest(ModelK0):
 
         # Результат:
         sigma_3_noise = np.insert(res, fixed_point_index, sigma_3_noise[fixed_point_index])
-        sigma_3_noise[0] = sigma_3_p
+        sigma_3_noise[0] = sigma_3_line_fixed
 
         # Соединение
         _sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1_line))
