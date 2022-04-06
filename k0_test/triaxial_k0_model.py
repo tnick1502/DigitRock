@@ -301,10 +301,6 @@ class ModelK0SoilTest(ModelK0):
             5. Накладываем шум на прямолинейный участок через `lse_faker()`.
         """
         # 2 - формируем прямолинейный участок
-        delta_sigma_1 = self._test_params.sigma_1_max - self._test_params.sigma_p
-        # + self._test_params.sigma_p - self._test_params.sigma_p
-
-        num = int(delta_sigma_1/self._test_params.sigma_1_step) + 1
         sgima_1_synth = np.linspace(self._test_params.sigma_p, self._test_params.sigma_1_max, 50)
         sgima_3_synth = self._test_params.K0 * (sgima_1_synth - self._test_params.sigma_p) + self._test_params.sigma_3_p
 
