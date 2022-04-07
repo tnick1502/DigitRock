@@ -303,8 +303,8 @@ class MechanicalProperties:
                 self.sigma_3 = MechanicalProperties.round_sigma_3(
                     MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
 
-            if self.sigma_3 < 50:
-                self.sigma_3 = 50
+            if self.sigma_3 < 25:
+                self.sigma_3 = 25
 
             if self.fi == 0:
                 self.qf = self.c * 2 * 1000 + np.random.uniform(-0.8, 0.8)
@@ -379,7 +379,8 @@ class MechanicalProperties:
             if test_mode == "Трёхосное сжатие КН":
                 self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
             elif test_mode == "Трёхосное сжатие НН":
-                self.u = np.round(np.random.uniform(0.85, 0.95) * self.sigma_3, 1)
+                self.u = None #np.full(len(self.sigma_3), None)
+                #self.u = np.round(np.random.uniform(0.85, 0.95) * self.sigma_3, 1)
                 #self.u = [np.round(i * np.random.uniform(0.85, 0.95), 1) for i in self.pressure_array["current"]]
 
     @staticmethod

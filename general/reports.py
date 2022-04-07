@@ -1916,8 +1916,8 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8):
 
     if len(Res["sigma_3_mohr"]) == 1:
         tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", "", ""])
-        tableData.append(["-", "-", "", "", "", ""])
-        tableData.append(["-", "-", "", "", "", ""])
+        tableData.append(["", "", "", "", "", ""])
+        tableData.append(["", "", "", "", "", ""])
     else:
         tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", "", ""])
         tableData.append([zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), "", "", "", ""])
@@ -1936,33 +1936,65 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8):
          #zap(Res["m"], 2), ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
-    t.setStyle([('SPAN', (0, 0), (-1, 0)),
 
-                ('SPAN', (0, 1), (-1, table_move)),
+    if len(Res["sigma_3_mohr"]) == 1:
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
 
-                #('SPAN', (0, table_move + 1), (2, table_move + 1)),
+                    ('SPAN', (0, 1), (-1, table_move)),
 
-                ('SPAN', (2, 1), (-1, -4)),
+                    ('SPAN', (0, table_move+4), (-1, table_move+6)),
 
-                ('SPAN', (0, 6 + table_move), (-1, r + table_move + 5)),
+                    # ('SPAN', (0, table_move + 1), (2, table_move + 1)),
 
-                ('SPAN', (0, table_move+1), (0, table_move+2)),
-                ('SPAN', (1, table_move+1), (1, table_move + 2)),
+                    ('SPAN', (2, 1), (-1, -4)),
 
-                ('SPAN', (0, -1), (3, -1)),
-                ('SPAN', (-2, -1), (-1, -1)),
+                    ('SPAN', (0, 6 + table_move), (-1, r + table_move + 5)),
 
-                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                    ('SPAN', (0, table_move + 1), (0, table_move + 2)),
+                    ('SPAN', (1, table_move + 1), (1, table_move + 2)),
 
-                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (0, 0), (-1, r), "CENTER"),
-                ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
-                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+                    ('SPAN', (0, -1), (3, -1)),
+                    ('SPAN', (-2, -1), (-1, -1)),
+
+                    ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                    ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+    else:
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
+
+                    ('SPAN', (0, 1), (-1, table_move)),
+
+                    #('SPAN', (0, table_move + 1), (2, table_move + 1)),
+
+                    ('SPAN', (2, 1), (-1, -4)),
+
+                    ('SPAN', (0, 6 + table_move), (-1, r + table_move + 5)),
+
+                    ('SPAN', (0, table_move+1), (0, table_move+2)),
+                    ('SPAN', (1, table_move+1), (1, table_move + 2)),
+
+                    ('SPAN', (0, -1), (3, -1)),
+                    ('SPAN', (-2, -1), (-1, -1)),
+
+                    ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                    ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, ((40-((r - 30)*4)) - table_move*6) * mm)
