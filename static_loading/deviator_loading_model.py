@@ -691,8 +691,14 @@ class ModelTriaxialDeviatorLoading:
 
         else:
             index_loop[1] -= 1  # на деле точка сдвинута, её нужно скорректировать
+
             before_loop_points_count = int(point_count * index_loop[0] / len(strain))
             after_loop_points_count = point_count - before_loop_points_count
+
+            while (before_loop_points_count < 3 or after_loop_points_count < 3) and point_count < 200:
+                point_count = point_count + 1
+                before_loop_points_count = int(point_count * index_loop[0] / len(strain))
+                after_loop_points_count = point_count - before_loop_points_count
 
             strain_before_loop = list_generator(strain[:index_loop[0]], before_loop_points_count - 2,
                                                 [index_qf, index_05qf])
