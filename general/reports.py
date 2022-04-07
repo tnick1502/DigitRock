@@ -2768,7 +2768,7 @@ def report_FC_NN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
 
     parameter_table(canvas, Data_phiz, Lab)
     if len(res["sigma_3_mohr"]) == 1:
-        test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3)
+        test_parameter["sigma_3"] = res["sigma_3_mohr"][0]*1000
     else:
         test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
