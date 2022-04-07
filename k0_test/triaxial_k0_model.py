@@ -107,8 +107,8 @@ class ModelK0:
             figure.subplots_adjust(right=0.98, top=0.98, bottom=0.1, wspace=0.2, hspace=0.2, left=0.08)
 
             ax_K0 = figure.add_subplot(1, 1, 1)
-            ax_K0.set_xlabel("Вертикальное напряжение __, МПа")
-            ax_K0.set_ylabel("Горизонтальное напряжение __, МПа")
+            ax_K0.set_xlabel("Горизонтальное напряжение __, МПа")
+            ax_K0.set_ylabel("Вертикальное напряжение __, МПа")
 
             ax_K0.scatter(plot_data["sigma_3"], plot_data["sigma_1"], label="test data", color="tomato")
             ax_K0.plot(plot_data["k0_line_x"], plot_data["k0_line_y"], label="approximate data")
@@ -286,7 +286,18 @@ class ModelK0SoilTest(ModelK0):
 
     def set_draw_params(self, params):
         """Считывание параметров отрисовки(для передачи на слайдеры)"""
-        self._test_params.K0 = params["K0"]
+        from excel_statment.properties_model import K0Properties
+
+        self._test_params.K0 = round(params["K0"], 2)
+        self._test_params.OCR = round(params["OCR"], 2)
+        self._test_params.depth = round(params["depth"], 2)
+
+        self._test_params.sigma_p, self._test_params.sigma_3_p = K0Properties.define_sigma_p(self._test_params.OCR,
+                                                                                             self._test_params.depth,
+                                                                                             self._test_params.K0)
+
+        self._test_params.sigma_1_step = int(params["sigma_1_step"])*0.050
+        self._test_params.sigma_1_max = round(params["sigma_1_max"], 3)
 
         self._test_modeling()
 
@@ -323,14 +334,23 @@ class ModelK0SoilTest(ModelK0):
         _test_y = np.hstack((sigma_1_spl[:-1], sgima_1_synth))
         #
 
+        plt.figure()
+        plt.plot(_test_x, _test_y)
+        # plt.plot(sgima_3_mesh, sgima_1_mesh)
+        plt.scatter(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
+        # plt.scatter(sigma_3, sigma_1)
+        plt.show()
+
         # 4 - уточнение сетки
         #   Строим сплайн для всей кривой
         spl = make_interp_spline(np.hstack((sigma_1_spl[:-1], sgima_1_synth)),
                                  np.hstack((sigma_3_spl[:-1], sgima_3_synth)), k=1)
 
         #   Считаем число точек и задаем сетку на Сигма1
-        num = int(self._test_params.sigma_1_max / self._test_params.sigma_1_step) + 1
+        num: int = int((self._test_params.sigma_1_max*1000) / (self._test_params.sigma_1_step*1000)) + 1
         sgima_1_mesh = np.linspace(0, self._test_params.sigma_1_max, num)
+
+        sgima_3_mesh = spl(sgima_1_mesh)
 
         index_sigma_p, = np.where(sgima_1_mesh >= self._test_params.sigma_p)
         #   Формируем участки
@@ -348,12 +368,12 @@ class ModelK0SoilTest(ModelK0):
 
         #
         #   Пока осталвляем это для дебага
-        # plt.figure()
-        # plt.plot(_test_x, _test_y)
-        # plt.plot(sgima_3_mesh, sgima_1_mesh)
-        # plt.scatter(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
-        # plt.scatter(sigma_3, sigma_1)
-        # plt.show()
+        plt.figure()
+        plt.plot(_test_x, _test_y)
+        plt.plot(sgima_3_mesh, sgima_1_mesh)
+        plt.scatter(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
+        plt.scatter(sigma_3, sigma_1)
+        plt.show()
         #
 
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})

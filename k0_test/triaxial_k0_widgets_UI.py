@@ -47,8 +47,11 @@ class K0UI(QWidget):
         self.canvas = FigureCanvas(self.figure)
 
         self.ax_K0 = self.figure.add_subplot(1, 1, 1)
-        self.ax_K0.set_xlabel("Вертикальное напряжение __, МПа")
-        self.ax_K0.set_ylabel("Горизонтальное напряжение __, МПа")
+        self.ax_K0.set_xlabel("Горизонтальное напряжение __, МПа")
+        self.ax_K0.set_ylabel("Вертикальное напряжение __, МПа")
+
+        self.ax_K0.set_ylim([-0.001, 2.2])
+        self.ax_K0.set_xlim([-0.001, 2])
 
         self.canvas.draw()
 
@@ -65,8 +68,11 @@ class K0UI(QWidget):
         """Построение графиков опыта"""
         try:
             self.ax_K0.clear()
-            self.ax_K0.set_xlabel("Вертикальное напряжение __, МПа")
-            self.ax_K0.set_ylabel("Горизонтальное напряжение __, МПа")
+            self.ax_K0.set_xlabel("Горизонтальное напряжение __, МПа")
+            self.ax_K0.set_ylabel("Вертикальное напряжение __, МПа")
+
+            self.ax_K0.set_ylim([-0.001, 2.2])
+            self.ax_K0.set_xlim([-0.001, 2])
 
             self.ax_K0.scatter(plot_data["sigma_3"], plot_data["sigma_1"], label="test data", color="tomato")
             self.ax_K0.plot(plot_data["k0_line_x"], plot_data["k0_line_y"], label="approximate data")
@@ -275,11 +281,19 @@ class K0SoilTestUI(K0UI):
 
     def _create_ST_UI(self):
         """Создание данных интерфейса"""
-        self.sliders = TriaxialStaticLoading_Sliders({"K0": "Коэффициент K0"
+        self.sliders = TriaxialStaticLoading_Sliders({"K0": "Коэффициент K0",
+                                                      "OCR": "OCR",
+                                                      "depth": "Глубина, м",
+                                                      "sigma_1_step": "Шаг нагружения, 0.050 МПа",
+                                                      "sigma_1_max": "Максимальное давление, МПа"
                                                       })
         self.sliders.set_sliders_params(
             {
-                "K0": {"value": 0.5, "borders": [0.1, 1]}
+                "K0": {"value": 0.5, "borders": [0.1, 1]},
+                "OCR": {"value": 1.3, "borders": [1, 3]},
+                "depth": {"value": 1, "borders": [0, 100]},
+                "sigma_1_step": {"value": 3, "borders": [1, 10]},
+                "sigma_1_max": {"value": 1.200, "borders": [0.600, 2.000]}
             })
         self.layout.addWidget(self.sliders)
 
