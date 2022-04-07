@@ -1779,7 +1779,7 @@ class ShearProperties(MechanicalProperties):
                                          np.array([28, 24, 21, 18, 15, 12]))
                     elif 0.25 < Il <= 0.5:
                         return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05]),
-                                         np.array([21, 18, 15, 14, 12, 9]))
+                                         np.array([21, 18, 15, 12, 9]))
                     elif 0.5 < Il <= 0.75:
                         return np.interp(e, np.array([0.75, 0.85, 0.95, 1.05]),
                                          np.array([15, 12, 9, 7]))
