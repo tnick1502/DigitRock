@@ -693,6 +693,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         #                      (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
         dilatancy = self._draw_params.dilatancy
 
+        print(f"E50 чтоб его: {self._test_params.E50}")
 
         if self._test_params.tau_max >= 150:
 
@@ -1084,7 +1085,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             return 0.15
 
         # Если все норм, то находим Xc
-        xc = 1.37 / (k ** 0.8)
+        xc = 1.37*1.5 / (k ** 0.8)
 
         # Проверим значение
         if xc >= 0.15:
@@ -1119,7 +1120,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         if xc:
             xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
             if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
-                xc = xc*k
+                xc = xc*k/1.5
+
 
         else:
             xc = 0.15
