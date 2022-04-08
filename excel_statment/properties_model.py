@@ -1932,15 +1932,17 @@ class K0Properties(MechanicalProperties):
 
             self.sigma_1_step = 0.150
             self.sigma_1_max = 1.200
-            
-            if self.sigma_1_max - self.sigma_1_step < self.sigma_p:
-                self.sigma_1_max = self.sigma_p + self.sigma_1_step
 
 
     @staticmethod
     def define_sigma_p(OCR, depth, K0):
         # бытовое давление (точка перегиба) определяется из OCR через ro*g*h, где h - глубина залгания грунта
         _sigma_p = OCR * 2 * 10 * depth
+
+        # максимальное бытовое давление - 2000 МПа
+        if _sigma_p > 2000*1000:
+            _sigma_p = 2000*1000
+
         # сигма 3 при этом давлении неизвестно, но мы знаем, что наклон точно больше, чем наклон прямолинейного участка
         _sigma_3_p = K0 * (1/np.random.uniform(2.5, 3.0)) * _sigma_p
 

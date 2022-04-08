@@ -311,6 +311,8 @@ class ModelK0SoilTest(ModelK0):
             4. Производим уточнение сетки по сигма1 - она должна идти с заданным шагом
             5. Накладываем шум на прямолинейный участок через `lse_faker()`.
         """
+        #
+        self.verify_test_params()
         # 2 - формируем прямолинейный участок
         sgima_1_synth = np.linspace(self._test_params.sigma_p, self._test_params.sigma_1_max, 50)
         sgima_3_synth = self._test_params.K0 * (sgima_1_synth - self._test_params.sigma_p) + self._test_params.sigma_3_p
@@ -378,6 +380,11 @@ class ModelK0SoilTest(ModelK0):
 
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
 
+    def verify_test_params(self):
+        # геометрические условие:
+        if self._test_params.sigma_1_max - self._test_params.sigma_1_step < self._test_params.sigma_p:
+            self._test_params.sigma_1_max = self._test_params.sigma_p + self._test_params.sigma_1_step
+
     @staticmethod
     def lse_faker(sigma_1_line: np.array, sigma_3_line: np.array,
                   sigma_1_spl: np.array, sigma_3_spl: np.array, K0: float):
@@ -404,6 +411,12 @@ class ModelK0SoilTest(ModelK0):
         #   так как происходят некорретные сдвиги по шумам
         sigma_3_line_fixed = sigma_3_line[0]
         '''точка начала прямолинейного участка'''
+
+        # Проверка числа узов
+        if len(sigma_3_line) < 2:
+            _sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1_line))
+            _sigma_3 = np.hstack((sigma_3_spl[:-1], sigma_3_line))
+            return _sigma_1, _sigma_3
 
         # Если выбирать точку произвольно то
         #   придется присать ограничения cons на расположения точек

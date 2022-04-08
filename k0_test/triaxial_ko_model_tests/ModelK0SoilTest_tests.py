@@ -20,9 +20,7 @@ def test_model_k0_simple():
 
         model.plotter()
 
-    test_data = model.test_data
-
-    check_test(test_data, _test_params)
+    check_test(model.test_data, model._test_params)
 
     assert model.get_test_results()["K0"] == 0.62
 
@@ -43,8 +41,7 @@ def test_model_k0_zero_depth():
 
         model.plotter()
 
-    test_data = model.test_data
-    check_test(test_data, _test_params)
+    check_test(model.test_data, model._test_params)
 
     assert model.get_test_results()["K0"] == 0.62
 
@@ -65,9 +62,7 @@ def test_model_k0():
 
         model.plotter()
 
-    test_data = model.test_data
-
-    check_test(test_data, _test_params)
+    check_test(model.test_data, model._test_params)
 
     assert model.get_test_results()["K0"] == 0.43
 
@@ -88,9 +83,7 @@ def test_model_k0_2():
 
         model.plotter()
 
-    test_data = model.test_data
-
-    check_test(test_data, _test_params)
+    check_test(model.test_data, model._test_params)
 
     assert model.get_test_results()["K0"] == 0.63
 
@@ -111,11 +104,10 @@ def test_model_k0_3():
 
         model.plotter()
 
-    test_data = model.test_data
-
-    check_test(test_data, _test_params)
+    check_test(model.test_data, model._test_params)
 
     assert model.get_test_results()["K0"] == 0.63
+
 
 def check_test(__test_data, __test_params):
     # проверка числа точек
