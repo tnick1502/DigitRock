@@ -555,8 +555,6 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
     @staticmethod
     def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading):
 
-        print(b_test, consolidation)
-
         data = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(b_test, consolidation, initial=True,
                                                                         skip_keys=["SampleHeight_mm",
                                                                                    "SampleDiameter_mm"])
