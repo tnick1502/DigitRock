@@ -1624,9 +1624,19 @@ def curve(qf, e50, **kwargs):
         time = [i*3 for i in range(len(x))]
 
     if U:
+        old_U = U
+        if U < 150:
+            k_low_u = 250/U
+            U = U * k_low_u
+
         e50_U = U / x50
-        x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50,  kwargs.get('xc'), 1.2* kwargs.get('xc'), np.random.uniform(0.3, 0.7)*U,
-                                        0, amount_points)
+        x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50, kwargs.get('xc'), 1.2 * kwargs.get('xc'),
+                                           np.random.uniform(0.3, 0.7)*U, 0, amount_points)
+
+        if old_U < 150:
+            y_U = y_U * k_low_u
+            U = U * k_low_u
+
         index_x2, = np.where(x_U >= 0.15)
         x_U = x_U[:index_x2[0]]
         y_U = y_U[:index_x2[0]]
