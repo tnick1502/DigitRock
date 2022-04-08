@@ -3087,6 +3087,160 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8):
     t.drawOn(canvas, 25 * mm, (50-((r-30)*4)) * mm)
 
 
+"""====== K0 ======"""
+
+
+def report_k0(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+
+
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    # Загружаем документ эксель, проверяем изменялось ли имя документа и создаем отчет
+
+
+    canvas = Canvas(Name, pagesize=A4)
+
+    test_parameter.h = 100
+    test_parameter.d = 50
+    test_parameter.Rezhim = Paragraph('''<p>КД, девиаторное нагружение в режиме К<sub rise="0.5" size="5">0</sub> -консолидации</p>''', LeftStyle)
+    test_parameter.Oborudovanie = r'GIESA UP-25a, АСИС ГТ.2.0.5, камера типа "Б"'
+
+    code = SaveCode(version)
+
+    main_frame(canvas, path,  Data_customer, code, "1/1", qr_code=qr_code)
+    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            ["ИСПЫТАНИЯ ГРУНТА МЕТОДОМ ТРЕХОСНОГО СЖАТИЯ (ГОСТ 12248.3-2020)", ""], "/БП")
+
+    parameter_table(canvas, Data_phiz, Lab)
+    test_mode_k0(canvas, Data_phiz.r, test_parameter)
+    result_table_k0(canvas, res, picks)
+
+
+    canvas.showPage()
+
+    canvas.save()
+
+
+def result_table_k0(canvas, Res, pick, scale = 0.55):
+
+    try:
+        a = svg2rlg(pick)
+        a.scale(scale, scale)
+        renderPDF.draw(a, canvas, 85 * mm, 115 * mm)
+    except AttributeError:
+        a = ImageReader(pick)
+        canvas.drawImage(a, 85 * mm, 115 * mm,
+                         width=160 * mm, height=54 * mm)
+
+
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", "", "", "", ""]]
+    r = 21
+    table_move = 3
+
+    for i in range(table_move):
+        tableData.append([""])
+
+    tableData.append(["№", Paragraph('''<p>σ<sub rise="0.5" size="5">1</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ<sub rise="0.5" size="5">3</sub></p>''', CentralStyle),
+                      "", "", "", "", "", ""])
+
+    tableData.append([zap(Res["sigma_1"][0], 3), zap(Res["sigma_3"][0], 3), "", "", "", "", "", "", ""])
+    tableData.append([zap(Res["sigma_1"][1], 3), zap(Res["sigma_3"][1], 3), "", "", "", "", "", "", ""])
+    tableData.append([zap(Res["sigma_1"][2], 3), zap(Res["sigma_3"][2], 3), "", "", "", "", "", "", ""])
+
+    for i in range(r):
+        tableData.append([""])
+
+    tableData.append(["", "", "", "", "", "", "", ""])
+
+    tableData.append([Paragraph('''<p>Коэффициент бокового давления K<sub rise="0.5" size="5">0</sub><sub rise="2.5" size="5">nc</sub>, МПа:</p>''', LeftStyle),
+                      "", "", "", zap(Res["K0"], 2), "", "", "", ""])
+
+    first_col = 10
+    col_widths = [first_col * mm,
+                  175 / 8 * mm, 175 / 8 * mm, 175 / 8 * mm, 175 / 8 * mm, 175 / 8 * mm, 175 / 8 * mm, 175 / 8 * mm,
+                  (175 / 8 - first_col) * mm]
+
+    t = Table(tableData, colWidths=col_widths, rowHeights=4 * mm)
+
+    t.setStyle([('SPAN', (0, 0), (-1, 0)),
+
+                ('SPAN', (0, 1), (-1, table_move)),
+
+                ('SPAN', (0, table_move), (2, table_move)),
+                ('SPAN', (3, 1), (-1, -3)),
+
+                ('SPAN', (0, 6+table_move), (-1, r+table_move+5)),
+
+                ('SPAN', (0, -1), (3, -1)),
+                ('SPAN', (-4, -1), (-1, -1)),
+                #('SPAN', (2, -1), (3, -1)),
+                #('SPAN', (4, -1), (5, -1)),
+                ('SPAN', (0, -2), (3, -2)),
+                ('SPAN', (-4, -2), (-1, -2)),
+                #('SPAN', (2, -2), (3, -2)),
+                #('SPAN', (4, -2), (5, -2)),
+                #('SPAN', (2, -3), (3, -3)),
+              #  ('SPAN', (4, -3), (5, -3)),
+
+                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+
+                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                ("ALIGN", (0, r+1), (0, -1), "LEFT"),
+                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
+
+
+def test_mode_k0(canvas, ro, Data):
+
+    t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
+               ["Режим испытания:", "", Data.Rezhim, "", "", "", "", "", ""],
+               [Paragraph('''<p>Давление консолидации K<sup rise="0.5" size="5">3c</sup>, МПа:</p>''', LeftStyle), "", "-"],
+               ["Оборудование:", "", Data.Oborudovanie],
+               ["Параметры образца:", "", "Высота, мм:", zap(Data.h, 2), "Диаметр, мм:", zap(Data.d, 2), Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(ro, 2)]], colWidths=19.444444* mm, rowHeights=4 * mm)
+
+    t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                ('SPAN', (0, 1), (1, 1)),
+                ('SPAN', (2, 1), (-1, 1)),
+                ('SPAN', (0, 2), (1, 2)),
+                ('SPAN', (2, 2), (-1, 2)),
+                ('SPAN', (0, 3), (1, 3)),
+                ('SPAN', (2, 3), (-1, 3)),
+                ('SPAN', (0, 4), (1, 4)),
+                ('SPAN', (7, 4), (8, 4)),
+                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("BACKGROUND", (0, 1), (1, 1), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, 2), (1, 2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, 3), (1, 3), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, 4), (1, 4), HexColor(0xebebeb)),
+                ("BACKGROUND", (2, 4), (2, 4), HexColor(0xebebeb)),
+                ("BACKGROUND", (4, 4), (4, 4), HexColor(0xebebeb)),
+                ("BACKGROUND", (6, 4), (6, 4), HexColor(0xebebeb)),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, 185 * mm)
+
+
+
 def StampReport(M, R, p1, p2, Nop, path, version = 1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
 
 

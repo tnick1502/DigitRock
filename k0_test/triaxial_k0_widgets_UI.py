@@ -47,8 +47,8 @@ class K0UI(QWidget):
         self.canvas = FigureCanvas(self.figure)
 
         self.ax_K0 = self.figure.add_subplot(1, 1, 1)
-        self.ax_K0.set_xlabel("Горизонтальное напряжение __, МПа")
-        self.ax_K0.set_ylabel("Вертикальное напряжение __, МПа")
+        self.ax_K0.set_xlabel("Горизонтальное напряжение σ_3, МПа")
+        self.ax_K0.set_ylabel("Вертикальное напряжение σ_1, МПа")
 
         self.ax_K0.set_ylim([-0.001, 2.2])
         self.ax_K0.set_xlim([-0.001, 2])
@@ -68,8 +68,8 @@ class K0UI(QWidget):
         """Построение графиков опыта"""
         try:
             self.ax_K0.clear()
-            self.ax_K0.set_xlabel("Горизонтальное напряжение __, МПа")
-            self.ax_K0.set_ylabel("Вертикальное напряжение __, МПа")
+            self.ax_K0.set_xlabel("Горизонтальное напряжение σ_3, МПа")
+            self.ax_K0.set_ylabel("Вертикальное напряжение σ_1, МПа")
 
             self.ax_K0.set_ylim([-0.001, 2.2])
             self.ax_K0.set_xlim([-0.001, 2])

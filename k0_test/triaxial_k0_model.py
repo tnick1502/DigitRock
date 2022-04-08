@@ -46,7 +46,9 @@ class ModelK0:
 
     def get_test_results(self):
         """Получение результатов обработки опыта"""
-        return self._test_result.get_dict()
+        _results = self.test_data.get_dict()
+        _results["K0"] = self._test_result.K0
+        return _results
 
     def open_path(self, path):
         data = {}
@@ -107,8 +109,8 @@ class ModelK0:
             figure.subplots_adjust(right=0.98, top=0.98, bottom=0.1, wspace=0.2, hspace=0.2, left=0.08)
 
             ax_K0 = figure.add_subplot(1, 1, 1)
-            ax_K0.set_xlabel("Горизонтальное напряжение __, МПа")
-            ax_K0.set_ylabel("Вертикальное напряжение __, МПа")
+            ax_K0.set_xlabel("Горизонтальное напряжение σ_3, МПа")
+            ax_K0.set_ylabel("Вертикальное напряжение σ_1, МПа")
 
             ax_K0.scatter(plot_data["sigma_3"], plot_data["sigma_1"], label="test data", color="tomato")
             ax_K0.plot(plot_data["k0_line_x"], plot_data["k0_line_y"], label="approximate data")
@@ -336,12 +338,10 @@ class ModelK0SoilTest(ModelK0):
         _test_y = np.hstack((sigma_1_spl[:-1], sgima_1_synth))
         #
 
-        plt.figure()
-        plt.plot(_test_x, _test_y)
-        # plt.plot(sgima_3_mesh, sgima_1_mesh)
-        plt.scatter(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
-        # plt.scatter(sigma_3, sigma_1)
-        plt.show()
+        # plt.figure()
+        # plt.plot(_test_x, _test_y)
+        # plt.scatter(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
+        # plt.show()
 
         # 4 - уточнение сетки
         #   Строим сплайн для всей кривой
@@ -370,12 +370,12 @@ class ModelK0SoilTest(ModelK0):
 
         #
         #   Пока осталвляем это для дебага
-        plt.figure()
-        plt.plot(_test_x, _test_y)
-        plt.plot(sgima_3_mesh, sgima_1_mesh)
-        plt.scatter(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
-        plt.scatter(sigma_3, sigma_1)
-        plt.show()
+        # plt.figure()
+        # plt.plot(_test_x, _test_y)
+        # plt.plot(sgima_3_mesh, sgima_1_mesh)
+        # plt.scatter(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
+        # plt.scatter(sigma_3, sigma_1)
+        # plt.show()
         #
 
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
@@ -384,6 +384,9 @@ class ModelK0SoilTest(ModelK0):
         # геометрические условие:
         if self._test_params.sigma_1_max - self._test_params.sigma_1_step < self._test_params.sigma_p:
             self._test_params.sigma_1_max = self._test_params.sigma_p + self._test_params.sigma_1_step
+
+    def save_log_file(self, director):
+        pass
 
     @staticmethod
     def lse_faker(sigma_1_line: np.array, sigma_3_line: np.array,

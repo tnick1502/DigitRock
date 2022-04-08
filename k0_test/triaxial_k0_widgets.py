@@ -20,11 +20,11 @@ from excel_statment.functions import set_cell_data
 from general.report_general_statment import save_report
 from general.general_statement import StatementGenerator
 from general.save_widget import Save_Dir
-from general.reports import report_rc
+from general.reports import report_k0
 # local
 from k0_test.triaxial_k0_widgets_UI import K0UI, K0OpenTestUI, \
     K0SoilTestUI, K0IdentificationUI
-from k0_test.triaxial_k0_model import ModelK0, ModelK0SoilTest
+from k0_test.triaxial_k0_model import ModelK0
 
 
 class K0ProcessingWidget(QWidget):
@@ -176,7 +176,7 @@ class K0ProcessingApp(QWidget):
 
             results = {"G0": test_result["G0"], "gam07": test_result["threshold_shear_strain"]}
 
-            report_rc(file_name, self.tab_1.get_customer_data(),
+            report_k0(file_name, self.tab_1.get_customer_data(),
                       self.tab_1.get_physical_data(),
                       self.tab_1.get_lab_number(),
                       os.getcwd() + "/project_data/", test_parameter, results,
@@ -245,7 +245,6 @@ class K0SoilTestApp(QWidget):
 
         self.tab_2.save_widget.general_statment_button.clicked.connect(self.general_statment)
 
-    @log_this(app_logger, "debug")
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
@@ -259,18 +258,18 @@ class K0SoilTestApp(QWidget):
             else:
                 os.mkdir(save)
 
-            file_name = save + "/" + "Отчет " + file_path_name + "-РК" + ".pdf"
+            file_name = save + "/" + "Отчет " + file_path_name + "-БП" + ".pdf"
 
             test_result = K0_models[statment.current_test].get_test_results()
 
-            results = {"K0": test_result["K0"]}
+            results = {"K0": test_result["K0"], "sigma_1": test_result["sigma_1"], "sigma_3": test_result["sigma_3"]}
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date
             if date:
                 data_customer.end_date = date
 
-            report_rc(file_name, data_customer,
+            report_k0(file_name, data_customer,
                       statment[statment.current_test].physical_properties,
                       statment.getLaboratoryNumber(),
                       os.getcwd() + "/project_data/", statment[statment.current_test].mechanical_properties, results,
