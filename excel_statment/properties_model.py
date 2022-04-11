@@ -303,8 +303,12 @@ class MechanicalProperties:
                 self.sigma_3 = MechanicalProperties.round_sigma_3(
                     MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
 
-            if self.sigma_3 < 100:
-                self.sigma_3 = 100
+            if test_mode == "Трёхосное сжатие НН":
+                if self.sigma_3 < 25:
+                    self.sigma_3 = 25
+            else:
+                if self.sigma_3 < 100:
+                    self.sigma_3 = 100
 
             if self.fi == 0:
                 self.qf = self.c * 2 * 1000 + np.random.uniform(-0.8, 0.8)
@@ -372,15 +376,8 @@ class MechanicalProperties:
                 self.pressure_array["calculated_by_pressure"] = \
                     MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3)
 
-            if test_mode == "Вибропрочность":
-                self.Kfi = np.random.uniform(0.85, 1.05)
-                self.Kc = np.random.uniform(0.7, 0.9)
-
             if test_mode == "Трёхосное сжатие КН":
                 self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
-            elif test_mode == "Трёхосное сжатие НН":
-                self.u = np.round(np.random.uniform(0.85, 0.95) * self.sigma_3, 1)
-                #self.u = [np.round(i * np.random.uniform(0.85, 0.95), 1) for i in self.pressure_array["current"]]
 
     @staticmethod
     def round_sigma_3(sigma_3, param=5):
