@@ -625,7 +625,7 @@ def test_mode_vibration_creep(canvas, test_parameter):
                 #Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(str(ro).replace(".", ","), 2)],
                [Paragraph('''<p>σ'<sub rise="2.5" size="6">3</sub>, кПа:</p>''', LeftStyle), "", zap(test_parameter["sigma_3"], 0),
                 "", "", "",
-                Paragraph('''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''', LeftStyle), "", zap(test_parameter["t"], 1)]],
+                Paragraph('''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''', LeftStyle), "", zap(test_parameter["t"], 0)]],
               colWidths=19.444444* mm, rowHeights=4 * mm)
 
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
@@ -1916,8 +1916,8 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8):
 
     if len(Res["sigma_3_mohr"]) == 1:
         tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", "", ""])
-        tableData.append(["-", "-", "", "", "", ""])
-        tableData.append(["-", "-", "", "", "", ""])
+        tableData.append(["", "", "", "", "", ""])
+        tableData.append(["", "", "", "", "", ""])
     else:
         tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", "", ""])
         tableData.append([zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), "", "", "", ""])
@@ -1936,33 +1936,65 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8):
          #zap(Res["m"], 2), ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
-    t.setStyle([('SPAN', (0, 0), (-1, 0)),
 
-                ('SPAN', (0, 1), (-1, table_move)),
+    if len(Res["sigma_3_mohr"]) == 1:
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
 
-                #('SPAN', (0, table_move + 1), (2, table_move + 1)),
+                    ('SPAN', (0, 1), (-1, table_move)),
 
-                ('SPAN', (2, 1), (-1, -4)),
+                    ('SPAN', (0, table_move+4), (-1, table_move+6)),
 
-                ('SPAN', (0, 6 + table_move), (-1, r + table_move + 5)),
+                    # ('SPAN', (0, table_move + 1), (2, table_move + 1)),
 
-                ('SPAN', (0, table_move+1), (0, table_move+2)),
-                ('SPAN', (1, table_move+1), (1, table_move + 2)),
+                    ('SPAN', (2, 1), (-1, -4)),
 
-                ('SPAN', (0, -1), (3, -1)),
-                ('SPAN', (-2, -1), (-1, -1)),
+                    ('SPAN', (0, 6 + table_move), (-1, r + table_move + 5)),
 
-                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                    ('SPAN', (0, table_move + 1), (0, table_move + 2)),
+                    ('SPAN', (1, table_move + 1), (1, table_move + 2)),
 
-                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (0, 0), (-1, r), "CENTER"),
-                ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
-                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+                    ('SPAN', (0, -1), (3, -1)),
+                    ('SPAN', (-2, -1), (-1, -1)),
+
+                    ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                    ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+    else:
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
+
+                    ('SPAN', (0, 1), (-1, table_move)),
+
+                    #('SPAN', (0, table_move + 1), (2, table_move + 1)),
+
+                    ('SPAN', (2, 1), (-1, -4)),
+
+                    ('SPAN', (0, 6 + table_move), (-1, r + table_move + 5)),
+
+                    ('SPAN', (0, table_move+1), (0, table_move+2)),
+                    ('SPAN', (1, table_move+1), (1, table_move + 2)),
+
+                    ('SPAN', (0, -1), (3, -1)),
+                    ('SPAN', (-2, -1), (-1, -1)),
+
+                    ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                    ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, ((40-((r - 30)*4)) - table_move*6) * mm)
@@ -2736,7 +2768,7 @@ def report_FC_NN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
 
     parameter_table(canvas, Data_phiz, Lab)
     if len(res["sigma_3_mohr"]) == 1:
-        test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3)
+        test_parameter["sigma_3"] = res["sigma_3_mohr"][0]*1000
     else:
         test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
