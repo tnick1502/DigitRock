@@ -47,11 +47,11 @@ class K0UI(QWidget):
         self.canvas = FigureCanvas(self.figure)
 
         self.ax_K0 = self.figure.add_subplot(1, 1, 1)
-        self.ax_K0.set_xlabel("Горизонтальное напряжение σ_3, МПа")
-        self.ax_K0.set_ylabel("Вертикальное напряжение σ_1, МПа")
+        self.ax_K0.set_xlabel("Горизонтальное напряжение $σ_{3}$, МПа")
+        self.ax_K0.set_ylabel("Вертикальное напряжение $σ_{1}$, МПа")
 
-        self.ax_K0.set_ylim([-0.001, 2.2])
-        self.ax_K0.set_xlim([-0.001, 2])
+        # self.ax_K0.set_ylim([-0.001, 2.2])
+        # self.ax_K0.set_xlim([-0.001, 2])
 
         self.canvas.draw()
 
@@ -68,11 +68,11 @@ class K0UI(QWidget):
         """Построение графиков опыта"""
         try:
             self.ax_K0.clear()
-            self.ax_K0.set_xlabel("Горизонтальное напряжение σ_3, МПа")
-            self.ax_K0.set_ylabel("Вертикальное напряжение σ_1, МПа")
+            self.ax_K0.set_xlabel("Горизонтальное напряжение $σ_{3}$, МПа")
+            self.ax_K0.set_ylabel("Вертикальное напряжение $σ_{1}$, МПа")
 
-            self.ax_K0.set_ylim([-0.001, 2.2])
-            self.ax_K0.set_xlim([-0.001, 2])
+            # self.ax_K0.set_ylim([-0.001, 2.2])
+            # self.ax_K0.set_xlim([-0.001, 2])
 
             self.ax_K0.scatter(plot_data["sigma_3"], plot_data["sigma_1"], label="test data", color="tomato")
             self.ax_K0.plot(plot_data["k0_line_x"], plot_data["k0_line_y"], label="approximate data")
@@ -86,7 +86,7 @@ class K0UI(QWidget):
         except:
             pass
 
-    def save_canvas(self,):
+    def save_canvas(self):
         """Сохранение графиков для передачи в отчет"""
 
         self.ax_K0.get_legend().remove()
@@ -94,7 +94,7 @@ class K0UI(QWidget):
 
         path = BytesIO()
         size = self.figure.get_size_inches()
-        self.figure.set_size_inches([6, 3])
+        self.figure.set_size_inches([6, 6])
         self.figure.savefig(path, format='svg', transparent=True)
         path.seek(0)
         self.figure.set_size_inches(size)

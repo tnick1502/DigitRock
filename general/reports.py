@@ -3129,10 +3129,10 @@ def result_table_k0(canvas, Res, pick, scale = 0.55):
     try:
         a = svg2rlg(pick)
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 85 * mm, 115 * mm)
+        renderPDF.draw(a, canvas, 90 * mm, 60 * mm)
     except AttributeError:
         a = ImageReader(pick)
-        canvas.drawImage(a, 85 * mm, 115 * mm,
+        canvas.drawImage(a, 90 * mm, 60 * mm,
                          width=160 * mm, height=54 * mm)
 
 
@@ -3147,16 +3147,17 @@ def result_table_k0(canvas, Res, pick, scale = 0.55):
                       Paragraph('''<p>σ<sub rise="0.5" size="5">3</sub></p>''', CentralStyle),
                       "", "", "", "", "", ""])
 
-    tableData.append([zap(Res["sigma_1"][0], 3), zap(Res["sigma_3"][0], 3), "", "", "", "", "", "", ""])
-    tableData.append([zap(Res["sigma_1"][1], 3), zap(Res["sigma_3"][1], 3), "", "", "", "", "", "", ""])
-    tableData.append([zap(Res["sigma_1"][2], 3), zap(Res["sigma_3"][2], 3), "", "", "", "", "", "", ""])
+    len_rez = len(Res["sigma_1"])
+    max_lines = 16
+    for i in range(max_lines):
+        tableData.append([str(i+1),
+                          zap(Res["sigma_1"][i], 3) if i < len_rez else "-",
+                          zap(Res["sigma_3"][i], 3) if i < len_rez else "-", "", "", "", "", "", ""])
 
-    for i in range(r):
+    for i in range(r-(max_lines-4)):
         tableData.append([""])
 
-    tableData.append(["", "", "", "", "", "", "", ""])
-
-    tableData.append([Paragraph('''<p>Коэффициент бокового давления K<sub rise="0.5" size="5">0</sub><sub rise="2.5" size="5">nc</sub>, МПа:</p>''', LeftStyle),
+    tableData.append([Paragraph('''<p>Коэффициент бокового давления K<sub rise="0.5" size="5">0</sub><sup rise="2.5" size="5">nc</sup>, МПа:</p>''', LeftStyle),
                       "", "", "", zap(Res["K0"], 2), "", "", "", ""])
 
     first_col = 10
@@ -3173,7 +3174,7 @@ def result_table_k0(canvas, Res, pick, scale = 0.55):
                 ('SPAN', (0, table_move), (2, table_move)),
                 ('SPAN', (3, 1), (-1, -3)),
 
-                ('SPAN', (0, 6+table_move), (-1, r+table_move+5)),
+                ('SPAN', (0, 18+table_move), (-1, r+table_move+5)),
 
                 ('SPAN', (0, -1), (3, -1)),
                 ('SPAN', (-4, -1), (-1, -1)),
@@ -3207,7 +3208,7 @@ def test_mode_k0(canvas, ro, Data):
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", Data.Rezhim, "", "", "", "", "", ""],
-               [Paragraph('''<p>Давление консолидации K<sup rise="0.5" size="5">3c</sup>, МПа:</p>''', LeftStyle), "", "-"],
+               [Paragraph('''<p>Давление консолидации K'<sub rise="0.5" size="5">3c</sub>, МПа:</p>''', LeftStyle), "", "-"],
                ["Оборудование:", "", Data.Oborudovanie],
                ["Параметры образца:", "", "Высота, мм:", zap(Data.h, 2), "Диаметр, мм:", zap(Data.d, 2), Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(ro, 2)]], colWidths=19.444444* mm, rowHeights=4 * mm)
 
