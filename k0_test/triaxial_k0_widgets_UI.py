@@ -281,7 +281,7 @@ class K0SoilTestUI(K0UI):
 
     def _create_ST_UI(self):
         """Создание данных интерфейса"""
-        self.sliders = TriaxialStaticLoading_Sliders({"K0": "Коэффициент K0",
+        self.sliders = TriaxialStaticLoading_Sliders({
                                                       "OCR": "OCR",
                                                       "depth": "Глубина, м",
                                                       "sigma_1_step": "Шаг нагружения, 0.050 МПа",
@@ -289,7 +289,6 @@ class K0SoilTestUI(K0UI):
                                                       })
         self.sliders.set_sliders_params(
             {
-                "K0": {"value": 0.5, "borders": [0.1, 1]},
                 "OCR": {"value": 1.3, "borders": [1, 3]},
                 "depth": {"value": 1, "borders": [0, 100]},
                 "sigma_1_step": {"value": 3, "borders": [1, 10]},

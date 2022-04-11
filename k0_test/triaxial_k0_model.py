@@ -290,7 +290,6 @@ class ModelK0SoilTest(ModelK0):
         """Считывание параметров отрисовки(для передачи на слайдеры)"""
         from excel_statment.properties_model import K0Properties
 
-        self._test_params.K0 = round(params["K0"], 2)
         self._test_params.OCR = round(params["OCR"], 2)
         self._test_params.depth = round(params["depth"], 2)
 

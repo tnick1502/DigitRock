@@ -3143,8 +3143,8 @@ def result_table_k0(canvas, Res, pick, scale = 0.8):
     for i in range(table_move):
         tableData.append([""])
 
-    tableData.append(["№", Paragraph('''<p>σ<sub rise="0.5" size="5">1</sub></p>''', CentralStyle),
-                      Paragraph('''<p>σ<sub rise="0.5" size="5">3</sub></p>''', CentralStyle),
+    tableData.append(["№", Paragraph('''<p>σ<sub rise="0.5" size="5">1</sub></p>, МПа''', CentralStyle),
+                      Paragraph('''<p>σ<sub rise="0.5" size="5">3</sub></p>, МПа''', CentralStyle),
                       "", "", "", "", "", ""])
 
     len_rez = len(Res["sigma_1"])
