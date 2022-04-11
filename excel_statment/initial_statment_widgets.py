@@ -304,11 +304,12 @@ class RezonantColumnStatment(InitialStatment):
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
                     self.table_physical_properties.set_data()
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
 
                     self.load_models(models_name="rc_models.pickle",
                                      models=RC_models, models_type=ModelRezonantColumnSoilTest)
+
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
 
 class TriaxialStaticStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -581,11 +582,10 @@ class CyclicStatment(InitialStatment):
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
                     self.table_physical_properties.set_data()
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
-
                     self.load_models(models_name="cyclic_models.pickle",
                                      models=Cyclic_models, models_type=ModelTriaxialCyclicLoadingSoilTest)
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
 
 class VibrationCreepStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -661,8 +661,6 @@ class VibrationCreepStatment(InitialStatment):
                         del statment.tests[test]
                 else:
                     self.table_physical_properties.set_data()
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
 
                     app_logger.info(f"Загружена ведомость: {self.path}")
 
@@ -671,6 +669,9 @@ class VibrationCreepStatment(InitialStatment):
 
                     self.load_models(models_name="VC_models.pickle",
                                      models=VC_models, models_type=ModelVibrationCreepSoilTest)
+
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
 
 class ConsolidationStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""

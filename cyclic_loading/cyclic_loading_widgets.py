@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMe
     QDialogButtonBox, QGroupBox, QPushButton, QTableWidget, QComboBox, QHeaderView, QTableWidgetItem, QTabWidget, \
     QTextEdit, QProgressDialog
 from PyQt5 import QtGui
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from excel_statment.initial_tables import TableCastomer
 import numpy as np
 import sys
@@ -124,6 +124,7 @@ class CyclicProcessingWidget(QWidget):
 class CyclicSoilTestWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
     ModelTriaxialCyclicLoadingUI"""
+    signal = pyqtSignal()
     def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__()
@@ -174,6 +175,7 @@ class CyclicSoilTestWidget(TabMixin, QWidget):
         try:
             Cyclic_models[statment.current_test].set_strain_params(param)
             self._plot()
+            self.signal.emit()
         except KeyError:
             pass
 
@@ -182,6 +184,7 @@ class CyclicSoilTestWidget(TabMixin, QWidget):
         try:
             Cyclic_models[statment.current_test].set_PPR_params(param)
             self._plot()
+            self.signal.emit()
         except KeyError:
             pass
 
@@ -192,6 +195,7 @@ class CyclicSoilTestWidget(TabMixin, QWidget):
             strain_params, ppr_params, cycles_count_params = Cyclic_models[statment.current_test].get_draw_params()
             self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params, True)
             self._plot()
+            self.signal.emit()
         except KeyError:
             pass
 
@@ -213,6 +217,7 @@ class CyclicSoilTestWidget(TabMixin, QWidget):
         strain_params, ppr_params, cycles_count_params = Cyclic_models[statment.current_test].get_draw_params()
         self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params, True)
         self._plot()
+        self.signal.emit()
 
     def _plot(self):
         """Построение графиков опыта"""
@@ -577,7 +582,13 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         self.tab_2.popIn.connect(self.addTab)
         self.tab_2.popOut.connect(self.removeTab)
 
-        self.tab_3 = Save_Dir()
+        self.tab_3 = Save_Dir(result_table_params={
+            "Макс. PPR": lambda lab: Cyclic_models[lab].get_test_results()['max_PPR'],
+            "Макс. деформ.": lambda lab: Cyclic_models[lab].get_test_results()['max_strain'],
+            "Цикл разрушения": lambda lab: Cyclic_models[lab].get_test_results()['fail_cycle'],
+            "Заключение": lambda lab: Cyclic_models[lab].get_test_results()['conclusion'],
+        })
+
         self.tab_3.popIn.connect(self.addTab)
         self.tab_3.popOut.connect(self.removeTab)
 
@@ -596,6 +607,8 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.update())
         self.tab_1.signal[bool].connect(self.tab_2.set_params)
         self.tab_1.signal[bool].connect(self.tab_2.identification.set_data)
+        self.tab_2.signal.connect(self.tab_3.result_table.update)
+        #self.tab_1.signal[bool].connect(self.tab_3.result_table.update)
 
         self.tab_1.signal[bool].connect(lambda x: self.physical_line.set_data())
 

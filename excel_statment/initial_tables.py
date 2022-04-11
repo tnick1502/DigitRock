@@ -21,7 +21,6 @@ class Table(QTableWidget):
             self.setHorizontalHeaderLabels(headers)
         if moove: self.horizontalHeader().setSectionsMovable(True)
 
-
     def _clear_table(self):
         """Очистка таблицы и придание соответствующего вида"""
         while (self.rowCount() > 0):

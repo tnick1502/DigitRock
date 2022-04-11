@@ -2,7 +2,7 @@
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMessageBox, QHBoxLayout, QTabWidget, \
     QDialog, QTableWidget, QGroupBox, QPushButton, QComboBox, QDialogButtonBox, QTableWidgetItem, QHeaderView, \
     QTextEdit, QProgressDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 import numpy as np
 import sys
 import shutil
@@ -30,6 +30,7 @@ from general.general_statement import StatementGenerator
 class VibrationCreepSoilTestWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
     ModelTriaxialCyclicLoadingUI"""
+    signal = pyqtSignal()
     def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__()
@@ -74,15 +75,19 @@ class VibrationCreepSoilTestWidget(TabMixin, QWidget):
     def set_test_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
         self._plot()
+        self.signal.emit()
+
 
     def static_model_change(self, param):
         VC_models[statment.current_test]._test_processing()
         self._plot()
+        self.signal.emit()
 
     def _refresh(self):
         try:
             VC_models[statment.current_test].set_test_params()
             self._plot()
+            self.signal.emit()
         except KeyError:
             pass
 
@@ -278,7 +283,12 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
         self.tab_3 = VibrationCreepSoilTestWidget()
         self.tab_3.popIn.connect(self.addTab)
         self.tab_3.popOut.connect(self.removeTab)
-        self.tab_4 = Save_Dir()
+
+        self.tab_4 = Save_Dir(result_table_params={
+            "Kd": lambda lab: "; ".join([str(i["Kd"]) for i in VC_models[lab].get_test_results()]),
+            "E50d": lambda lab: "; ".join([str(i["E50d"]) for i in VC_models[lab].get_test_results()]),
+            "E50": lambda lab: "; ".join([str(i["E50"]) for i in VC_models[lab].get_test_results()]),
+        })
         self.tab_4.popIn.connect(self.addTab)
         self.tab_4.popOut.connect(self.removeTab)
 
@@ -300,6 +310,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
         self.tab_4.save_button.clicked.connect(self.save_report)
         self.tab_4.save_all_button.clicked.connect(self.save_all_reports)
         self.tab_2.signal[bool].connect(self.tab_3.set_test_params)
+        self.tab_3.signal.connect(self.tab_4.result_table.update)
 
         self.button_predict = QPushButton("Прогнозирование")
         self.button_predict.setFixedHeight(50)

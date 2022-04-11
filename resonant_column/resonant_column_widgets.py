@@ -103,7 +103,10 @@ class RezonantColumnSoilTestWidget(TabMixin, QWidget):
         self.line_1.addWidget(self.identification_widget)
         self.layout.addLayout(self.line_1)
         self.layout.addWidget(self.test_widget)
-        self.save_widget = Save_Dir()
+        self.save_widget = Save_Dir(result_table_params={
+            "G0": lambda lab: RC_models[lab].get_test_results()['G0'],
+            "gam_07": lambda lab: RC_models[lab].get_test_results()["threshold_shear_strain"],
+        })
         self.layout.addWidget(self.save_widget)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
@@ -135,6 +138,7 @@ class RezonantColumnSoilTestWidget(TabMixin, QWidget):
         try:
             RC_models[statment.current_test].set_draw_params(params)
             self.set_test_params(True)
+            self.save_widget.result_table.update()
         except KeyError:
             pass
 
@@ -144,6 +148,7 @@ class RezonantColumnSoilTestWidget(TabMixin, QWidget):
             RC_models[statment.current_test].set_test_params()
             self._cut_slider_set_len(len(RC_models[statment.current_test]._test_data.G_array))
             self._plot()
+            self.signal.emit()
         except KeyError:
             pass
 
