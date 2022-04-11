@@ -47,8 +47,8 @@ class K0UI(QWidget):
         self.canvas = FigureCanvas(self.figure)
 
         self.ax_K0 = self.figure.add_subplot(1, 1, 1)
-        self.ax_K0.set_xlabel("Горизонтальное напряжение $σ_{3}$, МПа")
-        self.ax_K0.set_ylabel("Вертикальное напряжение $σ_{1}$, МПа")
+        self.ax_K0.set_xlabel("Горизонтальное напряжение $σ_{3}$, МПа", fontsize=8)
+        self.ax_K0.set_ylabel("Вертикальное напряжение $σ_{1}$, МПа", fontsize=8)
 
         # self.ax_K0.set_ylim([-0.001, 2.2])
         # self.ax_K0.set_xlim([-0.001, 2])
@@ -68,8 +68,8 @@ class K0UI(QWidget):
         """Построение графиков опыта"""
         try:
             self.ax_K0.clear()
-            self.ax_K0.set_xlabel("Горизонтальное напряжение $σ_{3}$, МПа")
-            self.ax_K0.set_ylabel("Вертикальное напряжение $σ_{1}$, МПа")
+            self.ax_K0.set_xlabel("Горизонтальное напряжение $σ_{3}$, МПа", fontsize=8)
+            self.ax_K0.set_ylabel("Вертикальное напряжение $σ_{1}$, МПа", fontsize=8)
 
             # self.ax_K0.set_ylim([-0.001, 2.2])
             # self.ax_K0.set_xlim([-0.001, 2])
@@ -88,13 +88,13 @@ class K0UI(QWidget):
 
     def save_canvas(self):
         """Сохранение графиков для передачи в отчет"""
-
+        plt.rc('axes', labelsize=12)
         self.ax_K0.get_legend().remove()
         self.canvas.draw()
 
         path = BytesIO()
         size = self.figure.get_size_inches()
-        self.figure.set_size_inches([6, 6])
+        self.figure.set_size_inches([4, 4])
         self.figure.savefig(path, format='svg', transparent=True)
         path.seek(0)
         self.figure.set_size_inches(size)

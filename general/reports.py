@@ -3124,7 +3124,7 @@ def report_k0(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     canvas.save()
 
 
-def result_table_k0(canvas, Res, pick, scale = 0.55):
+def result_table_k0(canvas, Res, pick, scale = 0.8):
 
     try:
         a = svg2rlg(pick)
@@ -3176,17 +3176,17 @@ def result_table_k0(canvas, Res, pick, scale = 0.55):
 
                 ('SPAN', (0, 18+table_move), (-1, r+table_move+5)),
 
-                ('SPAN', (0, -1), (3, -1)),
-                ('SPAN', (-4, -1), (-1, -1)),
+                ('SPAN', (0, -1), (3, -1)),  # объединение ячеек для надписи для коэффициента
+                ('SPAN', (-5, -1), (-1, -1)),  # объединение ячеек для коэффициента
                 #('SPAN', (2, -1), (3, -1)),
                 #('SPAN', (4, -1), (5, -1)),
-                ('SPAN', (0, -2), (3, -2)),
-                ('SPAN', (-4, -2), (-1, -2)),
+                # ('SPAN', (0, -2), (3, -2)),
+                # ('SPAN', (-4, -2), (-1, -2)),
                 #('SPAN', (2, -2), (3, -2)),
                 #('SPAN', (4, -2), (5, -2)),
                 #('SPAN', (2, -3), (3, -3)),
               #  ('SPAN', (4, -3), (5, -3)),
-
+              #   ('SPAN', (1, -2), (-1, -2)),
                 ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
                 # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
 
@@ -3194,9 +3194,15 @@ def result_table_k0(canvas, Res, pick, scale = 0.55):
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
                 ("FONTSIZE", (0, 0), (-1, -1), 8),
                 #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+
                 ("ALIGN", (0, 0), (-1, r), "CENTER"),
+
                 ("ALIGN", (0, r+1), (0, -1), "LEFT"),
+
+                ("ALIGN", (-5, -1), (-1, -1), "CENTER"),  # выравнивание ячеек с результатом
+
                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
@@ -3208,15 +3214,15 @@ def test_mode_k0(canvas, ro, Data):
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", Data.Rezhim, "", "", "", "", "", ""],
-               [Paragraph('''<p>Давление консолидации K'<sub rise="0.5" size="5">3c</sub>, МПа:</p>''', LeftStyle), "", "-"],
+               [Paragraph('''<p>Давление консолидации K'<sub rise="0.5" size="5">3c</sub>, МПа:</p>''', LeftStyle), "", "", "-"],
                ["Оборудование:", "", Data.Oborudovanie],
                ["Параметры образца:", "", "Высота, мм:", zap(Data.h, 2), "Диаметр, мм:", zap(Data.d, 2), Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(ro, 2)]], colWidths=19.444444* mm, rowHeights=4 * mm)
 
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (1, 1)),
                 ('SPAN', (2, 1), (-1, 1)),
-                ('SPAN', (0, 2), (1, 2)),
-                ('SPAN', (2, 2), (-1, 2)),
+                ('SPAN', (0, 2), (2, 2)),
+                ('SPAN', (3, 2), (-1, 2)),
                 ('SPAN', (0, 3), (1, 3)),
                 ('SPAN', (2, 3), (-1, 3)),
                 ('SPAN', (0, 4), (1, 4)),
@@ -3225,7 +3231,7 @@ def test_mode_k0(canvas, ro, Data):
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
                 ("FONTSIZE", (0, 0), (-1, -1), 8),
                 ("BACKGROUND", (0, 1), (1, 1), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, 2), (1, 2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, 2), (2, 2), HexColor(0xebebeb)),
                 ("BACKGROUND", (0, 3), (1, 3), HexColor(0xebebeb)),
                 ("BACKGROUND", (0, 4), (1, 4), HexColor(0xebebeb)),
                 ("BACKGROUND", (2, 4), (2, 4), HexColor(0xebebeb)),
