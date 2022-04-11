@@ -1696,8 +1696,8 @@ class ShearProperties(MechanicalProperties):
             if e < e_array[0]:
                 e = e_array[0]
             if e > e_array[-1]:
-                # e = e_array[-1]
-                return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
+                e = e_array[-1]
+                #return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
 
             return np.interp(e, e_array, e50_array)
 
@@ -1846,11 +1846,11 @@ class ShearProperties(MechanicalProperties):
         __E50_for_peat = define_E50_for_peat(Il, Ir, e)
 
         dependence_E50_on_type_ground = {
-            1: define_E50_for_sand(np.array([50, 40, 30*0.5]), e),  # Песок гравелистый
-            2: define_E50_for_sand(np.array([50, 40, 30*0.5]), e),  # Песок крупный
-            3: define_E50_for_sand(np.array([50, 30, 30*0.5]), e),  # Песок средней крупности
-            4: define_E50_for_sand(np.array([48*0.5, 38*0.5, 28*0.5, 18*0.5]), e),  # Песок мелкий
-            5: define_E50_for_sand(np.array([39*0.5, 28*0.5, 18*0.5, 11*0.5]), e),  # Песок пылеватый
+            1: define_E50_for_sand(np.array([30, 14, 8]), e),  # Песок гравелистый
+            2: define_E50_for_sand(np.array([30, 15, 8]), e),  # Песок крупный
+            3: define_E50_for_sand(np.array([30, 15, 8]), e),  # Песок средней крупности
+            4: define_E50_for_sand(np.array([48*0.4, 15, 9, 8]), e),  # Песок мелкий
+            5: define_E50_for_sand(np.array([39*0.4, 15, 9, 8]), e),  # Песок пылеватый
             6: __E50_for_clay*0.2 if __E50_for_clay else __E50_for_clay,  # Супесь
             7: __E50_for_clay*0.4 if __E50_for_clay else __E50_for_clay,  # Суглинок
             8: __E50_for_clay*0.4 if __E50_for_clay else __E50_for_clay,  # Глина

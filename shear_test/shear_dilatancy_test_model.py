@@ -1030,8 +1030,10 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             elif type_ground == 3:  # песок средней групности
                 if sigma3mor <= 0.15 and dens_sand == 3:  # песок средней крупности рыхлый
                     kr_fgs = 0
+                    print(1)
                 elif sigma3mor <= 0.15 and dens_sand == 2:  # песок средней крупности средней плотности
                     kr_fgs = round(np.random.uniform(0, 1))
+                    print(2)
                 else:  # песок средней групности и sigma3>0.15
                     kr_fgs = 1
             elif type_ground == 4:  # мелкий песок
@@ -1085,7 +1087,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             return 0.15
 
         # Если все норм, то находим Xc
-        xc = 1.37*1.5 / (k ** 0.8)
+        xc = 1.37/ (k ** 0.8)
 
         # Проверим значение
         if xc >= 0.15:
@@ -1111,16 +1113,18 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                                                            data_phiz.Ip, data_phiz.Il, data_phiz.Ir, test_mode)
 
         if sigma_3 <= 200:
-            k = 1
+            k = 1.2
         elif sigma_3 >= 200 and sigma_3 < 500:
-            k = 0.002 * sigma_3 + 0.6
+            k = 0.0013 * sigma_3 + 0.94
         else:
             k = 1.6
 
         if xc:
             xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
-            if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
-                xc = xc*k/1.5
+            #if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
+            xc = xc*k #/1.5
+            print(xc)
+
 
 
         else:
