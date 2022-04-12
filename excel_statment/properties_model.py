@@ -1690,7 +1690,7 @@ class ShearProperties(MechanicalProperties):
                 e = e_array[0]
             if e > e_array[-1]:
                 e = e_array[-1]
-                #return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
+                # return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
 
             return np.interp(e, e_array, e50_array)
 
@@ -1713,8 +1713,8 @@ class ShearProperties(MechanicalProperties):
                 if Il < 0:
                     Il = 0
                 if Il > 0.75:
-                    #Il = 0.75
-                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
+                    # Il = 0.75
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
 
                 if type_ground == 6:
                     if 0 <= Il <= 0.75:
@@ -1735,13 +1735,13 @@ class ShearProperties(MechanicalProperties):
                 if Il < -0.25:
                     Il = -0.25
                 if Il > 0.5:
-                    #Il = 0.5
-                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
+                    # Il = 0.5
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
 
                 if type_ground == 8:
                     if -0.25 <= Il <= 0:
                         return np.interp(e, np.array([0.95, 1.05, 1.2]),
-                                         np.array([27, 25, 22]))
+                                         np.array([27, 25, 22]) * 1.2)
                     elif 0 < Il <= 0.25:
                         return np.interp(e, np.array([0.95, 1.05, 1.2, 1.4]),
                                          np.array([24, 22, 19, 15]))
@@ -1753,8 +1753,8 @@ class ShearProperties(MechanicalProperties):
                 if Il < 0:
                     Il = 0
                 if Il > 0.75:
-                    #Il = 0.75
-                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
+                    # Il = 0.75
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
 
                 if type_ground == 6:
                     if 0 <= Il <= 0.75:
@@ -1773,7 +1773,7 @@ class ShearProperties(MechanicalProperties):
                 if type_ground == 8:
                     if 0 <= Il <= 0.25:
                         return np.interp(e, np.array([0.55, 0.65, 0.75, 0.85, 0.95, 1.05]),
-                                         np.array([28, 24, 21, 18, 15, 12]))
+                                         np.array([28, 24, 21, 18, 15, 12]) * 1.2)
                     elif 0.25 < Il <= 0.5:
                         return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05]),
                                          np.array([21, 18, 15, 12, 9]))
@@ -1785,7 +1785,6 @@ class ShearProperties(MechanicalProperties):
 
             if Ir is None:
                 return None
-
 
             if Il is None:
                 Il = np.random.uniform(0.25, 0.5)
@@ -1804,7 +1803,7 @@ class ShearProperties(MechanicalProperties):
                 Il = 0
             if Il > 0.75:
                 # Il = 0.75
-                return (tau_max / 0.15) * np.random.uniform(3.0, 4.0)/1000
+                return (tau_max / 0.15) * np.random.uniform(3.0, 4.0) / 1000
 
             if 0 <= Il <= 0.25:
                 if 0.05 <= Ir <= 0.1:
@@ -1839,19 +1838,19 @@ class ShearProperties(MechanicalProperties):
         __E50_for_peat = define_E50_for_peat(Il, Ir, e)
 
         dependence_E50_on_type_ground = {
-            1: define_E50_for_sand(np.array([30, 15, 8]), e),  # Песок гравелистый
-            2: define_E50_for_sand(np.array([30, 15, 8]), e),  # Песок крупный
-            3: define_E50_for_sand(np.array([30, 15, 8]), e),  # Песок средней крупности
-            4: define_E50_for_sand(np.array([48*0.5, 38*0.5, 28*0.5, 18*0.5]), e),  # Песок мелкий
-            5: define_E50_for_sand(np.array([39*0.5, 28*0.5, 18*0.5, 11*0.5]), e),  # Песок пылеватый
-            6: __E50_for_clay*0.2 if __E50_for_clay else __E50_for_clay,  # Супесь
-            7: __E50_for_clay*0.4 if __E50_for_clay else __E50_for_clay,  # Суглинок
-            8: __E50_for_clay*0.4 if __E50_for_clay else __E50_for_clay,  # Глина
-            9: __E50_for_peat*0.5 if __E50_for_peat else __E50_for_peat  # Торф
+            1: define_E50_for_sand(np.array([30, 20, 15]), e),  # Песок гравелистый
+            2: define_E50_for_sand(np.array([30, 15, 12]), e),  # Песок крупный
+            3: define_E50_for_sand(np.array([30, 15, 10]), e),  # Песок средней крупности
+            4: define_E50_for_sand(np.array([25, 13, 9, 7]), e),  # Песок мелкий
+            5: define_E50_for_sand(np.array([25, 13, 9, 7]), e),  # Песок пылеватый
+            6: __E50_for_clay * 0.2 if __E50_for_clay else __E50_for_clay,  # Супесь
+            7: __E50_for_clay * 0.4 if __E50_for_clay else __E50_for_clay,  # Суглинок
+            8: __E50_for_clay * 0.4 if __E50_for_clay else __E50_for_clay,  # Глина
+            9: __E50_for_peat * 0.5 if __E50_for_peat else __E50_for_peat  # Торф
         }
-        print(dependence_E50_on_type_ground[7])
-        return dependence_E50_on_type_ground[type_ground]
 
+        return dependence_E50_on_type_ground[type_ground]
+    
     @staticmethod
     def define_reference_pressure_array_calculated_by_referense_pressure(sigma: float) -> list:
         """Функция рассчета обжимающих давлений для среза"""
