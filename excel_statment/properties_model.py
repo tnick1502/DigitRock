@@ -169,7 +169,7 @@ class PhysicalProperties:
         """Функция определения типа грунта через грансостав"""
 
         ground_name = name.upper()
-        print(ground_name)
+        # print(ground_name)
 
         if "ТОРФ" in ground_name:
             type_ground = 9
@@ -1748,7 +1748,7 @@ class ShearProperties(MechanicalProperties):
                 if type_ground == 8:
                     if -0.25 <= Il <= 0:
                         return np.interp(e, np.array([0.95, 1.05, 1.2]),
-                                         np.array([27, 25, 22]))
+                                         np.array([27, 25, 22])*1.2)
                     elif 0 < Il <= 0.25:
                         return np.interp(e, np.array([0.95, 1.05, 1.2, 1.4]),
                                          np.array([24, 22, 19, 15]))
@@ -1780,7 +1780,7 @@ class ShearProperties(MechanicalProperties):
                 if type_ground == 8:
                     if 0 <= Il <= 0.25:
                         return np.interp(e, np.array([0.55, 0.65, 0.75, 0.85, 0.95, 1.05]),
-                                         np.array([28, 24, 21, 18, 15, 12]))
+                                         np.array([28, 24, 21, 18, 15, 12])*1.2)
                     elif 0.25 < Il <= 0.5:
                         return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05]),
                                          np.array([21, 18, 15, 12, 9]))
@@ -1846,17 +1846,17 @@ class ShearProperties(MechanicalProperties):
         __E50_for_peat = define_E50_for_peat(Il, Ir, e)
 
         dependence_E50_on_type_ground = {
-            1: define_E50_for_sand(np.array([30, 14, 8]), e),  # Песок гравелистый
-            2: define_E50_for_sand(np.array([30, 15, 8]), e),  # Песок крупный
-            3: define_E50_for_sand(np.array([30, 15, 8]), e),  # Песок средней крупности
-            4: define_E50_for_sand(np.array([48*0.4, 15, 9, 8]), e),  # Песок мелкий
-            5: define_E50_for_sand(np.array([39*0.4, 15, 9, 8]), e),  # Песок пылеватый
+            1: define_E50_for_sand(np.array([30, 20, 15]), e),  # Песок гравелистый
+            2: define_E50_for_sand(np.array([30, 15, 12]), e),  # Песок крупный
+            3: define_E50_for_sand(np.array([30, 15, 10]), e),  # Песок средней крупности
+            4: define_E50_for_sand(np.array([25, 13, 9, 7]), e),  # Песок мелкий
+            5: define_E50_for_sand(np.array([25, 13, 9, 7]), e),  # Песок пылеватый
             6: __E50_for_clay*0.2 if __E50_for_clay else __E50_for_clay,  # Супесь
             7: __E50_for_clay*0.4 if __E50_for_clay else __E50_for_clay,  # Суглинок
             8: __E50_for_clay*0.4 if __E50_for_clay else __E50_for_clay,  # Глина
             9: __E50_for_peat*0.5 if __E50_for_peat else __E50_for_peat  # Торф
         }
-        print(dependence_E50_on_type_ground[7])
+
         return dependence_E50_on_type_ground[type_ground]
 
     @staticmethod
