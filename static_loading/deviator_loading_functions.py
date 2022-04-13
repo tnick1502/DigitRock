@@ -1166,6 +1166,9 @@ def curve(qf, e50, **kwargs):
     else:
         amount_points = max_time/3
         amount_points_for_stock = np.random.uniform(15, 20)/3
+    if Eur:
+        amount_points = amount_points*10
+
 
 
 
