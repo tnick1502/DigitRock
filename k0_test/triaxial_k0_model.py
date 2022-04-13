@@ -20,6 +20,9 @@ class ModelK0:
         - Метод get_plot_data подготавливает данные для построения. Метод plotter позволяет построить графики с помощью
         matplotlib"""
 
+    MIN_LSE_PNTS = 4
+    '''Минимальное число точек, необходимых для расчета'''
+
     def __init__(self):
         """Определяем основную структуру данных"""
         # Структура дынных
@@ -163,11 +166,11 @@ class ModelK0:
         sigma_1 = np.asarray(sigma_1)
         sigma_3 = np.asarray(sigma_3)
 
-        lse_pnts = 4
+        lse_pnts = ModelK0.MIN_LSE_PNTS
 
         if len(sigma_1) <= lse_pnts:
             defined_k0, *__ = ModelK0.lse_linear_estimation(sigma_1, sigma_3)
-            defined_sigma_p = sigma_1[-lse_pnts]
+            defined_sigma_p = sigma_1[0]
             return (defined_k0, defined_sigma_p) if no_round else (round(defined_k0, 2), defined_sigma_p)
 
         # Итеративнй поиск прямолинейного участка с конца:
@@ -179,12 +182,14 @@ class ModelK0:
         current_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
         prev_residuals = residuals
 
-        while lse_pnts < len(sigma_1):
+        while lse_pnts < len(sigma_1) - 1:
             lse_pnts = lse_pnts + 1
             current_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
 
             if residuals > prev_residuals and abs(residuals - prev_residuals)/prev_residuals*100 > 100:
-                lse_pnts = lse_pnts - 1
+                # -1 за счет того, что необходима предыдущая точка
+                #  еще -1 за счет того, что в расчет принимается точка После перегиба
+                lse_pnts = lse_pnts - 2
                 break
             prev_residuals = residuals
 
@@ -380,9 +385,16 @@ class ModelK0SoilTest(ModelK0):
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
 
     def verify_test_params(self):
-        # геометрические условие:
+        # Округления
+        SGMA1MAX_PREC = 2
+
+        self._test_params.sigma_1_max = round(self._test_params.sigma_1_max, SGMA1MAX_PREC)
+        self._test_params.sigma_1_step = round(self._test_params.sigma_1_step, SGMA1MAX_PREC)
+
+        # Геометрические условие:
         if self._test_params.sigma_1_max - self._test_params.sigma_1_step < self._test_params.sigma_p:
-            self._test_params.sigma_1_max = self._test_params.sigma_p + self._test_params.sigma_1_step
+            _min_sigma_1 = self._test_params.sigma_p // self._test_params.sigma_1_step
+            self._test_params.sigma_1_max = (_min_sigma_1 + ModelK0.MIN_LSE_PNTS) * self._test_params.sigma_1_step
 
     def save_log_file(self, director):
         pass

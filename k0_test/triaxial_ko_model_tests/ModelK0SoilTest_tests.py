@@ -114,5 +114,5 @@ def check_test(__test_data, __test_params):
     assert int((__test_params["sigma_1_max"]*1000)/(__test_params["sigma_1_step"]*1000)) + 1 == len(__test_data["sigma_1"])
 
     for sigma_1 in __test_data["sigma_1"]:
-        left = sigma_1 % __test_params["sigma_1_step"]
-        assert left > __test_params["sigma_1_step"]*0.95 or left < __test_params["sigma_1_step"]*0.05
+        left = round(sigma_1 % __test_params["sigma_1_step"], 4)
+        assert (left >= __test_params["sigma_1_step"]*0.95) or (left <= __test_params["sigma_1_step"]*0.05)
