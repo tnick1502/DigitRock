@@ -1850,7 +1850,7 @@ class ShearProperties(MechanicalProperties):
         }
 
         return dependence_E50_on_type_ground[type_ground]
-    
+
     @staticmethod
     def define_reference_pressure_array_calculated_by_referense_pressure(sigma: float) -> list:
         """Функция рассчета обжимающих давлений для среза"""
@@ -1901,6 +1901,63 @@ class ShearProperties(MechanicalProperties):
         elif (type_ground == 6 or type_ground == 7 or
               type_ground == 8 or type_ground == 9) and (Il > 1.0):
             return [25, 75, 125]
+
+class RayleighDampingProperties(MechanicalProperties):
+    """Расширенный класс с дополнительными обработанными свойствами"""
+    t = DataTypeValidation(float, int, np.int32)
+    cycles_count = DataTypeValidation(float, int, np.int32)
+    frequency = DataTypeValidation(float, int, np.int32, list)
+    Mcsr = DataTypeValidation(float, int, np.int32)
+    Msf = DataTypeValidation(float, int, np.int32)
+    n_fail = DataTypeValidation(float, int, np.int32)
+    damping_ratio = DataTypeValidation(float, int, np.int32)
+
+    def __init__(self):
+        self._setNone()
+
+    def _setNone(self):
+        """Поставим изначально везде None"""
+        for key in CyclicProperties.__dict__:
+            if isinstance(getattr(CyclicProperties, key), DataTypeValidation):
+                object.__setattr__(self, key, None)
+
+    def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode) -> None:
+        super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
+        if self.c and self.fi and self.E50:
+
+            physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
+            if physical_properties.depth <= physical_properties.ground_water_depth:
+                self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
+            elif physical_properties.depth > physical_properties.ground_water_depth:
+                self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                        9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+
+            if self.sigma_1 < 10:
+                self.sigma_1 = 10
+
+            self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
+            self.cycles_count = 5
+
+            sigma_d = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])
+            if not sigma_d:
+                self.t = 25
+            else:
+                self.t = np.round(sigma_d / 2, 1)
+
+            frequency = data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]]
+
+            self.frequency = VibrationCreepProperties.val_to_list(frequency)
+
+
+            self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
+                                                       physical_properties.Ip,
+                                                       physical_properties.Il, physical_properties.e)
+
+            self.Ms = np.random.uniform(300, 500)
+
+            self.damping_ratio = None
+            #np.round(CyclicProperties.define_damping_ratio(), 2)
 
 PropertiesDict = {
     "PhysicalProperties": PhysicalProperties,
