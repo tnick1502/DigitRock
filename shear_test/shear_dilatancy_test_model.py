@@ -693,6 +693,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         #                      (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
         dilatancy = self._draw_params.dilatancy
 
+        # print(f"E50 чтоб его: {self._test_params.E50}")
 
         if self._test_params.tau_max >= 150:
 
@@ -1027,24 +1028,24 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                 else:
                     kr_fgs = 1
             elif type_ground == 3:  # песок средней групности
-                if sigma3mor <= 0.15 and dens_sand == 3:  # песок средней крупности рыхлый
+                if sigma3mor <= 0.05 and dens_sand == 3:  # песок средней крупности рыхлый
                     kr_fgs = 0
-                elif sigma3mor <= 0.15 and dens_sand == 2:  # песок средней крупности средней плотности
+                elif sigma3mor <= 0.05 and dens_sand == 2:  # песок средней крупности средней плотности
                     kr_fgs = round(np.random.uniform(0, 1))
                 else:  # песок средней групности и sigma3>0.15
                     kr_fgs = 1
             elif type_ground == 4:  # мелкий песок
-                if sigma3mor < 0.1 and dens_sand == 3:  # мелкий песок рыхлый s3<0.1
+                if sigma3mor < 0.05 and dens_sand == 3:  # мелкий песок рыхлый s3<0.1
                     kr_fgs = 0
-                elif (0.1 <= sigma3mor <= 0.2 and dens_sand == 3) or (sigma3mor <= 0.15 and dens_sand == 2):
+                elif (0.05 <= sigma3mor <= 0.15 and dens_sand == 3) or (sigma3mor <= 0.05 and dens_sand == 2):
                     kr_fgs = round(np.random.uniform(0, 1))  # мелкий песок рыхлый s3<=0.2 и средней плотности s3<=0.15
                 else:  # мелкий песок рыхлый s3>=0.2 и средней плотности s3>=0.15 (плотный закрыт раньше)
                     kr_fgs = 1
             elif type_ground == 5:  # песок пылеватый
-                if sigma3mor < 0.1 and dens_sand == 3:  # песок пылеватый рыхлый s3<0.1
+                if sigma3mor < 0.05 and dens_sand == 3:  # песок пылеватый рыхлый s3<0.1
                     kr_fgs = 0
-                elif (0.1 <= sigma3mor <= 0.2 and dens_sand == 3) or (
-                        sigma3mor <= 0.1 and dens_sand == 2):  # песок пылева-
+                elif (0.05 <= sigma3mor <= 0.15 and dens_sand == 3) or (
+                        sigma3mor <= 0.05 and dens_sand == 2):  # песок пылева-
                     kr_fgs = round(
                         np.random.uniform(0, 1))  # тый рыхлый 0.1<=s3<=0.2 и пылеватый средней плотности s3<=0.1
                 else:  # песок пылеватый рыхлый s3>0.2 и пылеватый средней плотности s3>0.1 (плотный закрыт раньше)
@@ -1084,7 +1085,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             return 0.15
 
         # Если все норм, то находим Xc
-        xc = 1.37 / (k ** 0.8)
+        xc = 1.37/ (k ** 0.8)
 
         # Проверим значение
         if xc >= 0.15:
@@ -1110,16 +1111,19 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                                                            data_phiz.Ip, data_phiz.Il, data_phiz.Ir, test_mode)
 
         if sigma_3 <= 200:
-            k = 1
+            k = 1.2
         elif sigma_3 >= 200 and sigma_3 < 500:
-            k = 0.002 * sigma_3 + 0.6
+            k = 0.0013 * sigma_3 + 0.94
         else:
             k = 1.6
 
         if xc:
             xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
-            if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
-                xc = xc*k
+            #if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
+            xc = xc*k #/1.5
+
+
+
 
         else:
             xc = 0.15
