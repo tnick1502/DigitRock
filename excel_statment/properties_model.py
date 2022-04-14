@@ -303,11 +303,12 @@ class MechanicalProperties:
                 self.sigma_3 = MechanicalProperties.round_sigma_3(
                     MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
 
-            if test_mode == "Трёхосное сжатие НН" and self.sigma_3 < 25:
-                self.sigma_3 = 25
+            if test_mode == "Трёхосное сжатие НН":
+                if self.sigma_3 < 25:
+                    self.sigma_3 = 25
             else:
-                if self.sigma_3 < 50:
-                    self.sigma_3 = 50
+                if self.sigma_3 < 100:
+                    self.sigma_3 = 100
 
             if self.fi == 0:
                 self.qf = self.c * 2 * 1000 + np.random.uniform(-0.8, 0.8)
@@ -375,16 +376,8 @@ class MechanicalProperties:
                 self.pressure_array["calculated_by_pressure"] = \
                     MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3)
 
-            if test_mode == "Вибропрочность":
-                self.Kfi = np.random.uniform(0.85, 1.05)
-                self.Kc = np.random.uniform(0.7, 0.9)
-
             if test_mode == "Трёхосное сжатие КН":
                 self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
-            elif test_mode == "Трёхосное сжатие НН":
-                self.u = None #np.full(len(self.sigma_3), None)
-                #self.u = np.round(np.random.uniform(0.85, 0.95) * self.sigma_3, 1)
-                #self.u = [np.round(i * np.random.uniform(0.85, 0.95), 1) for i in self.pressure_array["current"]]
 
     @staticmethod
     def round_sigma_3(sigma_3, param=5):
@@ -1697,7 +1690,7 @@ class ShearProperties(MechanicalProperties):
                 e = e_array[0]
             if e > e_array[-1]:
                 e = e_array[-1]
-                #return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
+                # return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
 
             return np.interp(e, e_array, e50_array)
 
@@ -1720,8 +1713,8 @@ class ShearProperties(MechanicalProperties):
                 if Il < 0:
                     Il = 0
                 if Il > 0.75:
-                    #Il = 0.75
-                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
+                    # Il = 0.75
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
 
                 if type_ground == 6:
                     if 0 <= Il <= 0.75:
@@ -1742,8 +1735,8 @@ class ShearProperties(MechanicalProperties):
                 if Il < -0.25:
                     Il = -0.25
                 if Il > 0.5:
-                    #Il = 0.5
-                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
+                    # Il = 0.5
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
 
                 if type_ground == 8:
                     if -0.25 <= Il <= 0:
@@ -1760,8 +1753,8 @@ class ShearProperties(MechanicalProperties):
                 if Il < 0:
                     Il = 0
                 if Il > 0.75:
-                    #Il = 0.75
-                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0)/1000
+                    # Il = 0.75
+                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
 
                 if type_ground == 6:
                     if 0 <= Il <= 0.75:
@@ -1793,7 +1786,6 @@ class ShearProperties(MechanicalProperties):
             if Ir is None:
                 return None
 
-
             if Il is None:
                 Il = np.random.uniform(0.25, 0.5)
 
@@ -1811,7 +1803,7 @@ class ShearProperties(MechanicalProperties):
                 Il = 0
             if Il > 0.75:
                 # Il = 0.75
-                return (tau_max / 0.15) * np.random.uniform(3.0, 4.0)/1000
+                return (tau_max / 0.15) * np.random.uniform(3.0, 4.0) / 1000
 
             if 0 <= Il <= 0.25:
                 if 0.05 <= Ir <= 0.1:
@@ -1909,6 +1901,63 @@ class ShearProperties(MechanicalProperties):
         elif (type_ground == 6 or type_ground == 7 or
               type_ground == 8 or type_ground == 9) and (Il > 1.0):
             return [25, 75, 125]
+
+class RayleighDampingProperties(MechanicalProperties):
+    """Расширенный класс с дополнительными обработанными свойствами"""
+    t = DataTypeValidation(float, int, np.int32)
+    cycles_count = DataTypeValidation(float, int, np.int32)
+    frequency = DataTypeValidation(float, int, np.int32, list)
+    Mcsr = DataTypeValidation(float, int, np.int32)
+    Msf = DataTypeValidation(float, int, np.int32)
+    n_fail = DataTypeValidation(float, int, np.int32)
+    damping_ratio = DataTypeValidation(float, int, np.int32)
+
+    def __init__(self):
+        self._setNone()
+
+    def _setNone(self):
+        """Поставим изначально везде None"""
+        for key in CyclicProperties.__dict__:
+            if isinstance(getattr(CyclicProperties, key), DataTypeValidation):
+                object.__setattr__(self, key, None)
+
+    def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode) -> None:
+        super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
+        if self.c and self.fi and self.E50:
+
+            physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
+            if physical_properties.depth <= physical_properties.ground_water_depth:
+                self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
+            elif physical_properties.depth > physical_properties.ground_water_depth:
+                self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                        9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+
+            if self.sigma_1 < 10:
+                self.sigma_1 = 10
+
+            self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
+            self.cycles_count = 5
+
+            sigma_d = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])
+            if not sigma_d:
+                self.t = 25
+            else:
+                self.t = np.round(sigma_d / 2, 1)
+
+            frequency = data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]]
+
+            self.frequency = VibrationCreepProperties.val_to_list(frequency)
+
+
+            self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
+                                                       physical_properties.Ip,
+                                                       physical_properties.Il, physical_properties.e)
+
+            self.Ms = np.random.uniform(300, 500)
+
+            self.damping_ratio = None
+            #np.round(CyclicProperties.define_damping_ratio(), 2)
 
 PropertiesDict = {
     "PhysicalProperties": PhysicalProperties,

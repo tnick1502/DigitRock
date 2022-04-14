@@ -27,7 +27,7 @@ from general.tab_view import TabMixin, AppMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
 
-class VibrationCreepSoilTestWidget(TabMixin, QWidget):
+class RayleighDampingWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
     ModelTriaxialCyclicLoadingUI"""
     signal = pyqtSignal()
@@ -50,16 +50,7 @@ class VibrationCreepSoilTestWidget(TabMixin, QWidget):
             "fi": "Угол внутреннего трения, град",
             "qf": "Максимальный девиатор qf, кПа",
             "sigma_3": "Обжимающее давление 𝜎3, кПа",
-            "t": "Касательное напряжение τ, кПа",
-            "Kd": "Kd, д.е.",
             "frequency": "Частота, Гц",
-            "K0": "K0, д.е.",
-            "poisons_ratio": "Коэффициент Пуассона, д.е.",
-            "Cv": "Коэффициент консолидации Cv",
-            "Ca": "Коэффициент вторичной консолидации Ca",
-            "dilatancy_angle": "Угол дилатансии, град",
-            "OCR": "OCR",
-            "m": "Показатель степени жесткости"
         }
         self.identification = TableVertical(fill_keys, size={"size": 100, "size_fixed_index": [1]})
         self.identification.setFixedWidth(350)
@@ -101,169 +92,6 @@ class VibrationCreepSoilTestWidget(TabMixin, QWidget):
         #res = self._model._static_test_data.get_test_results()
         #self.static_widget.plot(plots, res)
 
-class PredictVCTestResults(QDialog):
-    """Класс отрисовывает таблицу физических свойств"""
-    def __init__(self):
-        super().__init__()
-        self._table_is_full = False
-        self.setWindowTitle("Прогнозирование Kd")
-        self.create_IU()
-
-        self.resize(1400, 800)
-
-        self.save_button.clicked.connect(self._save_pdf)
-        self.combo_box.activated.connect(lambda s: self._sort_combo_changed(statment))
-
-        self._fill_table()
-
-    def create_IU(self):
-        self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(10)
-
-        self.table_castomer = TableCastomer()
-        self.table_castomer.set_data()
-        self.layout.addWidget(self.table_castomer)
-
-        self.l = QHBoxLayout()
-        self.button_box = QGroupBox("Инструменты")
-        self.button_box_layout = QHBoxLayout()
-        self.button_box.setLayout(self.button_box_layout)
-        self.save_button = QPushButton("Сохранить данные PDF")
-        self.save_button.setFixedHeight(30)
-        self.combo_box = QComboBox()
-        self.combo_box.setFixedHeight(30)
-        self.combo_box.addItems(["Сортировка", "sigma_3", "depth"])
-        self.button_box_layout.addWidget(self.combo_box)
-        self.button_box_layout.addWidget(self.save_button)
-
-        self.l.addStretch(-1)
-        self.l.addWidget(self.button_box)
-        self.layout.addLayout(self.l)
-
-        self.table = QTableWidget()
-        self._clear_table()
-        self.layout.addWidget(self.table)
-
-        self.buttonBox = QDialogButtonBox()
-        self.buttonBox.setOrientation(Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
-        self.buttonBox.setObjectName("buttonBox")
-        self.layout.addWidget(self.buttonBox)
-
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-
-        self.layout.setContentsMargins(5, 5, 5, 5)
-
-    def _clear_table(self):
-        """Очистка таблицы и придание соответствующего вида"""
-        self._table_is_full = False
-
-        while (self.table.rowCount() > 0):
-            self.table.removeRow(0)
-
-        self.table.setColumnCount(10)
-        self.table.setHorizontalHeaderLabels(
-            ["Лаб. ном.", "Глубина", "Наименование грунта", "Консистенция Il", "e", "𝜎3, кПа", "qf, кПа", "t, кПа",
-             "Частота, Гц", "Kd, д.е."])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.verticalHeader().setDefaultSectionSize(25)
-        self.table.horizontalHeader().setMinimumSectionSize(100)
-
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(7, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(8, QHeaderView.Fixed)
-        self.table.horizontalHeader().setSectionResizeMode(9, QHeaderView.Fixed)
-
-    def _fill_table(self):
-        """Заполнение таблицы параметрами"""
-        self.table.setRowCount(len(statment))
-
-        for string_number, lab_number in enumerate(statment):
-            for i, val in enumerate([
-                lab_number,
-                str(statment[lab_number].physical_properties.depth),
-                statment[lab_number].physical_properties.soil_name,
-                str(statment[lab_number].physical_properties.Il) if statment[lab_number].physical_properties.Il else "-",
-                str(statment[lab_number].physical_properties.e) if statment[lab_number].physical_properties.e else "-",
-                str(np.round(statment[lab_number].mechanical_properties.sigma_3)),
-                str(np.round(statment[lab_number].mechanical_properties.qf)),
-                str(np.round(statment[lab_number].mechanical_properties.t)),
-                str(statment[lab_number].mechanical_properties.frequency).strip("[").strip("]"),
-                str(statment[lab_number].mechanical_properties.Kd).strip("[").strip("]")
-            ]):
-
-                self.table.setItem(string_number, i, QTableWidgetItem(val))
-
-        self._table_is_full = True
-
-    def _set_data(self, data):
-        """Функция для получения данных"""
-        self._data = data
-        self._fill_table()
-
-    def _sort_combo_changed(self, statment):
-        """Изменение способа сортировки combo_box"""
-        if self._table_is_full:
-            if self.combo_box.currentText() == "Сортировка":
-                statment.sort("origin")
-                self._clear_table()
-            else:
-                statment.sort(self.combo_box.currentText())
-                self._clear_table()
-
-            self._fill_table()
-
-    def get_data(self):
-        for string_number, lab_number in enumerate(statment):
-            try:
-                statment[lab_number].mechanical_properties.Kd = [float(self.table.item(string_number, 9).text())]
-            except ValueError:
-                statment[lab_number].mechanical_properties.Kd = [float(x) for x in self.table.item(string_number, 9).text().split(",")]
-
-    def _save_pdf(self):
-        save_dir = QFileDialog.getExistingDirectory(self, "Select Directory")
-        if save_dir:
-            statement_title = "Прогнозирование парметров виброползучести"
-            titles, data, scales = PredictVCTestResults.transform_data_for_statment(statment)
-            try:
-                save_report(titles, data, scales, statment.general_data.end_date, ['Заказчик:', 'Объект:'],
-                            [statment.general_data.customer, statment.general_data.object_name], statement_title,
-                            save_dir, "---", "Прогноз Kd.pdf")
-                QMessageBox.about(self, "Сообщение", "Успешно сохранено")
-            except PermissionError:
-                QMessageBox.critical(self, "Ошибка", "Закройте ведомость", QMessageBox.Ok)
-
-    @staticmethod
-    def transform_data_for_statment(data):
-        """Трансформация данных для передачи в ведомость"""
-        data_structure = []
-
-        for string_number, lab_number in enumerate(data):
-                data_structure.append([
-                    lab_number,
-                    str(statment[lab_number].physical_properties.depth),
-                    statment[lab_number].physical_properties.soil_name,
-                    str(statment[lab_number].physical_properties.Il) if statment[lab_number].physical_properties.Il else "-",
-                    str(statment[lab_number].physical_properties.e) if statment[lab_number].physical_properties.e else "-",
-                    str(np.round(statment[lab_number].mechanical_properties.sigma_3)),
-                    str(np.round(statment[lab_number].mechanical_properties.qf)),
-                    str(np.round(statment[lab_number].mechanical_properties.t)),
-                    str(statment[lab_number].mechanical_properties.frequency).strip("[").strip("]"),
-                    str(statment[lab_number].mechanical_properties.Kd).strip("[").strip("]")
-                ])
-
-        titles = ["Лаб. ном.", "Глубина", "Наименование грунта", "Консистенция Il д.е.", "e, д.е.", "𝜎3, кПа",
-                  "qf, кПа", "t, кПа", "Частота, Гц", "Kd, д.е."]
-
-        scale = [60, 60, "*", 60, 60, 60, 60, 60, 60, 60]
-
-        return (titles, data_structure, scale)
 
 class VibrationCreepSoilTestApp(AppMixin, QWidget):
     def __init__(self, parent=None, geometry=None):

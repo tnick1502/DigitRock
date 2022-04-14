@@ -14,7 +14,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.title = "Static Loading Soil Test " + "{:.2f}".format(__version__)
         self.left = 100
         self.top = 30
-        self.width = 1500
+        self.width = 1600
         self.height = 950
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)

@@ -25,6 +25,7 @@ from configs.plot_params import plotter_params
 from general.general_functions import read_json_file, AttrDict
 from singletons import Shear_models, Shear_Dilatancy_models, statment
 from loggers.logger import app_logger, log_this
+from general.tab_view import TabMixin
 from shear_test.shear_dilatancy_widgets_UI import ModelShearDilatancyUI
 
 #plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
@@ -140,10 +141,9 @@ class ShearWidget(QWidget):
         self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.14, "wspace": 0.12, "hspace": 0.07, "left": 0.1}
 
         self.item_identification = ModelShearItemUI()
-        self.item_identification.setFixedHeight(330)
-        self.item_identification.setFixedWidth(450)
+        self.item_identification.setFixedHeight(400)
+        self.item_identification.setFixedWidth(350)
         self.mohr_test_manager = MohrTestManager()
-        self.mohr_test_manager.setFixedHeight(330)
         self._create_UI()
 
         self.mohr_test_manager.add_test_button.clicked.connect(self._add_test)
@@ -153,8 +153,10 @@ class ShearWidget(QWidget):
         # self.layout_wiget.setContentsMargins(5, 5, 5, 5)
 
         self.line_1_layout = QHBoxLayout()
+        self.line_1_1_layout = QVBoxLayout()
         self.line_1_layout.addWidget(self.item_identification)
-        self.line_1_layout.addWidget(self.mohr_test_manager)
+        self.line_1_1_layout.addWidget(self.mohr_test_manager)
+        self.line_1_layout.addLayout(self.line_1_1_layout)
         self.layout_wiget.addLayout(self.line_1_layout)
         self.line_2_layout = QHBoxLayout()
 
@@ -341,7 +343,7 @@ class ShearWidgetSoilTest(ShearWidget):
         self.add_UI()
         self.refresh_test_button = QPushButton("Обновить опыт")
         self.refresh_test_button.clicked.connect(self.refresh)
-        self.layout_wiget.insertWidget(0, self.refresh_test_button)
+        #self.layout_wiget.insertWidget(0, self.refresh_test_button)
         self.mohr_test_manager.add_test_button.hide()
 
     def add_UI(self):

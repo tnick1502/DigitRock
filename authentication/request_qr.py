@@ -1,9 +1,8 @@
 import requests
-HOST = "http://localhost:5000/"
 
 new_show = {
         "laboratory": "mdgt",
-        "password": "it_userг",
+        "password": "it_user",
 
         "test_name": "triaxial",
         "object": "233445",
@@ -18,9 +17,7 @@ new_show = {
     }
 
 def request_qr(data):
-    response = requests.post(f'{HOST}report/', json=data)
-    print(response.content)
-    print(response.ok)
+    response = requests.post('http://georeport.ru/report/', json=data)
     assert response.ok, "Не удалось сгенерировать код"
     with open("qr.png", "wb") as file:
         file.write(response.content)

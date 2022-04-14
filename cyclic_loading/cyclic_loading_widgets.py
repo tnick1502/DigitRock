@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMe
     QDialogButtonBox, QGroupBox, QPushButton, QTableWidget, QComboBox, QHeaderView, QTableWidgetItem, QTabWidget, \
     QTextEdit, QProgressDialog
 from PyQt5 import QtGui
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from excel_statment.initial_tables import TableCastomer
 import numpy as np
 import sys
@@ -16,6 +16,7 @@ import threading
 
 from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI, CyclicLoadingOpenTestUI, CyclicLoadingUISoilTest, CyclicDampingUI
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, ModelTriaxialCyclicLoadingSoilTest
+from excel_statment.initial_tables import LinePhysicalProperties
 from general.save_widget import Save_Dir
 from general.report_general_statment import save_report
 from excel_statment.initial_statment_widgets import CyclicStatment
@@ -29,6 +30,7 @@ from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogCyclic
 from version_control.configs import actual_version
 from general.general_statement import StatementGenerator
+from general.tab_view import AppMixin, TabMixin
 __version__ = actual_version
 
 class CyclicProcessingWidget(QWidget):
@@ -119,9 +121,10 @@ class CyclicProcessingWidget(QWidget):
         else:
             QMessageBox.critical(self, "Ошибка", "Проверьте заполнение параметров", QMessageBox.Ok)
 
-class CyclicSoilTestWidget(QWidget):
+class CyclicSoilTestWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
     ModelTriaxialCyclicLoadingUI"""
+    signal = pyqtSignal()
     def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__()
@@ -129,15 +132,12 @@ class CyclicSoilTestWidget(QWidget):
         self.test_widget.sliders_widget.strain_signal[object].connect(self._sliders_strain)
         self.test_widget.sliders_widget.PPR_signal[object].connect(self._sliders_PPR)
         self.test_widget.sliders_widget.cycles_count_signal[object].connect(self._sliders_cycles_count)
-        self.screen_button.clicked.connect(self._screenshot)
-
-        self.refresh_button = QPushButton("Обновить")
-        self.refresh_button.clicked.connect(self.refresh)
-        self.test_widget.sliders_widget.cycles_count_box_layout.addWidget(self.refresh_button)
+#        self.screen_button.clicked.connect(self._screenshot)
 
     def _create_Ui(self):
-        self.layout = QVBoxLayout(self)
-        self.layout_1 = QHBoxLayout(self)
+        self.layout = QHBoxLayout(self)
+        self.layout_1 = QVBoxLayout()
+
         self.test_widget = CyclicLoadingUISoilTest()
         fill_keys = {
             "laboratory_number": "Лаб. ном.",
@@ -166,21 +166,8 @@ class CyclicSoilTestWidget(QWidget):
         self.layout_1.addWidget(self.test_widget)
         self.layout_2.addWidget(self.identification)
         self.layout_2.addWidget(self.damping)
-        self.layout_1.addLayout(self.layout_2)
         self.layout.addLayout(self.layout_1)
-
-        self.save_widget = QGroupBox("Сохранение")
-        self.save_widget_layout = QHBoxLayout()
-        self.save_widget.setLayout(self.save_widget_layout)
-        self.save_widget_layout.addStretch(-1)
-
-        self.screen_button = QPushButton("Скрин")
-        self.save_widget_layout.addWidget(self.screen_button)
-        self.save_button = QPushButton("Сохранить отчет")
-        self.save_widget_layout.addWidget(self.save_button)
-
-        self.layout.addWidget(self.save_widget)
-
+        self.layout.addLayout(self.layout_2)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
     @log_this(app_logger, "debug")
@@ -188,6 +175,7 @@ class CyclicSoilTestWidget(QWidget):
         try:
             Cyclic_models[statment.current_test].set_strain_params(param)
             self._plot()
+            self.signal.emit()
         except KeyError:
             pass
 
@@ -196,6 +184,7 @@ class CyclicSoilTestWidget(QWidget):
         try:
             Cyclic_models[statment.current_test].set_PPR_params(param)
             self._plot()
+            self.signal.emit()
         except KeyError:
             pass
 
@@ -206,6 +195,7 @@ class CyclicSoilTestWidget(QWidget):
             strain_params, ppr_params, cycles_count_params = Cyclic_models[statment.current_test].get_draw_params()
             self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params, True)
             self._plot()
+            self.signal.emit()
         except KeyError:
             pass
 
@@ -227,6 +217,7 @@ class CyclicSoilTestWidget(QWidget):
         strain_params, ppr_params, cycles_count_params = Cyclic_models[statment.current_test].get_draw_params()
         self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params, True)
         self._plot()
+        self.signal.emit()
 
     def _plot(self):
         """Построение графиков опыта"""
@@ -572,7 +563,7 @@ class CyclicProcessingApp(QWidget):
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
 
-class CyclicSoilTestApp(QWidget):
+class CyclicSoilTestApp(AppMixin, QWidget):
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
         super().__init__(parent=parent)
@@ -586,8 +577,20 @@ class CyclicSoilTestApp(QWidget):
 
         self.tab_widget = QTabWidget()
         self.tab_1 = CyclicStatment()
+
         self.tab_2 = CyclicSoilTestWidget()
-        self.tab_3 = Save_Dir()
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
+
+        self.tab_3 = Save_Dir(result_table_params={
+            "Макс. PPR": lambda lab: Cyclic_models[lab].get_test_results()['max_PPR'],
+            "Макс. деформ.": lambda lab: Cyclic_models[lab].get_test_results()['max_strain'],
+            "Цикл разрушения": lambda lab: Cyclic_models[lab].get_test_results()['fail_cycle'],
+            "Заключение": lambda lab: Cyclic_models[lab].get_test_results()['conclusion'],
+        })
+
+        self.tab_3.popIn.connect(self.addTab)
+        self.tab_3.popOut.connect(self.removeTab)
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Обработка")
@@ -600,12 +603,17 @@ class CyclicSoilTestApp(QWidget):
 
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
+        self.physical_line = LinePhysicalProperties()
         self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.update())
         self.tab_1.signal[bool].connect(self.tab_2.set_params)
         self.tab_1.signal[bool].connect(self.tab_2.identification.set_data)
+        self.tab_2.signal.connect(self.tab_3.result_table.update)
+        #self.tab_1.signal[bool].connect(self.tab_3.result_table.update)
+
+        self.tab_1.signal[bool].connect(lambda x: self.physical_line.set_data())
 
         self.tab_3.save_button.clicked.connect(self.save_report)
-        self.tab_2.save_button.clicked.connect(self.save_report)
+        #self.tab_2.save_button.clicked.connect(self.save_report)
         self.tab_3.save_all_button.clicked.connect(self.save_all_reports)
 
         self.tab_3.jornal_button.clicked.connect(self.jornal)
@@ -616,9 +624,13 @@ class CyclicSoilTestApp(QWidget):
         self.button_predict_liquefaction = QPushButton("Прогнозирование разжижаемости")
         self.button_predict_liquefaction.setFixedHeight(50)
         self.button_predict_liquefaction.clicked.connect(self._predict)
-        self.tab_1.splitter_table_vertical.addWidget(self.button_predict_liquefaction)
+        self.tab_1.layuot_for_button.addWidget(self.button_predict_liquefaction)
 
         self.tab_3.general_statment_button.clicked.connect(self.general_statment)
+
+        self.tab_2.layout_1.insertWidget(0, self.physical_line)
+        self.physical_line.refresh_button.clicked.connect(self.tab_2.refresh)
+        self.physical_line.save_button.clicked.connect(self.save_report_and_continue)
 
     def keyPressEvent(self, event):
         if statment.current_test:
@@ -656,7 +668,7 @@ class CyclicSoilTestApp(QWidget):
 
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
-            file_path_name = statment.current_test.replace("/", "-").replace("*", "")
+            file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
 
             save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
@@ -787,6 +799,7 @@ class CyclicSoilTestApp(QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_all_reports(self):
+        statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
         progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
@@ -836,6 +849,23 @@ class CyclicSoilTestApp(QWidget):
 
         _statment = StatementGenerator(self, path=s, statement_structure_key=key)
         _statment.show()
+
+    def save_report_and_continue(self):
+        try:
+            self.save_report()
+        except:
+            pass
+        keys = [key for key in statment]
+        for i, val in enumerate(keys):
+            if (val == statment.current_test) and (i < len(keys) - 1):
+                statment.current_test = keys[i+1]
+                self.physical_line.set_data()
+                self.tab_2.set_params(True)
+                self.tab_2.identification.set_data()
+                break
+            else:
+                pass
+
 
 
 

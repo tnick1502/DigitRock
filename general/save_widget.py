@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QGroupBox, \
-    QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton
+from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QGroupBox, QHeaderView, QTableWidgetItem, \
+    QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton, QTableWidget
 import sys
 import os
 from pdf_watermark.widget import PDFWatermark
@@ -8,17 +8,20 @@ from general.general_functions import create_path
 from singletons import statment
 from general.general_statement import StatementGenerator
 from loggers.logger import app_logger
+from general.tab_view import TabMixin
 
-class Save_Dir(QWidget):
+class Save_Dir(TabMixin, QWidget):
     """Класс создает интерфейс для сохранения отчетов.
     Сигнал с директорией файла ведомости передается из класса открытия,
      после чего в этой директории создаются соответствующие папки.
      Название папки отчета передается в класс через коструктор mode"""
 
-    def __init__(self, report_type=None):
+    def __init__(self, report_type=None, result_table_params=None):
         super().__init__()
 
         self._report_types = report_type
+
+        self._result_table_params = result_table_params
 
         self.create_UI()
 
@@ -95,7 +98,14 @@ class Save_Dir(QWidget):
         self.model_box_layout.addWidget(self.tree)
         self.model_box.setLayout(self.model_box_layout)
 
-        self.savebox_layout.addWidget(self.model_box)
+        self.layout_end = QHBoxLayout()
+        self.layout_end.addWidget(self.model_box)
+
+        if self._result_table_params is not None:
+            self.result_table = ResultsTable(self._result_table_params)
+            self.layout_end.addWidget(self.result_table)
+
+        self.savebox_layout.addLayout(self.layout_end)
 
         self.setLayout(self.savebox_layout)
         self.savebox_layout.setContentsMargins(5, 5, 5, 5)
@@ -111,6 +121,9 @@ class Save_Dir(QWidget):
     def update(self):
         self.save_directory_text.setText(statment.save_dir.save_directory)
         self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))
+        if self._result_table_params is not None:
+            self.result_table.update()
+
 
     def change_save_directory(self):
         """Самостоятельный выбор папки сохранения"""
@@ -136,7 +149,6 @@ class Save_Dir(QWidget):
             self.wm = PDFWatermark(statment.save_dir.save_directory)
         except Exception as err:
             print(str(err))
-
 
 class ReportType(QGroupBox):
 
@@ -169,6 +181,53 @@ class ReportType(QGroupBox):
     @property
     def checked(self):
         return self._checked
+
+class ResultsTable(QGroupBox):
+
+    def __init__(self, params: dict):
+        super().__init__()
+        self.setTitle('Таблица результатов')
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+        self.table = QTableWidget()
+        self.layout.addWidget(self.table)
+
+        self.params = params
+
+        self._clear_table()
+
+
+    def _clear_table(self):
+        """Очистка таблицы и придание соответствующего вида"""
+
+        while (self.table.rowCount() > 0):
+            self.table.removeRow(0)
+
+        self.table.setRowCount(len(statment))
+        self.table.setColumnCount(len(self.params) + 1)
+        #self.table.horizontalHeader().resizeSection(1, 200)
+        self.table.verticalHeader().hide()
+
+        self.table.verticalHeader().setMinimumHeight(30)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+        self.table.setHorizontalHeaderLabels(["Лаб. ном.", *self.params.keys()])
+
+    def update(self):
+        """Функция для получения данных"""
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        self._clear_table()
+
+        for i, lab in enumerate(statment):
+            self.table.setItem(i, 0, QTableWidgetItem(
+                replaceNone(str(lab))))
+            for j, key in enumerate(self.params):
+                self.table.setItem(i, j + 1, QTableWidgetItem(replaceNone(str(self.params[key](lab)))))
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
