@@ -11,7 +11,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
 
     def __init__(self):
         super().__init__()
-        self.title = "Vibration Creep Soil Test " + "{:.2f}".format(__version__)
+        self.title = "Rayleigh Dampin Soil Test " + "{:.2f}".format(__version__)
         self.left = 100
         self.top = 30
         self.width = 1500
