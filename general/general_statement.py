@@ -98,6 +98,89 @@ def convert_data(data):
 
     #x.insert(val, pos)
 
+def convert_data2(data):
+    def zap(val, prec, none='-'):
+        """ Возвращает значение `val` в виде строки с `prec` знаков после запятой
+        используя запятую как разделитель дробной части
+        """
+        if isinstance(val, str):
+            return val
+        if val is None:
+            return none
+        fmt = "{:." + str(int(prec)) + "f}"
+        return fmt.format(val).replace(".", ",")
+
+    def val_to_list(val, prec) -> list:
+        if val is None:
+            return None
+        else:
+            try:
+                val = [float(val)]
+            except ValueError:
+                v = val.split(";")
+                val = []
+                for value in v:
+                    try:
+                        a = float(value.replace(",", ".").strip(" "))
+                        a = zap(a, prec)
+                        val.append(a)
+                    except:
+                        pass
+
+            return val
+
+    data_new = []
+
+    for i in range(len(data)):
+        try:
+            line = data[i]
+            try:
+                borehole = float(line[1])
+                if borehole % 1 < 0.001:
+                    line[1] = str(int(borehole))
+                else:
+                    line[1] = str(borehole)
+            except ValueError:
+                pass
+
+            line[2] = line[2].replace(".", ",")# zap(line[2], 1, none='-')
+
+            for i in range(3, len(line)):
+                try:
+                    line[i] = line[i].replace(".", ",")
+                except:
+                    pass
+
+        except IndexError:
+            pass
+
+        try:
+            if len(val_to_list(line[4], 1)) > 0:
+                f = val_to_list(line[4], 1)
+
+                amp = zap(line[5], 1)
+                rel = val_to_list(line[6], 2)
+                alpha = zap(line[7], 3)
+                betta = zap(line[8], 3)
+
+                line = [line[0], line[1], line[2], line[3], f[0], amp, rel[0], alpha, betta]
+                data_new.append(line)
+
+                for j in range(1, len(f)):
+                    line = [line[0], line[1], line[2], line[3], f[j], amp, rel[j], alpha, betta]
+                    data_new.append(line)
+            else:
+                data_new.append(line)
+        except:
+            data_new.append(line)
+
+    return data_new
+
+
+
+    #x.insert(val, pos)
+
+
 
 class StatementGenerator(QDialog):
     """
@@ -268,7 +351,7 @@ class StatementGenerator(QDialog):
                     # self.StatementStructure._additional_parameters = \
                     #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
                     titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
-                    data = convert_data(data)
+                    data = convert_data2(data)
                     for i in range(len(data)):
                         for j in range(len(data[i])):
                             if data[i][j] == 'None':
@@ -282,12 +365,7 @@ class StatementGenerator(QDialog):
                     customer_data = [self.customer[i] + "                  " for i in ["customer", "object_name"]]
 
                     statement_title += f" №{self.customer['object_number']}СВД"
-                    print(titles)
-                    print(scales)
-                    print(data_report)
-                    print(customer_data_info)
-                    print(customer_data)
-                    print(statement_title)
+
                     try:
                         if save_file_pass:
                             save_report(titles, data, scales, data_report, customer_data_info, customer_data,

@@ -1908,17 +1908,17 @@ class RayleighDampingProperties(MechanicalProperties):
     cycles_count = DataTypeValidation(float, int, np.int32)
     frequency = DataTypeValidation(float, int, np.int32, list)
     Mcsr = DataTypeValidation(float, int, np.int32)
-    Msf = DataTypeValidation(float, int, np.int32)
+    Ms = DataTypeValidation(float, int, np.int32)
     n_fail = DataTypeValidation(float, int, np.int32)
-    damping_ratio = DataTypeValidation(float, int, np.int32)
+    damping_ratio = DataTypeValidation(float, int, np.int32, list)
 
     def __init__(self):
         self._setNone()
 
     def _setNone(self):
         """Поставим изначально везде None"""
-        for key in CyclicProperties.__dict__:
-            if isinstance(getattr(CyclicProperties, key), DataTypeValidation):
+        for key in RayleighDampingProperties.__dict__:
+            if isinstance(getattr(RayleighDampingProperties, key), DataTypeValidation):
                 object.__setattr__(self, key, None)
 
     def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode) -> None:
@@ -1954,9 +1954,9 @@ class RayleighDampingProperties(MechanicalProperties):
                                                        physical_properties.Ip,
                                                        physical_properties.Il, physical_properties.e)
 
-            self.Ms = np.random.uniform(300, 500)
+            self.Ms = np.round(np.random.uniform(150, 200), 2)
 
-            self.damping_ratio = None
+            self.damping_ratio = 5
             #np.round(CyclicProperties.define_damping_ratio(), 2)
 
 PropertiesDict = {

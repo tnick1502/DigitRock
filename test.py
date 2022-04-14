@@ -1,3 +1,5 @@
-x = {"a": 3, "b": 5}
+x = [1,2,3]
+y = [1,2,3]
 
-print([3, *x.keys()])
+for x, y in zip(x, y):
+    print(x, y)
