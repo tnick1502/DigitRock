@@ -1583,9 +1583,9 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False):
 
     if Res["damping_ratio"] == "Rayleigh":
         tableData.append([Paragraph('''<p>Коэффициент Релея α, c:</p>''', LeftStyle), "", "",
-                          zap(Res["alpha"], 2), "", ""])
+                          zap(Res["alpha"], 3), "", ""])
         tableData.append([Paragraph('''<p>Коэффициент Релея β, 1/c:</p>''', LeftStyle), "", "",
-                          zap(Res["betta"], 2), "", ""])
+                          zap(Res["betta"], 5), "", ""])
         s = 4
     else:
         tableData.append([Paragraph('''<p>Коэффициент демпфирования, %:</p>''', LeftStyle), "", "",

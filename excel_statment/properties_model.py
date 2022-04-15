@@ -1911,6 +1911,8 @@ class RayleighDampingProperties(MechanicalProperties):
     Ms = DataTypeValidation(float, int, np.int32)
     n_fail = DataTypeValidation(float, int, np.int32)
     damping_ratio = DataTypeValidation(float, int, np.int32, list)
+    alpha = DataTypeValidation(float, int)
+    betta = DataTypeValidation(float, int)
 
     def __init__(self):
         self._setNone()
@@ -1949,15 +1951,23 @@ class RayleighDampingProperties(MechanicalProperties):
 
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
 
-
             self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
                                                        physical_properties.Ip,
                                                        physical_properties.Il, physical_properties.e)
 
             self.Ms = np.round(np.random.uniform(150, 200), 2)
 
-            self.damping_ratio = 5
-            #np.round(CyclicProperties.define_damping_ratio(), 2)
+            self.alpha = np.random.uniform(0.1, 0.2)
+            self.betta = np.random.uniform(0.001, 0.005)
+
+            self.damping_ratio = [np.round(RayleighDampingProperties.define_damping_ratio(self.alpha, self.betta, f) *
+                                             np.random.uniform(0.9, 1.1), 2) for f in self.frequency]
+
+
+    @staticmethod
+    def define_damping_ratio(alpha: float, betta: float, frequency: float):
+        damping_ratio = 0.5 * (alpha / (frequency * 2 * np.pi) + betta * frequency * 2 * np.pi)
+        return damping_ratio * 100
 
 PropertiesDict = {
     "PhysicalProperties": PhysicalProperties,

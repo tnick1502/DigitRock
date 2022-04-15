@@ -65,7 +65,7 @@ class ModelRayleighDamping:
 
             "frequency_rayleigh": np.linspace(0.08, 10.5, 100),
             "damping_rayleigh": ModelRayleighDamping.define_damping_ratio(
-                self._test_results.alpha, self._test_results.betta, np.linspace(0.08, 10.5, 100))/100
+                self._test_results.alpha, self._test_results.betta, np.linspace(0.08, 10.5, 100))
         }
 
     def _test_processing(self):
@@ -82,8 +82,10 @@ class ModelRayleighDamping:
         self._test_results.frequency = np.array(frequency)
         self._test_results.damping_ratio = np.array(damping_ratio)
         self._test_results.alpha, self._test_results.betta = ModelRayleighDamping.define_rayleigh_coefficients(
-            self._test_results.frequency, self._test_results.damping_ratio)
+            self._test_results.frequency*2*np.pi, self._test_results.damping_ratio/100)
 
+        self._test_results.alpha = np.round(self._test_results.alpha, 3)
+        self._test_results.betta = np.round(self._test_results.betta, 5)
 
     @staticmethod
     def define_rayleigh_coefficients(frequency: np.array, damping_ratio: np.array):
@@ -143,7 +145,7 @@ class ModelRayleighDamping:
 
     @staticmethod
     def define_damping_ratio(alpha: float, betta: float, frequency: float):
-        damping_ratio = alpha / (2 * frequency) + betta * frequency / 2
+        damping_ratio = 0.5*(alpha / (frequency * 2 * np.pi) + betta * frequency * 2 * np.pi)
         return damping_ratio * 100
 
 class ModelRayleighDampingSoilTest(ModelRayleighDamping):
@@ -154,8 +156,8 @@ class ModelRayleighDampingSoilTest(ModelRayleighDamping):
 
         frequency_origin = statment[statment.current_test].mechanical_properties.frequency
 
-        alpha = np.random.uniform(0.015, 0.03)
-        betta = np.random.uniform(0.01, 0.02)
+        alpha = statment[statment.current_test].mechanical_properties.alpha
+        betta = statment[statment.current_test].mechanical_properties.betta
 
         damping_ratio_origin = [np.round(ModelRayleighDamping.define_damping_ratio(alpha, betta, f) *
                                 np.random.uniform(0.9, 1.1), 2) for f in frequency_origin]

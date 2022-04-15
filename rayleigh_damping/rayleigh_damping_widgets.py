@@ -11,13 +11,11 @@ import threading
 
 from excel_statment.initial_tables import LinePhysicalProperties
 from excel_statment.initial_statment_widgets import RayleighDampingStatment
+from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
 from general.reports import report_RayleighDamping, zap
 from general.save_widget import Save_Dir
 from rayleigh_damping.rayleigh_damping_widgets_UI import RayleighDampingUI, CyclicDampingUI
 from excel_statment.initial_tables import TableVertical
-from static_loading.triaxial_static_test_widgets import StaticSoilTestWidget
-from general.initial_tables import TableCastomer
-from general.excel_functions import create_json_file, read_json_file
 from excel_statment.functions import set_cell_data
 from general.report_general_statment import save_report
 from singletons import RayleighDamping_models, statment
@@ -36,6 +34,8 @@ class RayleighDampingWidget(TabMixin, QWidget):
         super().__init__()
         self._create_Ui()
 
+        self.sliders.signal[object].connect(self._sliders_moove)
+
     def _create_Ui(self):
         self.main_layout = QVBoxLayout(self)
         fill_keys = {
@@ -48,14 +48,24 @@ class RayleighDampingWidget(TabMixin, QWidget):
             "frequency": "Частота, Гц",
         }
         self.identification = TableVertical(fill_keys)
+        self.sliders = TriaxialStaticLoading_Sliders(
+            {
+                "alpha": "alpha",
+                "betta": "betta",
+                "Ms": "Ms",
+            })
         #self.identification.setFixedWidth(350)
         #self.identification.setFixedHeight(700)
         self.layout_1 = QHBoxLayout()
+        self.layout_1_1 = QVBoxLayout()
         self.rayleigh_widget = RayleighDampingUI()
         self.damping_widget = CyclicDampingUI()
         self.damping_widget.signal[object].connect(self._refresh_one)
 
-        self.layout_1.addWidget(self.identification)
+        self.layout_1_1.addWidget(self.identification)
+        self.layout_1_1.addWidget(self.sliders)
+
+        self.layout_1.addLayout(self.layout_1_1)
         self.layout_1.addWidget(self.rayleigh_widget)
 
         self.main_layout.addLayout(self.layout_1)
@@ -65,6 +75,15 @@ class RayleighDampingWidget(TabMixin, QWidget):
 
     def set_test_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
+        self.sliders.set_sliders_params(
+            {
+                "alpha": {"value": statment[statment.current_test].mechanical_properties.alpha,
+                          "borders": [0.05, 0.3]},
+                "betta": {"value": statment[statment.current_test].mechanical_properties.betta,
+                          "borders": [0.001, 0.005]},
+                "Ms": {"value": statment[statment.current_test].mechanical_properties.Ms,
+                          "borders": [50, 300]}
+            })
         self._plot()
         self.signal.emit()
 
@@ -75,6 +94,13 @@ class RayleighDampingWidget(TabMixin, QWidget):
             self.signal.emit()
         except KeyError:
             pass
+
+    def _sliders_moove(self, param):
+        statment[statment.current_test].mechanical_properties.alpha = param["alpha"]
+        statment[statment.current_test].mechanical_properties.betta = param["betta"]
+        statment[statment.current_test].mechanical_properties.Ms = param["Ms"]
+        self._refresh()
+
 
     def _refresh_one(self, i):
         RayleighDamping_models[statment.current_test].set_one_test_params(i)
