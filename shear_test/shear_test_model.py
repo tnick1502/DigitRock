@@ -416,7 +416,7 @@ class ModelShearSoilTest(ModelShear):
     def set_test_params(self):
         self._test_modeling()
 
-    def save_log_files(self, directory):
+    def save_log_files(self, directory, nonzero_vertical_def=True):
         """Метод генерирует файлы испытания для всех кругов"""
         if len(self._tests) >= 3:
             for test in self._tests:
@@ -426,7 +426,7 @@ class ModelShearSoilTest(ModelShear):
                 if not os.path.isdir(path):
                     os.mkdir(path)
                 file_name = os.path.join(path, "Test.1.log")
-                test.save_log_file(file_name)
+                test.save_log_file(file_name, nonzero_vertical_def=nonzero_vertical_def)
 
     def save_cvi_file(self, file_path, file_name, isNaturalShear: bool = False):
         if isNaturalShear:

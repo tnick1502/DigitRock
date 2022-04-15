@@ -1,7 +1,8 @@
 
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFrame, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, \
     QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout, \
-    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog, QHeaderView
+    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog, QHeaderView, \
+    QCheckBox
 from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject
 from PyQt5.QtGui import QPalette, QBrush
 import matplotlib.pyplot as plt
@@ -441,6 +442,10 @@ class ShearSoilTestApp(AppMixin, QWidget):
         self.tab_4 = Save_Dir()
         self.tab_4.popIn.connect(self.addTab)
         self.tab_4.popOut.connect(self.removeTab)
+
+        self.vertical_def_btn = QCheckBox('Вертикальная деформация')
+        self.vertical_def_btn.setChecked(True)
+        self.tab_4.advanced_box_layout.insertWidget(self.tab_4.advanced_box_layout.count() - 1, self.vertical_def_btn)
         # self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
@@ -557,7 +562,8 @@ class ShearSoilTestApp(AppMixin, QWidget):
                 Shear_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"{ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
 
-                Shear_Dilatancy_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
+                Shear_Dilatancy_models[statment.current_test].save_log_file(save + "/" + "Test.1.log",
+                                                                            nonzero_vertical_def=self.vertical_def_btn.isChecked())
                 Shear_Dilatancy_models[statment.current_test].save_cvi_file(save,
                                                                             statment.save_dir.cvi_directory +
                                                                             "/" + f"{file_path_name} ЦВИ.xls")
@@ -572,7 +578,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
 
             elif not ShearStatment.is_dilatancy_type(_test_mode):
                 name = file_path_name + " " + statment.general_data.object_number + " Сп" + ".pdf"
-                Shear_models[statment.current_test].save_log_files(save)
+                Shear_models[statment.current_test].save_log_files(save, nonzero_vertical_def=self.vertical_def_btn.isChecked())
                 Shear_models[statment.current_test].save_cvi_file(save,
                                                                   statment.save_dir.cvi_directory +
                                                                   "/" + f"{file_path_name} ЦВИ.xls",

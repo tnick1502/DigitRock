@@ -642,12 +642,13 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         self._test_params.velocity = velocity
         self._test_params.delta_h_consolidation = delta_h_consolidation
 
-    def get_dict(self):
+    def get_dict(self, nonzero_vertical_def=True):
         return ModelShearDilatancySoilTest.dictionary_deviator_loading(self._test_data.strain,
                                                                        self._test_data.deviator,
                                                                        self._test_data.pore_volume_strain,
                                                                        self._test_params.sigma,
-                                                                       self._test_params.velocity)
+                                                                       self._test_params.velocity,
+                                                                       nonzero_vertical_def=nonzero_vertical_def)
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -1155,7 +1156,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         return 5.5 - 30 * xc
 
     @staticmethod
-    def dictionary_deviator_loading(strain, tau, vertical_strain, sigma, velocity):
+    def dictionary_deviator_loading(strain, tau, vertical_strain, sigma, velocity, nonzero_vertical_def=True):
         """Формирует словарь девиаторного нагружения"""
 
         time_end = (7.14 / velocity) * 60
@@ -1194,7 +1195,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             "SampleHeight_mm": np.round(np.full(len(time), 35)),
             "SampleDiameter_mm": np.round(np.full(len(time), 71.4),1),
             "VerticalPress_kPa": np.round(vertical_press, 4),
-            "VerticalDeformation_mm": np.round(vertical_deformation,7),
+            "VerticalDeformation_mm": np.round(vertical_deformation,7) if nonzero_vertical_def else np.zeros_like(vertical_deformation),
             "ShearDeformation_mm": np.round(shear_deformation,8),
             "ShearPress_kPa": np.round(shear_press, 6),
             "Stage": stage
@@ -1288,9 +1289,9 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         return np.array([val for i, val in enumerate(x) if i % k == 0])
 
 
-    def save_log_file(self, file_path):
+    def save_log_file(self, file_path, nonzero_vertical_def=True):
         """Метод генерирует логфайл прибора"""
-        deviator_loading_dict = self.get_dict()
+        deviator_loading_dict = self.get_dict(nonzero_vertical_def=nonzero_vertical_def)
 
         main_dict = deviator_loading_dict
 
