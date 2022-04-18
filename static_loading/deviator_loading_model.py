@@ -762,7 +762,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                       "volumetric_strain_xc": None,
                                       "Eur": None})
 
-    def set_test_params(self):
+        self.pre_defined_kr_fgs = None
+
+    def set_test_params(self, pre_defined_kr_fgs=None):
         """Установка основных параметров опыта"""
         self._test_params.qf = statment[statment.current_test].mechanical_properties.qf
 
@@ -778,9 +780,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._test_params.fi = statment[statment.current_test].mechanical_properties.fi
         self._test_params.Eur = statment[statment.current_test].mechanical_properties.Eur
         self._test_params.data_physical = statment[statment.current_test].physical_properties
-        xc, residual_strength = ModelTriaxialDeviatorLoadingSoilTest.define_xc_value_residual_strength(
+        xc, residual_strength, self.pre_defined_kr_fgs = ModelTriaxialDeviatorLoadingSoilTest.define_xc_value_residual_strength(
             statment[statment.current_test].physical_properties, statment[statment.current_test].mechanical_properties.sigma_3,
-            statment[statment.current_test].mechanical_properties.qf, statment[statment.current_test].mechanical_properties.E50)
+            statment[statment.current_test].mechanical_properties.qf, statment[statment.current_test].mechanical_properties.E50,
+            pre_defined_kr_fgs=pre_defined_kr_fgs)
         if isinstance(statment[statment.current_test].mechanical_properties.u, list):
             self._test_params.u = None
         else:
@@ -1297,23 +1300,29 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         return param
 
     @staticmethod
-    def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E):
+    def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E, pre_defined_kr_fgs=None):
 
-        xc = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
-                                                                     data_phiz.Ip, data_phiz.Il)
+        xc = 1
+
+        if not pre_defined_kr_fgs:
+            xc = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
+                                                                         data_phiz.Ip, data_phiz.Il)
+        elif pre_defined_kr_fgs == 1:
+            xc = 1
 
         if xc:
             xc = ModelTriaxialDeviatorLoadingSoilTest.define_xc_qf_E(qf, E)
-
+            pre_defined_kr_fgs = 1
         else:
             xc = 0.15
+            pre_defined_kr_fgs = None
 
         if xc != 0.15:
             residual_strength = ModelTriaxialDeviatorLoadingSoilTest.define_k_q(data_phiz.Il, data_phiz.e, sigma_3)
         else:
             residual_strength = 0.95
 
-        return xc, residual_strength
+        return xc, residual_strength, pre_defined_kr_fgs
 
     @staticmethod
     def define_dilatancy_from_xc_qres(xc, qres):

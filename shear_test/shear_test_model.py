@@ -316,13 +316,16 @@ class ModelShearSoilTest(ModelShear):
         self._test_params = None
         self._reference_pressure_array = None
 
-    def add_test_st(self):
+        self.pre_defined_kr_fgs = None
+
+    def add_test_st(self, pre_defined_kr_fgs=None):
         """Добавление опытов"""
         test = ModelShearDilatancySoilTest()
-        test.set_test_params()
+        test.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
         if self._check_clone(test):
             self._tests.append(test)
             self.sort_tests()
+            self.pre_defined_kr_fgs = test.pre_defined_kr_fgs
 
     def set_reference_pressure_array(self, reference_pressure_array):
         self._reference_pressure_array = reference_pressure_array
@@ -403,7 +406,9 @@ class ModelShearSoilTest(ModelShear):
             statment[statment.current_test].mechanical_properties.E50 = E50_array[i]
             # if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
             #     statment[statment.current_test].mechanical_properties.u = u_array[i]
-            self.add_test_st()
+            self.add_test_st(pre_defined_kr_fgs=self.pre_defined_kr_fgs)
+
+        self.pre_defined_kr_fgs = None
 
         statment[statment.current_test].mechanical_properties.sigma = sigma_origin
         statment[statment.current_test].mechanical_properties.tau_max = tau_origin
@@ -486,6 +491,14 @@ class ModelShearSoilTest(ModelShear):
         else:
             tau_with_noise[fixed_point_index] += noise
 
+        for i in range(len(tau_with_noise)):
+            if i == fixed_point_index:
+                continue
+            if i % 2 == 0:
+                tau_with_noise += noise/4
+            else:
+                tau_with_noise -= noise/4
+
         def func(x):
             """x - массив tau без зафиксированной точки"""
             # возвращаем зафиксированную точку для подачи в метод наименьших квадратов (МНК)
@@ -504,8 +517,26 @@ class ModelShearSoilTest(ModelShear):
         bnds = Bounds(np.zeros_like(initial), np.ones_like(initial) * np.inf)
         '''Граничные условия типа a <= xi <= b'''
 
+        def constrains(x):
+            """
+            Функция ограничений на икс, должна подаваться в cons.
+            Должна представлять собой массивы ограничений вида x1 - x2 < 0
+            """
+
+            # икс для фукнции оптимизации это два круга, поэтому возвращаем в икс убранный круг
+            x = np.insert(x, fixed_point_index, tau_with_noise[fixed_point_index])
+
+            # первое ограничение - каждая последующая сигма не меньше предыдущей
+            first = np.array([x[i + 1] - x[i] for i in range(len(x) - 1)])
+
+            # замыкаем последний на первый на всякий случай
+            second = np.array([x[-1] - x[0]])
+
+            _res = np.hstack((first, second))
+            return _res
+
         cons = {'type': 'ineq',
-                'fun': lambda x: np.array([x[i] for i in range(len(x) - 1)])
+                'fun': constrains
                 }
         '''Нелинейные ограничения типа cj(x)>=0'''
 

@@ -573,7 +573,9 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                                       "dilatancy": None,
                                       "volumetric_strain_xc": None})
 
-    def set_test_params(self):
+        self.pre_defined_kr_fgs = None
+
+    def set_test_params(self, pre_defined_kr_fgs=None):
         """Установка основных параметров опыта"""
         self._test_params.E50 = statment[statment.current_test].mechanical_properties.E50
 
@@ -591,9 +593,14 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                  statment[statment.current_test].physical_properties.Ip, statment[statment.current_test].physical_properties.type_ground)
         _test_mode = statment.general_parameters.test_mode
 
-        xc, residual_strength = ModelShearDilatancySoilTest.define_xc_value_residual_strength(
-            statment[statment.current_test].physical_properties, statment[statment.current_test].mechanical_properties.sigma,
-            statment[statment.current_test].mechanical_properties.tau_max, statment[statment.current_test].mechanical_properties.E50, _test_mode)
+        xc, residual_strength,\
+            self.pre_defined_kr_fgs = ModelShearDilatancySoilTest.define_xc_value_residual_strength(
+                statment[statment.current_test].physical_properties,
+                statment[statment.current_test].mechanical_properties.sigma,
+                statment[statment.current_test].mechanical_properties.tau_max,
+                statment[statment.current_test].mechanical_properties.E50,
+                _test_mode,
+                pre_defined_kr_fgs=pre_defined_kr_fgs)
 
 
         if xc <= 0.14:
@@ -1106,10 +1113,15 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         return param
 
     @staticmethod
-    def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E, test_mode):
+    def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E, test_mode, pre_defined_kr_fgs=None):
 
-        xc = ModelShearDilatancySoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
-                                                           data_phiz.Ip, data_phiz.Il, data_phiz.Ir, test_mode)
+        xc = 1
+
+        if not pre_defined_kr_fgs:
+            xc = ModelShearDilatancySoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
+                                                               data_phiz.Ip, data_phiz.Il, data_phiz.Ir, test_mode)
+        elif pre_defined_kr_fgs == 1:
+            xc = 1
 
         if sigma_3 <= 200:
             k = 1.2
@@ -1122,12 +1134,10 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
             #if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
             xc = xc*k #/1.5
-
-
-
-
+            pre_defined_kr_fgs = 1
         else:
             xc = 0.15
+            pre_defined_kr_fgs = None
 
         if xc != 0.15:
             residual_strength = ModelShearDilatancySoilTest.define_k_q(data_phiz.Il, data_phiz.e, sigma_3)
@@ -1140,7 +1150,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
                 xc = xc*k
 
-        return xc, residual_strength
+        return xc, residual_strength, pre_defined_kr_fgs
 
     @staticmethod
     def define_dilatancy_from_xc_qres(xc, qres):

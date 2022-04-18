@@ -356,14 +356,16 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         super().__init__()
         self._test_params = None
         self._reference_pressure_array = None
+        self.pre_defined_kr_fgs = None
 
-    def add_test_st(self):
+    def add_test_st(self, pre_defined_kr_fgs=None):
         """Добавление опытов"""
         test = ModelTriaxialStaticLoadSoilTest()
-        test.set_test_params(statment.general_parameters.reconsolidation)
+        test.set_test_params(statment.general_parameters.reconsolidation, pre_defined_kr_fgs=pre_defined_kr_fgs)
         if self._check_clone(test):
             self._tests.append(test)
             self.sort_tests()
+            self.pre_defined_kr_fgs = test.deviator_loading.pre_defined_kr_fgs
 
     def add_test_st_NN(self):
         """Добавление опытов"""
@@ -462,7 +464,9 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 if statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
                     self.add_test_st_NN()
                 else:
-                    self.add_test_st()
+                    self.add_test_st(pre_defined_kr_fgs=self.pre_defined_kr_fgs)
+
+            self.pre_defined_kr_fgs = None
 
             statment[statment.current_test].mechanical_properties.sigma_3 = sigma_3_origin
             statment[statment.current_test].mechanical_properties.qf = qf_origin
