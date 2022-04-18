@@ -501,6 +501,28 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
                 file.write(make_string(data, i))
 
     @staticmethod
+    def text_file_new(file_path, data):
+        """Сохранение текстового файла формата Willie.
+                    Передается папка, массивы"""
+        p = os.path.join(file_path, "Тест.log")
+
+        def make_string(data, i):
+            s = ""
+            for key in data:
+                s += str(data[key][i]) + '\t'
+            s += '\n'
+            return (s)
+
+        with open(file_path, "w") as file:
+            file.write(
+                "Time" + '\t' + "Action" + '\t' + "Action_Changed" + '\t' + "SampleHeight_mm" + '\t' + "SampleDiameter_mm" + '\t' +
+                "Deviator_kPa" + '\t' + "VerticalDeformation_mm" + '\t' + "CellPress_kPa" + '\t' + "CellVolume_mm3" + '\t' +
+                "PorePress_kPa" + '\t' + "PoreVolume_mm3" + '\t' + "VerticalPress_kPa" + '\t' +
+                "Trajectory" + '\n')
+            for i in range(len(data["Time"])):
+                file.write(make_string(data, i))
+
+    @staticmethod
     def number_format(x, characters_number=0, split=".", change_negatives=True):
         """Функция возвращает число с заданным количеством знаков после запятой
         :param characters_number: количество знаков после запятой
@@ -549,7 +571,7 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
     def current_value_array(array, number, change_negatives=True):
         s = []
         for i in range(len(array)):
-            num = ModelTriaxialStaticLoadSoilTest.number_format(array[i], number, change_negatives=change_negatives)
+            num = ModelTriaxialStaticLoadSoilTest.number_format(array[i], number, change_negatives=change_negatives).replace(".", ",")
             if num == "0.00000":
                 num = "0"
             s.append(num)
@@ -558,7 +580,31 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
     @staticmethod
     def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading):
 
-        data = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(b_test, consolidation, initial=True,
+        start = np.random.uniform(0.5, 0.8)
+        dict = {
+            'Time': [0, 0, np.round(start, 3), np.round(start + 0.1, 3), np.round(start + 2, 3)],
+            'Action': ["", "", "Start", "Start", "Start"],
+            'Action_Changed': ["", "True", "", "", "True"],
+            'SampleHeight_mm': np.full(5, 76),
+            'SampleDiameter_mm': np.full(5, 38),
+            'Deviator_kPa': np.full(5, 0),
+            'VerticalDeformation_mm': np.full(5, 0),
+            'CellPress_kPa': np.full(5, 0),
+            'CellVolume_mm3': np.full(5, 0),
+            'PorePress_kPa': np.full(5, 0),
+            'PoreVolume_mm3': np.full(5, 0),
+            'VerticalPress_kPa': np.full(5, 0),
+            'Trajectory': np.full(5, "HC")
+
+            # 'skempton': skempton_step,
+            # 'step_pressure': sigma_steps
+        }
+
+        data_start = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(dict, b_test, initial=True,
+                                                                        skip_keys=["SampleHeight_mm",
+                                                                                   "SampleDiameter_mm"])
+
+        data = ModelTriaxialStaticLoadSoilTest.addition_of_dictionaries(copy.deepcopy(data_start), consolidation, initial=True,
                                                                         skip_keys=["SampleHeight_mm",
                                                                                    "SampleDiameter_mm"])
 
@@ -577,10 +623,15 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         dictionary["VerticalDeformation_mm"] = str
 
         dictionary["CellPress_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["CellPress_kPa"], 5)
+        dictionary['CellVolume_mm3'] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["CellVolume_mm3"],
+                                                                                          5)
+        dictionary['PoreVolume_mm3'] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["PoreVolume_mm3"],
+                                                                                           5)
         #dictionary["CellVolume_mm3"] = dictionary["CellVolume_mm3"]
         dictionary["PorePress_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["PorePress_kPa"], 5)
         #dictionary["PoreVolume_mm3"] = dictionary["PoreVolume_mm3"]
         dictionary["VerticalPress_kPa"] = ModelTriaxialStaticLoadSoilTest.current_value_array(dictionary["VerticalPress_kPa"], 5)
+
 
         return dictionary
 
