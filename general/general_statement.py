@@ -351,7 +351,7 @@ class StatementGenerator(QDialog):
                     # self.StatementStructure._additional_parameters = \
                     #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
                     titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
-                    data = convert_data2(data)
+                    #data = convert_data2(data)
                     for i in range(len(data)):
                         for j in range(len(data[i])):
                             if data[i][j] == 'None':
