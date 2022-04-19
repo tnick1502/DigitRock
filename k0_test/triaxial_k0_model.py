@@ -317,7 +317,7 @@ class ModelK0SoilTest(ModelK0):
             4. Производим уточнение сетки по сигма1 - она должна идти с заданным шагом
             5. Накладываем шум на прямолинейный участок через `lse_faker()`.
         """
-        #
+        # Верификация заданных параметров моделирования
         self.verify_test_params()
         # 2 - формируем прямолинейный участок
         sgima_1_synth = np.linspace(self._test_params.sigma_p, self._test_params.sigma_1_max, 50)
@@ -335,18 +335,6 @@ class ModelK0SoilTest(ModelK0):
             sigma_1_spl = spl(sigma_3_spl)
             sigma_1_spl[0] = 0
 
-
-        #
-        #   Пока осталвляем это для дебага
-        _test_x = np.hstack((sigma_3_spl[:-1], sgima_3_synth))
-        _test_y = np.hstack((sigma_1_spl[:-1], sgima_1_synth))
-        #
-
-        # plt.figure()
-        # plt.plot(_test_x, _test_y)
-        # plt.scatter(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
-        # plt.show()
-
         # 4 - уточнение сетки
         #   Строим сплайн для всей кривой
         spl = make_interp_spline(np.hstack((sigma_1_spl[:-1], sgima_1_synth)),
@@ -355,9 +343,6 @@ class ModelK0SoilTest(ModelK0):
         #   Считаем число точек и задаем сетку на Сигма1
         num: int = int((self._test_params.sigma_1_max*1000) / (self._test_params.sigma_1_step*1000)) + 1
         sgima_1_mesh = np.linspace(0, self._test_params.sigma_1_max, num)
-
-        sgima_3_mesh = spl(sgima_1_mesh)
-
         index_sigma_p, = np.where(sgima_1_mesh >= self._test_params.sigma_p)
         #   Формируем участки
         sgima_1_synth = sgima_1_mesh[index_sigma_p[0]:]
@@ -371,20 +356,13 @@ class ModelK0SoilTest(ModelK0):
                                                      sigma_1_spl, sigma_3_spl,
                                                      self._test_params.K0)
 
-
-        #
-        #   Пока осталвляем это для дебага
-        # plt.figure()
-        # plt.plot(_test_x, _test_y)
-        # plt.plot(sgima_3_mesh, sgima_1_mesh)
-        # plt.scatter(np.hstack((sigma_3_spl[:-1], sgima_3_synth)), np.hstack((sigma_1_spl[:-1], sgima_1_synth)))
-        # plt.scatter(sigma_3, sigma_1)
-        # plt.show()
-        #
-
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
 
     def verify_test_params(self):
+        """
+        Проводит верификацию заданных параметров моделирования, включая округления.
+        ВНИМАНИЕ! Верфикация параметров как Физических характеристик должна проводится в `properties_model`
+        """
         # Округления
         SGMA1MAX_PREC = 2
 
