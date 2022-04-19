@@ -30,6 +30,7 @@ from version_control.configs import actual_version
 from general.tab_view import AppMixin
 __version__ = actual_version
 from authentication.request_qr import request_qr
+from saver.savers_models import BaseSaver, MohrSaver
 
 class StaticProcessingWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -792,6 +793,9 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 test_result = E_models[statment.current_test].get_test_results()
 
+                #s = BaseSaver(E_models[statment.current_test], statment.save_dir.save_directory + "/geologs")
+                #s.save_log_file(file_path_name)
+
                 report_E(save + "/" + name, data_customer,
                                  statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
                                  os.getcwd() + "/project_data/",
@@ -859,6 +863,9 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
 
+                #s = BaseSaver(E_models[statment.current_test], statment.save_dir.save_directory + "/geologs")
+                #s.save_log_file(file_path_name)
+
                 test_result = E_models[statment.current_test].get_test_results()
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[statment.current_test].get_sigma_3_1()
                 test_result["c"], test_result["fi"], test_result["m"] = \
@@ -886,6 +893,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
                     }
                 }
 
+                #s = MohrSaver(FC_models[statment.current_test], statment.save_dir.save_directory + "/geologs", size=[h, d])
+                #s.save_log_file(file_path_name)
                 #qr = request_qr(data)
 
                 report_FCE(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,

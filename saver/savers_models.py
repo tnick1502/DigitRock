@@ -4,71 +4,64 @@ import copy
 from singletons import statment
 import numpy as np
 from loggers.logger import app_logger
+import shutil
 
 class BaseSaver(metaclass=ABCMeta):
     """Абстрактный суперкласс обработчика
         Суперкласс принимает объект модели и формирует из данных опыта данные для постоения"""
-    def __init__(self, obj):
+    def __init__(self, obj, save_path, size=[76, 38]):
         self.obj = obj
-
-    def save_log_file(self, file_path):
-        """Метод генерирует логфайл прибора"""
-
-        if self.obj.reconsolidation is not None:
-            reconsolidation_dict = self.obj.reconsolidation.get_dict()
-            effective_stress_after_reconsolidation = self.obj.reconsolidation.get_effective_stress_after_reconsolidation()
+        if os.path.isdir(save_path):
+            pass
         else:
-            reconsolidation_dict = None
-            effective_stress_after_reconsolidation = 0
+            os.mkdir(save_path)
+        self.size = size
+        self.save_path = save_path
 
-        if self.obj.consolidation is not None:
-            consolidation_dict = self.obj.consolidation.get_dict(effective_stress_after_reconsolidation)
-        else:
-            consolidation_dict = None
+    def save_log_file(self, name):
 
-        deviator_loading_dict = self.obj.deviator_loading.get_dict()
+        path = self.create_path(name)
+        BaseSaver.text_file(path, self.get_dict_for_enggeo(self.size))
 
-        main_dict = BaseSaver.triaxial_deviator_loading_dictionary(
-            reconsolidation_dict, consolidation_dict, deviator_loading_dict)
+    def get_dict_for_enggeo(self, size):
+        time_start = len(self.obj.deviator_loading._test_data.time) - len(self.obj.deviator_loading._test_data.deviator_cut)
+        time = self.obj.deviator_loading._test_data.time[time_start:]
+        volume_mm = np.round(np.pi * (size[1]/2)**2 *size[0], 2)
+        volume_cm = np.round(volume_mm/1000, 5)
+        square = np.round(np.pi * (size[1]/2)**2, 2)
 
         new = {
-            "Time": main_dict["Time"],
-            "Action": main_dict["Action"],
-            "Action_Changed": main_dict["Action_Changed"],
-            "Deviator_kPa": main_dict["Action_Changed"],
-            "VerticalDeformation_mm": main_dict["Action_Changed"],
-            "CellPress_kPa": main_dict["Action_Changed"],
-            "CellVolume_mm3": main_dict["Action_Changed"],
-            "PorePress_kPa": main_dict["Action_Changed"],
-            "PoreVolume_mm3": main_dict["Action_Changed"],
-            "Deviator_kgs": main_dict["Action_Changed"],
-            "VerticalPress_kPa": main_dict["Action_Changed"],
-            "VerticalStrain": main_dict["Action_Changed"],
-            "VolumeStrain": main_dict["Action_Changed"],
-            "StampVolumeDeformation_mm3": main_dict["Action_Changed"],
-            "VolumeDeformation_cm3": main_dict["Action_Changed"],
-            "SampleSquare_mm2": main_dict["Action_Changed"],
-            "SampleVolume_mm3": main_dict["Action_Changed"],
-            "Deviator_MPa": main_dict["Action_Changed"],
-            "VerticalPress_MPa": main_dict["Action_Changed"],
-            "CellPress_MPa": main_dict["Action_Changed"],
-            "PorePress_MPa": main_dict["Action_Changed"],
-            "CellVolume_cm3": main_dict["Action_Changed"],
-            "StampVolumeDeformation_cm3": main_dict["Action_Changed"],
-            "SampleVolume_cm3": main_dict["Action_Changed"],
-            "PoreVolume_cm3": main_dict["Action_Changed"],
-            "Trajectory": main_dict["Action_Changed"],
+            "Time": time,
+            "Action": np.full(len(time), "WaitLimit"),
+            "Action_Changed": np.full(len(time), ""),
+            "Deviator_kPa": self.obj.deviator_loading._test_data.deviator_cut,
+            "VerticalDeformation_mm": self.obj.deviator_loading._test_data.strain_cut*size[0],
+            "CellPress_kPa": np.full(len(time), self.obj.deviator_loading._test_params.sigma_3),
+            "CellVolume_mm3": self.obj.deviator_loading._test_data.volume_strain_cut*volume_mm,
+            "PorePress_kPa": np.full(len(time), "0"),
+            "PoreVolume_mm3": self.obj.deviator_loading._test_data.volume_strain_cut*volume_mm,
+
+            "Deviator_kgs": self.obj.deviator_loading._test_data.deviator_cut * 0.11564754,
+            "VerticalPress_kPa": self.obj.deviator_loading._test_data.deviator_cut + self.obj.deviator_loading._test_params.sigma_3,
+            "VerticalStrain": self.obj.deviator_loading._test_data.strain_cut,
+            "VolumeStrain": self.obj.deviator_loading._test_data.volume_strain_cut,
+            "StampVolumeDeformation_mm3": np.full(len(time), "0"),  ###########
+            "VolumeDeformation_cm3": self.obj.deviator_loading._test_data.volume_strain_cut*volume_cm,
+            ############
+            "SampleSquare_mm2": np.full(len(time), str(square).replace(".", ",")),
+            "SampleVolume_mm3": np.full(len(time), str(volume_mm).replace(".", ",")),
+            "Deviator_MPa": self.obj.deviator_loading._test_data.deviator_cut / 1000,
+            "VerticalPress_MPa": (self.obj.deviator_loading._test_data.deviator_cut + self.obj.deviator_loading._test_params.sigma_3)/1000,
+            "CellPress_MPa": np.full(len(time), self.obj.deviator_loading._test_params.sigma_3)/1000,
+            "PorePress_MPa": np.full(len(time), "0"),
+            "CellVolume_cm3": self.obj.deviator_loading._test_data.volume_strain_cut*volume_cm,
+            "StampVolumeDeformation_cm3": np.full(len(time), "0"),
+            "SampleVolume_cm3": np.full(len(time), "86,19275"),
+            "PoreVolume_cm3": self.obj.deviator_loading._test_data.volume_strain_cut*volume_cm,
+            "Trajectory": np.full(len(time), "CTC"),
         }
 
-        BaseSaver.text_file(file_path, main_dict)
-
-        try:
-            plaxis = self.deviator_loading.get_plaxis_dictionary()
-            with open('/'.join(os.path.split(file_path)[:-1]) + "/plaxis_log.txt", "w") as file:
-                for i in range(len(plaxis["strain"])):
-                    file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
-        except Exception as err:
-            app_logger.exception(f"Проблема сохранения массива для plaxis {statment.current_test}")
+        return new
 
     def save_plaxis_log(self, file_path):
         try:
@@ -78,6 +71,25 @@ class BaseSaver(metaclass=ABCMeta):
                     file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
         except Exception as err:
             app_logger.exception(f"Проблема сохранения массива для plaxis {statment.current_test}")
+
+    def create_path(self, name):
+        name_path = os.path.join(self.save_path, name)
+
+        if os.path.exists(name_path):
+            shutil.rmtree(name_path)
+        os.mkdir(os.path.join(name_path, name_path))
+        os.mkdir(os.path.join(name_path, "General"))
+
+        with open(os.path.join(name_path, "General", "General.1.log"), "w") as file:
+            file.write("SampleHeight_mm\tSampleDiameter_mm\n")
+            file.write(f"{self.size[0]}\t{self.size[1]}\n")
+
+        shutil.copy(os.getcwd() + "/saver/test.xml", os.path.join(name_path, f"name.xml"))
+
+        os.mkdir(os.path.join(name_path, "Test"))
+
+        return os.path.join(name_path, "Test")
+
 
     @staticmethod
     def addition_of_dictionaries(data1, data2, initial=True, skip_keys=None):
@@ -248,6 +260,65 @@ class BaseSaver(metaclass=ABCMeta):
                     x[i].replace(".", ",")
 
             return x
+
+    @staticmethod
+    def umn(x, k, number):
+        s = []
+        for i in x:
+            s.append(float(i)*k)
+
+        return BaseSaver.current_value_array(s, number)
+
+    @staticmethod
+    def text_file(file_path, data):
+        """Сохранение текстового файла формата Willie.
+                    Передается папка, массивы"""
+        p = os.path.join(file_path, "Test.1.log")
+
+        def make_string(data, i):
+            s = ""
+            for key in data:
+                s += str(data[key][i]) + '\t'
+            s += '\n'
+            return (s)
+
+        with open(p, "w") as file:
+            file.write("\t".join(
+                ["Time", "Action", "Action_Changed", "Deviator_kPa", "VerticalDeformation_mm", "CellPress_kPa",
+                 "CellVolume_mm3", "PorePress_kPa", "PoreVolume_mm3", "Deviator_kgs", "VerticalPress_kPa",
+                 "VerticalStrain", "VolumeStrain", "StampVolumeDeformation_mm3", "VolumeDeformation_cm3",
+                 "SampleSquare_mm2", "SampleVolume_mm3", "Deviator_MPa", "VerticalPress_MPa", "CellPress_MPa",
+                 "PorePress_MPa", "CellVolume_cm3", "StampVolumeDeformation_cm3", "SampleVolume_cm3", "PoreVolume_cm3",
+                 "Trajectory"]))
+            file.write("\n")
+
+            for i in range(len(data["Time"])):
+                file.write(make_string(data, i))
+
+
+class MohrSaver(metaclass=ABCMeta):
+    """Абстрактный суперкласс обработчика
+        Суперкласс принимает объект модели и формирует из данных опыта данные для постоения"""
+
+    def __init__(self, obj, save_path, size):
+        self.obj = obj
+        if os.path.isdir(save_path):
+            pass
+        else:
+            os.mkdir(save_path)
+        self.size = size
+        self.save_path = save_path
+
+    def save_log_file(self, name):
+
+        for test in self.obj._tests:
+            s = BaseSaver(test, save_path=self.save_path, size=self.size)
+            s.save_log_file(f"{name} {np.round(test.deviator_loading._test_params.sigma_3/1000, 3)}")
+
+
+
+
+
 
 
 

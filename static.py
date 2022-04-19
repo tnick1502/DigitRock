@@ -19,7 +19,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
         #self.showFullScreen()
-        if test_version(actual_version):
+        if True:
             try:
                 self.table_widget = StatickSoilTestApp()
                 self.setCentralWidget(self.table_widget)

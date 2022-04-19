@@ -1,0 +1,106 @@
+<LogProject createSubfolder="false" version="1.0.0.0" schema="">
+  <Properties>
+    <Property name="" />
+    <Property name="measurerArticul" value="" />
+    <Property name="measurerText" value="" />
+    <Property name="startTime" value="01.01.2001 00:00:01" />
+    <Property name="testKey" value="" />
+    <Property name="testTitle" value="Метод трехосного сжатия КД с камерой т.А определение деформационных характеристик" />
+  </Properties>
+  <Logs>
+    <Log createSubfolder="true" maxFileSize="8388608" name="General" ext="log" culture="ru-RU">
+      <Properties />
+      <Columns>
+        <LogColumn name="SampleHeight_mm" caption="Высота образца, мм" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="SampleDiameter_mm" caption="Диаметр образца, мм" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+      </Columns>
+    </Log>
+    <Log createSubfolder="true" maxFileSize="8388608" name="Test" ext="log" culture="ru-RU">
+      <Properties />
+      <Columns>
+        <LogColumn name="Time" caption="Время от начала испытания, c" csType="System.Double" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="Action" caption="Действие" csType="System.String" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="Action_Changed" caption="" csType="System.Boolean" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="Deviator_kPa" caption="Девиатор, кПа" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="VerticalDeformation_mm" caption="Вертикальная деформация, мм" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="CellPress_kPa" caption="Давление в камере, кПа" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="CellVolume_mm3" caption="Измерение объема вытесненной жидкости из камеры, мм3" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="PorePress_kPa" caption="Давление поровой жидкости, кПа" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="PoreVolume_mm3" caption="Измерение объема вытесненной поровой жидкости, мм3" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="Deviator_kgs" caption="Девиатор, кгс" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="VerticalPress_kPa" caption="Вертикальная нагрузка, кПа" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="VerticalStrain" caption="Относительная вертикальная деформация, д.е." csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="VolumeStrain" caption="Относительная объемная деформация, д.е." csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="StampVolumeDeformation_mm3" caption="Объем внедренного штампа, мм3" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="VolumeDeformation_cm3" caption="Объемная деформация образца, см3" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="SampleSquare_mm2" caption="Площадь сечения образца, мм2" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="SampleVolume_mm3" caption="Объем образца, мм3" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="Deviator_MPa" caption="Девиатор, МПа" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="VerticalPress_MPa" caption="Вертикальная нагрузка, МПа" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="CellPress_MPa" caption="Давление в камере, МПа" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="PorePress_MPa" caption="Давление поровой жидкости, МПа" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="CellVolume_cm3" caption="Объем вытесненной жидкости из камеры, см3" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="StampVolumeDeformation_cm3" caption="Объем внедренного штампа, см3" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="SampleVolume_cm3" caption="Объем образца, см3" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="PoreVolume_cm3" caption="Измерение объема вытесненной поровой жидкости, см3" csType="System.Single" formatString="">
+          <Properties />
+        </LogColumn>
+        <LogColumn name="Trajectory" caption="Траектория нагружения" csType="System.String" formatString="">
+          <Properties />
+        </LogColumn>
+      </Columns>
+    </Log>
+  </Logs>
+</LogProject>
