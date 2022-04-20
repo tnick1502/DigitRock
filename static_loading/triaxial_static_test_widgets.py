@@ -30,7 +30,7 @@ from version_control.configs import actual_version
 from general.tab_view import AppMixin
 __version__ = actual_version
 from authentication.request_qr import request_qr
-from saver.savers_models import BaseSaver, MohrSaver
+from saver import XMLWidget
 
 class StaticProcessingWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -699,6 +699,11 @@ class StatickSoilTestApp(AppMixin, QWidget):
         self.physical_line_2.refresh_button.clicked.connect(self.tab_3.refresh)
         self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
 
+        self.xml_button = QPushButton("Выгнать xml")
+        self.xml_button.clicked.connect(self.xml)
+        self.tab_4.advanced_box_layout.insertWidget(3, self.xml_button)
+        #self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
+
 
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
@@ -793,9 +798,6 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 test_result = E_models[statment.current_test].get_test_results()
 
-                #s = BaseSaver(E_models[statment.current_test], statment.save_dir.save_directory + "/geologs")
-                #s.save_log_file(file_path_name)
-
                 report_E(save + "/" + name, data_customer,
                                  statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
                                  os.getcwd() + "/project_data/",
@@ -862,9 +864,6 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
-
-                #s = BaseSaver(E_models[statment.current_test], statment.save_dir.save_directory + "/geologs")
-                #s.save_log_file(file_path_name)
 
                 test_result = E_models[statment.current_test].get_test_results()
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[statment.current_test].get_sigma_3_1()
@@ -1184,6 +1183,13 @@ class StatickSoilTestApp(AppMixin, QWidget):
         else:
             self.dialog = TestsLogWidget(static, TestsLogTriaxialStatic, self.tab_1.path)
             self.dialog.show()
+
+    def xml(self):
+        try:
+            self.wm = XMLWidget(statment.save_dir.save_directory + "/xml")
+            QMessageBox.about(self, "Сообщение", "XML выгнаны")
+        except Exception as err:
+            print(str(err))
 
 
 

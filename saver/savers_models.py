@@ -1,12 +1,13 @@
-from abc import abstractmethod, ABCMeta
 import os
 import copy
 from singletons import statment
 import numpy as np
 from loggers.logger import app_logger
 import shutil
+from singletons.models import FC_models, E_models
+from thrd.socket_thd import send_to_server
 
-class BaseSaver(metaclass=ABCMeta):
+class TriaxialSaver:
     """Абстрактный суперкласс обработчика
         Суперкласс принимает объект модели и формирует из данных опыта данные для постоения"""
     def __init__(self, obj, save_path, size=[76, 38]):
@@ -21,7 +22,7 @@ class BaseSaver(metaclass=ABCMeta):
     def save_log_file(self, name):
 
         path = self.create_path(name)
-        BaseSaver.text_file(path, self.get_dict_for_enggeo(self.size))
+        TriaxialSaver.text_file(path, self.get_dict_for_enggeo(self.size))
 
     def get_dict_for_enggeo(self, size):
         time_start = len(self.obj.deviator_loading._test_data.time) - len(self.obj.deviator_loading._test_data.deviator_cut)
@@ -84,7 +85,7 @@ class BaseSaver(metaclass=ABCMeta):
             file.write("SampleHeight_mm\tSampleDiameter_mm\n")
             file.write(f"{self.size[0]}\t{self.size[1]}\n")
 
-        shutil.copy(os.getcwd() + "/saver/test.xml", os.path.join(name_path, f"name.xml"))
+        shutil.copy(os.getcwd() + "/saver/test.xml", os.path.join(name_path, f"{name}.xml"))
 
         os.mkdir(os.path.join(name_path, "Test"))
 
@@ -149,37 +150,37 @@ class BaseSaver(metaclass=ABCMeta):
             # 'step_pressure': sigma_steps
         }
 
-        data_start = BaseSaver.addition_of_dictionaries(dict, b_test, initial=True,
+        data_start = TriaxialSaver.addition_of_dictionaries(dict, b_test, initial=True,
                                                                         skip_keys=["SampleHeight_mm",
                                                                                    "SampleDiameter_mm"])
 
-        data = BaseSaver.addition_of_dictionaries(copy.deepcopy(data_start), consolidation, initial=True,
+        data = TriaxialSaver.addition_of_dictionaries(copy.deepcopy(data_start), consolidation, initial=True,
                                                                         skip_keys=["SampleHeight_mm",
                                                                                    "SampleDiameter_mm"])
 
-        dictionary = BaseSaver.addition_of_dictionaries(copy.deepcopy(data), deviator_loading, initial=True,
+        dictionary = TriaxialSaver.addition_of_dictionaries(copy.deepcopy(data), deviator_loading, initial=True,
                                               skip_keys=["SampleHeight_mm", "SampleDiameter_mm", "Action_Changed"])
 
 
-        dictionary["Time"] = BaseSaver.current_value_array(dictionary["Time"], 3)
-        dictionary["Deviator_kPa"] = BaseSaver.current_value_array(dictionary["Deviator_kPa"], 3)
+        dictionary["Time"] = TriaxialSaver.current_value_array(dictionary["Time"], 3)
+        dictionary["Deviator_kPa"] = TriaxialSaver.current_value_array(dictionary["Deviator_kPa"], 3)
         # dictionary["VerticalDeformation_mm"] = current_value_array(dictionary["VerticalDeformation_mm"], 5)
 
         # Для части девиаторного нагружения вертикальная деформация хода штока должна писаться со знаком "-"
         CTC_index, = np.where(dictionary["Trajectory"] == 'CTC')
-        str = BaseSaver.current_value_array(dictionary["VerticalDeformation_mm"][:CTC_index[0]], 5)
-        str.extend(BaseSaver.current_value_array(dictionary["VerticalDeformation_mm"][CTC_index[0]:], 5, change_negatives=False))
+        str = TriaxialSaver.current_value_array(dictionary["VerticalDeformation_mm"][:CTC_index[0]], 5)
+        str.extend(TriaxialSaver.current_value_array(dictionary["VerticalDeformation_mm"][CTC_index[0]:], 5, change_negatives=False))
         dictionary["VerticalDeformation_mm"] = str
 
-        dictionary["CellPress_kPa"] = BaseSaver.current_value_array(dictionary["CellPress_kPa"], 5)
-        dictionary['CellVolume_mm3'] = BaseSaver.current_value_array(dictionary["CellVolume_mm3"],
+        dictionary["CellPress_kPa"] = TriaxialSaver.current_value_array(dictionary["CellPress_kPa"], 5)
+        dictionary['CellVolume_mm3'] = TriaxialSaver.current_value_array(dictionary["CellVolume_mm3"],
                                                                                           5)
-        dictionary['PoreVolume_mm3'] = BaseSaver.current_value_array(dictionary["PoreVolume_mm3"],
+        dictionary['PoreVolume_mm3'] = TriaxialSaver.current_value_array(dictionary["PoreVolume_mm3"],
                                                                                            5)
         #dictionary["CellVolume_mm3"] = dictionary["CellVolume_mm3"]
-        dictionary["PorePress_kPa"] = BaseSaver.current_value_array(dictionary["PorePress_kPa"], 5)
+        dictionary["PorePress_kPa"] = TriaxialSaver.current_value_array(dictionary["PorePress_kPa"], 5)
         #dictionary["PoreVolume_mm3"] = dictionary["PoreVolume_mm3"]
-        dictionary["VerticalPress_kPa"] = BaseSaver.current_value_array(dictionary["VerticalPress_kPa"], 5)
+        dictionary["VerticalPress_kPa"] = TriaxialSaver.current_value_array(dictionary["VerticalPress_kPa"], 5)
 
 
         return dictionary
@@ -210,7 +211,7 @@ class BaseSaver(metaclass=ABCMeta):
     def current_value_array(array, number, change_negatives=True):
         s = []
         for i in range(len(array)):
-            num = BaseSaver.number_format(array[i], number, change_negatives=change_negatives).replace(".", ",")
+            num = TriaxialSaver.number_format(array[i], number, change_negatives=change_negatives).replace(".", ",")
             if num == "0.00000":
                 num = "0"
             s.append(num)
@@ -267,7 +268,7 @@ class BaseSaver(metaclass=ABCMeta):
         for i in x:
             s.append(float(i)*k)
 
-        return BaseSaver.current_value_array(s, number)
+        return TriaxialSaver.current_value_array(s, number)
 
     @staticmethod
     def text_file(file_path, data):
@@ -295,8 +296,7 @@ class BaseSaver(metaclass=ABCMeta):
             for i in range(len(data["Time"])):
                 file.write(make_string(data, i))
 
-
-class MohrSaver(metaclass=ABCMeta):
+class MohrSaver:
     """Абстрактный суперкласс обработчика
         Суперкласс принимает объект модели и формирует из данных опыта данные для постоения"""
 
@@ -312,8 +312,64 @@ class MohrSaver(metaclass=ABCMeta):
     def save_log_file(self, name):
 
         for test in self.obj._tests:
-            s = BaseSaver(test, save_path=self.save_path, size=self.size)
+            s = TriaxialSaver(test, save_path=self.save_path, size=self.size)
             s.save_log_file(f"{name} {np.round(test.deviator_loading._test_params.sigma_3/1000, 3)}")
+
+class SaverModel:
+    def __init__(self, path, port):
+        self.path = path
+        self._port = port
+
+    def process(self):
+
+        send_to_server(self._port, {"window_title": "Процесс ..."})
+        send_to_server(self._port, {"label": "Генерация xml..."})
+        send_to_server(self._port, {"maximum": len(statment)})
+
+        for i, lab in enumerate(statment):
+            if statment.general_parameters.equipment == "АСИС ГТ.2.0.5 (150х300)":
+                h, d = 300, 150
+            else:
+                d, h = statment[lab].physical_properties.sample_size
+
+            if statment.general_parameters.test_mode == "Трёхосное сжатие (E)":
+                s = TriaxialSaver(E_models[lab], self.path, size=[h, d])
+                s.save_log_file(lab)
+
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
+                s = TriaxialSaver(E_models[lab], self.path, size=[h, d])
+                s.save_log_file(lab)
+
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
+                s = TriaxialSaver(E_models[lab], self.path, size=[h, d])
+                s.save_log_file(lab)
+
+                s = MohrSaver(FC_models[lab], self.path, size=[h, d])
+                s.save_log_file(lab)
+
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, Eur)":
+                s = TriaxialSaver(E_models[lab], self.path, size=[h, d])
+                s.save_log_file(lab)
+
+                s = MohrSaver(FC_models[lab], self.path, size=[h, d])
+                s.save_log_file(lab)
+
+            elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)':
+                s = MohrSaver(FC_models[lab], self.path, size=[h, d])
+                s.save_log_file(lab)
+
+            elif statment.general_parameters.test_mode == 'Трёхосное сжатие КН':
+                s = MohrSaver(FC_models[lab], self.path, size=[h, d])
+                s.save_log_file(lab)
+
+            elif statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
+                s = MohrSaver(FC_models[lab], self.path, size=[h, d])
+                s.save_log_file(lab)
+
+            send_to_server(self._port, {"value": i + 1})
+
+        send_to_server(self._port, {"break": True})
+        app_logger.info("Выгнаны xml")
 
 
 
