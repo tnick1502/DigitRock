@@ -1302,9 +1302,6 @@ class RCProperties(MechanicalProperties):
             if isinstance(getattr(RCProperties, key), DataTypeValidation):
                 object.__setattr__(self, key, None)
 
-    def __init__(self):
-        self._setNone()
-
     def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode) -> None:
         super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
         if self.c and self.fi and self.E50:
@@ -1927,23 +1924,41 @@ class RayleighDampingProperties(MechanicalProperties):
         super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
         if self.c and self.fi and self.E50:
 
-            physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
-            if physical_properties.depth <= physical_properties.ground_water_depth:
-                self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
-            elif physical_properties.depth > physical_properties.ground_water_depth:
-                self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
-                        9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+            sigma_3 = float_df(data_frame.iat[string, DynamicsPropertyPosition["reference_pressure"][1]])
 
-            if self.sigma_1 < 10:
-                self.sigma_1 = 10
+            if sigma_3:
+                self.sigma_1 = sigma_3
+                self.sigma_3 = sigma_3
+            else:
+                physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
+                if physical_properties.depth <= physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
+                elif physical_properties.depth > physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                            9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+                if self.sigma_1 < 50:
+                    self.sigma_1 = 50
+                self.sigma_3 = np.round(self.sigma_1 * self.K0)
+                self.cycles_count = 5
 
-            self.sigma_3 = np.round(self.sigma_1 * self.K0)
-
-            self.cycles_count = 5
 
             sigma_d = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])
             if not sigma_d:
-                self.t = 25
+                acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]])
+                if acceleration:
+                    acceleration = np.round(acceleration, 3)
+                else:
+                    intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
+                    acceleration = CyclicProperties.define_acceleration(intensity)
+
+                if physical_properties.depth <= 9.15:
+                    rd = round((1 - (0.00765 * physical_properties.depth)), 3)
+                elif (physical_properties.depth > 9.15) and (physical_properties.depth < 23):
+                    rd = round((1.174 - (0.0267 * physical_properties.depth)), 3)
+                else:
+                    rd = round((1.174 - (0.0267 * 23)), 3)
+
+                self.t = np.round(0.65 * acceleration * self.sigma_1 * float(rd))
             else:
                 self.t = np.round(sigma_d / 2, 1)
 
