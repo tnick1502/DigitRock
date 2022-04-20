@@ -481,7 +481,7 @@ class ModelShearSoilTest(ModelShear):
         # после добавления шума
         fixed_point_index = 1
 
-        noise = abs(tau[fixed_point_index]-tau[0]) * 0.1
+        noise = abs(tau[fixed_point_index]-tau[0]) * 0.2
 
         tau_with_noise = copy.deepcopy(tau)
 
@@ -491,13 +491,13 @@ class ModelShearSoilTest(ModelShear):
         else:
             tau_with_noise[fixed_point_index] += noise
 
-        for i in range(len(tau_with_noise)):
-            if i == fixed_point_index:
-                continue
-            if i % 2 == 0:
-                tau_with_noise += noise/4
-            else:
-                tau_with_noise -= noise/4
+        # for i in range(len(tau_with_noise)):
+        #     if i == fixed_point_index:
+        #         continue
+        #     if i % 2 == 0:
+        #         tau_with_noise += noise/4
+        #     else:
+        #         tau_with_noise -= noise/4
 
         def func(x):
             """x - массив tau без зафиксированной точки"""

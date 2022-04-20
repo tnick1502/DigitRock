@@ -16,7 +16,6 @@ def dictionary_without_VFS(sigma_3=100, velocity=49):
     k = sigma_3 / velocity
     if k <= 2:
         velocity = velocity / (2 / k) - 1
-    print(velocity)
     load_stage_time = round(sigma_3 / velocity, 2)
     load_stage_time_array = np.arange(1, load_stage_time, 1)
     time_max = np.random.uniform(20, 30)
@@ -31,10 +30,11 @@ def dictionary_without_VFS(sigma_3=100, velocity=49):
     final_volume_strain = np.random.uniform(0.14, 0.2)
     load_stage_cell_volume_strain = exponent(load_stage_time_array[:-1], final_volume_strain,
                                              np.random.uniform(1, 1))
-    load_stage_cell_volume_strain[0] = 0
+    # load_stage_cell_volume_strain[0] = 0
     cell_volume_strain = np.hstack((load_stage_cell_volume_strain,
                                     np.full(len(time_array) + 1, final_volume_strain))) * np.pi * (19 ** 2) * 76 + \
                          np.random.uniform(-0.1, 0.1, len(time))
+    cell_volume_strain[0] = 0
     vertical_press = cell_press + np.random.uniform(-0.1, 0.1, len(time))
 
     # На нэтапе нагружения 'LoadStage', на основном опыте Stabilization
@@ -55,41 +55,27 @@ def dictionary_without_VFS(sigma_3=100, velocity=49):
     trajectory[-1] = "CTC"
 
     # Подключение запуска опыта
-    LEN_START = 4
-
-    time_start = np.zeros(LEN_START)
-    time_start[-1] = time[0]
+    time_start = [time[0]]
     time = np.hstack((time_start, time))
 
-    action_start = np.full(LEN_START, 'Start')
-    action_start[0] = ''
-    action_start[1] = ''
+    action_start = ['Start']
     action = np.hstack((action_start, action))
 
-    action_changed_start = np.full(LEN_START, 'True')
-    action_changed_start[0] = ''
-    action_changed_start[2] = ''
+    action_changed_start = ['True']
     action_changed = np.hstack((action_changed_start, action_changed))
 
-    cell_press_start = np.zeros(LEN_START)
-    cell_press_start[-1] = cell_press[0]
+    cell_press_start = [cell_press[0]]
     cell_press = np.hstack((cell_press_start, cell_press))
 
-    cell_volume_strain_start = np.zeros(LEN_START)
-    cell_volume_strain_start[-1] = cell_volume_strain[0]
+    cell_volume_strain_start = [cell_volume_strain[0]]
     cell_volume_strain = np.hstack((cell_volume_strain_start, cell_volume_strain))
 
-    vertical_press_start = np.zeros(LEN_START)
-    vertical_press_start[-1] = vertical_press[0]
+    vertical_press_start = [vertical_press[0]]
     vertical_press = np.hstack((vertical_press_start, vertical_press))
 
-    trajectory_start = np.full(LEN_START, trajectory[0])
-
-    for i in range(len(trajectory_start) - 1):
-        trajectory_start[i] = 'HC'
+    trajectory_start = [trajectory[0]]
     trajectory = np.hstack((trajectory_start, trajectory))
 
-    print(len(time), len(action))
     data = {
         "Time": time,
         "Action": action,
@@ -107,3 +93,5 @@ def dictionary_without_VFS(sigma_3=100, velocity=49):
     }
 
     return data
+
+print(dictionary_without_VFS(sigma_3=400, velocity=49))

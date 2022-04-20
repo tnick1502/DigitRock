@@ -617,9 +617,10 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         self._draw_params.fail_strain = xc
         self._draw_params.residual_strength_param = \
-            ModelShearDilatancySoilTest.residual_strength_param_from_xc(xc)
+            ModelShearDilatancySoilTest.residual_strength_param_from_xc(xc, self._test_params.sigma)
 
-        self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
+        # self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
+
 
         if ShearProperties.shear_type(_test_mode) == ShearProperties.SHEAR_DD:
             residual_strength = residual_strength + (1-residual_strength)*0.8
@@ -1076,7 +1077,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             if Il > 0.5:  # показатель текучести.от 0.5 мягко- и текучепласт., текучий (для суглинков и глины)
                 kr_fgs = 0
             elif 0.25 < Il <= 0.5:  # от 0.25 до 0.5 тугопластичный (для суглинков и глины)
-                kr_fgs = round(np.random.uniform(0, 1))
+                kr_fgs = round(np.random.choice([0, 1], p=[0.7, 0.3]))
             else:  # меньше 0.25 твердый и полутвердый (для суглинков и глины)
                 kr_fgs = 1
         else:
@@ -1105,10 +1106,19 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         return xc
 
     @staticmethod
-    def residual_strength_param_from_xc(xc):
+    def residual_strength_param_from_xc(xc, sigma_3):
         """Функция находит параметр падения остатичной прочности в зависимости от пика"""
+        param = (0.33 - 1.9 * (0.15 - xc))
+        if sigma_3 <= 200:
+            k = 1.2
+        elif sigma_3 >= 200 and sigma_3 < 500:
+            k = 0.0013 * sigma_3 + 0.94
+        else:
+            k = 1.6
+        if xc > 0.043:
+            param = param*k
+        print('sigma_3', sigma_3, 'xc', xc, 'x2', param)
 
-        param = 0.33 - 1.9 * (0.15 - xc)
 
         return param
 
@@ -1205,7 +1215,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             "SampleHeight_mm": np.round(np.full(len(time), 35)),
             "SampleDiameter_mm": np.round(np.full(len(time), 71.4),1),
             "VerticalPress_kPa": np.round(vertical_press, 4),
-            "VerticalDeformation_mm": np.round(vertical_deformation,7) if nonzero_vertical_def else np.zeros_like(vertical_deformation),
+            "VerticalDeformation_mm": np.round(vertical_deformation,7) if nonzero_vertical_def else np.round(np.random.uniform(0, 0.0005, len(vertical_deformation)),7),
             "ShearDeformation_mm": np.round(shear_deformation,8),
             "ShearPress_kPa": np.round(shear_press, 6),
             "Stage": stage

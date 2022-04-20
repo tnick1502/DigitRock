@@ -1267,7 +1267,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             if Il > 0.5:  # показатель текучести.от 0.5 мягко- и текучепласт., текучий (для суглинков и глины)
                 kr_fgs = 0
             elif 0.25 < Il <= 0.5:  # от 0.25 до 0.5 тугопластичный (для суглинков и глины)
-                kr_fgs = round(np.random.uniform(0, 1))
+                kr_fgs = round(np.random.choice([0, 1], p=[0.7, 0.3]))
             else:  # меньше 0.25 твердый и полутвердый (для суглинков и глины)
                 kr_fgs = 1
         else:
