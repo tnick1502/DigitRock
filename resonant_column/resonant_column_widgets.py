@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMe
     QTableWidget, QGroupBox, QPushButton, QComboBox, QDialogButtonBox, QHeaderView, QTableWidgetItem, QTabWidget, \
     QTextEdit, QProgressDialog
 import os
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 import numpy as np
 import sys
 import shutil
@@ -86,6 +86,7 @@ class RezonantColumnProcessingWidget(QWidget):
 
 class RezonantColumnSoilTestWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора"""
+    signal = pyqtSignal()
     def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__()
@@ -103,11 +104,6 @@ class RezonantColumnSoilTestWidget(TabMixin, QWidget):
         self.line_1.addWidget(self.identification_widget)
         self.layout.addLayout(self.line_1)
         self.layout.addWidget(self.test_widget)
-        self.save_widget = Save_Dir(result_table_params={
-            "G0": lambda lab: RC_models[lab].get_test_results()['G0'],
-            "gam_07": lambda lab: RC_models[lab].get_test_results()["threshold_shear_strain"],
-        })
-        self.layout.addWidget(self.save_widget)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
     def _cut_sliders_moove(self):
@@ -138,7 +134,7 @@ class RezonantColumnSoilTestWidget(TabMixin, QWidget):
         try:
             RC_models[statment.current_test].set_draw_params(params)
             self.set_test_params(True)
-            self.save_widget.result_table.update()
+            self.signal.emit()
         except KeyError:
             pass
 
@@ -436,8 +432,16 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         self.tab_2.popIn.connect(self.addTab)
         self.tab_2.popOut.connect(self.removeTab)
 
+        self.tab_3 = Save_Dir(result_table_params={
+            "G0": lambda lab: RC_models[lab].get_test_results()['G0'],
+            "gam_07": lambda lab: RC_models[lab].get_test_results()["threshold_shear_strain"],
+        })
+        self.tab_3.popIn.connect(self.addTab)
+        self.tab_3.popOut.connect(self.removeTab)
+
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Обработка")
+        self.tab_widget.addTab(self.tab_3, "Сохранение отчета")
         self.layout.addWidget(self.tab_widget)
         self.log_widget = QTextEdit()
         self.log_widget.setFixedWidth(300)
@@ -446,22 +450,23 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(lambda x:
-                                                   self.tab_2.save_widget.update())
+                                                   self.tab_3.update())
         self.physical_line = LinePhysicalProperties()
 
         self.tab_1.signal[bool].connect(self.tab_2.set_test_params)
         self.tab_1.signal[bool].connect(lambda x: self.physical_line.set_data())
 
         self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_data)
-        self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
-        self.tab_2.save_widget.save_all_button.clicked.connect(self.save_all_reports)
+        self.tab_3.save_button.clicked.connect(self.save_report)
+        self.tab_3.save_all_button.clicked.connect(self.save_all_reports)
+        self.tab_2.signal.connect(self.tab_3.update)
 
         self.button_predict = QPushButton("Прогнозирование")
         self.button_predict.setFixedHeight(50)
         self.button_predict.clicked.connect(self._predict)
         self.tab_1.layuot_for_button.addWidget(self.button_predict)
 
-        self.tab_2.save_widget.general_statment_button.clicked.connect(self.general_statment)
+        self.tab_3.general_statment_button.clicked.connect(self.general_statment)
 
         self.tab_2.line_1.addWidget(self.physical_line)
         self.physical_line.refresh_button.clicked.connect(self.tab_2._refresh)

@@ -30,6 +30,7 @@ from version_control.configs import actual_version
 from general.tab_view import AppMixin
 __version__ = actual_version
 from authentication.request_qr import request_qr
+from saver import XMLWidget
 
 class StaticProcessingWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -698,6 +699,11 @@ class StatickSoilTestApp(AppMixin, QWidget):
         self.physical_line_2.refresh_button.clicked.connect(self.tab_3.refresh)
         self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
 
+        self.xml_button = QPushButton("Выгнать xml")
+        self.xml_button.clicked.connect(self.xml)
+        self.tab_4.advanced_box_layout.insertWidget(3, self.xml_button)
+        #self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
+
 
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
@@ -886,6 +892,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
                     }
                 }
 
+                #s = MohrSaver(FC_models[statment.current_test], statment.save_dir.save_directory + "/geologs", size=[h, d])
+                #s.save_log_file(file_path_name)
                 #qr = request_qr(data)
 
                 report_FCE(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
@@ -1175,6 +1183,13 @@ class StatickSoilTestApp(AppMixin, QWidget):
         else:
             self.dialog = TestsLogWidget(static, TestsLogTriaxialStatic, self.tab_1.path)
             self.dialog.show()
+
+    def xml(self):
+        try:
+            self.wm = XMLWidget(statment.save_dir.save_directory + "/xml")
+            QMessageBox.about(self, "Сообщение", "XML выгнаны")
+        except Exception as err:
+            print(str(err))
 
 
 

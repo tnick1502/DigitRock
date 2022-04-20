@@ -491,10 +491,14 @@ def test_mode_rc(canvas, ro, Data):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, 185 * mm)
 
-def test_mode_triaxial_cyclic(canvas, ro, test_parameter):
+def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True):
+
+    tau_text = '''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''' if tau else '''<p>σ<sub rise="2.5" size="6">d</sub>, кПа:</p>'''
+    tau = zap(test_parameter["tau"]) if tau else zap(test_parameter["tau"] * 2, 0)
 
     d = test_parameter["d"]
     h = test_parameter["h"]
+
 
     if test_parameter["type"] == "Сейсморазжижение":
 
@@ -523,8 +527,10 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter):
                     zap(test_parameter["sigma3"], 0),
                     Paragraph('''<p>σ'<sub rise="2.5" size="6">1</sub>, кПа:</p>''', LeftStyle), "",
                     zap(test_parameter["sigma1"], 0),
-                    Paragraph('''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''', LeftStyle), "",
-                    zap(test_parameter["tau"], 0)],
+
+                    Paragraph(tau_text, LeftStyle), "",
+                    tau],
+
                    [Paragraph('''<p>K<sub rise="0.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "",
                     zap(test_parameter["K0"], 2),
                     "Частота, Гц:", "", str(test_parameter["frequency"]).replace(".", ","), "", "", ""]],
@@ -1553,49 +1559,85 @@ def result_table_deviator_reload(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (42-(( r-30)*4)) * mm)
 
-def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8):
+def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False):
     try:
-        a = svg2rlg(pick[0])
+        a = svg2rlg(pick)
         a.scale(scale, scale)
         renderPDF.draw(a, canvas, 50 * mm, 45 * mm)
     except AttributeError:
-        a = ImageReader(pick[0])
-        canvas.drawImage(a, 55 * mm, 55 * mm,
-                         width=110 * mm, height=110 * mm)
+        a = ImageReader(pick)
+        if long:
+            canvas.drawImage(a, 48 * mm, 67.5 * mm,
+                             width=125 * mm, height=100 * mm)
+        else:
+            canvas.drawImage(a, 55 * mm, 67.5 * mm,
+                             width=105 * mm, height=100 * mm)
 
 
     #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
-    r = 29
+    r = 27
     for i in range(r):
         tableData.append([""])
 
-    tableData.append([Paragraph('''<p>Коэффициент демпфирования, %:</p>''', LeftStyle), "", "",
-                      zap(Res["damping_ratio"], 2), "", ""])
+    if Res["damping_ratio"] == "Rayleigh":
+        tableData.append([Paragraph('''<p>Коэффициент Релея α, c:</p>''', LeftStyle), "", "",
+                          zap(Res["alpha"], 3), "", ""])
+        tableData.append([Paragraph('''<p>Коэффициент Релея β, 1/c:</p>''', LeftStyle), "", "",
+                          zap(Res["betta"], 5), "", ""])
+        s = 4
+    else:
+        tableData.append([Paragraph('''<p>Коэффициент демпфирования, %:</p>''', LeftStyle), "", "",
+                          zap(Res["damping_ratio"], 2), "", ""])
+        s = 0
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
-    t.setStyle([('SPAN', (0, 0), (-1, 0)),
-                ('SPAN', (0, 1), (-1, r)),
-                ('SPAN', (0, -2), (2, -2)),
-                ('SPAN', (3, -2), (5, -2)),
-                ('SPAN', (0, -1), (2, -1)),
-                ('SPAN', (3, -1), (5, -1)),
-                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                #("BACKGROUND", (2, -2), (2, -2), HexColor(0xebebeb)),
-                #("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -1), (2, -1), HexColor(0xebebeb)),
-                #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (0, 0), (-1, r), "CENTER"),
-                ("ALIGN", (0, r+1), (0, -1), "LEFT"),
-                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    if Res["damping_ratio"] == "Rayleigh":
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                    ('SPAN', (0, 1), (-1, r)),
+                    ('SPAN', (0, -2), (2, -2)),
+                    ('SPAN', (3, -2), (5, -2)),
+                    ('SPAN', (0, -1), (2, -1)),
+                    ('SPAN', (3, -1), (5, -1)),
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    # ("BACKGROUND", (2, -2), (2, -2), HexColor(0xebebeb)),
+                    # ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -1), (2, -1), HexColor(0xebebeb)),
+                    # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                    ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    else:
+
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                    ('SPAN', (0, 1), (-1, r)),
+                    ('SPAN', (0, -2), (2, -2)),
+                    ('SPAN', (3, -2), (5, -2)),
+                    ('SPAN', (0, -1), (2, -1)),
+                    ('SPAN', (3, -1), (5, -1)),
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    #("BACKGROUND", (2, -2), (2, -2), HexColor(0xebebeb)),
+                    #("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -1), (2, -1), HexColor(0xebebeb)),
+                    #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                    ("ALIGN", (0, r+1), (0, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 49 * mm)
+    t.drawOn(canvas, 25 * mm, (60 - s) * mm)
 
 
 
@@ -2936,6 +2978,49 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     canvas.save()
 
+def report_RayleighDamping(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    # Подгружаем шрифты
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    canvas = Canvas(Name, pagesize=A4)
+    code = SaveCode(version)
+    frequency = test_parameter["frequency"]
+    damping_ratio = res["damping_ratio"]
+    test_parameter["type"] = "Демпфирование"
+
+    for i in range(len(test_parameter["frequency"])):
+        main_frame(canvas, path, Data_customer, code, f"{i+1}/6", qr_code=qr_code)
+        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                ["ОПРЕДЕЛЕНИЕ ДЕМПФИРУЮЩИХ СВОЙСТ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
+                                 "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"],
+                                "/Д")
+        parameter_table(canvas, Data_phiz, Lab)
+        test_parameter["frequency"] = frequency[i]
+        test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, tau=False)
+        res["damping_ratio"] = damping_ratio[i]
+        result_table_cyclic_damping(canvas, res, picks[i+1])
+
+        canvas.showPage()
+
+    main_frame(canvas, path, Data_customer, code, f"6/6", qr_code=qr_code)
+    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            ["ОПРЕДЕЛЕНИЕ ДЕМПФИРУЮЩИХ СВОЙСТ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
+                             "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"],
+                            "/Д")
+    parameter_table(canvas, Data_phiz, Lab)
+    test_parameter["frequency"] = "-"#"; ".join([zap(f, 1) for f in frequency])
+    test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, tau=False)
+    res["damping_ratio"] = "Rayleigh"
+    result_table_cyclic_damping(canvas, res, picks[0], long=True)
+
+    canvas.showPage()
+
+    canvas.save()
+
+
 
 def report_cyclic_damping(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
@@ -2954,7 +3039,7 @@ def report_cyclic_damping(Name, Data_customer, Data_phiz, Lab, path, test_parame
                             "/Д")
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter)
-    result_table_cyclic_damping(canvas, res, [picks[0]])
+    result_table_cyclic_damping(canvas, res, picks[0])
 
     canvas.showPage()
 

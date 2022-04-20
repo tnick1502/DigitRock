@@ -829,6 +829,15 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                             'CellVolume_mm3', 'PoreVolume_mm3']:
                     dict[key][index + 1] = dict[key][index]
 
+        for key in dict:
+            dict[key][0] = 0
+
+        dict['Trajectory'][0] = 'RPSReconsolidation'
+        dict['SampleHeight_mm'][0] = '76'
+        dict['SampleDiameter_mm'][0] = '38'
+        dict['Action'][0] = "LoadStage"
+        dict['Action_Changed'][0] = ""
+
         return dict
 
     @staticmethod

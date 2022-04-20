@@ -55,12 +55,12 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
             "Ca": "Коэфициент Ca",
             "max_time": "Время испытания",
             "strain": "Значение деформации"})
-        self.consolidation_sliders.setFixedHeight(130)
+        self.consolidation_sliders.setFixedHeight(150)
 
         self.consolidation.graph_layout.addWidget(self.consolidation_sliders)
 
         self.point_identificator = None
-        self.consolidation.setFixedHeight(520)
+
 
         self.consolidation_sliders.signal[object].connect(self._consolidation_sliders_moove)
 
@@ -79,14 +79,6 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
         self.layout_1.addWidget(self.consolidation)
         self.layout.addLayout(self.layout_identification)
         self.layout.addLayout(self.layout_1)
-
-        self.save_wigdet = Save_Dir()
-        self.save_wigdet.advanced_box.hide()
-
-
-        self.save_wigdet.setFixedHeight(200)
-
-        self.layout.addWidget(self.save_wigdet)
 
         self.setLayout(self.layout)
 
@@ -252,23 +244,27 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = ConsolidationStatment()
         self.tab_2 = ConsilidationSoilTestWidget()
+        self.tab_3 = Save_Dir()
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
         self.tab_widget.addTab(self.tab_2, "Опыт консолидации")
+        self.tab_widget.addTab(self.tab_3, "Сохранение отчетов")
         self.layout.addWidget(self.tab_widget)
 
         self.physical_line = LinePhysicalProperties()
 
         self.tab_1.signal[bool].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_wigdet.update())
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.update())
         self.tab_1.signal[bool].connect(lambda x: self.physical_line.set_data())
 
-        self.tab_2.save_wigdet.save_button.clicked.connect(self.save_report)
-        self.tab_2.save_wigdet.save_all_button.clicked.connect(self.save_all_reports)
-        self.tab_2.save_wigdet.jornal_button.clicked.connect(self.jornal)
+        self.tab_3.save_button.clicked.connect(self.save_report)
+        self.tab_3.save_all_button.clicked.connect(self.save_all_reports)
+        self.tab_3.jornal_button.clicked.connect(self.jornal)
 
         self.tab_2.popIn.connect(self.addTab)
         self.tab_2.popOut.connect(self.removeTab)
+        self.tab_3.popIn.connect(self.addTab)
+        self.tab_3.popOut.connect(self.removeTab)
 
         self.save_massage = True
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)

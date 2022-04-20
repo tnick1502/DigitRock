@@ -1017,13 +1017,14 @@ class VibrationStrangthStatment(InitialStatment):
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
                     self.table_physical_properties.set_data()
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
 
                     self.load_models(models_name="FC_models.pickle",
                                      models=FC_models, models_type=ModelMohrCirclesSoilTest)
                     self.load_models(models_name="VibrationFC_models.pickle",
                                      models=VibrationFC_models, models_type=CyclicVibrationStrangthMohr)
+
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
 
 class RayleighDampingStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -1070,11 +1071,12 @@ class RayleighDampingStatment(InitialStatment):
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
                     self.table_physical_properties.set_data()
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
 
                     self.load_models(models_name="RayleighDamping_models.pickle",
                                      models=RayleighDamping_models, models_type=ModelRayleighDampingSoilTest)
+
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
 
 
 
