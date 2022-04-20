@@ -46,6 +46,7 @@ class RayleighDampingWidget(TabMixin, QWidget):
             "qf": "Максимальный девиатор qf, кПа",
             "sigma_3": "Обжимающее давление 𝜎3, кПа",
             "frequency": "Частота, Гц",
+            "t": "Касательное напряжение",
         }
         self.identification = TableVertical(fill_keys)
         self.sliders = TriaxialStaticLoading_Sliders(
@@ -245,7 +246,7 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
 
             set_cell_data(self.tab_1.path, ("IL" + str(number), (number, 245)), damping_ratio, sheet="Лист1", color="FF6961")
             set_cell_data(self.tab_1.path, ("IM" + str(number), (number, 246)), zap(res["alpha"], 3), sheet="Лист1", color="FF6961")
-            set_cell_data(self.tab_1.path, ("IN" + str(number), (number, 247)), zap(res["betta"], 3), sheet="Лист1", color="FF6961")
+            set_cell_data(self.tab_1.path, ("IN" + str(number), (number, 247)), zap(res["betta"], 5), sheet="Лист1", color="FF6961")
             #set_cell_data(self.tab_1.path, ("CB" + str(number), (number, 79)), Kd, sheet="Лист1", color="FF6961")
 
 
