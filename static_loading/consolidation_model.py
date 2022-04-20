@@ -1135,7 +1135,104 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             "Trajectory": np.full(len(time), 'Consolidation')
         }
         return data
+    @staticmethod
+    def dictionary_without_VFS(sigma_3=100, velocity=49):
+        # Создаем массив набора нагрузки до обжимающего давления консолидации
+        # sigma_3 -= effective_stress_after_reconsolidation
+        k = sigma_3 / velocity
+        if k <= 2:
+            velocity = velocity / (2 / k) - 1
+        print(velocity)
+        load_stage_time = round(sigma_3 / velocity, 2)
+        load_stage_time_array = np.arange(1, load_stage_time, 1)
+        time_max = np.random.uniform(20, 30)
+        time_array = np.arange(0, time_max, 1)
+        # Добавим набор нагрузки к основным массивам
+        time = np.hstack((load_stage_time_array, time_array + load_stage_time_array[-1]))
 
+        load_stage_cell_press = np.linspace(0, sigma_3, len(load_stage_time_array) + 1)
+        cell_press = np.hstack((load_stage_cell_press[1:], np.full(len(time_array), sigma_3))) + \
+                     np.random.uniform(-0.1, 0.1, len(time))
+
+        final_volume_strain = np.random.uniform(0.14, 0.2)
+        load_stage_cell_volume_strain = exponent(load_stage_time_array[:-1], final_volume_strain,
+                                                 np.random.uniform(1, 1))
+        load_stage_cell_volume_strain[0] = 0
+        cell_volume_strain = np.hstack((load_stage_cell_volume_strain,
+                                        np.full(len(time_array) + 1, final_volume_strain))) * np.pi * (19 ** 2) * 76 + \
+                             np.random.uniform(-0.1, 0.1, len(time))
+        vertical_press = cell_press + np.random.uniform(-0.1, 0.1, len(time))
+
+        # На нэтапе нагружения 'LoadStage', на основном опыте Stabilization
+        load_stage = ['LoadStage' for _ in range(len(load_stage_time_array))]
+        wait = ['Wait' for _ in range(len(time_array))]
+        action = load_stage + wait
+
+        action_changed = ['' for _ in range(len(time))]
+        action_changed[len(load_stage_time_array) - 1] = "True"
+        action_changed[-1] = 'True'
+
+        # Значения на последнем LoadStage и Первом Wait (следующая точка) - равны
+        cell_press[len(load_stage)] = cell_press[len(load_stage) - 1]
+        vertical_press[len(load_stage)] = vertical_press[len(load_stage) - 1]
+        cell_volume_strain[len(load_stage)] = cell_volume_strain[len(load_stage) - 1]
+
+        trajectory = np.full(len(time), 'ReconsolidationWoDrain')
+        trajectory[-1] = "CTC"
+
+        # Подключение запуска опыта
+        LEN_START = 4
+
+        time_start = np.zeros(LEN_START)
+        time_start[-1] = time[0]
+        time = np.hstack((time_start, time))
+
+        action_start = np.full(LEN_START, 'Start')
+        action_start[0] = ''
+        action_start[1] = ''
+        action = np.hstack((action_start, action))
+
+        action_changed_start = np.full(LEN_START, 'True')
+        action_changed_start[0] = ''
+        action_changed_start[2] = ''
+        action_changed = np.hstack((action_changed_start, action_changed))
+
+        cell_press_start = np.zeros(LEN_START)
+        cell_press_start[-1] = cell_press[0]
+        cell_press = np.hstack((cell_press_start, cell_press))
+
+        cell_volume_strain_start = np.zeros(LEN_START)
+        cell_volume_strain_start[-1] = cell_volume_strain[0]
+        cell_volume_strain = np.hstack((cell_volume_strain_start, cell_volume_strain))
+
+        vertical_press_start = np.zeros(LEN_START)
+        vertical_press_start[-1] = vertical_press[0]
+        vertical_press = np.hstack((vertical_press_start, vertical_press))
+
+        trajectory_start = np.full(LEN_START, trajectory[0])
+
+        for i in range(len(trajectory_start) - 1):
+            trajectory_start[i] = 'HC'
+        trajectory = np.hstack((trajectory_start, trajectory))
+
+        print(len(time), len(action))
+        data = {
+            "Time": time,
+            "Action": action,
+            "Action_Changed": action_changed,
+            "SampleHeight_mm": np.round(np.full(len(time), 76)),
+            "SampleDiameter_mm": np.round(np.full(len(time), 38)),
+            "Deviator_kPa": np.full(len(time), 0),
+            "VerticalDeformation_mm": np.full(len(time), 0),
+            "CellPress_kPa": cell_press,
+            "CellVolume_mm3": cell_volume_strain,
+            "PorePress_kPa": np.full(len(time), 0),
+            "PoreVolume_mm3": np.full(len(time), 0),
+            "VerticalPress_kPa": vertical_press,
+            "Trajectory": trajectory
+        }
+
+        return data
 
 if __name__ == '__main__':
     file = r"C:\Users\Пользователь\PycharmProjects\Willie\Test.1.log"

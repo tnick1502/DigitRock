@@ -414,7 +414,7 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         self.deviator_loading = ModelTriaxialDeviatorLoadingSoilTest()# ModelResistanseSoilTest()
         self.test_params = None
 
-    def set_test_params(self, reconsolidation=True, consolidation=True):
+    def set_test_params(self, reconsolidation=True, consolidation=True, pre_defined_kr_fgs=None):
         """Получение массивов опытов и передача в соответствующий класс"""
         if reconsolidation:
             self.reconsolidation.set_test_params()
@@ -442,14 +442,14 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         iteration = 0
 
         while (poisons_ratio > poisons_ratio_global + 0.03 or poisons_ratio < poisons_ratio_global - 0.03):
-            self.deviator_loading.set_test_params()
+            self.deviator_loading.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
             iteration += 1
             poisons_ratio = self.deviator_loading.get_test_results()["poissons_ratio"]
             if iteration == 5:
                 break
 
         if iteration == 0:
-            self.deviator_loading.set_test_params()
+            self.deviator_loading.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
 
     def get_test_params(self):
         return self.test_params
