@@ -1927,8 +1927,8 @@ class RayleighDampingProperties(MechanicalProperties):
             sigma_3 = float_df(data_frame.iat[string, DynamicsPropertyPosition["reference_pressure"][1]])
 
             if sigma_3:
-                self.sigma_1 = sigma_3
-                self.sigma_3 = sigma_3
+                self.sigma_1 = np.round(sigma_3*1000)
+                self.sigma_3 = np.round(sigma_3*1000)
             else:
                 physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
                 if physical_properties.depth <= physical_properties.ground_water_depth:
@@ -1939,7 +1939,6 @@ class RayleighDampingProperties(MechanicalProperties):
                 if self.sigma_1 < 50:
                     self.sigma_1 = 50
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
-                self.cycles_count = 5
 
 
             sigma_d = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])
@@ -1962,6 +1961,8 @@ class RayleighDampingProperties(MechanicalProperties):
             else:
                 self.t = np.round(sigma_d / 2, 1)
 
+            self.cycles_count = 5
+
             frequency = data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]]
 
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
@@ -1972,8 +1973,28 @@ class RayleighDampingProperties(MechanicalProperties):
 
             self.Ms = np.round(np.random.uniform(150, 200), 2)
 
-            self.alpha = np.random.uniform(0.1, 0.2)
-            self.betta = np.random.uniform(0.001, 0.005)
+            #self.alpha = np.random.uniform(0.1, 0.2)
+            #self.betta = np.random.uniform(0.001, 0.005)
+
+            self.alpha = np.random.uniform(0.1, 0.14)
+            self.betta = np.random.uniform(0.0015, 0.003)
+
+            dependence_ground = {
+                1: np.random.uniform(0.8, 0.85),  # Песок гравелистый
+                2: np.random.uniform(0.85, 0.9),  # Песок крупный
+                3: np.random.uniform(0.9, 0.95),  # Песок средней крупности
+                4: np.random.uniform(0.95, 1),  # Песок мелкий
+                5: np.random.uniform(0.95, 1),  # Песок пылеватый
+                6: np.random.uniform(1, 1.05),  # Супесь
+                7: np.random.uniform(1.1, 1.2),  # Суглинок
+                8: np.random.uniform(1.2, 1.4),  # Глина
+                9: np.random.uniform(0.7, 0.8),  # Торф
+            }
+
+            K_ground_type = dependence_ground[physical_properties.type_ground]
+
+            self.alpha *= K_ground_type
+            self.betta *= K_ground_type
 
             self.damping_ratio = [np.round(RayleighDampingProperties.define_damping_ratio(self.alpha, self.betta, f) *
                                              np.random.uniform(0.9, 1.1), 2) for f in self.frequency]
