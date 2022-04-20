@@ -26,6 +26,7 @@ from version_control.configs import actual_version
 from general.tab_view import AppMixin, TabMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
+from authentication.request_qr import request_qr
 
 class RezonantColumnProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -435,7 +436,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         self.tab_3 = Save_Dir(result_table_params={
             "G0": lambda lab: RC_models[lab].get_test_results()['G0'],
             "gam_07": lambda lab: RC_models[lab].get_test_results()["threshold_shear_strain"],
-        })
+        }, qr=True)
         self.tab_3.popIn.connect(self.addTab)
         self.tab_3.popOut.connect(self.removeTab)
 
@@ -511,11 +512,34 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
             if date:
                 data_customer.end_date = date
 
+            data = {
+                "laboratory": "mdgt",
+                "password": "it_user",
+
+                "test_name": "Cyclic",
+                "object": str(statment.general_data.object_number),
+                "laboratory_number": str(statment.current_test),
+                "test_type": "rezonant_column",
+
+                "data": {
+                    "Лаболаторный номер:": str(statment.current_test),
+                    "Референтное давление Pref, МПа:": str(
+                        np.round(statment[statment.current_test].mechanical_properties.reference_pressure / 1000, 3)),
+                    "Модуль сдвига при сверхмалых деформациях G0, МПа:": str(test_result["G0"]),
+                    "Пороговое значение сдвиговой деформации γ0.7, д.е.:": str(test_result["threshold_shear_strain"]),
+                }
+            }
+
+            if self.tab_3.qr:
+                qr = None  # qr = request_qr(data)
+            else:
+                qr = None
+
             report_rc(file_name, data_customer,
                       statment[statment.current_test].physical_properties,
                       statment.getLaboratoryNumber(),
                       os.getcwd() + "/project_data/", statment[statment.current_test].mechanical_properties, results,
-                      self.tab_2.test_widget.save_canvas(), __version__)
+                      self.tab_2.test_widget.save_canvas(), __version__, qr_code=qr)
 
             number = statment[statment.current_test].physical_properties.sample_number + 7
 

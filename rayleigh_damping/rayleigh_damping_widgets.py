@@ -8,6 +8,7 @@ import sys
 import shutil
 import os
 import threading
+from authentication.request_qr import request_qr
 
 from excel_statment.initial_tables import LinePhysicalProperties
 from excel_statment.initial_statment_widgets import RayleighDampingStatment
@@ -228,6 +229,30 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
             if date:
                 data_customer.end_date = date
 
+            test_result = RayleighDamping_models[statment.current_test].get_test_results()
+            data = {
+                "laboratory": "mdgt",
+                "password": "it_user",
+
+                "test_name": "Cyclic",
+                "object": str(statment.general_data.object_number),
+                "laboratory_number": str(statment.current_test),
+                "test_type": "rayleigh_damping",
+
+                "data": {
+                    "Лаболаторный номер:": str(statment.current_test),
+                    "Обжимающее давление 𝜎3, МПа:": str(
+                        np.round(statment[statment.current_test].mechanical_properties.sigma_3 / 1000, 3)),
+                    "Коэффициент Релея α, c:": str(test_result["alpha"]),
+                    "Коэффициент Релея β, 1 / c:": str(test_result["betta"])
+                }
+            }
+
+            if self.tab_4.qr:
+                qr = None  # qr = request_qr(data)
+            else:
+                qr = None
+
 
             report_RayleighDamping(save + "/" + file_name, data_customer,
                                   statment[statment.current_test].physical_properties,
@@ -236,7 +261,7 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
                                   test_parameter, RayleighDamping_models[statment.current_test].get_test_results(),
                                   [self.tab_3.rayleigh_widget.save_canvas(),
                                    *self.tab_3.damping_widget.save_canvas()],
-                                  "{:.2f}".format(__version__))
+                                  "{:.2f}".format(__version__), qr_code=qr)
 
 
             number = statment[statment.current_test].physical_properties.sample_number + 7

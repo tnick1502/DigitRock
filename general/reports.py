@@ -494,7 +494,7 @@ def test_mode_rc(canvas, ro, Data):
 def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True):
 
     tau_text = '''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''' if tau else '''<p>σ<sub rise="2.5" size="6">d</sub>, кПа:</p>'''
-    tau = zap(test_parameter["tau"]) if tau else zap(test_parameter["tau"] * 2, 0)
+    tau = zap(test_parameter["tau"], 0) if tau else zap(test_parameter["tau"] * 2, 0)
 
     d = test_parameter["d"]
     h = test_parameter["h"]
