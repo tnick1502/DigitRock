@@ -356,14 +356,16 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         super().__init__()
         self._test_params = None
         self._reference_pressure_array = None
+        self.pre_defined_kr_fgs = None
 
-    def add_test_st(self):
+    def add_test_st(self, pre_defined_kr_fgs=None):
         """Добавление опытов"""
         test = ModelTriaxialStaticLoadSoilTest()
-        test.set_test_params(statment.general_parameters.reconsolidation)
+        test.set_test_params(statment.general_parameters.reconsolidation, pre_defined_kr_fgs=pre_defined_kr_fgs)
         if self._check_clone(test):
             self._tests.append(test)
             self.sort_tests()
+            self.pre_defined_kr_fgs = test.deviator_loading.pre_defined_kr_fgs
 
     def add_test_st_NN(self):
         """Добавление опытов"""
@@ -462,7 +464,9 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 if statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
                     self.add_test_st_NN()
                 else:
-                    self.add_test_st()
+                    self.add_test_st(pre_defined_kr_fgs=self.pre_defined_kr_fgs)
+
+            self.pre_defined_kr_fgs = None
 
             statment[statment.current_test].mechanical_properties.sigma_3 = sigma_3_origin
             statment[statment.current_test].mechanical_properties.qf = qf_origin
@@ -608,14 +612,42 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         initial = np.delete(sigma1_with_noise, fixed_circle_index)
         from scipy.optimize import Bounds, minimize
         bnds = Bounds(np.zeros_like(initial), np.ones_like(initial) * np.inf)
+
+        def constrains(x):
+            """
+            Функция ограничений на икс, должна подаваться в cons.
+            Должна представлять собой массивы ограничений вида x1 - x2 < 0
+            """
+
+            # икс для фукнции оптимизации это два круга, поэтому возвращаем в икс убранный круг
+            x = np.insert(x, fixed_circle_index, sigma1_with_noise[fixed_circle_index])
+
+            # первое ограничение - каждая последующая сигма не меньше предыдущей
+            first = np.array([x[i + 1] - x[i] for i in range(len(x) - 1)])
+
+            # замыкаем последний на первый на всякий случай
+            second = np.array([x[-1] - x[0]])
+
+            # здесь считаем тау - каждый следующий тау не меньше предыдущего (- погреность)
+            EPS = 1
+            third = np.array([(x[i + 1] - sigma3[i+1])/2 - (x[i] - sigma3[i])/2 - EPS for i in range(len(x) - 1)])
+
+            res = np.hstack((first, second, third))
+            return res
+
         cons = {'type': 'ineq',
-                'fun': lambda x: np.hstack((np.array([x[i + 1] - x[i] for i in range(len(x) - 1)]),
-                                            np.array([x[-1] - x[0]])))
-                }
+                'fun': constrains}
+
         res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, options={'ftol': 1e-9})
+        # res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds,
+        #                options={'ftol': 1e-9, 'maxiter': 50}) # отбойник на 50
         res = res.x
         sigma1_with_noise = np.insert(res, fixed_circle_index, sigma1_with_noise[fixed_circle_index])
+
         qf_with_noise = sigma1_with_noise - sigma3
+
+        if np.any(qf_with_noise[1:] < qf_with_noise[:-1]):
+            raise RuntimeWarning(f"Круги имеют ошибочные размеры : tau : {qf_with_noise / 2}")
 
         assert sum([abs(sigma1[i] - sigma1_with_noise[i]) < 10 ** (-1) for i in range(len(sigma1))]) < 2, \
             "Два круга не зашумлены!"
@@ -648,5 +680,3 @@ if __name__ == '__main__':
     a.plotter()
     a.save_log_files("C:/Users/Пользователь/Desktop")
     plt.show()
-
-
