@@ -1559,7 +1559,7 @@ def result_table_deviator_reload(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (42-(( r-30)*4)) * mm)
 
-def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False, path=None):
+def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False):
     try:
         a = svg2rlg(pick)
         a.scale(scale, scale)
@@ -1587,7 +1587,6 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False, path
         tableData.append([Paragraph('''<p>Коэффициент Релея β, 1/c:</p>''', LeftStyle), "", "",
                           zap(Res["betta"], 5), "", ""])
         s = 4
-        canvas.drawImage(path + "Report Data/rayleigh.png", 150 * mm, 90 * mm, width=22.3 * mm, height=10.4 * mm)
     else:
         tableData.append([Paragraph('''<p>Коэффициент демпфирования, %:</p>''', LeftStyle), "", "",
                           zap(Res["damping_ratio"], 2), "", ""])
@@ -3016,7 +3015,7 @@ def report_RayleighDamping(Name, Data_customer, Data_phiz, Lab, path, test_param
     test_parameter["frequency"] = "-"#"; ".join([zap(f, 1) for f in frequency])
     test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, tau=False)
     res["damping_ratio"] = "Rayleigh"
-    result_table_cyclic_damping(canvas, res, picks[0], long=True, path=path)
+    result_table_cyclic_damping(canvas, res, picks[0], long=True)
 
     canvas.showPage()
 

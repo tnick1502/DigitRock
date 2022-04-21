@@ -15,7 +15,7 @@ from excel_statment.initial_statment_widgets import RayleighDampingStatment
 from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
 from general.reports import report_RayleighDamping, zap
 from general.save_widget import Save_Dir
-from rayleigh_damping.rayleigh_damping_widgets_UI import RayleighDampingUI, CyclicDampingUI
+from rayleigh_damping.rayleigh_damping_widgets_UI import RayleighDampingUI, CyclicDampingUI, ResultsUI
 from excel_statment.initial_tables import TableVertical
 from excel_statment.functions import set_cell_data
 from general.report_general_statment import save_report
@@ -60,12 +60,16 @@ class RayleighDampingWidget(TabMixin, QWidget):
         #self.identification.setFixedHeight(700)
         self.layout_1 = QHBoxLayout()
         self.layout_1_1 = QVBoxLayout()
+        self.layout_1_1_1 = QHBoxLayout()
         self.rayleigh_widget = RayleighDampingUI()
         self.damping_widget = CyclicDampingUI()
         self.damping_widget.signal[object].connect(self._refresh_one)
+        self.result_widget = ResultsUI()
 
         self.layout_1_1.addWidget(self.identification)
-        self.layout_1_1.addWidget(self.sliders)
+        self.layout_1_1_1.addWidget(self.sliders)
+        self.layout_1_1_1.addWidget(self.result_widget)
+        self.layout_1_1.addLayout(self.layout_1_1_1)
 
         self.layout_1.addLayout(self.layout_1_1)
         self.layout_1.addWidget(self.rayleigh_widget)
@@ -122,10 +126,10 @@ class RayleighDampingWidget(TabMixin, QWidget):
 
         self.damping_widget.plot(plots, results)
 
-
         plot = RayleighDamping_models[statment.current_test].get_plot_data()
         res = RayleighDamping_models[statment.current_test].get_test_results()
         self.rayleigh_widget.plot(plot, res)
+        self.result_widget.set_data(res)
 
         #plots = self._model._static_test_data.get_plot_data()
         #res = self._model._static_test_data.get_test_results()
