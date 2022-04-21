@@ -255,7 +255,7 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
         canvas.line((158.75) * mm, (10) * mm, (158.75) * mm, (51.25) * mm)
         canvas.line((158.75) * mm, (51.25) * mm, (210-5) * mm, (51.25) * mm)
 
-        t = Table([["Аутентификация протокола"], ["Сервис georeport.ru"]], colWidths=46.25 * mm,
+        t = Table([["Сервис georeport.ru"], [""]], colWidths=46.25 * mm,
                   rowHeights=4* mm)
         t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
                     ("FONTSIZE", (0, 0), (-1, -1), 7),
@@ -267,7 +267,7 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
         t.wrapOn(canvas, 0, 0)
         t.drawOn(canvas, 158.75 * mm, 51.25 - 8 + 28* mm)
 
-        canvas.drawImage(qr_code, (8.25*0.5 + 158.75 + 0.5) * mm, 6.5 * mm,
+        canvas.drawImage(qr_code, (8.25*0.5 + 158.75 + 0.5) * mm, 8.5 * mm,
                          width=37 * mm, height=37 * mm)
 
     else:

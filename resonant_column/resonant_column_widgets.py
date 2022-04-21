@@ -487,7 +487,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
                               #name="Резонансная колонка.pickle")
                 app_logger.info("Новые параметры ведомости и модели сохранены")
 
-    @log_this(app_logger, "debug")
+    #@log_this(app_logger, "debug")
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
@@ -526,12 +526,12 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
                     "Референтное давление Pref, МПа:": str(
                         np.round(statment[statment.current_test].mechanical_properties.reference_pressure / 1000, 3)),
                     "Модуль сдвига при сверхмалых деформациях G0, МПа:": str(test_result["G0"]),
-                    "Пороговое значение сдвиговой деформации γ0.7, д.е.:": str(test_result["threshold_shear_strain"]),
+                    "Пороговое значение сдвиговой деформации γ0.7, д.е.:": str(test_result["threshold_shear_strain"]) + "10(-4)",
                 }
             }
 
             if self.tab_3.qr:
-                qr = None  # qr = request_qr(data)
+                qr = request_qr(data)
             else:
                 qr = None
 

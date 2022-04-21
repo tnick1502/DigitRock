@@ -1,7 +1,7 @@
 import sys, os
 import PyQt5
 pyqt = os.path.dirname(PyQt5.__file__)
-os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt, "Qt/plugins")
+os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt, "Qt5/plugins")
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget, QGridLayout, QPushButton
 from PyQt5.QtGui import QIcon, QPixmap, QFont
