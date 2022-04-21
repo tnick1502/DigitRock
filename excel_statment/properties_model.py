@@ -269,6 +269,8 @@ class MechanicalProperties:
         """Считывание строки свойств"""
         if test_mode == "Трёхосное сжатие КН" or test_mode == "Вибропрочность":
             self.c, self.fi, self.E50, self.u = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
+            if self.u != None:
+                self.u *= 1000
         else:
             self.c, self.fi, self.E50 = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
 
