@@ -2112,14 +2112,14 @@ def result_table_CF_KN(canvas, Res, pick, scale = 0.8):
 
 
     tableData.append(["Напряжение, МПа", "", "", "", "", "", "", ""])
-    tableData.append([Paragraph('''<p>σ<sub rise="0.5" size="5">3c</sub></p>''', CentralStyle),
-                      Paragraph('''<p>σ<sub rise="0.5" size="5">1c</sub></p>''', CentralStyle),
-                      Paragraph('''<p>σ<sub rise="0.5" size="5">1f</sub></p>''', CentralStyle),
+    tableData.append([Paragraph('''<p>σ'<sub rise="0.5" size="5">3c</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ'<sub rise="0.5" size="5">3f</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ'<sub rise="0.5" size="5">1f</sub></p>''', CentralStyle),
                       Paragraph('''<p>u<sub rise="0.5" size="5">f</sub></p>''', CentralStyle), "", "", "", ""])
 
-    tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), zap(Res["u_mohr"][0], 3) if Res["u_mohr"][0] != 0 else "-", "", "", "", ""])
-    tableData.append([zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), zap(Res["u_mohr"][1], 3) if Res["u_mohr"][1] != 0 else "-", "", "", "", ""])
-    tableData.append([zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_1_mohr"][2], 3), zap(Res["u_mohr"][2], 3) if Res["u_mohr"][2] != 0 else "-", "", "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][0] + Res["u_mohr"][0], 3), zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), zap(Res["u_mohr"][0], 3) if Res["u_mohr"][0] != 0 else "-", "", "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][1] + Res["u_mohr"][1], 3), zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), zap(Res["u_mohr"][1], 3) if Res["u_mohr"][1] != 0 else "-", "", "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][2] + Res["u_mohr"][2], 3), zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_1_mohr"][2], 3), zap(Res["u_mohr"][2], 3) if Res["u_mohr"][2] != 0 else "-", "", "", "", ""])
 
     for i in range(r):
         tableData.append([""])
@@ -2869,7 +2869,7 @@ def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
-    test_parameter["K0"] = test_parameter["K0"][1]
+    test_parameter["K0"] = test_parameter["K0"][0]
     test_parameter["mode"] = "КН, девиаторное нагружение в кинематическом режиме"
     name = "КН"
 
@@ -2883,7 +2883,7 @@ def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
 
     parameter_table(canvas, Data_phiz, Lab)
-    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
+    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0] + res["u_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1]+ res["u_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2] + res["u_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
 
     result_table_CF_KN(canvas, res, [picks[0],picks[1]])
