@@ -312,7 +312,7 @@ class MohrWidget(QWidget):
             self.deviator_ax.set_ylabel("Девиатор q, МПа")
 
             self.mohr_ax.clear()
-            self.mohr_ax.set_xlabel("Девиатор q, МПа")
+            self.mohr_ax.set_xlabel("σ, МПа")
             self.mohr_ax.set_ylabel("τ, МПа")
 
             plots = FC_models[statment.current_test].get_plot_data()

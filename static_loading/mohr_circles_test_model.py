@@ -159,17 +159,22 @@ class ModelMohrCircles:
         if statment.general_parameters.test_mode == "Трёхосное сжатие НН":
             strain = []
             deviator = []
+            s3 = []
             for test in self._tests:
                 plots = test.deviator_loading.get_plot_data()
+                s3.append(test.deviator_loading.get_test_results()["sigma_3"])
                 strain.append(plots["strain"])
                 deviator.append(plots["deviator"])
 
             mohr_x, mohr_y = ModelMohrCircles.mohr_circles([0 for _ in range(len(deviator))], [np.max(d) for d in deviator])
 
-            line_x = np.linspace(0, np.max(deviator[-1]), 10)
+            for i in range(len(mohr_x)):
+                mohr_x[i] += s3[i]
+
+            line_x = np.linspace(0, np.max(deviator[-1]) + s3[0], 10)
             line_y = np.full(10, np.max(deviator[-1]) / 2)
 
-            x_lims = (0, np.max(deviator[-1]) * 1.1)
+            x_lims = (s3[0], np.max(deviator[-1]) * 1.1 + s3[0])
             y_lims = (0, np.max(deviator[-1]) * 1.1 * 0.5)
 
             return {"strain": strain,
