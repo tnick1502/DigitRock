@@ -1708,78 +1708,78 @@ class ShearProperties(MechanicalProperties):
             if e > 1.6:
                 e = 1.6
 
-            if stratigraphic_index == "f":
+            # if stratigraphic_index == "f":
+            #
+            #     if Il < 0:
+            #         Il = 0
+            #     if Il > 0.75:
+            #         Il = 0.75
+            #         # return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
+            #
+            #     if type_ground == 6:
+            #         if 0 <= Il <= 0.75:
+            #             return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85]),
+            #                              np.array([33, 24, 17, 11, 7]))
+            #     if type_ground == 7:
+            #         if 0 <= Il <= 0.25:
+            #             return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75]),
+            #                              np.array([40, 33, 27, 21]))
+            #         elif 0.25 < Il <= 0.5:
+            #             return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85, 0.95]),
+            #                              np.array([35, 28, 22, 17, 14]))
+            #         elif 0.5 < Il <= 0.75:
+            #             return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+            #                              np.array([15, 12, 9, 7]))
+            # elif stratigraphic_index == "J":
+            #
+            #     if Il < -0.25:
+            #         Il = -0.25
+            #     if Il > 0.5:
+            #         # Il = 0.5
+            #         return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
+            #
+            #     if type_ground == 8:
+            #         if -0.25 <= Il <= 0:
+            #             return np.interp(e, np.array([0.95, 1.05, 1.2]),
+            #                              np.array([27, 25, 22])*1.2)
+            #         elif 0 < Il <= 0.25:
+            #             return np.interp(e, np.array([0.95, 1.05, 1.2, 1.4]),
+            #                              np.array([24, 22, 19, 15]))
+            #         elif 0.25 < Il <= 0.5:
+            #             return np.interp(e, np.array([1.2, 1.4, 1.6]),
+            #                              np.array([16, 12, 10]))
+            # else:  # stratigraphic_index == "a" or stratigraphic_index == "d":
 
-                if Il < 0:
-                    Il = 0
-                if Il > 0.75:
-                    # Il = 0.75
-                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
+            if Il < 0:
+                Il = 0
+            if Il > 0.75:
+                Il = 0.75
+                # return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
 
-                if type_ground == 6:
-                    if 0 <= Il <= 0.75:
-                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85]),
-                                         np.array([33, 24, 17, 11, 7]))
-                if type_ground == 7:
-                    if 0 <= Il <= 0.25:
-                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75]),
-                                         np.array([40, 33, 27, 21]))
-                    elif 0.25 < Il <= 0.5:
-                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85, 0.95]),
-                                         np.array([35, 28, 22, 17, 14]))
-                    elif 0.5 < Il <= 0.75:
-                        return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
-                                         np.array([15, 12, 9, 7]))
-            elif stratigraphic_index == "J":
-
-                if Il < -0.25:
-                    Il = -0.25
-                if Il > 0.5:
-                    # Il = 0.5
-                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
-
-                if type_ground == 8:
-                    if -0.25 <= Il <= 0:
-                        return np.interp(e, np.array([0.95, 1.05, 1.2]),
-                                         np.array([27, 25, 22])*1.2)
-                    elif 0 < Il <= 0.25:
-                        return np.interp(e, np.array([0.95, 1.05, 1.2, 1.4]),
-                                         np.array([24, 22, 19, 15]))
-                    elif 0.25 < Il <= 0.5:
-                        return np.interp(e, np.array([1.2, 1.4, 1.6]),
-                                         np.array([16, 12, 10]))
-            else:  # stratigraphic_index == "a" or stratigraphic_index == "d":
-
-                if Il < 0:
-                    Il = 0
-                if Il > 0.75:
-                    # Il = 0.75
-                    return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
-
-                if type_ground == 6:
-                    if 0 <= Il <= 0.75:
-                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85]),
-                                         np.array([32, 24, 16, 10, 7]))
-                if type_ground == 7:
-                    if 0 <= Il <= 0.25:
-                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85, 0.95]),
-                                         np.array([34, 27, 22, 17, 14, 11]))
-                    elif 0.25 < Il <= 0.5:
-                        return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85, 0.95]),
-                                         np.array([32, 25, 19, 14, 11, 8]))
-                    elif 0.5 < Il <= 0.75:
-                        return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05]),
-                                         np.array([17, 12, 8, 6, 5]))
-                if type_ground == 8:
-                    if 0 <= Il <= 0.25:
-                        return np.interp(e, np.array([0.55, 0.65, 0.75, 0.85, 0.95, 1.05]),
-                                         np.array([28, 24, 21, 18, 15, 12])*1.2)
-                    elif 0.25 < Il <= 0.5:
-                        return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05]),
-                                         np.array([21, 18, 15, 12, 9]))
-                    elif 0.5 < Il <= 0.75:
-                        return np.interp(e, np.array([0.75, 0.85, 0.95, 1.05]),
-                                         np.array([15, 12, 9, 7]))
+            if type_ground == 6:
+                if 0 <= Il <= 0.75:
+                    return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85]),
+                                     np.array([32, 24, 16, 10, 7]))
+            if type_ground == 7:
+                if 0 <= Il <= 0.25:
+                    return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85, 0.95]),
+                                     np.array([34, 27, 22, 17, 14, 11]))
+                elif 0.25 < Il <= 0.5:
+                    return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85, 0.95]),
+                                     np.array([32, 25, 19, 14, 11, 8]))
+                elif 0.5 < Il <= 0.75:
+                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05]),
+                                     np.array([17, 12, 8, 6, 5]))
+            if type_ground == 8:
+                if 0 <= Il <= 0.25:
+                    return np.interp(e, np.array([0.55, 0.65, 0.75, 0.85, 0.95, 1.05]),
+                                     np.array([28, 24, 21, 18, 15, 12])*1.2)
+                elif 0.25 < Il <= 0.5:
+                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05]),
+                                     np.array([21, 18, 15, 12, 9]))
+                elif 0.5 < Il <= 0.75:
+                    return np.interp(e, np.array([0.75, 0.85, 0.95, 1.05]),
+                                     np.array([15, 12, 9, 7]))
 
         def define_E50_for_peat(Il, Ir, e):
 
