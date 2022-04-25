@@ -1,7 +1,7 @@
 import sys, os
 import PyQt5
 pyqt = os.path.dirname(PyQt5.__file__)
-os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt, "Qt/plugins")
+os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt, "Qt5/plugins")
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget, QGridLayout, QPushButton
 from PyQt5.QtGui import QIcon, QPixmap, QFont
@@ -73,7 +73,7 @@ prog_geometry = {
     "shear": {
         "left": 100,
         "top": 30,
-        "width": 1500,
+        "width": 1600,
         "height": 950
     },
 
@@ -133,7 +133,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.info_button.clicked.connect(self.info)
         self.layout.addWidget(self.info_button, 0, 0, 1, -1)
 
-        col, string = 0, 0
+        col, string = 0, 1
 
         for key in prog_dict:
             setattr(self, key, QPushButton(prog_name[key]))
@@ -150,8 +150,8 @@ class App(QMainWindow):  # Окно и виджеты на нем
             self.layout.addWidget(btn, string, col)
 
             string += 1
-            if string == 3:
-                string = 0
+            if string == 4:
+                string = 1
                 col += 1
 
 

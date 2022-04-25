@@ -8,8 +8,10 @@ import shutil
 import threading
 
 from general.general_functions import create_path
+from general.tab_view import TabMixin
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from excel_statment.initial_statment_widgets import TriaxialStaticStatment
+from excel_statment.initial_tables import LinePhysicalProperties
 from general.save_widget import Save_Dir
 from excel_statment.functions import set_cell_data
 from excel_statment.position_configs import c_fi_E_PropertyPosition
@@ -25,8 +27,10 @@ from tests_log.equipment import static
 from tests_log.test_classes import TestsLogTriaxialStatic
 import os
 from version_control.configs import actual_version
+from general.tab_view import AppMixin
 __version__ = actual_version
 from authentication.request_qr import request_qr
+from saver import XMLWidget
 
 class StaticProcessingWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -40,11 +44,13 @@ class StaticProcessingWidget(QWidget):
 
         self.item_identification = ModelTriaxialItemUI()
         self.item_identification.setFixedHeight(330)
-        self.item_identification.setFixedWidth(450)
+        self.item_identification.setFixedWidth(350)
         self.reconsolidation = ModelTriaxialReconsolidationUI()
         self.line = QHBoxLayout()
         self.line.addWidget(self.item_identification)
-        self.line.addWidget(self.reconsolidation)
+        self.line_for_phiz = QVBoxLayout()
+        self.line.addLayout(self.line_for_phiz)
+
 
         self.consolidation = ModelTriaxialConsolidationUI()
         self.point_identificator = None
@@ -52,6 +58,7 @@ class StaticProcessingWidget(QWidget):
         self.consolidation.setFixedHeight(500)
         self.deviator_loading = ModelTriaxialDeviatorLoadingUI()
         self.deviator_loading.setFixedHeight(500)
+        self.reconsolidation.setFixedHeight(300)
 
         self.deviator_loading.combo_box.activated.connect(self._combo_plot_deviator_changed)
 
@@ -69,6 +76,7 @@ class StaticProcessingWidget(QWidget):
         self.layout_wiget.addLayout(self.line)
         self.layout_wiget.addWidget(self.deviator_loading)
         self.layout_wiget.addWidget(self.consolidation)
+        self.layout_wiget.addWidget(self.reconsolidation)
         #self.layout_wiget.addWidget(self.deviator_loading)
 
         self.wiget = QWidget()
@@ -438,7 +446,7 @@ class TriaxialStaticLoading_Sliders(QWidget):
 
         self._sliders_moove()
 
-class StaticSoilTestWidget(StaticProcessingWidget):
+class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
@@ -473,11 +481,6 @@ class StaticSoilTestWidget(StaticProcessingWidget):
 
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.consolidation_sliders.signal[object].connect(self._consolidation_sliders_moove)
-
-
-        self.refresh_test_button = QPushButton("Обновить опыт")
-        self.refresh_test_button.clicked.connect(self.refresh)
-        self.layout_wiget.insertWidget(1, self.refresh_test_button)
 
     def refresh(self):
         try:
@@ -628,7 +631,7 @@ class StatickProcessingApp(QWidget):
         read_parameters = self.tab_1.open_line.get_data()
         self.tab_4.set_directory(signal, read_parameters["test_type"])
 
-class StatickSoilTestApp(QWidget):
+class StatickSoilTestApp(AppMixin, QWidget):
 
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
@@ -641,9 +644,17 @@ class StatickSoilTestApp(QWidget):
         self.layout = QHBoxLayout(self)
 
         self.tab_widget = QTabWidget()
+
         self.tab_1 = TriaxialStaticStatment()
+
         self.tab_2 = StaticSoilTestWidget()
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
+
         self.tab_3 = MohrWidgetSoilTest()
+        self.tab_3.popIn.connect(self.addTab)
+        self.tab_3.popOut.connect(self.removeTab)
+
         self.tab_4 = Save_Dir(
             {
                 "standart_E": "Стандардный E",
@@ -652,6 +663,9 @@ class StatickSoilTestApp(QWidget):
                 "plaxis": "Plaxis/Midas",
                 "user_define_1": "Пользовательский с ε50"
             })
+
+        self.tab_4.popIn.connect(self.addTab)
+        self.tab_4.popOut.connect(self.removeTab)
         # self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
@@ -673,6 +687,24 @@ class StatickSoilTestApp(QWidget):
         self.tab_4.jornal_button.clicked.connect(self.jornal)
 
         self.save_massage = True
+
+        self.physical_line_1 = LinePhysicalProperties()
+        self.tab_2.line_for_phiz.addWidget(self.physical_line_1)
+        self.tab_2.line_for_phiz.addStretch(-1)
+        self.physical_line_1.refresh_button.clicked.connect(self.tab_2.refresh)
+        self.physical_line_1.save_button.clicked.connect(self.save_report_and_continue)
+
+        self.physical_line_2 = LinePhysicalProperties()
+        self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
+        self.physical_line_2.refresh_button.clicked.connect(self.tab_3.refresh)
+        self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
+
+        self.xml_button = QPushButton("Выгнать xml")
+        self.xml_button.clicked.connect(self.xml)
+        self.tab_4.advanced_box_layout.insertWidget(3, self.xml_button)
+        #self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
+
+
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
     def keyPressEvent(self, event):
@@ -694,22 +726,27 @@ class StatickSoilTestApp(QWidget):
             self.tab_3.item_identification.set_data()
             self.tab_2.set_params()
             self.tab_3.set_params()
+            self.physical_line_1.set_data()
+            self.physical_line_2.set_data()
         elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)' or \
                 statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or \
                 statment.general_parameters.test_mode == 'Трёхосное сжатие КН':
             self.tab_3.item_identification.set_data()
             self.tab_3.set_params()
+            self.physical_line_2.set_data()
         elif statment.general_parameters.test_mode == 'Трёхосное сжатие (E)':
             self.tab_2.item_identification.set_data()
             self.tab_2.set_params()
+            self.physical_line_1.set_data()
         elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
             self.tab_2.item_identification.set_data()
             self.tab_2.set_params()
+            self.physical_line_1.set_data()
 
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
-            file_path_name = statment.current_test.replace("/", "-").replace("*", "")
+            file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
 
             if statment.general_parameters.equipment == "АСИС ГТ.2.0.5 (150х300)":
                 h, d = 300, 150
@@ -772,15 +809,16 @@ class StatickSoilTestApp(QWidget):
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                if self.tab_4.report_type == "standart_E" or self.tab_4.report_type == "E_E50":
-                    set_cell_data(self.tab_1.path,
-                                  (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
-                                  test_result["E"][0], sheet="Лист1", color="FF6961")
-                else:
+                if self.tab_4.report_type == "standart_E50":
                     set_cell_data(self.tab_1.path,
                                   (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number),
                                    (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
                                   test_result["E50"], sheet="Лист1", color="FF6961")
+                else:
+                    set_cell_data(self.tab_1.path,
+                                  (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number),
+                                   (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
+                                  test_result["E"][0], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
                 name = file_path_name + " " + statment.general_data.object_number + " ТС Р" + ".pdf"
@@ -837,16 +875,16 @@ class StatickSoilTestApp(QWidget):
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 data = {
-                    "labolatory": "mdgt",
+                    "laboratory": "mdgt",
                     "password": "it_user",
 
                     "test_name": "FC",
-                    "object": statment.general_data.object_number,
-                    "labolatory_number": statment.current_test,
+                    "object": str(statment.general_data.object_number),
+                    "laboratory_number": str(statment.current_test),
                     "test_type": "FC",
 
                     "data": {
-                        "Лаболаторный номер": statment.current_test,
+                        "Лаболаторный номер": str(statment.current_test),
                         "Модуль деформации E, МПа:": str(test_result["E"][0]),
                         "Коэффициент поперечной деформации ν, д.е.:": str(test_result["poissons_ratio"]),
                         "Эффективное сцепление с', МПа:": str(test_result["c"]),
@@ -854,6 +892,8 @@ class StatickSoilTestApp(QWidget):
                     }
                 }
 
+                #s = MohrSaver(FC_models[statment.current_test], statment.save_dir.save_directory + "/geologs", size=[h, d])
+                #s.save_log_file(file_path_name)
                 #qr = request_qr(data)
 
                 report_FCE(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
@@ -866,17 +906,18 @@ class StatickSoilTestApp(QWidget):
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                if self.tab_4.report_type == "standart_E" or self.tab_4.report_type == "E_E50":
-                    set_cell_data(
-                        self.tab_1.path,
-                        (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][2] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][2])),
-                        test_result["E"][0], sheet="Лист1", color="FF6961")
-                else:
+                if self.tab_4.report_type == "Standart_E50":
                     set_cell_data(
                         self.tab_1.path,
                         (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][2] + str(number),
                          (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][2])),
                         test_result["E50"], sheet="Лист1", color="FF6961")
+                else:
+                    set_cell_data(
+                        self.tab_1.path,
+                        (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][2] + str(number),
+                         (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][2])),
+                        test_result["E"][0], sheet="Лист1", color="FF6961")
 
                 set_cell_data(self.tab_1.path,
                               (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][0] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][0])),
@@ -1097,7 +1138,22 @@ class StatickSoilTestApp(QWidget):
         except:
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
+    def save_report_and_continue(self):
+        try:
+            self.save_report()
+        except:
+            pass
+        keys = [key for key in statment]
+        for i, val in enumerate(keys):
+            if (val == statment.current_test) and (i < len(keys) - 1):
+                statment.current_test = keys[i+1]
+                self.set_test_parameters(True)
+                break
+            else:
+                pass
+
     def save_all_reports(self):
+        statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
         progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
@@ -1128,6 +1184,12 @@ class StatickSoilTestApp(QWidget):
             self.dialog = TestsLogWidget(static, TestsLogTriaxialStatic, self.tab_1.path)
             self.dialog.show()
 
+    def xml(self):
+        try:
+            self.wm = XMLWidget(statment.save_dir.save_directory + "/xml")
+            QMessageBox.about(self, "Сообщение", "XML выгнаны")
+        except Exception as err:
+            print(str(err))
 
 
 

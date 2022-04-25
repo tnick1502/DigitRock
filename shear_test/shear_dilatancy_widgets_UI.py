@@ -318,7 +318,6 @@ class ModelShearItemUI(TableVertical):
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
     def __init__(self):
         fill_keys = {
-            "laboratory_number": "Лаб. ном.",
             "c": "Сцепление с, МПа",
             "fi": "Угол внутреннего трения, град",
             "tau_max": "Максимальное касательное напряжение τ, кПа",
@@ -328,4 +327,4 @@ class ModelShearItemUI(TableVertical):
             "pit_depth": "Глубина котлована, м",
             "dilatancy_angle": "Угол дилатансии, град"
         }
-        super().__init__(fill_keys=fill_keys)
+        super().__init__(fill_keys=fill_keys, size={"size": 100, "size_fixed_index": [1]})

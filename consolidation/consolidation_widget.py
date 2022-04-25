@@ -7,11 +7,12 @@ import matplotlib.pyplot as plt
 import shutil
 import threading
 
+from general.tab_view import AppMixin
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
 from excel_statment.initial_statment_widgets import ConsolidationStatment
 from general.save_widget import Save_Dir
-from general.initial_tables import TableVertical
+from excel_statment.initial_tables import TableVertical, LinePhysicalProperties
 from excel_statment.functions import set_cell_data
 from general.reports import report_consolidation, report_FCE, report_FC
 from consolidation.consolidation_UI import ModelTriaxialConsolidationUI
@@ -24,10 +25,11 @@ from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogTriaxialStatic, TestsLogCyclic
 import os
 from version_control.configs import actual_version
+from general.tab_view import TabMixin
 __version__ = actual_version
 
 
-class ConsilidationSoilTestWidget(QWidget):
+class ConsilidationSoilTestWidget(TabMixin, QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
@@ -35,7 +37,6 @@ class ConsilidationSoilTestWidget(QWidget):
         super().__init__()
 
         fill_keys = {
-            "laboratory_number": "Лаб. ном.",
             "Eoed": "Одометрический модуль Eoed, кПа",
             "p_max": "Максимальное давление, МПа",
             "Cv": "Коэффициент консолидации Cv",
@@ -43,8 +44,9 @@ class ConsilidationSoilTestWidget(QWidget):
             "m": "Показатель степени жесткости"
         }
 
-        self.item_identification = TableVertical(fill_keys)
-        self.item_identification.setFixedWidth(250)
+        self.item_identification = TableVertical(fill_keys, size={"size": 100, "size_fixed_index": [1]})
+        self.item_identification.setFixedHeight(180)
+        self.item_identification.setFixedWidth(300)
 
         self.consolidation = ModelTriaxialConsolidationUI()
 
@@ -58,17 +60,12 @@ class ConsilidationSoilTestWidget(QWidget):
         self.consolidation.graph_layout.addWidget(self.consolidation_sliders)
 
         self.point_identificator = None
-        self.consolidation.setFixedHeight(590)
+
 
         self.consolidation_sliders.signal[object].connect(self._consolidation_sliders_moove)
 
         self._create_UI()
         self._wigets_connect()
-
-        self.refresh_test_button = QPushButton("Обновить опыт")
-        self.refresh_test_button.clicked.connect(self.refresh)
-        self.layout.insertWidget(0, self.refresh_test_button)
-
         #if model:
             #self.set_model(model)
         #else:
@@ -76,15 +73,12 @@ class ConsilidationSoilTestWidget(QWidget):
 
     def _create_UI(self):
         self.layout = QVBoxLayout()
+        self.layout_identification = QHBoxLayout()
+        self.layout_identification.addWidget(self.item_identification)
         self.layout_1 = QHBoxLayout()
-        self.layout_1.addWidget(self.item_identification)
         self.layout_1.addWidget(self.consolidation)
-
+        self.layout.addLayout(self.layout_identification)
         self.layout.addLayout(self.layout_1)
-
-        self.save_wigdet = Save_Dir()
-
-        self.layout.addWidget(self.save_wigdet)
 
         self.setLayout(self.layout)
 
@@ -235,7 +229,7 @@ class ConsilidationSoilTestWidget(QWidget):
         except KeyError:
             pass
 
-class ConsolidationSoilTestApp(QWidget):
+class ConsolidationSoilTestApp(AppMixin,QWidget):
 
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
@@ -250,20 +244,34 @@ class ConsolidationSoilTestApp(QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = ConsolidationStatment()
         self.tab_2 = ConsilidationSoilTestWidget()
+        self.tab_3 = Save_Dir()
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
         self.tab_widget.addTab(self.tab_2, "Опыт консолидации")
+        self.tab_widget.addTab(self.tab_3, "Сохранение отчетов")
         self.layout.addWidget(self.tab_widget)
 
-        self.tab_1.signal[bool].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_wigdet.update())
+        self.physical_line = LinePhysicalProperties()
 
-        self.tab_2.save_wigdet.save_button.clicked.connect(self.save_report)
-        self.tab_2.save_wigdet.save_all_button.clicked.connect(self.save_all_reports)
-        self.tab_2.save_wigdet.jornal_button.clicked.connect(self.jornal)
+        self.tab_1.signal[bool].connect(self.set_test_parameters)
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.update())
+        self.tab_1.signal[bool].connect(lambda x: self.physical_line.set_data())
+
+        self.tab_3.save_button.clicked.connect(self.save_report)
+        self.tab_3.save_all_button.clicked.connect(self.save_all_reports)
+        self.tab_3.jornal_button.clicked.connect(self.jornal)
+
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
+        self.tab_3.popIn.connect(self.addTab)
+        self.tab_3.popOut.connect(self.removeTab)
 
         self.save_massage = True
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
+
+        self.tab_2.layout_identification.addWidget(self.physical_line)
+        self.physical_line.refresh_button.clicked.connect(self.tab_2.refresh)
+        self.physical_line.save_button.clicked.connect(self.save_report_and_continue)
 
     def keyPressEvent(self, event):
         if statment.current_test:
@@ -286,7 +294,7 @@ class ConsolidationSoilTestApp(QWidget):
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
-            file_path_name = statment.current_test.replace("/", "-").replace("*", "")
+            file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
 
             if statment[statment.current_test].mechanical_properties.p_max >= 1:
                 equipment = "GIG, Absolut Digimatic ID-S"
@@ -353,6 +361,7 @@ class ConsolidationSoilTestApp(QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_all_reports(self):
+        statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
         progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
@@ -375,6 +384,21 @@ class ConsolidationSoilTestApp(QWidget):
         t = threading.Thread(target=save)
         progress.show()
         t.start()
+
+    def save_report_and_continue(self):
+        try:
+            self.save_report()
+        except:
+            pass
+        keys = [key for key in statment]
+        for i, val in enumerate(keys):
+            if (val == statment.current_test) and (i < len(keys) - 1):
+                statment.current_test = keys[i+1]
+                self.set_test_parameters(True)
+                self.physical_line.set_data()
+                break
+            else:
+                pass
 
     def jornal(self):
         self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogCyclic, self.tab_1.path)

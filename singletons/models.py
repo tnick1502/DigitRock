@@ -104,6 +104,10 @@ class ModelsShearDilatancy(Models):
 class ModelsK0(Models):
     pass
 
+@singleton
+class ModelsRayleighDamping(Models):
+    pass
+
 statment = Statment()
 
 E_models = ModelsE()
@@ -127,4 +131,8 @@ Shear_Dilatancy_models = ModelsShearDilatancy()
 VibrationFC_models = ModelsVibrationFC()
 
 K0_models = ModelsK0()
+
+RayleighDamping_models = ModelsRayleighDamping()
+
+
 

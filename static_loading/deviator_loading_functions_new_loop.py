@@ -560,7 +560,7 @@ def form_kp(x: float, qf, k, xocr, xc, qocr, x50):
 def sensor_accuracy(x, y, qf, x50, xc):
     '''возвразщает зашумеленную функцию без шума в характерных точках'''
 
-    sh = np.random.uniform(-0.4, 0.4, len(x))
+    sh = np.random.uniform(-1, 1, len(x))
     index_qf_half, = np.where(y >= np.max(y) / 2)
     index_qf, = np.where(y >= np.max(y))
     if xc > max(x):  # если хс последня точка в массиве или дальше
@@ -571,7 +571,7 @@ def sensor_accuracy(x, y, qf, x50, xc):
             if (y[i] + sh[i] < np.max(y)):
                 y[i] = y[i] + sh[i]
             else:
-                y[i] = y[i] - np.random.uniform(0.05, 0.025)  # в районе максимума шум меньше первоначального
+                y[i] = y[i] - np.random.uniform(0.1, 0.5)  # в районе максимума шум меньше первоначального
     return y
 
 
@@ -1093,7 +1093,6 @@ def volumetric_deformation(x, x_given, m_given, xc, v_d2, x_end, angle_of_dilata
 
 
 def curve(qf, e50, **kwargs):
-
     try:
         kwargs["xc"]
     except KeyError:
@@ -1120,9 +1119,9 @@ def curve(qf, e50, **kwargs):
         kwargs["gaus_or_par"] = 0
 
     try:
-        kwargs["max_time"]
+        kwargs["amount_points"]
     except KeyError:
-        kwargs["max_time"] = 500
+        kwargs["amount_points"] = 700
 
     try:
         kwargs["Eur"]
@@ -1149,52 +1148,18 @@ def curve(qf, e50, **kwargs):
     qf2 = kwargs.get('qf2')
     qocr = kwargs.get('qocr')
     gaus_or_par = kwargs.get('gaus_or_par')  # 0 - гаус, 1 - парабола
-    max_time = kwargs.get('max_time')
+    amount_points = kwargs.get('amount_points')
     Eur = kwargs.get('Eur')
     y_rel_p = kwargs.get('y_rel_p')
     point2_y = kwargs.get('point2_y')
     U = kwargs.get('U')
-
-    if max_time < 50:
-        max_time = 50
-    if max_time <= 499:
-        amount_points = max_time * 20
-        amount_points_for_stock = np.random.uniform(1, 3)*20
-    elif max_time > 499 and max_time <= 2999:
-        amount_points = max_time * 2
-        amount_points_for_stock = np.random.uniform(5, 10)*2
-    else:
-        amount_points = max_time/3
-        amount_points_for_stock = np.random.uniform(15, 20)/3
-    if Eur:
-        amount_points = amount_points*10
-
-
-
-
-    qf_old = qf
-    if qf < 150:
-        k_low_qf = 250 / qf
-        if Eur:
-            qf = qf * k_low_qf
-            e50 = e50 * k_low_qf
-            qf2 = qf2 * k_low_qf
-            Eur = Eur * k_low_qf
-            # amount_points = amount_points * 6
-            y_rel_p = y_rel_p * k_low_qf
-            point2_y = point2_y * k_low_qf
-        else:
-            qf = qf * k_low_qf
-            e50 = e50 * k_low_qf
-            qf2 = qf2 * k_low_qf
-
 
     if y_rel_p > qf:
         y_rel_p = qf
     if y_rel_p < 20.0:
         y_rel_p = 20.0
 
-    if xc>0.111:
+    if xc>0.11:
         xc=0.15
 
     # ограничение на qf2
@@ -1271,19 +1236,15 @@ def curve(qf, e50, **kwargs):
                 return None
         return None
 
-    # print(f"ПОДАННЫЙ Еур : {Eur}")
+    print(f"ПОДАННЫЙ Еур : {Eur}")
     # построение петли разгрузки
-    y_for_loop = y + deviator_loading_deviation(x, y, xc)
-
     x_loop, y_loop,\
         point1_x, point1_y, point2_x, point2_y, point3_x, point3_y,\
-        x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, Eur, y_rel_p, point2_y)
+        x1_l, x2_l, y1_l, y2_l = loop(x, y, Eur, y_rel_p, point2_y)
     # оптимизация петли разгрузки
     if Eur:
         current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
-        if not current_Eur:
-            current_Eur = Eur * 1.3
-        # print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur}")
+        print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur}")
         delta_Eur = Eur
         error = Eur - current_Eur
         best_error = error
@@ -1293,7 +1254,7 @@ def curve(qf, e50, **kwargs):
             delta_Eur = delta_Eur + 100
             x_loop, y_loop, \
                 point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
-                x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, delta_Eur, y_rel_p, point2_y)
+                x1_l, x2_l, y1_l, y2_l = loop(x, y, delta_Eur, y_rel_p, point2_y)
 
             current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
 
@@ -1304,34 +1265,19 @@ def curve(qf, e50, **kwargs):
             if abs(error) <= best_error:
                 best_error = abs(error)
                 best_Eur = delta_Eur
-            # print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur} : ОШИБКА : {abs(Eur - current_Eur) / Eur * 100}")
+            print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur} : ОШИБКА : {abs(Eur - current_Eur) / Eur * 100}")
 
         x_loop, y_loop, \
             point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
-            x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, best_Eur, y_rel_p, point2_y)
-        #current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
-        # print(f"ЛУЧШИЙ ПОЛУЧЕННЫЙ Еур : {current_Eur} : ОШИБКА : {abs(Eur - current_Eur) / Eur * 100}")
+            x1_l, x2_l, y1_l, y2_l = loop(x, y, best_Eur, y_rel_p, point2_y)
+        current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
+        print(f"ЛУЧШИЙ ПОЛУЧЕННЫЙ Еур : {current_Eur} : ОШИБКА : {abs(Eur - current_Eur) / Eur * 100}")
         # оптимизация петли разгрузки завершена
 
     index_point1_x, = np.where(x >= point1_x)
     index_point3_x, = np.where(x >= point3_x)
 
-    if qf_old < 150:
-        y = y / k_low_qf
-
-        if Eur:
-            y_for_loop = y_for_loop / k_low_qf
-            qf = qf / k_low_qf
-            Eur = Eur / k_low_qf
-            y1_l = y1_l / k_low_qf
-            y2_l = y2_l / k_low_qf
-        else:
-            qf = qf / k_low_qf
-
-    if Eur:
-        y = y_for_loop
-    else:
-        y += deviator_loading_deviation(x, y, xc)
+    y += deviator_loading_deviation(x, y, xc)
 
     y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
     y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
@@ -1350,10 +1296,10 @@ def curve(qf, e50, **kwargs):
         k = y_qf2ocr / (qf / 2)
         y_ocr = y_ocr / k
         y = copy.deepcopy(y_ocr)
+    #
 
-
-    y1_l = y1_l + np.random.uniform(-0.4, 0.4, len(y1_l))  # шум на петле
-    y2_l = y2_l + np.random.uniform(-0.4, 0.4, len(y2_l))  # шум на петле
+    y1_l = y1_l + np.random.uniform(-1, 1, len(y1_l))  # шум на петле
+    y2_l = y2_l + np.random.uniform(-1, 1, len(y2_l))  # шум на петле
     y1_l = discrete_array(y1_l, 1)  # ступени на петле
     y2_l = discrete_array(y2_l, 1)  # ступени на петле
 
@@ -1368,8 +1314,8 @@ def curve(qf, e50, **kwargs):
     point3_x_index = index_point1_x[0] + len(x_loop) - 2  # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
     y[0] = 0.
 
-    #current_Eur = define_eur(x, y, [point1_x_index - 1, point2_x_index - 1, point3_x_index + 1])
-    # print(f"Еур ПОСЛЕ ПРИСОЕДИНЕНИЯ: {current_Eur} : ОШИБКА : {abs(Eur - current_Eur)/Eur*100}")
+    current_Eur = define_eur(x, y, [point1_x_index - 1, point2_x_index - 1, point3_x_index + 1])
+    print(f"Еур ПОСЛЕ ПРИСОЕДИНЕНИЯ: {current_Eur} : ОШИБКА : {abs(Eur - current_Eur)/Eur*100}")
 
     # ограничение на хс (не меньше чем x_given)
     if xc <= 0.025:
@@ -1580,7 +1526,7 @@ def curve(qf, e50, **kwargs):
     x_last_point = np.random.uniform(0.005, 0.01) - (
             x[-1] - x[-2])  # положительная последняя точка х для метрвого хода штока
     x_start = np.linspace(0, x_last_point,
-                          int(x_last_point / (x_last_point / amount_points_for_stock) + 1)) # положительный масив х для метрвого хода штока
+                          int(x_last_point / (x[-1] - x[-2])) + 1)  # положительный масив х для метрвого хода штока
     slant = np.random.uniform(20, 30)  # наклон функции экспоненты
     amplitude = np.random.uniform(15, 25)  # высота функции экспоненты
     y_start = exponent(x_start, amplitude, slant)  # абциссы метрвого хода штока
@@ -1589,7 +1535,7 @@ def curve(qf, e50, **kwargs):
         -2])  # смещение массива x для метрвого хода штока кривой девиаторного нагружения в отрицальную область
     y_start -= y_start[
         -1]  # смещение массива y для метрвого хода штока кривой девиаторного нагружения в отрицальную область
-    y_start = y_start + np.random.uniform(-0.4, 0.4, len(y_start))
+    y_start = y_start + np.random.uniform(-1, 1, len(y_start))
     y_start = discrete_array(y_start, 0.5)  # наложение ступенчватого шума на мертвый ход штока
     x = np.hstack((x_start, x))  # добавление начального участка в функцию девиаторного нагружения
 
@@ -1624,28 +1570,10 @@ def curve(qf, e50, **kwargs):
     else:
         indexs_loop = [0, 0, 0]
 
-
-    if max_time <= 499:
-        time = [i/20 for i in range(len(x))]
-    elif max_time > 499 and max_time <= 2999:
-        time = [i/2 for i in range(len(x))]
-    else:
-        time = [i*3 for i in range(len(x))]
-
     if U:
-        old_U = U
-        if U < 150:
-            k_low_u = 250/U
-            U = U * k_low_u
-
         e50_U = U / x50
-        x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50, kwargs.get('xc'), 1.2 * kwargs.get('xc'),
-                                           np.random.uniform(0.3, 0.7)*U, 0, amount_points)
-
-        if old_U < 150:
-            y_U = y_U * k_low_u
-            U = U * k_low_u
-
+        x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50,  kwargs.get('xc'), 1.2* kwargs.get('xc'), np.random.uniform(0.3, 0.7)*U,
+                                        0, amount_points, 0.8*U, False, 10)
         index_x2, = np.where(x_U >= 0.15)
         x_U = x_U[:index_x2[0]]
         y_U = y_U[:index_x2[0]]
@@ -1658,7 +1586,7 @@ def curve(qf, e50, **kwargs):
         y_start = exponent(x_start, amplitude, slant)
         x_start -= x_start[-1] + (x_U[-1] - x_U[-2])
         y_start -= y_start[-1]
-        y_start = y_start + np.random.uniform(-0.4, 0.4, len(y_start))
+        y_start = y_start + np.random.uniform(-1, 1, len(y_start))
         y_start = discrete_array(y_start, 0.5)
         x_U = np.hstack((x_start, x_U))
 
@@ -1693,9 +1621,9 @@ def curve(qf, e50, **kwargs):
         y_U[len(x_start) + 1] = amplitude
         y_U[len(x_start) - 1] = amplitude"""
 
-        return x, y, y1, y2, indexs_loop, time, len(x_start)
+        return x, y, y1, y2, indexs_loop, len(x_start)
 
-    return x, y, y1, y2, indexs_loop, time, len(x_start)
+    return x, y, y1, y2, indexs_loop, len(x_start)
 
 
 def vol_test():
@@ -1913,10 +1841,9 @@ if __name__ == '__main__':
     #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
     # (596.48, 382.8)
 
-    x, y, y1, y2, indexs_loop, time, lenlen = curve(30, 500, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                         max_time=3000, angle_of_dilatacy=6, y_rel_p=12, point2_y=2)
-    print(len(x))
-    print(time)
+    x, y, y1, y2, indexs_loop, a = curve(800, 29710.0, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
+                                 amount_points=500, angle_of_dilatacy=6, y_rel_p=596, point2_y=382, Eur=50000)
+
     #
     # i, = np.where(x >= max(x) - 0.15)
     # x = x[i[0]:] - x[i[0]]

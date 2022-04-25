@@ -447,6 +447,8 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         slant_skempton = np.random.uniform(1, 3)
         # Масимальное давление, которое выдерживает камера испытательной машины
         max_press_exp = 900
+        if sigma_ref > 800:
+            max_press_exp = 2000
         # Доля от sigma_VFS_step и sigma_VPD_step, при которой происходит слияние промежуточной точки и финальной
         tolerance_merge_sigma = 0.25
 
@@ -737,7 +739,7 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
             delta_initial = {'time': t_stabil + np.random.uniform(0, 1),
                              'press': {'delta': press_current - sigma_previous,
                                        'initial': sigma_previous},
-                             'u': {'delta': [(delta_sigma) * skempton_step[i_sigma] ** 2 / skempton_end - 0.001,
+                             'u': {'delta': [(delta_sigma) * skempton_step[i_sigma] ** 2 / skempton_end - 0.000001,
                                              (delta_sigma) * skempton_step[i_sigma]],
                                    'initial': u_previos},
                              'v_pore': {'delta': fix_value,
@@ -826,6 +828,15 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                 for key in ['Time', 'CellPress_kPa', 'PorePress_kPa', 'VerticalPress_kPa', 'VerticalDeformation_mm',
                             'CellVolume_mm3', 'PoreVolume_mm3']:
                     dict[key][index + 1] = dict[key][index]
+
+        for key in dict:
+            dict[key][0] = 0
+
+        dict['Trajectory'][0] = 'RPSReconsolidation'
+        dict['SampleHeight_mm'][0] = '76'
+        dict['SampleDiameter_mm'][0] = '38'
+        dict['Action'][0] = "LoadStage"
+        dict['Action_Changed'][0] = ""
 
         return dict
 

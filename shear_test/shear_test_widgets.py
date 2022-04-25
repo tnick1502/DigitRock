@@ -1,13 +1,15 @@
 
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFrame, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, \
     QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout, \
-    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog, QHeaderView
+    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog, QHeaderView, \
+    QCheckBox
 from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject
 from PyQt5.QtGui import QPalette, QBrush
 import matplotlib.pyplot as plt
 import shutil
 import threading
 
+from excel_statment.initial_tables import LinePhysicalProperties
 from shear_test.shear_widgets import ShearWidget, ShearWidgetSoilTest
 from excel_statment.initial_statment_widgets import ShearStatment
 from excel_statment.position_configs import c_fi_E_PropertyPosition
@@ -22,6 +24,7 @@ from loggers.logger import app_logger, log_this, handler
 from tests_log.widget import TestsLogWidget
 from tests_log.test_classes import TestsLogTriaxialStatic
 import os
+from general.tab_view import TabMixin, AppMixin
 from version_control.configs import actual_version
 __version__ = actual_version
 
@@ -36,7 +39,8 @@ class ShearProcessingWidget(QWidget):
         self.log_file_path = None
 
         self.item_identification = ModelShearItemUI()
-        self.item_identification.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.item_identification.setFixedWidth(300)
+        #self.item_identification.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         self.line = QHBoxLayout()
         self.line.addWidget(self.item_identification)
@@ -256,7 +260,7 @@ class Shear_Sliders(QWidget):
 
         self._sliders_moove()
 
-class ShearDilatancySoilTestWidget(ShearProcessingWidget):
+class ShearDilatancySoilTestWidget(TabMixin, ShearProcessingWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
@@ -282,10 +286,6 @@ class ShearDilatancySoilTestWidget(ShearProcessingWidget):
         self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)
         self.deviator_loading.setFixedHeight(530+180)
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
-
-        self.refresh_test_button = QPushButton("Обновить опыт")
-        self.refresh_test_button.clicked.connect(self.refresh)
-        self.layout_wiget.insertWidget(0, self.refresh_test_button)
 
     def refresh(self):
         try:
@@ -422,7 +422,7 @@ class ShearProcessingApp(QWidget):
         read_parameters = self.tab_1.open_line.get_data()
         self.tab_4.set_directory(signal, read_parameters["test_type"])
 
-class ShearSoilTestApp(QWidget):
+class ShearSoilTestApp(AppMixin, QWidget):
 
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
@@ -436,8 +436,16 @@ class ShearSoilTestApp(QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = ShearStatment()
         self.tab_2 = ShearDilatancySoilTestWidget()
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
         self.tab_3 = ShearWidgetSoilTest()
         self.tab_4 = Save_Dir()
+        self.tab_4.popIn.connect(self.addTab)
+        self.tab_4.popOut.connect(self.removeTab)
+
+        self.vertical_def_btn = QCheckBox('Вертикальная деформация')
+        self.vertical_def_btn.setChecked(True)
+        self.tab_4.advanced_box_layout.insertWidget(self.tab_4.advanced_box_layout.count() - 1, self.vertical_def_btn)
         # self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
@@ -464,6 +472,16 @@ class ShearSoilTestApp(QWidget):
         self.save_massage = True
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
+        self.physical_line_1 = LinePhysicalProperties()
+        self.tab_2.line.addWidget(self.physical_line_1)
+        self.physical_line_1.refresh_button.clicked.connect(self.tab_2.refresh)
+        self.physical_line_1.save_button.clicked.connect(self.save_report_and_continue)
+
+        self.physical_line_2 = LinePhysicalProperties()
+        self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
+        self.physical_line_2.refresh_button.clicked.connect(self.tab_3.refresh)
+        self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
+
     def keyPressEvent(self, event):
         if statment.current_test:
             list = [x for x in statment]
@@ -482,14 +500,16 @@ class ShearSoilTestApp(QWidget):
                                                            ShearStatment.SHEAR_NN, ShearStatment.SHEAR_DD]:
             self.tab_3.item_identification.set_data()
             self.tab_3.set_params()
+            self.physical_line_2.set_data()
         elif self.tab_1.shear_test_type_from_open_line() == ShearStatment.SHEAR_DILATANCY:
             self.tab_2.item_identification.set_data()
             self.tab_2.set_params()
+            self.physical_line_1.set_data()
 
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
-            file_path_name = statment.current_test.replace("/", "-").replace("*", "")
+            file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
 
             # if statment.general_parameters.equipment == "АСИС ГТ.2.0.5 (150х300)":
             #     h, d = 300, 150
@@ -542,7 +562,8 @@ class ShearSoilTestApp(QWidget):
                 Shear_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"{ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
 
-                Shear_Dilatancy_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
+                Shear_Dilatancy_models[statment.current_test].save_log_file(save + "/" + "Test.1.log",
+                                                                            nonzero_vertical_def=self.vertical_def_btn.isChecked())
                 Shear_Dilatancy_models[statment.current_test].save_cvi_file(save,
                                                                             statment.save_dir.cvi_directory +
                                                                             "/" + f"{file_path_name} ЦВИ.xls")
@@ -557,7 +578,7 @@ class ShearSoilTestApp(QWidget):
 
             elif not ShearStatment.is_dilatancy_type(_test_mode):
                 name = file_path_name + " " + statment.general_data.object_number + " Сп" + ".pdf"
-                Shear_models[statment.current_test].save_log_files(save)
+                Shear_models[statment.current_test].save_log_files(save, nonzero_vertical_def=self.vertical_def_btn.isChecked())
                 Shear_models[statment.current_test].save_cvi_file(save,
                                                                   statment.save_dir.cvi_directory +
                                                                   "/" + f"{file_path_name} ЦВИ.xls",
@@ -624,6 +645,7 @@ class ShearSoilTestApp(QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_all_reports(self):
+        statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
         progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
@@ -667,6 +689,21 @@ class ShearSoilTestApp(QWidget):
             test_mode = self.tab_1.open_line.get_data()["test_mode"]
             self.tab_1.set_optional_parameter(test_mode)
         self.previous_test_type = self.tab_1.open_line.get_data()["test_mode"]
+
+    def save_report_and_continue(self):
+        try:
+            self.save_report()
+        except:
+            pass
+        keys = [key for key in statment]
+        for i, val in enumerate(keys):
+            if (val == statment.current_test) and (i < len(keys) - 1):
+                statment.current_test = keys[i+1]
+                self.set_test_parameters(True)
+                break
+            else:
+                pass
+
 
 
 if __name__ == '__main__':

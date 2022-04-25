@@ -2,7 +2,7 @@ import os
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 
-from shear_test.shear_test_widgets import ShearSoilTestApp, __version__
+from rayleigh_damping.rayleigh_damping_widgets import RayleighDampingSoilTestApp, __version__
 from version_control.json_management import test_version, get_actual_version
 from version_control.configs import actual_version
 from loggers.logger import app_logger
@@ -11,17 +11,19 @@ class App(QMainWindow):  # Окно и виджеты на нем
 
     def __init__(self):
         super().__init__()
-        self.title = "Static Loading Soil Test " + "{:.2f}".format(__version__)
+        self.title = "Rayleigh Dampin Soil Test " + "{:.2f}".format(__version__)
         self.left = 100
         self.top = 30
-        self.width = 1600
+        self.width = 1500
         self.height = 950
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
         #self.showFullScreen()
-        if 1:
+
+
+        if test_version(actual_version):
             try:
-                self.table_widget = ShearSoilTestApp()
+                self.table_widget = RayleighDampingSoilTestApp()
                 self.setCentralWidget(self.table_widget)
                 self.show()
             except:
@@ -32,7 +34,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
                                        QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
             if ret == QMessageBox.Yes:
                 try:
-                    self.table_widget = ShearSoilTestApp()
+                    self.table_widget = RayleighDampingSoilTestApp()
                     self.setCentralWidget(self.table_widget)
                     self.show()
                 except:

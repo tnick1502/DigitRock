@@ -12,20 +12,21 @@ from excel_statment.functions import read_general_prameters, k0_test_type_column
 from excel_statment.initial_tables import TableCastomer, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties, ComboBox_Initial_ParametersV2
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, CyclicProperties, \
-    DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties, ShearProperties, K0Properties
-from k0_test.triaxial_k0_model import ModelK0SoilTest
+    DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties, ShearProperties, RayleighDampingProperties, K0Properties
 from loggers.logger import app_logger, log_this
-from singletons import statment, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, \
-    Shear_models, Shear_Dilatancy_models, VibrationFC_models, K0_models
+from singletons import statment, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, Shear_models, Shear_Dilatancy_models, VibrationFC_models, RayleighDamping_models, K0_models
 
 from resonant_column.rezonant_column_hss_model import ModelRezonantColumnSoilTest
 from consolidation.consolidation_model import ModelTriaxialConsolidationSoilTest
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTest
+from rayleigh_damping.rayleigh_damping_model import ModelRayleighDampingSoilTest
 from static_loading.triaxial_static_loading_test_model import ModelTriaxialStaticLoadSoilTest
 from static_loading.mohr_circles_test_model import ModelMohrCirclesSoilTest
 from vibration_creep.vibration_creep_model import ModelVibrationCreepSoilTest
 from shear_test.shear_test_model import ModelShearSoilTest
 from shear_test.shear_dilatancy_test_model import ModelShearDilatancySoilTest
+from k0_test.triaxial_k0_model import ModelK0SoilTest
+
 from excel_statment.params import accreditation
 from excel_statment.position_configs import c_fi_E_PropertyPosition, GeneralDataColumns
 from excel_statment.functions import set_cell_data
@@ -138,7 +139,8 @@ class InitialStatment(QWidget):
 
         self.layout = QVBoxLayout()
         self.layout.setSpacing(0)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+        self.table_vertical = TableVertical(fill_keys)
 
         self.open_line = ComboBox_Initial_ParametersV2(self.test_parameters)
         self.open_line.setFixedHeight(120)
@@ -146,41 +148,24 @@ class InitialStatment(QWidget):
         self.customer_line = TableCastomer()
         self.accreditation = SetAccreditation()
         self.accreditation.setFixedWidth(200)
+        self.accreditation.setFixedHeight(165)
         #self.customer_line.setFixedHeight(80)
-
-        self.layout_tables = QHBoxLayout()
-        self.table_splitter_propetries = QSplitter(Qt.Horizontal)
         self.table_physical_properties = TablePhysicalProperties()
-        self.table_vertical = TableVertical(fill_keys)
-        self.splitter_table_vertical = QSplitter(Qt.Vertical)
-        self.splitter_table_vertical_widget = QWidget()
-        self.splitter_table_vertical.addWidget(self.table_vertical)
-        self.splitter_table_vertical.addWidget(self.splitter_table_vertical_widget)
-        self.splitter_table_vertical.setStretchFactor(0, 8)
-        self.splitter_table_vertical.setStretchFactor(1, 1)
-        #self.table_vertical.setFixedWidth(300)
-        #self.table_vertical.setFixedHeight(40 * len(self.headlines))
+        self.table_physical_properties.setMinimumWidth(1400)
 
-        self.table_splitter_propetries = QSplitter(Qt.Horizontal)
-        self.table_splitter_propetries.addWidget(self.table_physical_properties)
-        self.table_splitter_propetries.addWidget(self.splitter_table_vertical)
-        self.table_splitter_propetries.setStretchFactor(0, 2)
 
-        #self.layout_tables.addWidget(self.table_splitter)
-        #self.layout_tables.setAlignment(Qt.AlignTop)
-
-        self.table_splitter_propetries_customer = QSplitter(Qt.Vertical)
-        self.customer_layout_widget = QWidget()
         self.customer_layout = QHBoxLayout()
         self.customer_layout.addWidget(self.customer_line)
         self.customer_layout.addWidget(self.accreditation)
-        self.customer_layout_widget.setLayout(self.customer_layout)
-        self.table_splitter_propetries_customer.addWidget(self.customer_layout_widget)
-        self.table_splitter_propetries_customer.addWidget(self.table_splitter_propetries)
-        self.table_splitter_propetries_customer.setStretchFactor(0, 1)
-        self.table_splitter_propetries_customer.setStretchFactor(1, 10)
+
+
         self.layout.addWidget(self.open_line)
-        self.layout.addWidget(self.table_splitter_propetries_customer)
+        self.layout.addLayout(self.customer_layout)
+        self.layout.addWidget(self.table_physical_properties)
+        self.layuot_for_button = QHBoxLayout()
+        self.layuot_for_button.addStretch(-1)
+        self.layout.addLayout(self.layuot_for_button)
+        self.layuot_for_button.setContentsMargins(5, 5, 5, 5)
         #self.layout.addLayout(self.layout_tables)
         self.setLayout(self.layout)
 
@@ -230,7 +215,7 @@ class InitialStatment(QWidget):
             statment.general_data.shipment_number = window.get_data()
 
             set_cell_data(self.path, (GeneralDataColumns["shipment_number"][0],
-                                      (GeneralDataColumns["shipment_number"][1])),
+                                      (2, 9)),
                           statment.general_data.shipment_number, sheet="Лист1", color="FF6961")
         statment.save_dir.set_directory(self.path, statment_name.split(".")[0], statment.general_data.shipment_number)
 
@@ -322,11 +307,12 @@ class RezonantColumnStatment(InitialStatment):
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
                     self.table_physical_properties.set_data()
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
 
                     self.load_models(models_name="rc_models.pickle",
                                      models=RC_models, models_type=ModelRezonantColumnSoilTest)
+
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
 
 class TriaxialStaticStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -364,6 +350,15 @@ class TriaxialStaticStatment(InitialStatment):
                     "K0: Формула Джекки",
                     "K0: K0 = 1",
                     "K0: Формула Джекки c учетом переупл."]
+            },
+
+            "pressure_mode": {
+                "label": "Давление на кругах",
+                "vars": [
+                    "Автоматически",
+                    "Расчетное давление",
+                    "По ГОСТу",
+                    "Ручные ступени давления"]
             },
 
             "waterfill": {
@@ -421,7 +416,6 @@ class TriaxialStaticStatment(InitialStatment):
                     properties_type=MechanicalProperties,
                     general_params=combo_params)
 
-
                 statment.general_parameters.reconsolidation = False
 
                 keys = list(statment.tests.keys())
@@ -433,6 +427,31 @@ class TriaxialStaticStatment(InitialStatment):
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
+
+                    if combo_params["pressure_mode"] == "Расчетное давление":
+                        keys = list(statment.tests.keys())
+                        for test in keys:
+                            if statment[test].mechanical_properties.pressure_array["calculated_by_pressure"] is not None:
+                                statment[test].mechanical_properties.pressure_array["current"] = \
+                                    statment[test].mechanical_properties.pressure_array["calculated_by_pressure"]
+                    elif combo_params["pressure_mode"] == "По ГОСТу":
+                        keys = list(statment.tests.keys())
+                        for test in keys:
+                            if statment[test].mechanical_properties.pressure_array[
+                                "state_standard"] is not None:
+                                statment[test].mechanical_properties.pressure_array["current"] = \
+                                    statment[test].mechanical_properties.pressure_array["state_standard"]
+                    elif combo_params["pressure_mode"] == "Ручные ступени давления":
+                        keys = list(statment.tests.keys())
+                        for test in keys:
+                            if statment[test].mechanical_properties.pressure_array[
+                                "set_by_user"] is not None:
+                                statment[test].mechanical_properties.pressure_array["current"] = \
+                                    statment[test].mechanical_properties.pressure_array["set_by_user"]
+                    else:
+                        pass
+
+
                     self.table_physical_properties.set_data()
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
@@ -566,11 +585,10 @@ class CyclicStatment(InitialStatment):
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
                     self.table_physical_properties.set_data()
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
-
                     self.load_models(models_name="cyclic_models.pickle",
                                      models=Cyclic_models, models_type=ModelTriaxialCyclicLoadingSoilTest)
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
 
 class VibrationCreepStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -646,8 +664,6 @@ class VibrationCreepStatment(InitialStatment):
                         del statment.tests[test]
                 else:
                     self.table_physical_properties.set_data()
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
 
                     app_logger.info(f"Загружена ведомость: {self.path}")
 
@@ -656,6 +672,9 @@ class VibrationCreepStatment(InitialStatment):
 
                     self.load_models(models_name="VC_models.pickle",
                                      models=VC_models, models_type=ModelVibrationCreepSoilTest)
+
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
 
 class ConsolidationStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -1000,13 +1019,67 @@ class VibrationStrangthStatment(InitialStatment):
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
                     self.table_physical_properties.set_data()
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
 
                     self.load_models(models_name="FC_models.pickle",
                                      models=FC_models, models_type=ModelMohrCirclesSoilTest)
                     self.load_models(models_name="VibrationFC_models.pickle",
                                      models=VibrationFC_models, models_type=CyclicVibrationStrangthMohr)
+
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
+
+class RayleighDampingStatment(InitialStatment):
+    """Класс обработки файла задания для трехосника"""
+    def __init__(self):
+        data_test_parameters = {
+        }
+
+        fill_keys = {
+            "laboratory_number": "Лаб. ном."
+        }
+
+        super().__init__(data_test_parameters, fill_keys)
+
+    @log_this(app_logger, "debug")
+    def file_open(self):
+        """Открытие и проверка заполненности всего файла веддомости"""
+        if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
+            combo_params = self.open_line.get_data()
+            combo_params["K0_mode"] = "K0: K0 = 1"
+            combo_params["test_mode"] = "Демпфирование по Релею"
+            columns_marker = list(zip(*c_fi_E_PropertyPosition[combo_params["test_mode"]]))
+            marker, error = read_general_prameters(self.path)
+
+            try:
+                assert not marker, "Проверьте " + error
+            except AssertionError as error:
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+            else:
+                self.load_statment(
+                    statment_name=combo_params["test_mode"] + ".pickle",
+                    properties_type=RayleighDampingProperties,
+                    general_params=combo_params)
+
+
+                statment.general_parameters.reconsolidation = False
+
+                keys = list(statment.tests.keys())
+                for test in keys:
+                    if not statment[test].mechanical_properties.E50:
+                        del statment.tests[test]
+
+                if len(statment) < 1:
+                    QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
+                                        + str(columns_marker), QMessageBox.Ok)
+                else:
+                    self.table_physical_properties.set_data()
+
+                    self.load_models(models_name="RayleighDamping_models.pickle",
+                                     models=RayleighDamping_models, models_type=ModelRayleighDampingSoilTest)
+
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
+
 
 
 class K0Statment(InitialStatment):
@@ -1068,8 +1141,8 @@ class K0Statment(InitialStatment):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = ShipmentDialog()
-    print(window.get_data())
+    window = RayleighDampingStatment()
+    window.show()
     #print(Dialog.save())
     app.setStyle('Fusion')
     sys.exit(app.exec_())

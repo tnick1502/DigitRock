@@ -5,7 +5,7 @@ from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTe
 import numpy as np
 from static_loading.mohr_circles_test_model import ModelMohrCirclesSoilTest
 from typing import List
-from static_loading.deviator_loading_functions import curve
+from vibration_strength.deviator_loading_functions import curve
 from singletons import statment
 import os
 
@@ -319,6 +319,43 @@ class CyclicVibrationStrangthMohr(ModelMohrCirclesSoilTest):
                     os.mkdir(path)
                 test.save_log_file(path)
 
+class CyclicVibrationStrangthMohrKcu(ModelMohrCirclesSoilTest):
+    def add_test_st(self):
+        """Добавление опытов"""
+        test = CyclicVibrationStrangth()
+        if self._check_clone(test):
+            self._tests.append(test)
+            self.sort_tests()
+
+    def _test_modeling(self):
+        c = statment[statment.current_test].mechanical_properties.c
+        fi = statment[statment.current_test].mechanical_properties.fi
+        statment[statment.current_test].mechanical_properties.u = np.random.uniform(0.2, 0.4) * statment[statment.current_test].mechanical_properties.sigma_3
+
+        statment[statment.current_test].mechanical_properties.c *= statment[statment.current_test].mechanical_properties.Kc
+        statment[statment.current_test].mechanical_properties.fi *= statment[statment.current_test].mechanical_properties.Kfi
+
+        statment[statment.current_test].mechanical_properties.frequency = 40
+        statment[statment.current_test].mechanical_properties.sigma_d = np.round(statment[statment.current_test].mechanical_properties.qf / 50)
+        if statment[statment.current_test].mechanical_properties.sigma_d <= 5:
+            statment[statment.current_test].mechanical_properties.sigma_d = 5
+
+        statment[statment.current_test].mechanical_properties.step = np.round(statment[statment.current_test].mechanical_properties.qf/10)
+
+        super()._test_modeling()
+
+        statment[statment.current_test].mechanical_properties.c = c
+        statment[statment.current_test].mechanical_properties.fi = fi
+        statment[statment.current_test].mechanical_properties.u = None
+
+    def save_log_files(self, directory, name):
+        """Метод генерирует файлы испытания для всех кругов"""
+        for test in self._tests:
+            results = test.get_test_results()
+            path = os.path.join(directory, str(results["sigma_3"]))
+            if not os.path.isdir(path):
+                os.mkdir(path)
+            test.save_log_file(path)
 
 
 

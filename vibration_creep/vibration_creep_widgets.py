@@ -2,13 +2,14 @@
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMessageBox, QHBoxLayout, QTabWidget, \
     QDialog, QTableWidget, QGroupBox, QPushButton, QComboBox, QDialogButtonBox, QTableWidgetItem, QHeaderView, \
     QTextEdit, QProgressDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 import numpy as np
 import sys
 import shutil
 import os
 import threading
 
+from excel_statment.initial_tables import LinePhysicalProperties
 from excel_statment.initial_statment_widgets import VibrationCreepStatment
 from general.reports import report_VibrationCreep, report_VibrationCreep3, zap
 from general.save_widget import Save_Dir
@@ -22,20 +23,23 @@ from general.report_general_statment import save_report
 from singletons import E_models, VC_models, statment
 from loggers.logger import app_logger, handler
 from version_control.configs import actual_version
+from general.tab_view import TabMixin, AppMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
 
-class VibrationCreepSoilTestWidget(QWidget):
+class VibrationCreepSoilTestWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
     ModelTriaxialCyclicLoadingUI"""
+    signal = pyqtSignal()
     def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__()
         self._create_Ui()
 
     def _create_Ui(self):
+        self.main_layout = QVBoxLayout(self)
 
-        self.layout = QHBoxLayout(self)
+        self.layout = QHBoxLayout()
         self.dynamic_widget = VibrationCreepUI()
         self.layout_2 = QVBoxLayout()
 
@@ -62,27 +66,28 @@ class VibrationCreepSoilTestWidget(QWidget):
         self.identification.setFixedHeight(700)
         self.layout.addWidget(self.dynamic_widget)
 
-        self.refresh_button = QPushButton("Обновить")
-        self.refresh_button.clicked.connect(self._refresh)
-
         self.layout_2.addWidget(self.identification)
         self.layout.addLayout(self.layout_2)
-        self.layout_2.addWidget(self.refresh_button)
         self.layout_2.addStretch(-1)
-        self.layout.setContentsMargins(5, 5, 5, 5)
+        self.main_layout.setContentsMargins(5, 5, 5, 5)
+        self.main_layout.addLayout(self.layout)
 
     def set_test_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
         self._plot()
+        self.signal.emit()
+
 
     def static_model_change(self, param):
         VC_models[statment.current_test]._test_processing()
         self._plot()
+        self.signal.emit()
 
     def _refresh(self):
         try:
             VC_models[statment.current_test].set_test_params()
             self._plot()
+            self.signal.emit()
         except KeyError:
             pass
 
@@ -260,7 +265,7 @@ class PredictVCTestResults(QDialog):
 
         return (titles, data_structure, scale)
 
-class VibrationCreepSoilTestApp(QWidget):
+class VibrationCreepSoilTestApp(AppMixin, QWidget):
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
         super().__init__(parent=parent)
@@ -273,8 +278,19 @@ class VibrationCreepSoilTestApp(QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = VibrationCreepStatment()
         self.tab_2 = StaticSoilTestWidget()
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
         self.tab_3 = VibrationCreepSoilTestWidget()
-        self.tab_4 = Save_Dir()
+        self.tab_3.popIn.connect(self.addTab)
+        self.tab_3.popOut.connect(self.removeTab)
+
+        self.tab_4 = Save_Dir(result_table_params={
+            "Kd": lambda lab: "; ".join([str(i["Kd"]) for i in VC_models[lab].get_test_results()]),
+            "E50d": lambda lab: "; ".join([str(i["E50d"]) for i in VC_models[lab].get_test_results()]),
+            "E50": lambda lab: "; ".join([str(i["E50"]) for i in VC_models[lab].get_test_results()]),
+        })
+        self.tab_4.popIn.connect(self.addTab)
+        self.tab_4.popOut.connect(self.removeTab)
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Опыт E")
@@ -294,26 +310,40 @@ class VibrationCreepSoilTestApp(QWidget):
         self.tab_4.save_button.clicked.connect(self.save_report)
         self.tab_4.save_all_button.clicked.connect(self.save_all_reports)
         self.tab_2.signal[bool].connect(self.tab_3.set_test_params)
+        self.tab_3.signal.connect(self.tab_4.result_table.update)
 
         self.button_predict = QPushButton("Прогнозирование")
         self.button_predict.setFixedHeight(50)
         self.button_predict.clicked.connect(self._predict)
-        self.tab_1.splitter_table_vertical.addWidget(self.button_predict)
+        self.tab_1.layuot_for_button.addWidget(self.button_predict)
 
         self.save_massage = True
 
         self.tab_4.general_statment_button.clicked.connect(self.general_statment)
+
+        self.physical_line_1 = LinePhysicalProperties()
+        self.tab_2.line_for_phiz.addWidget(self.physical_line_1)
+        self.tab_2.line_for_phiz.addStretch(-1)
+        self.physical_line_1.refresh_button.clicked.connect(self.tab_2.refresh)
+        self.physical_line_1.save_button.clicked.connect(self.save_report_and_continue)
+
+        self.physical_line_2 = LinePhysicalProperties()
+        self.tab_3.main_layout.insertWidget(0, self.physical_line_2)
+        self.physical_line_2.refresh_button.clicked.connect(self.tab_3._refresh)
+        self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
 
     def _set_params(self, param):
         self.tab_2.set_params(param)
         self.tab_3.set_test_params(param)
         self.tab_3.identification.set_data()
         self.tab_2.item_identification.set_data()
+        self.physical_line_1.set_data()
+        self.physical_line_2.set_data()
 
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
-            file_path_name = statment.current_test.replace("/", "-").replace("*", "")
+            file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
 
             VC_models.dump(os.path.join(statment.save_dir.save_directory,
                                         f"VC_models{statment.general_data.get_shipment_number()}.pickle"))
@@ -444,6 +474,7 @@ class VibrationCreepSoilTestApp(QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_all_reports(self):
+        statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
         progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
@@ -489,6 +520,23 @@ class VibrationCreepSoilTestApp(QWidget):
 
         _statment = StatementGenerator(self, path=s, statement_structure_key="triaxial_cyclic")
         _statment.show()
+
+    def save_report_and_continue(self):
+        try:
+            self.save_report()
+        except:
+            pass
+        keys = [key for key in statment]
+        for i, val in enumerate(keys):
+            if (val == statment.current_test) and (i < len(keys) - 1):
+                statment.current_test = keys[i+1]
+                self._set_params(True)
+                self.physical_line_1.set_data()
+                self.physical_line_2.set_data()
+                break
+            else:
+                pass
+
 
 
 

@@ -71,7 +71,7 @@ def save_cvi_FC(file_path: str, data: dict):
             set_cell_f(17, row, float(np.max(data['test_data'][test]['main_stress'])))
             set_cell_f(18, row, data['test_data'][test]['sigma_3'])
 
-        for i in range(len(data['test_data'][test]['main_stress']) - 1):
+        for i in range(len(data['test_data'][test]['main_stress'])):
             if row == FIRST_ROW:
                 set_cell(COL['strain'], row, float(data['test_data'][test]['strain'][i]))
                 set_cell(COL['main_stress'], row, float(data['test_data'][test]['main_stress'][i]))
@@ -163,7 +163,7 @@ def save_cvi_E(file_path: str, data: dict):
             set_cell_f(17, row, float(np.max(data['test_data'][test]['main_stress'])))
             set_cell_f(18, row, data['test_data'][test]['sigma_3'])
 
-        for i in range(len(data['test_data'][test]['main_stress']) - 1):
+        for i in range(len(data['test_data'][test]['main_stress'])):
             if row == FIRST_ROW:
                 set_cell(COL['strain'], row, float(data['test_data'][test]['strain'][i]))
                 set_cell(COL['main_stress'], row, float(data['test_data'][test]['main_stress'][i]))

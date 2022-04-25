@@ -287,7 +287,23 @@ def define_G0_threshold_shear_strain(p_ref, E50, c, fi, K0, type_ground, Ip, e) 
               define_G0_Kallioglou_et_al_2008(p_ref, PI, e) +
               define_G0_Sas_et_al_2017(p_ref)) / 9) * 0.8 * 0.6 + define_G0_clays(p_ref, Ip, e) * 0.4
 
+    dependence_Eur = {
+        1: np.random.uniform(0.7, 0.8),  # Песок гравелистый
+        2: np.random.uniform(0.7, 0.8),  # Песок крупный
+        3: np.random.uniform(0.75, 0.85),  # Песок средней крупности
+        4: np.random.uniform(0.75, 0.9),  # Песок мелкий
+        5: np.random.uniform(0.85, 0.95),  # Песок пылеватый
+        6: np.random.uniform(0.9, 1.05),  # Супесь
+        7: np.random.uniform(1.1, 1.2),  # Суглинок
+        8: np.random.uniform(1.2, 1.4),  # Глина
+        9: np.random.uniform(0.7, 0.8),  # Торф
+    }
+
+    K_ground_type = dependence_Eur[type_ground]
+
     G0 = G0_plaxis * 0.7 + G0 * 0.3
+
+    G0 *= K_ground_type
     gam07 = define_threshold_shear_strain(E50/1000, G0, p_ref, c, fi, K0, PI)
 
     G0 *= np.random.uniform(0.85, 1.15)

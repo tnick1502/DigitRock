@@ -1177,7 +1177,7 @@ def curve_shear_dilatancy(qf, e50, **kwargs):
         v_d_xc = (-x_given * (1 - 2 * m_given)) * 1.3
 
         while x_given*angle_of_dilatacy+(v_d_xc-angle_of_dilatacy*xc) > 1.1*(-x_given * (1 - 2 * m_given)):
-            m_given = m_given - 0.00001
+            m_given = m_given - 0.001
             v_d_xc = (-x_given * (1 - 2 * m_given)) * 1.3
 
         y1 = bezier_curve([0, 0], [x_given, (-x_given * (1 - 2 * m_given))],
@@ -1217,6 +1217,10 @@ def curve_shear_dilatancy(qf, e50, **kwargs):
     if kwargs["v_d_xc"] < (-x_given * (1 - 2 * kwargs["m_given"])) / x_given * (xc - len_x_dilatacy / 2) * 0.8:
         local = (-x_given * (1 - 2 * kwargs["m_given"])) / x_given * (xc - len_x_dilatacy / 2) * 0.8
         kwargs["v_d_xc"] = local + abs(local) * 0.2
+
+    # Ограничение на "угол" дилатансии
+    if kwargs["angle_of_dilatacy"] == 0:
+        kwargs["angle_of_dilatacy"] = 0.001
 
     # Ограничение на "угол" дилатансии, связанное с положеним точки хс и x_given
     # при положительных v_d_xc и малых значениях "угла" дилатансии
