@@ -1073,13 +1073,14 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 set_cell_data(self.tab_1.path,
                               (c_fi_E_PropertyPosition["Трёхосное сжатие КН"][0][0] + str(number),
-                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][1][0])),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие КН"][1][0])),
                               test_result["c"], sheet="Лист1", color="FF6961")
 
                 set_cell_data(self.tab_1.path,
                               (c_fi_E_PropertyPosition["Трёхосное сжатие КН"][0][1] + str(number),
-                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][1][1])),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие КН"][1][1])),
                               test_result["fi"], sheet="Лист1", color="FF6961")
+
 
             elif statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
                 name = file_path_name + " " + statment.general_data.object_number + " НН" + ".pdf"
