@@ -94,4 +94,13 @@ def dictionary_without_VFS(sigma_3=100, velocity=49):
 
     return data
 
-print(dictionary_without_VFS(sigma_3=400, velocity=49))
+
+def define_E50(E50ref, c, fi, sigma_3, p_ref, m, deviation=0.1):
+    """Расчет E50 через параметр умрочнения"""
+    fi = np.deg2rad(fi)
+    up = c*np.cos(fi)+sigma_3*np.sin(fi)
+    down = c*np.cos(fi)+p_ref*np.sin(fi)
+    E50 = (E50ref*(up/down)**m) * np.random.uniform(1 - deviation, 1 + deviation)
+    return E50
+
+print(define_E50(5722, 79, 23.5, 900, 600, 0.59, deviation=0))

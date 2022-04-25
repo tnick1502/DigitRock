@@ -573,9 +573,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                                       "dilatancy": None,
                                       "volumetric_strain_xc": None})
 
-        self.pre_defined_kr_fgs = None
 
-    def set_test_params(self, pre_defined_kr_fgs=None):
+    def set_test_params(self, pre_defined_xc=None):
         """Установка основных параметров опыта"""
         self._test_params.E50 = statment[statment.current_test].mechanical_properties.E50
 
@@ -593,14 +592,13 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                  statment[statment.current_test].physical_properties.Ip, statment[statment.current_test].physical_properties.type_ground)
         _test_mode = statment.general_parameters.test_mode
 
-        xc, residual_strength,\
-            self.pre_defined_kr_fgs = ModelShearDilatancySoilTest.define_xc_value_residual_strength(
+        xc, residual_strength, self._test_params.E50  = ModelShearDilatancySoilTest.define_xc_value_residual_strength(
                 statment[statment.current_test].physical_properties,
                 statment[statment.current_test].mechanical_properties.sigma,
                 statment[statment.current_test].mechanical_properties.tau_max,
                 statment[statment.current_test].mechanical_properties.E50,
                 _test_mode,
-                pre_defined_kr_fgs=pre_defined_kr_fgs)
+                pre_defined_xc=pre_defined_xc)
 
 
         if xc <= 0.14:
@@ -608,8 +606,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             residual_strength *= np.random.uniform(0.8, 1)
 
             xc_sigma = lambda sigma: 1-0.0005 * sigma
-            xc *= xc_sigma(self._test_params.sigma)
-
+            # xc *= xc_sigma(self._test_params.sigma)
+            #
             residual_strength *= xc_sigma(self._test_params.sigma)
 
 
@@ -1109,58 +1107,69 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
     def residual_strength_param_from_xc(xc, sigma_3):
         """Функция находит параметр падения остатичной прочности в зависимости от пика"""
         param = (0.33 - 1.9 * (0.15 - xc))
-        if sigma_3 <= 200:
-            k = 1.2
-        elif sigma_3 >= 200 and sigma_3 < 500:
-            k = 0.0013 * sigma_3 + 0.94
-        else:
-            k = 1.6
         if xc > 0.043:
-            param = param*k
-        print('sigma_3', sigma_3, 'xc', xc, 'x2', param)
-
+            param = param
+        # print('sigma_3', sigma_3, 'xc', xc, 'x2', param)
 
         return param
 
     @staticmethod
-    def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E, test_mode, pre_defined_kr_fgs=None):
+    def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E, test_mode, pre_defined_xc=None):
 
-        xc = 1
-
-        if not pre_defined_kr_fgs:
-            xc = ModelShearDilatancySoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
-                                                               data_phiz.Ip, data_phiz.Il, data_phiz.Ir, test_mode)
-        elif pre_defined_kr_fgs == 1:
-            xc = 1
+        _E50 = E
 
         if sigma_3 <= 200:
             k = 1.2
         elif sigma_3 >= 200 and sigma_3 < 500:
-            k = 0.0013 * sigma_3 + 0.94
+            k = 0.000333 * sigma_3 + 1.1333
         else:
-            k = 1.6
+            k = 1.3
 
-        if xc:
-            xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
-            #if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
-            xc = xc*k #/1.5
-            pre_defined_kr_fgs = 1
+        if not pre_defined_xc:
+            xc = ModelShearDilatancySoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
+                                                                data_phiz.Ip, data_phiz.Il, data_phiz.Ir, test_mode)
+            if xc:
+                xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
+
+
+                # Коррекция хс
+                XC_LIM_k = 0.11
+                XC_LIM_E = 0.11
+                rnd = np.random.uniform(1.4, 1.6)
+
+                if data_phiz.Ip is not None and data_phiz.Il is not None:
+                    if xc > XC_LIM_E and \
+                            ((data_phiz.Ip <= 7 and data_phiz.Il <= 0) or (data_phiz.Ip > 7 and data_phiz.Il <= 0.25)):
+                        print('твердый')
+                        XC_LIM_E = 0.06
+                        rnd = np.random.uniform(1.4, 1.6)
+
+                while xc > XC_LIM_E:
+                    _E50 = ((1.37 / (XC_LIM_E-0.005))**10)**(1/8) * qf * rnd
+                    xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, _E50)
+
+                while (xc * k > XC_LIM_k) and (k >= 1):
+                    # уменьшаем все коэффициенты меньше текущего (включая текущий) на 0.1 пока кривая не "войдет"
+                    k = k - 0.1
+
+                #if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
+                xc = xc*k #/1.5
+            else:
+                xc = 0.15
         else:
-            xc = 0.15
-            pre_defined_kr_fgs = None
+            xc = pre_defined_xc
 
         if xc != 0.15:
             residual_strength = ModelShearDilatancySoilTest.define_k_q(data_phiz.Il, data_phiz.e, sigma_3)
-
         else:
             residual_strength = 0.95
 
         if xc <= 0.03:
             xc = np.random.uniform(0.025, 0.03)
-            if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
-                xc = xc*k
+            # if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
+            xc = xc*k
 
-        return xc, residual_strength, pre_defined_kr_fgs
+        return xc, residual_strength, _E50
 
     @staticmethod
     def define_dilatancy_from_xc_qres(xc, qres):

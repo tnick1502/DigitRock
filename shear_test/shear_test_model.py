@@ -318,14 +318,13 @@ class ModelShearSoilTest(ModelShear):
 
         self.pre_defined_kr_fgs = None
 
-    def add_test_st(self, pre_defined_kr_fgs=None):
+    def add_test_st(self, pre_defined_xc=None):
         """Добавление опытов"""
         test = ModelShearDilatancySoilTest()
-        test.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
+        test.set_test_params(pre_defined_xc=pre_defined_xc)
         if self._check_clone(test):
             self._tests.append(test)
             self.sort_tests()
-            self.pre_defined_kr_fgs = test.pre_defined_kr_fgs
 
     def set_reference_pressure_array(self, reference_pressure_array):
         self._reference_pressure_array = reference_pressure_array
@@ -387,7 +386,7 @@ class ModelShearSoilTest(ModelShear):
                     statment[statment.current_test].mechanical_properties.fi,
                     sigma_array[i],
                     statment[statment.current_test].mechanical_properties.sigma,
-                    statment[statment.current_test].mechanical_properties.m) * np.random.uniform(0.9, 1.1))
+                    statment[statment.current_test].mechanical_properties.m))
 
 
             c, fi = ModelShearSoilTest.cf_shear(
@@ -399,6 +398,95 @@ class ModelShearSoilTest(ModelShear):
             fi = round(np.rad2deg(np.arctan(fi)), 1)
             # count += 1
 
+        # ПРОВЕРКА РАСПОЛОЖЕНИЯ ХС ДЛЯ ВСЕХ ТРЕХ ОПЫТОВ
+        #   Проходим с конца по опытам и замеряем хс, если хс выходит за заданную границу, то снижаем коэф. сдвига
+        #   см. ModelShearDilatancySoilTest.define_xc_value_residual_strength
+
+        _if_xc_all = []  # 1, 0 есть пик или нет
+        _xc_all = []  # значения хс
+        _k_all = []  # коэф. коррекции к
+        _phys = statment[statment.current_test].physical_properties
+
+        # определяем есть ли "пики"
+        for i, sigma in enumerate(sigma_array):
+            # Если в предыдущем опыте есть пик, то пик будет в любом случае
+            if len(_if_xc_all) == 0:
+                _if_xc_all.append(ModelShearDilatancySoilTest.xc_from_qf_e_if_is(sigma, _phys.type_ground, _phys.e,
+                                                                                 _phys.Ip, _phys.Il, _phys.Ir,
+                                                                                 statment.general_parameters.test_mode))
+            elif not _if_xc_all[-1]:
+                _if_xc_all.append(ModelShearDilatancySoilTest.xc_from_qf_e_if_is(sigma, _phys.type_ground, _phys.e,
+                                                                                 _phys.Ip, _phys.Il, _phys.Ir,
+                                                                                 statment.general_parameters.test_mode))
+            elif _if_xc_all[-1] == 1:
+                _if_xc_all.append(1)
+
+            # считаем xc
+            if _if_xc_all[i]:
+                _xc_all.append(ModelShearDilatancySoilTest.define_xc_qf_E(tau_array[i], E50_array[i]))
+            else:
+                _xc_all.append(0.15)
+
+            # считаем коэф. коррекции
+            if sigma <= 200:
+                _k_all.append(1.2)
+            elif sigma >= 200 and sigma < 500:
+                _k_all.append(0.000333 * sigma + 1.1333)
+            else:
+                _k_all.append(1.3)
+
+        print(f"ХС ДО {_xc_all}")
+
+        # Коррекция хс
+        XC_LIM_k = 0.11
+        XC_LIM_E = 0.11
+
+        if _phys.Ip is not None and _phys.Il is not None:
+            if (np.any(np.asarray(_xc_all) > XC_LIM_E) and np.any(np.asarray(_if_xc_all))) and\
+                    ((_phys.Ip <= 7 and _phys.Il <= 0) or (_phys.Ip > 7 and _phys.Il <= 0.25)):
+                print('твердый')
+                XC_LIM_E = 0.06
+
+        for i in range(len(sigma_array) - 1, -1, -1):
+            if not _if_xc_all[i]:
+                continue
+
+            indexes, = np.where(np.asarray([_xc_all[k] if _if_xc_all[k] else 0 for k in range(len(_xc_all))]) > XC_LIM_E)
+
+            while len(indexes) > 0:
+                rnd = np.random.uniform(1.4, 1.6)
+                _E50 = ((1.37 / (XC_LIM_E-0.005))**10)**(1/8) * tau_array[indexes[0]] * rnd
+                p_ref = sigma_array[indexes[0]]
+
+                for j in range(len(E50_array)):
+                    E50_array[j] = define_E50(_E50,
+                                              statment[statment.current_test].mechanical_properties.c * 1000,
+                                              statment[statment.current_test].mechanical_properties.fi,
+                                              sigma_array[j],
+                                              p_ref,
+                                              statment[statment.current_test].mechanical_properties.m)
+                    _xc_all[j] = ModelShearDilatancySoilTest.define_xc_qf_E(tau_array[j], E50_array[j])
+
+                indexes, = np.where(np.asarray(_xc_all) > XC_LIM_E)
+
+        print(f"ХС ПОСЛЕ {_xc_all}")
+        # теперь, заная есть ли пики и расположения хс можем провести коррекции
+        # формируем итератор и движемся с конца, если при максимальном давлении кривая "помещается",
+        # то поместятся и остальные
+        for i in range(len(sigma_array) - 1, -1, -1):
+            # пики дальше 0.14 игнорируем (фактически их не будет)
+            if _xc_all[i] >= XC_LIM_k:
+                continue
+
+            while (_xc_all[i] * _k_all[i] > XC_LIM_k) and (_k_all[i] >= 1):
+                # уменьшаем все коэффициенты меньше текущего (включая текущий) на 0.1 пока кривая не "войдет"
+                _k_all = [_k_all[j] - 0.1 if j <= i else _k_all[j] for j in range(len(_k_all))]
+        # если какой-то из k ушел меньше 1, то его нужно приравнять к 1
+        for i in range(len(_k_all)):
+            if _k_all[i] < 1:
+                _k_all[i] = 1
+            _xc_all[i] = _xc_all[i] * _k_all[i]
+
         for i in range(len(sigma_array)):
             statment[statment.current_test].mechanical_properties.sigma = sigma_array[i]
             statment[statment.current_test].mechanical_properties.tau_max = tau_array[i]
@@ -406,9 +494,7 @@ class ModelShearSoilTest(ModelShear):
             statment[statment.current_test].mechanical_properties.E50 = E50_array[i]
             # if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
             #     statment[statment.current_test].mechanical_properties.u = u_array[i]
-            self.add_test_st(pre_defined_kr_fgs=self.pre_defined_kr_fgs)
-
-        self.pre_defined_kr_fgs = None
+            self.add_test_st(pre_defined_xc=_xc_all[i])
 
         statment[statment.current_test].mechanical_properties.sigma = sigma_origin
         statment[statment.current_test].mechanical_properties.tau_max = tau_origin
@@ -540,7 +626,7 @@ class ModelShearSoilTest(ModelShear):
                 }
         '''Нелинейные ограничения типа cj(x)>=0'''
 
-        res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, options={'ftol': 1e-11})
+        res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, options={'ftol': 1e-8})
         res = res.x
 
         # Результат:
