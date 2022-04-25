@@ -1194,7 +1194,7 @@ def curve(qf, e50, **kwargs):
     if y_rel_p < 20.0:
         y_rel_p = 20.0
 
-    if xc>0.11:
+    if xc>0.111:
         xc=0.15
 
     # ограничение на qf2
@@ -1273,9 +1273,11 @@ def curve(qf, e50, **kwargs):
 
     # print(f"ПОДАННЫЙ Еур : {Eur}")
     # построение петли разгрузки
+    y_for_loop = y + deviator_loading_deviation(x, y, xc)
+
     x_loop, y_loop,\
         point1_x, point1_y, point2_x, point2_y, point3_x, point3_y,\
-        x1_l, x2_l, y1_l, y2_l = loop(x, y, Eur, y_rel_p, point2_y)
+        x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, Eur, y_rel_p, point2_y)
     # оптимизация петли разгрузки
     if Eur:
         current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
@@ -1291,7 +1293,7 @@ def curve(qf, e50, **kwargs):
             delta_Eur = delta_Eur + 100
             x_loop, y_loop, \
                 point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
-                x1_l, x2_l, y1_l, y2_l = loop(x, y, delta_Eur, y_rel_p, point2_y)
+                x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, delta_Eur, y_rel_p, point2_y)
 
             current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
 
@@ -1306,7 +1308,7 @@ def curve(qf, e50, **kwargs):
 
         x_loop, y_loop, \
             point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
-            x1_l, x2_l, y1_l, y2_l = loop(x, y, best_Eur, y_rel_p, point2_y)
+            x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, best_Eur, y_rel_p, point2_y)
         #current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
         # print(f"ЛУЧШИЙ ПОЛУЧЕННЫЙ Еур : {current_Eur} : ОШИБКА : {abs(Eur - current_Eur) / Eur * 100}")
         # оптимизация петли разгрузки завершена
@@ -1318,6 +1320,7 @@ def curve(qf, e50, **kwargs):
         y = y / k_low_qf
 
         if Eur:
+            y_for_loop = y_for_loop / k_low_qf
             qf = qf / k_low_qf
             Eur = Eur / k_low_qf
             y1_l = y1_l / k_low_qf
@@ -1325,7 +1328,10 @@ def curve(qf, e50, **kwargs):
         else:
             qf = qf / k_low_qf
 
-    y += deviator_loading_deviation(x, y, xc)
+    if Eur:
+        y = y_for_loop
+    else:
+        y += deviator_loading_deviation(x, y, xc)
 
     y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
     y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
@@ -1344,7 +1350,7 @@ def curve(qf, e50, **kwargs):
         k = y_qf2ocr / (qf / 2)
         y_ocr = y_ocr / k
         y = copy.deepcopy(y_ocr)
-    #
+
 
     y1_l = y1_l + np.random.uniform(-0.4, 0.4, len(y1_l))  # шум на петле
     y2_l = y2_l + np.random.uniform(-0.4, 0.4, len(y2_l))  # шум на петле

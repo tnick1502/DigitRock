@@ -2868,7 +2868,7 @@ def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
-    test_parameter["K0"] = test_parameter["K0"][0]
+    test_parameter["K0"] = test_parameter["K0"][1]
     test_parameter["mode"] = "КН, девиаторное нагружение в кинематическом режиме"
     name = "КН"
 
