@@ -197,7 +197,7 @@ class ModelK0:
         defined_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
 
         # Сигма точки перегиба можем взять прям из данных
-        defined_sigma_p = sigma_1[-lse_pnts]
+        defined_sigma_p = sigma_1[-lse_pnts-1]
 
         return (defined_k0, defined_sigma_p) if no_round else (round(defined_k0, 2), defined_sigma_p)
 
@@ -354,7 +354,7 @@ class ModelK0SoilTest(ModelK0):
         # накладываем шум на прямолинейный участок и объединяем
         sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_synth, sgima_3_synth,
                                                      sigma_1_spl, sigma_3_spl,
-                                                     self._test_params.K0)
+                                                     self._test_params.K0, self._test_params.sigma_p)
 
         self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
 
@@ -430,7 +430,7 @@ class ModelK0SoilTest(ModelK0):
 
     @staticmethod
     def lse_faker(sigma_1_line: np.array, sigma_3_line: np.array,
-                  sigma_1_spl: np.array, sigma_3_spl: np.array, K0: float):
+                  sigma_1_spl: np.array, sigma_3_spl: np.array, K0: float, sigma_p: float):
         """
             Принцип работы следующий:
                 шумы накладываются на линейный участок графика, по которому определяется К0.
@@ -466,7 +466,7 @@ class ModelK0SoilTest(ModelK0):
         #   после добавления шума
         fixed_point_index = 1
 
-        noise = abs(sigma_3_line[fixed_point_index] - sigma_3_line[0]) * 0.4
+        noise = abs(sigma_3_line[fixed_point_index] - sigma_3_line[0]) * 0.2
 
         sigma_3_noise = copy.deepcopy(sigma_3_line)
 
@@ -495,14 +495,31 @@ class ModelK0SoilTest(ModelK0):
             __sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1_line))
 
             _K0_new, _sigma_p_new = ModelK0.define_ko(__sigma_1, x, no_round=True)
-            return abs(_K0_new - K0)
+
+            # print(abs(_K0_new - K0) + abs(_sigma_p_new - sigma_p))
+
+            return abs(_K0_new - K0) + abs(_sigma_p_new - sigma_p)
 
         initial = np.delete(sigma_3_noise, fixed_point_index)
         bnds = Bounds(np.zeros_like(initial), np.ones_like(initial) * np.inf)
         '''Граничные условия типа a <= xi <= b'''
+
+        def constrains(x):
+            x = np.insert(x, fixed_point_index, sigma_3_noise[fixed_point_index])
+
+            # первое ограничение - каждая последующая сигма не меньше предыдущей
+            first = np.array([x[j + 1] - x[j] for j in range(len(x) - 1)])
+
+            # замыкаем последний на первый на всякий случай
+            second = np.array([x[-1] - x[0]])
+
+            third = np.array([(x[j + 1] - x[j])/x[j]*100 - 2 for j in range(1, len(x) - 1)])
+
+            res = np.hstack((first, second, third))
+            return res
+
         cons = {'type': 'ineq',
-                'fun': lambda x: np.hstack((np.array([x[ind] for ind in range(len(x))]),
-                                            np.array([x[ind+1] - x[ind] for ind in range(len(x) - 1)])))
+                'fun': constrains
                 }
         '''Нелинейные ограничения типа cj(x)>=0'''
 
@@ -520,8 +537,8 @@ class ModelK0SoilTest(ModelK0):
         # Проверка:
         K0_new, sigma_p_new = ModelK0.define_ko(_sigma_1, _sigma_3)
 
-        # print(f"Было:\n{K0}\n"
-        #       f"Стало:\n{K0_new}")
+        print(f"Было:\n{K0} {sigma_p}\n"
+              f"Стало:\n{K0_new} {sigma_p_new}")
 
         if K0 != K0_new:
             raise RuntimeWarning("Слишком большая ошибка в К0")

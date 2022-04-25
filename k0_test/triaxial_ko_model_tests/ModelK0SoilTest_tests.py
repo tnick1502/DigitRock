@@ -1,7 +1,7 @@
 from k0_test.triaxial_k0_model import ModelK0SoilTest
 from excel_statment.properties_model import K0Properties
 
-PLOT = False
+PLOT = True
 
 
 def test_model_k0_simple():
