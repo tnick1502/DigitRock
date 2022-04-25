@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import Bounds, minimize
 from scipy.interpolate import make_interp_spline
 
-from general.general_functions import AttrDict
+from general.general_functions import AttrDict, discrete_array, exponent, create_json_file
 from singletons import statment
 
 
@@ -374,8 +374,59 @@ class ModelK0SoilTest(ModelK0):
             _min_sigma_1 = self._test_params.sigma_p // self._test_params.sigma_1_step
             self._test_params.sigma_1_max = (_min_sigma_1 + ModelK0.MIN_LSE_PNTS) * self._test_params.sigma_1_step
 
-    def save_log_file(self, director):
-        pass
+    def save_log_file(self, file_path):
+        """Метод генерирует логфайл прибора"""
+        #
+        TIME = 5000
+        # Формируем массивы данных
+        #
+        deviator = ModelK0SoilTest.form_time_array(self.test_data.sigma_3*1000, points_count=TIME)
+        #
+        strain = np.zeros_like(deviator)  # np.random.uniform(-0.1, 0.1, len(deviator))
+        #
+        pore_pressure = ModelK0SoilTest.form_time_array(self.test_data.sigma_1*1000, points_count=TIME)
+        #   Подготовка под наличие разгрузки
+        reload_points = [0, 0, 0]
+        #
+        cell_volume_strain = np.zeros_like(deviator)  # np.random.uniform(-0.1, 0.1, len(deviator))
+        #
+        pore_volume_strain = np.zeros_like(deviator)  # np.random.uniform(-0.1, 0.1, len(deviator))
+        #
+        if TIME <= 499:
+            time = [i / 20 for i in range(len(deviator))]
+        elif 499 < TIME <= 2999:
+            time = [i / 2 for i in range(len(deviator))]
+        else:
+            time = [i * 3 for i in range(len(deviator))]
+
+
+        # Формируем словари с данными
+        #   реконсолидации нет
+        reconsolidation_dict = None
+        #   консолидация стандартная
+        consolidation_dict = None  # ModelK0SoilTest.dictionary_without_VFS(sigma_3=100, velocity=49)
+        #
+        deviator_loading_dict = ModelK0SoilTest.dictionary_deviator_loading(strain, deviator, pore_volume_strain,
+                                                                            cell_volume_strain, reload_points,
+                                                                            pore_pressure=pore_pressure,
+                                                                            time=time)
+
+        main_dict = ModelK0SoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
+                                                                         consolidation_dict,
+                                                                         deviator_loading_dict)
+
+        ModelK0SoilTest.text_file(file_path, main_dict)
+
+        # create_json_file('/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json",
+        #                  self.get_processing_parameters())
+
+        # try:
+        #     plaxis = self.deviator_loading.get_plaxis_dictionary()
+        #     with open('/'.join(os.path.split(file_path)[:-1]) + "/plaxis_log.txt", "w") as file:
+        #         for i in range(len(plaxis["strain"])):
+        #             file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
+        # except Exception as err:
+        #     app_logger.exception(f"Проблема сохранения массива для plaxis {statment.current_test}")
 
     @staticmethod
     def lse_faker(sigma_1_line: np.array, sigma_3_line: np.array,
@@ -476,3 +527,358 @@ class ModelK0SoilTest(ModelK0):
             raise RuntimeWarning("Слишком большая ошибка в К0")
 
         return _sigma_1, _sigma_3
+
+    @staticmethod
+    def dictionary_without_VFS(sigma_3=100, velocity=49):
+        # Создаем массив набора нагрузки до обжимающего давления консолидации
+        # sigma_3 -= effective_stress_after_reconsolidation
+        k = sigma_3 / velocity
+        if k <= 2:
+            velocity = velocity / (2 / k) - 1
+        load_stage_time = round(sigma_3 / velocity, 2)
+        load_stage_time_array = np.arange(1, load_stage_time, 1)
+        time_max = np.random.uniform(20, 30)
+        time_array = np.arange(0, time_max, 1)
+        # Добавим набор нагрузки к основным массивам
+        time = np.hstack((load_stage_time_array, time_array + load_stage_time_array[-1]))
+
+        load_stage_cell_press = np.linspace(0, sigma_3, len(load_stage_time_array) + 1)
+        cell_press = np.hstack((load_stage_cell_press[1:], np.full(len(time_array), sigma_3))) + \
+                     np.random.uniform(-0.1, 0.1, len(time))
+
+        final_volume_strain = np.random.uniform(0.14, 0.2)
+        load_stage_cell_volume_strain = exponent(load_stage_time_array[:-1], final_volume_strain,
+                                                 np.random.uniform(1, 1))
+        # load_stage_cell_volume_strain[0] = 0
+        cell_volume_strain = np.hstack((load_stage_cell_volume_strain,
+                                        np.full(len(time_array) + 1, final_volume_strain))) * np.pi * (19 ** 2) * 76 + \
+                             np.random.uniform(-0.1, 0.1, len(time))
+        cell_volume_strain[0] = 0
+        vertical_press = cell_press + np.random.uniform(-0.1, 0.1, len(time))
+
+        # На нэтапе нагружения 'LoadStage', на основном опыте Stabilization
+        load_stage = ['LoadStage' for _ in range(len(load_stage_time_array))]
+        wait = ['Wait' for _ in range(len(time_array))]
+        action = load_stage + wait
+
+        action_changed = ['' for _ in range(len(time))]
+        action_changed[len(load_stage_time_array) - 1] = "True"
+        action_changed[-1] = 'True'
+
+        # Значения на последнем LoadStage и Первом Wait (следующая точка) - равны
+        cell_press[len(load_stage)] = cell_press[len(load_stage) - 1]
+        vertical_press[len(load_stage)] = vertical_press[len(load_stage) - 1]
+        cell_volume_strain[len(load_stage)] = cell_volume_strain[len(load_stage) - 1]
+
+        trajectory = np.full(len(time), 'ReconsolidationWoDrain')
+        trajectory[-1] = "CTC"
+
+        # Подключение запуска опыта
+        time_start = [time[0]]
+        time = np.hstack((time_start, time))
+
+        action_start = ['Start']
+        action = np.hstack((action_start, action))
+
+        action_changed_start = ['True']
+        action_changed = np.hstack((action_changed_start, action_changed))
+
+        cell_press_start = [cell_press[0]]
+        cell_press = np.hstack((cell_press_start, cell_press))
+
+        cell_volume_strain_start = [cell_volume_strain[0]]
+        cell_volume_strain = np.hstack((cell_volume_strain_start, cell_volume_strain))
+
+        vertical_press_start = [vertical_press[0]]
+        vertical_press = np.hstack((vertical_press_start, vertical_press))
+
+        trajectory_start = [trajectory[0]]
+        trajectory = np.hstack((trajectory_start, trajectory))
+
+        data = {
+            "Time": time,
+            "Action": action,
+            "Action_Changed": action_changed,
+            "SampleHeight_mm": np.round(np.full(len(time), 76)),
+            "SampleDiameter_mm": np.round(np.full(len(time), 38)),
+            "Deviator_kPa": np.full(len(time), 0),
+            "VerticalDeformation_mm": np.full(len(time), 0),
+            "CellPress_kPa": cell_press,
+            "CellVolume_mm3": cell_volume_strain,
+            "PorePress_kPa": np.full(len(time), 0),
+            "PoreVolume_mm3": np.full(len(time), 0),
+            "VerticalPress_kPa": vertical_press,
+            "Trajectory": trajectory
+        }
+
+        return data
+
+    @staticmethod
+    def dictionary_deviator_loading(strain, deviator, pore_volume_strain, cell_volume_strain, indexs_loop,
+                                    pore_pressure, time, delta_h_consolidation=0,):
+        """Формирует словарь девиаторного нагружения"""
+        # index_unload, = np.where(strain >= strain[-1] * 0.92)  # индекс абциссы конца разгрузки
+        # x_unload_p = strain[index_unload[0]]  # деформация на конце разгрузки
+        # y_unload_p = - 0.05 * max(deviator)  # девиатор на конце разгрузки
+        #
+        # x_unload = np.linspace(strain[-1], x_unload_p, 8 + 1)  # массив деформаций разгрузки с другим шагом
+        # spl = make_interp_spline([x_unload_p, strain[-1]],
+        #                                      [y_unload_p, deviator[-1]], k=3,
+        #                                      bc_type=([(1, 0)], [(1, deviator[-1] * 200)]))
+        # y_unload = spl(x_unload)  # массив значений девиатора при разгрузке
+        # z_unload_p = min(pore_volume_strain) * 1.05  # обьемная деформация на конце разгрузки
+        # spl = make_interp_spline([x_unload_p, strain[-1]],
+        #                                      [z_unload_p, pore_volume_strain[-1]], k=3,
+        #                                      bc_type=([(1, 0)], [(1, abs(pore_volume_strain[-1] - z_unload_p) * 200)]))
+        # unload_pore_volume_strain = spl(x_unload)  # массив обьемных деформаций при разгрузке
+        #
+        # y_unload = y_unload + np.random.uniform(-1, 1, len(y_unload))  # наложение  шума на разгрузку
+        # y_unload = discrete_array(y_unload, 1)  # наложение ступенатого шума на разгрузку
+        #
+        # z_unload_p = min(cell_volume_strain) * 1.05
+        # spl = make_interp_spline([x_unload_p, strain[-1]],
+        #                                      [z_unload_p, cell_volume_strain[-1]], k=3,
+        #                                      bc_type=([(1, 0)], [(1, abs(cell_volume_strain[-1] - z_unload_p) * 200)]))
+        # unload_cell_volume_strain = spl(x_unload)
+        #
+        # # Расширяем массивы на разгрузку
+        # cell_volume_strain = np.hstack((cell_volume_strain, unload_cell_volume_strain[1:]))
+        # strain = np.hstack((strain, x_unload[1:]))
+        # deviator = np.hstack((deviator, y_unload[1:]))
+        # pore_volume_strain = np.hstack((pore_volume_strain, unload_pore_volume_strain[1:]))
+        #
+        # end_unload = len(strain) - len(x_unload) + 1  # индекс конца разгрузки в масииве
+        #
+        # # запись девиаторного нагружения в файл
+        # time = np.hstack((time, deviator[-1] + np.linspace(1, len(y_unload[1:]), len(y_unload[1:]))))
+
+        action = ['WaitLimit' for __ in range(len(time))]
+
+        # pore_pressure = np.hstack((
+        #     pore_pressure,
+        #     np.linspace(pore_pressure[-1], pore_pressure[-1] * np.random.uniform(0.3, 0.5), len(time) - len(pore_pressure))
+        # ))
+        #
+        # if indexs_loop[0] != 0:
+        #     for i in range(len(action)):
+        #         if i >= indexs_loop[0] and i < indexs_loop[1]:
+        #             action[i] = 'CyclicUnloading'
+        #         elif i >= indexs_loop[1] and i <= indexs_loop[2]:
+        #             action[i] = 'CyclicLoading'
+        #         elif i >= end_unload:
+        #             action[i] = 'Unload'
+        # else:
+        #     for i in range(len(action)):
+        #         if i >= end_unload:
+        #             action[i] = 'Unload'
+
+        action_changed = []
+        Last_WaitLimit_flag = 1
+        for i in range(len(action) - 1):
+            if action[i] == "WaitLimit" and action[i + 1] == "Unload" and Last_WaitLimit_flag:
+                action_changed.append('True' + '')
+                Last_WaitLimit_flag = 0
+            else:
+                action_changed.append('')
+        action_changed.append('')
+
+        data = {
+            "Time": time,
+            "Action": action,
+            "Action_Changed": action_changed,
+            "SampleHeight_mm": np.round(np.full(len(time), 76)),
+            "SampleDiameter_mm": np.round(np.full(len(time), 38)),
+            "Deviator_kPa": np.round(deviator, 4),
+            "VerticalDeformation_mm": strain * (76 - delta_h_consolidation),
+            "CellPress_kPa": np.full(len(time), 0) + np.random.uniform(0, 1.57, len(time)),
+            "CellVolume_mm3": (cell_volume_strain * np.pi * 19 ** 2 * (76 - delta_h_consolidation)),
+            "PorePress_kPa": pore_pressure,
+            "PoreVolume_mm3": pore_volume_strain * np.pi * 19 ** 2 * (76 - delta_h_consolidation),
+            "VerticalPress_kPa": deviator + np.random.uniform(-0.1, 0.1, len(time)),
+            "Trajectory": np.full(len(time), 'CTC')}
+
+        return data
+
+    @staticmethod
+    def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading):
+
+        start = np.random.uniform(0.5, 0.8)
+        dict = {
+            'Time': [0, 0, np.round(start, 3), np.round(start + 0.1, 3), np.round(start + 2, 3)],
+            'Action': ["", "", "Start", "Start", "Start"],
+            'Action_Changed': ["", "True", "", "", "True"],
+            'SampleHeight_mm': np.full(5, 76),
+            'SampleDiameter_mm': np.full(5, 38),
+            'Deviator_kPa': np.full(5, 0),
+            'VerticalDeformation_mm': np.full(5, 0),
+            'CellPress_kPa': np.full(5, 0),
+            'CellVolume_mm3': np.full(5, 0),
+            'PorePress_kPa': np.full(5, 0),
+            'PoreVolume_mm3': np.full(5, 0),
+            'VerticalPress_kPa': np.full(5, 0),
+            'Trajectory': np.full(5, "HC")
+        }
+
+        data_start = ModelK0SoilTest.addition_of_dictionaries(dict, b_test, initial=True,
+                                                                        skip_keys=["SampleHeight_mm",
+                                                                                   "SampleDiameter_mm"])
+
+        data = ModelK0SoilTest.addition_of_dictionaries(copy.deepcopy(data_start), consolidation, initial=True,
+                                                                        skip_keys=["SampleHeight_mm",
+                                                                                   "SampleDiameter_mm"])
+
+        dictionary = ModelK0SoilTest.addition_of_dictionaries(copy.deepcopy(data), deviator_loading, initial=True,
+                                              skip_keys=["SampleHeight_mm", "SampleDiameter_mm", "Action_Changed"])
+
+        dictionary["Time"] = ModelK0SoilTest.current_value_array(dictionary["Time"], 3)
+        dictionary["Deviator_kPa"] = ModelK0SoilTest.current_value_array(dictionary["Deviator_kPa"], 3)
+
+        # Для части девиаторного нагружения вертикальная деформация хода штока должна писаться со знаком "-"
+        CTC_index, = np.where(dictionary["Trajectory"] == 'CTC')
+        str = ModelK0SoilTest.current_value_array(dictionary["VerticalDeformation_mm"][:CTC_index[0]], 5)
+        str.extend(ModelK0SoilTest.current_value_array(dictionary["VerticalDeformation_mm"][CTC_index[0]:], 5,
+                                                       change_negatives=False))
+        dictionary["VerticalDeformation_mm"] = str
+
+        dictionary["CellPress_kPa"] = ModelK0SoilTest.current_value_array(dictionary["CellPress_kPa"], 5)
+        dictionary['CellVolume_mm3'] = ModelK0SoilTest.current_value_array(dictionary["CellVolume_mm3"], 5)
+        dictionary['PoreVolume_mm3'] = ModelK0SoilTest.current_value_array(dictionary["PoreVolume_mm3"], 5)
+        dictionary["PorePress_kPa"] = ModelK0SoilTest.current_value_array(dictionary["PorePress_kPa"], 5)
+        dictionary["VerticalPress_kPa"] = ModelK0SoilTest.current_value_array(dictionary["VerticalPress_kPa"], 5)
+
+        return dictionary
+
+    @staticmethod
+    def addition_of_dictionaries(data1, data2, initial=True, skip_keys=None):
+        if data1 is None and data2 is None:
+            return None
+        elif data1 is None:
+            return copy.deepcopy(data2)
+        elif data2 is None:
+            return copy.deepcopy(data1)
+
+        dictionary_1 = copy.deepcopy(data1)
+        dictionary_2 = copy.deepcopy(data2)
+        if skip_keys is None:
+            skip_keys = ['']
+        keys_d1 = list(dictionary_1.keys())  # массив ключей словаря 1
+        len_d1_elem = len(dictionary_1[keys_d1[0]])  # длина массива под произвольным ключем словаря 1
+        keys_d2 = list(dictionary_2.keys())  # массив ключей словаря 2
+        len_d2_elem = len(dictionary_2[keys_d2[0]])  # длина массива под произвольным ключем словаря 2
+
+        for key in dictionary_1:
+            if key in dictionary_2:  # если ключ есть в словаре 2
+                if initial and (str(type(dictionary_1[key][0])) not in ["<class 'str'>", "<class 'numpy.str_'>"]) and (
+                        key not in skip_keys):  # если initial=True и элементы под ключем не строки
+                    # к эламентам словаря 2 прибавляется последний элемент словаря 1 под одним ключем
+                    for val in range(len(dictionary_2[key])):
+                        dictionary_2[key][val] += dictionary_1[key][-1]
+                dictionary_1[key] = np.append(dictionary_1[key], dictionary_2[key])
+            else:  # если ключа нет в словаре 2
+                dictionary_1[key] = np.append(dictionary_1[key], np.full(len_d2_elem, ''))
+
+        for key in dictionary_2:  # если ключа нет в словаре 1
+            if key not in dictionary_1:
+                dictionary_1[key] = np.append(np.full(len_d1_elem, ''), dictionary_2[key])
+
+        return dictionary_1
+
+    @staticmethod
+    def current_value_array(array, number, change_negatives=True):
+        s = []
+        for i in range(len(array)):
+            num = ModelK0SoilTest.number_format(array[i], number, change_negatives=change_negatives).replace(".", ",")
+            if num in ["0,0", "0,00", "0,000", "0,0000", "0,00000","0,000000"]:
+                num = "0"
+            s.append(num)
+        return s
+
+    @staticmethod
+    def number_format(x, characters_number=0, split=".", change_negatives=True):
+        """Функция возвращает число с заданным количеством знаков после запятой
+        :param characters_number: количество знаков после запятой
+        :param format: строка или число
+        :param split: кразделитель дробной части. точка или запятая
+        :param change_negatives: удаление начального знака минус"""
+
+        if str(type(x)) in ["<class 'numpy.float64'>", "<class 'numpy.int32'>", "<class 'int'>", "<class 'float'>"]:
+            # установим нужный формат
+            _format = "{:." + str(characters_number) + "f}"
+            round_x = np.round(x, characters_number)
+            x = _format.format(round_x)
+
+            # Уберем начальный минус  (появляется, например, когда округляем -0.0003 до 1 знака)
+            if change_negatives:
+                if x[0] == "-":
+                    x = x[1:len(x)]
+
+            if split == ".":
+                return x
+            elif split == ",":
+                return x.replace(".", ",")
+
+
+        else:
+            _format = "{:." + str(characters_number) + "f}"
+
+            if str(type(x)) == "<class 'numpy.ndarray'>":
+                x = list(x)
+
+            for i in range(len(x)):
+                # Уберем начальный минус  (появляется, например, когда округляем -0.0003 до 1 знака)
+                x[i] = _format.format(x[i])
+                if change_negatives:
+                    if x[i][0] == "-":
+                        x[i] = x[i][1:len(x)]
+
+                if split == ".":
+                    pass
+                elif split == ",":
+                    x[i].replace(".", ",")
+
+            return x
+
+    @staticmethod
+    def text_file(file_path, data):
+        """Сохранение текстового файла формата Willie.
+                    Передается папка, массивы"""
+        p = os.path.join(file_path, "Тест.log")
+
+        def make_string(data, i):
+            s = ""
+            for key in data:
+                s += str(data[key][i]) + '\t'
+            s += '\n'
+            return (s)
+
+        with open(file_path, "w") as file:
+            file.write(
+                "Time" + '\t' + "Action" + '\t' + "Action_Changed" + '\t' + "SampleHeight_mm" + '\t' + "SampleDiameter_mm" + '\t' +
+                "Deviator_kPa" + '\t' + "VerticalDeformation_mm" + '\t' + "CellPress_kPa" + '\t' + "CellVolume_mm3" + '\t' +
+                "PorePress_kPa" + '\t' + "PoreVolume_mm3" + '\t' + "VerticalPress_kPa" + '\t' +
+                "Trajectory" + '\n')
+            for i in range(len(data["Time"])):
+                file.write(make_string(data, i))
+
+    @staticmethod
+    def form_time_array(x, points_count: int = 5000, discrete_level=0.5, noise=0.4):
+        _t = np.linspace(0, len(x) - 1, points_count)
+        spl = make_interp_spline(ModelK0SoilTest.time_series(x), x, k=1)
+        _x = spl(_t)
+
+        if noise:
+            sh = np.random.uniform(-noise, noise, len(_x))
+            _x += sh
+
+        if discrete_level:
+            _x = discrete_array(_x, discrete_level)
+
+        return _x
+
+    @staticmethod
+    def time_series(x: np.ndarray) -> np.ndarray:
+        """
+        Возвращает массив целых чисел по размеру `x`: [0,1,2,...,len(`x`)-1]:
+        """
+        time = np.linspace(0, len(x) - 1, len(x))
+        return time

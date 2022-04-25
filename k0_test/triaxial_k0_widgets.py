@@ -282,7 +282,9 @@ class K0SoilTestApp(QWidget):
 
             shutil.copy(file_name, statment.save_dir.report_directory + "/" + file_name[len(file_name) -
                                                                                       file_name[::-1].index("/"):])
-            K0_models[statment.current_test].save_log_file(save)
+
+            K0_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log")
+
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
                 app_logger.info(f"Проба {statment.current_test} успешно сохранена в папке {save}")
