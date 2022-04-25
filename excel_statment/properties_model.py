@@ -1789,6 +1789,9 @@ class ShearProperties(MechanicalProperties):
             if Il is None:
                 Il = np.random.uniform(0.25, 0.5)
 
+            if e is None:
+                e = np.random.uniform(0.45, 0.75)
+
             if Ir < 0:
                 Ir = 0
             if Ir > 0.25:
