@@ -592,7 +592,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                  statment[statment.current_test].physical_properties.Ip, statment[statment.current_test].physical_properties.type_ground)
         _test_mode = statment.general_parameters.test_mode
 
-        xc, residual_strength = ModelShearDilatancySoilTest.define_xc_value_residual_strength(
+        xc, residual_strength, self._test_params.E50  = ModelShearDilatancySoilTest.define_xc_value_residual_strength(
                 statment[statment.current_test].physical_properties,
                 statment[statment.current_test].mechanical_properties.sigma,
                 statment[statment.current_test].mechanical_properties.tau_max,
@@ -1116,6 +1116,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
     @staticmethod
     def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E, test_mode, pre_defined_xc=None):
 
+        _E50 = E
+
         if sigma_3 <= 200:
             k = 1.2
         elif sigma_3 >= 200 and sigma_3 < 500:
@@ -1128,6 +1130,28 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                                                                 data_phiz.Ip, data_phiz.Il, data_phiz.Ir, test_mode)
             if xc:
                 xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
+
+
+                # Коррекция хс
+                XC_LIM_k = 0.11
+                XC_LIM_E = 0.11
+                rnd = np.random.uniform(1.4, 1.6)
+
+                if data_phiz.Ip is not None and data_phiz.Il is not None:
+                    if xc > XC_LIM_E and \
+                            ((data_phiz.Ip <= 7 and data_phiz.Il <= 0) or (data_phiz.Ip > 7 and data_phiz.Il <= 0.25)):
+                        print('твердый')
+                        XC_LIM_E = 0.06
+                        rnd = np.random.uniform(1.4, 1.6)
+
+                while xc > XC_LIM_E:
+                    _E50 = ((1.37 / (XC_LIM_E-0.005))**10)**(1/8) * qf * rnd
+                    xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, _E50)
+
+                while (xc * k > XC_LIM_k) and (k >= 1):
+                    # уменьшаем все коэффициенты меньше текущего (включая текущий) на 0.1 пока кривая не "войдет"
+                    k = k - 0.1
+
                 #if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
                 xc = xc*k #/1.5
             else:
@@ -1145,7 +1169,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             # if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
             xc = xc*k
 
-        return xc, residual_strength
+        return xc, residual_strength, _E50
 
     @staticmethod
     def define_dilatancy_from_xc_qres(xc, qres):

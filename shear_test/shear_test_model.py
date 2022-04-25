@@ -438,18 +438,24 @@ class ModelShearSoilTest(ModelShear):
         print(f"ХС ДО {_xc_all}")
 
         # Коррекция хс
+        XC_LIM_k = 0.11
+        XC_LIM_E = 0.11
 
-        XC_LIM = 0.11
+        if _phys.Ip is not None and _phys.Il is not None:
+            if np.any(np.asarray(_xc_all) > XC_LIM_E) and\
+                    ((_phys.Ip <= 7 and _phys.Il <= 0) or (_phys.Ip > 7 and _phys.Il <= 0.25)):
+                print('твердый')
+                XC_LIM_E = 0.06
 
         for i in range(len(sigma_array) - 1, -1, -1):
             if not _if_xc_all[i]:
                 continue
 
-            indexes, = np.where(np.asarray(_xc_all) > XC_LIM)
+            indexes, = np.where(np.asarray(_xc_all) > XC_LIM_E)
 
             while len(indexes) > 0:
                 rnd = np.random.uniform(1.4, 1.6)
-                _E50 = ((1.37 / (XC_LIM-0.005))**10)**(1/8) * tau_array[indexes[0]] * rnd
+                _E50 = ((1.37 / (XC_LIM_E-0.005))**10)**(1/8) * tau_array[indexes[0]] * rnd
                 p_ref = sigma_array[indexes[0]]
 
                 for j in range(len(E50_array)):
@@ -461,7 +467,7 @@ class ModelShearSoilTest(ModelShear):
                                               statment[statment.current_test].mechanical_properties.m)
                     _xc_all[j] = ModelShearDilatancySoilTest.define_xc_qf_E(tau_array[j], E50_array[j])
 
-                indexes, = np.where(np.asarray(_xc_all) > XC_LIM)
+                indexes, = np.where(np.asarray(_xc_all) > XC_LIM_E)
 
         print(f"ХС ПОСЛЕ {_xc_all}")
         # теперь, заная есть ли пики и расположения хс можем провести коррекции
@@ -469,10 +475,10 @@ class ModelShearSoilTest(ModelShear):
         # то поместятся и остальные
         for i in range(len(sigma_array) - 1, -1, -1):
             # пики дальше 0.14 игнорируем (фактически их не будет)
-            if _xc_all[i] >= XC_LIM:
+            if _xc_all[i] >= XC_LIM_k:
                 continue
 
-            while (_xc_all[i] * _k_all[i] > XC_LIM) and (_k_all[i] >= 1):
+            while (_xc_all[i] * _k_all[i] > XC_LIM_k) and (_k_all[i] >= 1):
                 # уменьшаем все коэффициенты меньше текущего (включая текущий) на 0.1 пока кривая не "войдет"
                 _k_all = [_k_all[j] - 0.1 if j <= i else _k_all[j] for j in range(len(_k_all))]
         # если какой-то из k ушел меньше 1, то его нужно приравнять к 1
