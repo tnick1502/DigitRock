@@ -15,7 +15,7 @@ from excel_statment.initial_tables import LinePhysicalProperties
 from general.save_widget import Save_Dir
 from excel_statment.functions import set_cell_data
 from excel_statment.position_configs import c_fi_E_PropertyPosition
-from general.reports import report_consolidation, report_FCE, report_FC, report_FC_KN, report_E, report_FC_NN
+from general.reports import report_consolidation, report_FCE, report_FC, report_FC_KN, report_E, report_FC_NN, report_FC_res
 from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI, ModelTriaxialFileOpenUI, ModelTriaxialReconsolidationUI, \
     ModelTriaxialConsolidationUI, ModelTriaxialDeviatorLoadingUI
 from general.general_widgets import Float_Slider
@@ -730,7 +730,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
             self.physical_line_2.set_data()
         elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)' or \
                 statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or \
-                statment.general_parameters.test_mode == 'Трёхосное сжатие КН':
+                statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or \
+                statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C) res':
             self.tab_3.item_identification.set_data()
             self.tab_3.set_params()
             self.physical_line_2.set_data()
@@ -1081,7 +1082,6 @@ class StatickSoilTestApp(AppMixin, QWidget):
                                (number, c_fi_E_PropertyPosition["Трёхосное сжатие КН"][1][1])),
                               test_result["fi"], sheet="Лист1", color="FF6961")
 
-
             elif statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
                 name = file_path_name + " " + statment.general_data.object_number + " НН" + ".pdf"
 
@@ -1114,6 +1114,52 @@ class StatickSoilTestApp(AppMixin, QWidget):
                               (c_fi_E_PropertyPosition["Трёхосное сжатие КН"][0][0] + str(number),
                                (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][1][0])),
                               test_result["c"], sheet="Лист1", color="FF6961")
+
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
+                FC_models[statment.current_test].save_log_files(save, file_path_name)
+                shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
+                            statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
+
+                FC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
+                test_result = {}
+                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[
+                    statment.current_test].get_sigma_3_1()
+
+                test_result["sigma_1_res"] = FC_models[
+                    statment.current_test].get_sigma_1_res()
+
+                test_result["c"], test_result["fi"], test_result["m"], test_result["c_res"], test_result["fi_res"] = \
+                    FC_models[statment.current_test].get_test_results()["c"], \
+                    FC_models[statment.current_test].get_test_results()["fi"],\
+                    FC_models[statment.current_test].get_test_results()["m"],\
+                    FC_models[statment.current_test].get_test_results()["c_res"],\
+                    FC_models[statment.current_test].get_test_results()["fi_res"],
+
+
+                test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
+
+                report_FC_res(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
+                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
+                           test_parameter, test_result,
+                          (*self.tab_3.save_canvas(),
+                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+
+                shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
+
+                number = statment[statment.current_test].physical_properties.sample_number + 7
+
+                set_cell_data(self.tab_1.path,
+                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][0][0] + str(number),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][1][0])),
+                              test_result["c"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][0][1] + str(number),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][1][1])),
+                              test_result["fi"], sheet="Лист1", color="FF6961")
+
 
 
 

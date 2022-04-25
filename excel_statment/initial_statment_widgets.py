@@ -335,7 +335,8 @@ class TriaxialStaticStatment(InitialStatment):
                     "Трёхосное сжатие с разгрузкой",
                     "Трёхосное сжатие (F, C, Eur)",
                     "Трёхосное сжатие КН",
-                    "Трёхосное сжатие НН"]
+                    "Трёхосное сжатие НН",
+                    "Трёхосное сжатие (F, C) res"]
             },
 
             "K0_mode": {
@@ -456,7 +457,8 @@ class TriaxialStaticStatment(InitialStatment):
 
                     if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C)" or \
                             statment.general_parameters.test_mode == "Трёхосное сжатие КН" or \
-                            statment.general_parameters.test_mode == "Трёхосное сжатие НН":
+                            statment.general_parameters.test_mode == "Трёхосное сжатие НН" or \
+                            statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
                         self.load_models(models_name="FC_models.pickle",
                                          models=FC_models, models_type=ModelMohrCirclesSoilTest)
 

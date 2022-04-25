@@ -348,13 +348,25 @@ class MohrWidget(QWidget):
 
             if plots is not None:
                 for i in range(len(plots["strain"])):
-                    self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
-                    self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
-
-                self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
+                    if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                        self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
+                        self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], color="green", linewidth=2, alpha=0.6)
+                        self.mohr_ax.plot(plots["mohr_x_res"][i], plots["mohr_y_res"][i], color="black", linewidth=1, linestyle="--", alpha=0.6)
+                    else:
+                        self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
+                        self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
 
                 self.mohr_ax.plot([], [], label="c" + ", МПа = " + str(res["c"]), color="#eeeeee")
                 self.mohr_ax.plot([], [], label="fi" + ", град. = " + str(res["fi"]), color="#eeeeee")
+
+                if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                    self.mohr_ax.plot([], [], label="c_res" + ", МПа = " + str(res["c_res"]), color="#eeeeee")
+                    self.mohr_ax.plot([], [], label="fi_res" + ", град. = " + str(res["fi_res"]), color="#eeeeee")
+                    self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], color="green", linewidth=2, alpha=0.6)
+                    self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y_res"], color="black", linewidth=2, alpha=0.6)
+
+                else:
+                    self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
 
                 self.mohr_ax.set_xlim(*plots["x_lims"])
                 self.mohr_ax.set_ylim(*plots["y_lims"])

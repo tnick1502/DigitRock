@@ -222,6 +222,7 @@ class ModelTriaxialDeviatorLoading:
         """Получение результатов обработки опыта"""
         dict = copy.deepcopy(self._test_result.get_dict())
         dict["sigma_3"] = np.round((self._test_params.sigma_3 - float(dict["max_pore_pressure"])) / 1000, 3)
+        dict["q_res"] = np.round((self._test_data.deviator[-1]) / 1000, 3)
 
         dict["K_E50"] = np.round(self._test_result.E[0]/self._test_result.E50, 2)
         dict["K_Eur"] = np.round(self._test_result.Eur/self._test_result.E[0], 2) if self._test_result.Eur else None
@@ -939,13 +940,13 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                     76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
                     76 - self._test_params.delta_h_consolidation)), 6)
 
-
-        i_end = ModelTriaxialDeviatorLoadingSoilTest.define_final_loading_point(self._test_data.deviator, 0.08 + np.random.uniform(0.01, 0.03))
-        self._test_data.time = self._test_data.time[:i_end]
-        self._test_data.strain = self._test_data.strain[:i_end]
-        self._test_data.deviator = self._test_data.deviator[:i_end]
-        self._test_data.pore_volume_strain = self._test_data.pore_volume_strain[:i_end]
-        self._test_data.cell_volume_strain = self._test_data.cell_volume_strain[:i_end]
+        if statment.general_parameters.test_mode != "Трёхосное сжатие (F, C) res":
+            i_end = ModelTriaxialDeviatorLoadingSoilTest.define_final_loading_point(self._test_data.deviator, 0.08 + np.random.uniform(0.01, 0.03))
+            self._test_data.time = self._test_data.time[:i_end]
+            self._test_data.strain = self._test_data.strain[:i_end]
+            self._test_data.deviator = self._test_data.deviator[:i_end]
+            self._test_data.pore_volume_strain = self._test_data.pore_volume_strain[:i_end]
+            self._test_data.cell_volume_strain = self._test_data.cell_volume_strain[:i_end]
 
         if self._test_params.u:
             self._test_data.pore_pressure = ModelTriaxialDeviatorLoadingSoilTest.define_pore_pressure_array(
