@@ -442,7 +442,7 @@ class ModelShearSoilTest(ModelShear):
         XC_LIM_E = 0.11
 
         if _phys.Ip is not None and _phys.Il is not None:
-            if np.any(np.asarray(_xc_all) > XC_LIM_E) and\
+            if (np.any(np.asarray(_xc_all) > XC_LIM_E) and np.any(np.asarray(_if_xc_all))) and\
                     ((_phys.Ip <= 7 and _phys.Il <= 0) or (_phys.Ip > 7 and _phys.Il <= 0.25)):
                 print('твердый')
                 XC_LIM_E = 0.06
@@ -451,7 +451,7 @@ class ModelShearSoilTest(ModelShear):
             if not _if_xc_all[i]:
                 continue
 
-            indexes, = np.where(np.asarray(_xc_all) > XC_LIM_E)
+            indexes, = np.where(np.asarray([_xc_all[k] if _if_xc_all[k] else 0 for k in range(len(_xc_all))]) > XC_LIM_E)
 
             while len(indexes) > 0:
                 rnd = np.random.uniform(1.4, 1.6)
