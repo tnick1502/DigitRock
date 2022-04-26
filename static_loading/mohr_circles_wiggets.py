@@ -570,6 +570,7 @@ class MohrWidgetSoilTest(TabMixin, MohrWidget):
             self._create_test_tables()
             self._plot()
 
+
 class PressureArray(QGroupBox):
     def __init__(self):
         super().__init__()
@@ -910,7 +911,7 @@ class StaticSoilTestDialog(QDialog):
                                                                        "dilatancy": "Угол дилатансии",
                                                                        "volumetric_strain_xc": "Объемн. деформ. в пике",
                                                                        "Eur": "Модуль разгрузки"})
-        self.deviator_loading_sliders.setFixedHeight(180)
+        self.deviator_loading_sliders.setFixedHeight(200)
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)
 
@@ -976,12 +977,15 @@ class StaticSoilTestDialog(QDialog):
 
     def _cut_slider_deviator_moove(self):
         """Обработчик перемещения слайдера обрезки"""
-        if E_models[statment.current_test].deviator_loading.check_none():
-            if (int(self.deviator_loading.slider_cut.high()) - int(self.deviator_loading.slider_cut.low())) >= 50:
-                self._model.deviator_loading.change_borders(
-                    int(self.deviator_loading.slider_cut.low()),
-                    int(self.deviator_loading.slider_cut.high()))
-            self._plot_deviator_loading()
+        try:
+            if self._model.deviator_loading.check_none():
+                if (int(self.deviator_loading.slider_cut.high()) - int(self.deviator_loading.slider_cut.low())) >= 50:
+                    self._model.deviator_loading.change_borders(
+                        int(self.deviator_loading.slider_cut.low()),
+                        int(self.deviator_loading.slider_cut.high()))
+                self._plot_deviator_loading()
+        except:
+            pass
 
     def _deviator_loading_sliders_moove(self, params):
         """Обработчик движения слайдера"""
