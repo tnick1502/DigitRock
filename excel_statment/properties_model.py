@@ -1928,7 +1928,6 @@ class K0Properties(MechanicalProperties):
             self.sigma_1_step = 0.150
             self.sigma_1_max = 1.200
 
-
     @staticmethod
     def define_sigma_p(OCR, depth, K0):
         # бытовое давление (точка перегиба) определяется из OCR через ro*g*h, где h - глубина залгания грунта
@@ -1943,6 +1942,12 @@ class K0Properties(MechanicalProperties):
 
         # значения получаем в кпа, поэтому делим на 1000
         return _sigma_p/1000, _sigma_3_p/1000
+
+    @staticmethod
+    def is_kinematic_mode(_test_mode):
+        if _test_mode == 'Кинематический':
+            return True
+        return False
 
 
 class RayleighDampingProperties(MechanicalProperties):

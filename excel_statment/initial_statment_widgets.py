@@ -1084,8 +1084,16 @@ class RayleighDampingStatment(InitialStatment):
 
 class K0Statment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
+
     def __init__(self):
-        data_test_parameters = {}
+        data_test_parameters = {
+            "test_mode": {
+                "label": "Режим испытания",
+                "vars": [
+                    "Ступенчатый",
+                    "Кинематический"]
+            }
+        }
 
         fill_keys = {
             "laboratory_number": "Лаб. ном.",
@@ -1118,7 +1126,7 @@ class K0Statment(InitialStatment):
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
             else:
-                combo_params["test_mode"] = "Трехосное сжатие K0"
+                # combo_params["test_mode"] = "Трехосное сжатие K0"
 
                 self.load_statment(statment_name="Трехосное сжатие K0.pickle",
                                    properties_type=K0Properties, general_params=combo_params)

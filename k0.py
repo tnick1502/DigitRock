@@ -22,7 +22,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.setGeometry(self.left, self.top, 1500, 1000)
         # self.showFullScreen()
 
-        if True : # test_version(actual_version):
+        if test_version(actual_version):
             self.table_widget = K0SoilTestApp()
             self.setCentralWidget(self.table_widget)
             self.show()
