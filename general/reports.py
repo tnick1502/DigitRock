@@ -311,11 +311,17 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
 
     borehole = str(Data_phiz.borehole) if Data_phiz.borehole else "-"
 
+    moove = int(len(Data_customer.object_name)/115) + 1
+    if moove <= 3:
+        moove = 3
+
+    moove = 3
+
     t = Table([[name[0], "", "", "", "", "", "", "", "", ""],
                [name[1]],
                ["Протокол испытаний №", "", str_for_excel(Lab + "/" + Data_customer.object_number + lname), "", "", "", "", "", "", ""],
                ['Заказчик:', Paragraph(Data_customer.customer, LeftStyle)],
-               ['Объект:', Paragraph(Data_customer.object_name, LeftStyle)], [""], [""], [""],
+               ['Объект:', Paragraph(Data_customer.object_name, LeftStyle)], *[[""] for _ in range(moove)],
                ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(borehole + "; " + strNone(Data_phiz.depth).replace(".",",") +" м", LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(strNone(Data_phiz.ige), LeftStyle)],
                ['Лабораторный номер №:', "", "", Lab],
                ['Наименование грунта:', "", Paragraph(Data_phiz.soil_name, LeftStyle)], [""]
@@ -336,24 +342,27 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
 
                  ('SPAN', (0, 2), (1, 2)), ('SPAN', (2, 2), (-1, 2)),
                  ('SPAN', (1, 3), (-1, 3)),
-                 ('SPAN', (0, 4), (0, 7)), ('SPAN', (1, 4), (-1, 7)),
-                 ('SPAN', (0, 8), (2, 8)), ('SPAN', (3, 8), (5, 8)), ('SPAN', (7, 8), (-1, 8)),
-                 ('SPAN', (0, 9), (2, 9)), ('SPAN', (3, 9), (-1, 9)),
-                 ('SPAN', (0, 10), (1, 11)), ('SPAN', (2, 10), (-1, 11)),
+                 ('SPAN', (0, 4), (0, 4+moove)), ('SPAN', (1, 4), (-1, 4+moove)),
+                 ('SPAN', (0, 5+moove), (2, 5+moove)), ('SPAN', (3, 5+moove), (5, 5+moove)), ('SPAN', (7, 5+moove), (-1, 5+moove)),
+                 ('SPAN', (0, 6+moove), (2, 6+moove)), ('SPAN', (3, 6+moove), (-1, 6+moove)),
+                 ('SPAN', (0, 7+moove), (1, 8+moove)), ('SPAN', (2, 7+moove), (-1, 8+moove)),
                  ("BACKGROUND", (0, 2), (1, 2), HexColor(0xebebeb)),
                  ("BACKGROUND", (0, 3), (0, 3), HexColor(0xebebeb)),
                  ("BACKGROUND", (0, 4), (0, 4), HexColor(0xebebeb)),
 
-                 ("BACKGROUND", (0, 8), (2, 8), HexColor(0xebebeb)),("BACKGROUND", (6, 8), (6, 8), HexColor(0xebebeb)),
-                 ("BACKGROUND", (0, 9), (2, 9), HexColor(0xebebeb)),
-                 ("BACKGROUND", (0, 10), (0, 10), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 5+moove), (2, 5+moove), HexColor(0xebebeb)),
+                 ("BACKGROUND", (6, 5+moove), (6, 5+moove), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 6+moove), (2, 6+moove), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 7+moove), (0, 7+moove), HexColor(0xebebeb)),
                  #("BACKGROUND", (0, 2), (1, 2), HexColor(0xd9d9d9)),
                  #('SPAN', (0, 2), (1, 2)),
                  ('BOX', (0, 2), (-1, -1), 0.3 * mm, "black"),
                  ('INNERGRID', (0, 2), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 221 * mm)
+    t.drawOn(canvas, 25 * mm, (221 - (moove - 3)*4) * mm)
+
+    return (moove-3)*4
 
 
 
