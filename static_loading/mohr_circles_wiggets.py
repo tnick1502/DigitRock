@@ -567,6 +567,7 @@ class MohrWidgetSoilTest(TabMixin, MohrWidget):
         # показывает диалог и после нажатия Ok передаёт виджету модель из диалога
         if dialog.exec() == QDialog.Accepted:
             FC_models[statment.current_test]._tests[test_id] = dialog._model
+            FC_models[statment.current_test]._test_processing()
             self._create_test_tables()
             self._plot()
 
