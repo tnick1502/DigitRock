@@ -919,7 +919,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                  max_time=max_time,
                 angle_of_dilatacy=dilatancy,
                 v_d_xc=-self._draw_params.volumetric_strain_xc,
-                U=self._test_params.u)
+                U=None)
 
         self._test_data.deviator = np.round(self._test_data.deviator, 3)
         self._test_data.strain = np.round(
