@@ -1352,13 +1352,17 @@ class VibrationCreepProperties(MechanicalProperties):
                 self.t = np.round(t/2, 1)
 
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
-            if physical_properties.type_ground in [1, 2, 3, 4, 5]:
-                self.Kd = [VibrationCreepProperties.define_Kd_sand(
-                    physical_properties.type_ground, physical_properties.e, frequency, self.sigma_3) for frequency in
-                    self.frequency]
+            Kd = float_df(data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]])
+            if Kd is not None:
+                self.Kd = VibrationCreepProperties.val_to_list(Kd)
             else:
-                self.Kd = [VibrationCreepProperties.define_Kd(
-                    self.qf, self.t, physical_properties.e, physical_properties.Il, frequency) for frequency in self.frequency]
+                if physical_properties.type_ground in [1, 2, 3, 4, 5]:
+                    self.Kd = [VibrationCreepProperties.define_Kd_sand(
+                        physical_properties.type_ground, physical_properties.e, frequency, self.sigma_3) for frequency in
+                        self.frequency]
+                else:
+                    self.Kd = [VibrationCreepProperties.define_Kd(self.qf, self.t,
+                                                                  physical_properties.e, physical_properties.Il, frequency) for frequency in self.frequency]
 
             """self.frequency = [float(frequency)] if str(frequency).isdigit() else list(map(
                 lambda frequency: float(frequency.replace(",", ".").strip(" ")), frequency.split(";")))
@@ -1380,10 +1384,14 @@ class VibrationCreepProperties(MechanicalProperties):
             return None
         else:
             try:
-                val = [float(val)]
+                return_value = [float(val)]
             except ValueError:
-                val = list(map(lambda val: float(val.replace(",", ".").strip(" ")), val.split(";")))
-            return val
+                array = val.replace(' ', '').split(';')
+                return_value = []
+                for i in array:
+                    if i:
+                        return_value.append(float(i.replace(",", ".").strip(" ")))
+            return return_value
 
     @staticmethod
     def define_Kd(qf: float, t: float, e: float, Il: float, frequency: float) -> float:
