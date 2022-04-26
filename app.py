@@ -37,7 +37,7 @@ prog_dict = {
     "shear": ShearSoilTestApp,
     "consolidation": ConsolidationSoilTestApp,
     "resonant_column": RezonantColumnSoilTestApp,
-    "vibration_strangth": VibrationStrangthSoilTestApp,
+    "vibration_strength": VibrationStrangthSoilTestApp,
     "rayleigh_damping": RayleighDampingSoilTestApp
 }
 
@@ -48,7 +48,7 @@ prog_name = {
     "shear": "Сдвиг",
     "consolidation": "Консолидация",
     "resonant_column": "Резонансная колонка",
-    "vibration_strangth": "Вибропрочность",
+    "vibration_strength": "Вибропрочность",
     "rayleigh_damping": "Демпфирование"
 }
 
@@ -95,7 +95,7 @@ prog_geometry = {
         "height": 1000
     },
 
-    "vibration_strangth": {
+    "vibration_strength": {
             "left": 100,
             "top": 30,
             "width": 1500,
