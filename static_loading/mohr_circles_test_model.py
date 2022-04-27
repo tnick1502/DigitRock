@@ -35,7 +35,7 @@ class ModelMohrCircles:
         # Основные модели опыта
         self._tests = []
         self._test_data = AttrDict({"fi": None, "c": None})
-        self._test_result = AttrDict({"fi": None, "c": None, "m": None})
+        self._test_result = AttrDict({"fi": None, "c": None, "m": None, "c_res": None, "fi_res": None})
         self._test_reference_params = AttrDict({"p_ref": None, "Eref": None})
 
     def add_test(self, file_path):
@@ -80,6 +80,17 @@ class ModelMohrCircles:
                 sigma_1.append(np.round(results["sigma_3"] + results["qf"], 3))
             return sigma_3, sigma_1
         return None, None
+
+    def get_sigma_1_res(self):
+        """Получение массивов давлений грунтов"""
+        if len(self._tests) >= 2:
+            sigma_1_res = []
+
+            for test in self._tests:
+                results = test.deviator_loading.get_test_results()
+                sigma_1_res.append(np.round(results["sigma_3"] + results["q_res"], 3))
+            return sigma_1_res
+        return None
 
     def get_sigma_3_deviator(self):
         """Получение массивов давлений грунтов"""
@@ -134,6 +145,27 @@ class ModelMohrCircles:
             self._test_result.fi = 0
             t = [test.deviator_loading.get_test_results()["qf"]/2 for test in self._tests]
             self._test_result.c = sum(t)/len(t)
+        elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+            sigma_3, sigma_1 = self.get_sigma_3_1()
+            sigma_1_res = self.get_sigma_1_res()
+            if sigma_3 is not None:
+                c, fi = ModelMohrCircles.mohr_cf_stab(sigma_3, sigma_1)
+                self._test_result.c = np.round(np.arctan(c), 3)
+                self._test_result.fi = np.round(np.rad2deg(np.arctan(fi)), 1)  # round(np.rad2deg(np.arctan(fi)), 1)
+
+                c_res, fi_res = ModelMohrCircles.mohr_cf_stab(sigma_3, sigma_1_res)
+                self._test_result.c_res = np.round(np.arctan(c_res), 3)
+                self._test_result.fi_res = np.round(np.rad2deg(np.arctan(fi_res)), 1)
+
+                self.plot_data_m = None, None
+
+                if self._test_reference_params.p_ref and self._test_reference_params.Eref:
+                    E50 = self.get_E50()
+                    self._test_result.m, self.plot_data_m, self.plot_data_m_line = ModelMohrCircles.calculate_m(
+                        sigma_3, E50, self._test_reference_params.Eref / 1000,
+                                      self._test_reference_params.p_ref / 1000,
+                        statment[statment.current_test].mechanical_properties.c,
+                        statment[statment.current_test].mechanical_properties.fi)
         else:
             sigma_3, sigma_1 = self.get_sigma_3_1()
             if sigma_3 is not None:
@@ -159,17 +191,22 @@ class ModelMohrCircles:
         if statment.general_parameters.test_mode == "Трёхосное сжатие НН":
             strain = []
             deviator = []
+            s3 = []
             for test in self._tests:
                 plots = test.deviator_loading.get_plot_data()
+                s3.append(test.deviator_loading.get_test_results()["sigma_3"])
                 strain.append(plots["strain"])
                 deviator.append(plots["deviator"])
 
             mohr_x, mohr_y = ModelMohrCircles.mohr_circles([0 for _ in range(len(deviator))], [np.max(d) for d in deviator])
 
-            line_x = np.linspace(0, np.max(deviator[-1]), 10)
+            for i in range(len(mohr_x)):
+                mohr_x[i] += s3[i]
+
+            line_x = np.linspace(0, np.max(deviator[-1]) + s3[0], 10)
             line_y = np.full(10, np.max(deviator[-1]) / 2)
 
-            x_lims = (0, np.max(deviator[-1]) * 1.1)
+            x_lims = (s3[0], np.max(deviator[-1]) * 1.1 + s3[0])
             y_lims = (0, np.max(deviator[-1]) * 1.1 * 0.5)
 
             return {"strain": strain,
@@ -198,16 +235,34 @@ class ModelMohrCircles:
             x_lims = (0, sigma_1[-1] * 1.1)
             y_lims = (0, sigma_1[-1] * 1.1 * 0.5)
 
-            return {"strain": strain,
-                    "deviator": deviator,
-                    "mohr_x": mohr_x,
-                    "mohr_y": mohr_y,
-                    "mohr_line_x": line_x,
-                    "mohr_line_y": line_y,
-                    "x_lims": x_lims,
-                    "y_lims": y_lims,
-                    "plot_data_m": self.plot_data_m,
-                    "plot_data_m_line": self.plot_data_m_line}
+            if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                sigma_1_res = self.get_sigma_1_res()
+                mohr_x_res, mohr_y_res = ModelMohrCircles.mohr_circles(sigma_3, sigma_1_res)
+                line_y_res = line(np.tan(np.deg2rad(self._test_result.fi_res)), self._test_result.c_res, line_x)
+                return {"strain": strain,
+                        "deviator": deviator,
+                        "mohr_x": mohr_x,
+                        "mohr_y": mohr_y,
+                        "mohr_x_res": mohr_x_res,
+                        "mohr_y_res": mohr_y_res,
+                        "mohr_line_x": line_x,
+                        "mohr_line_y": line_y,
+                        "mohr_line_y_res": line_y_res,
+                        "x_lims": x_lims,
+                        "y_lims": y_lims,
+                        "plot_data_m": self.plot_data_m,
+                        "plot_data_m_line": self.plot_data_m_line}
+            else:
+                return {"strain": strain,
+                        "deviator": deviator,
+                        "mohr_x": mohr_x,
+                        "mohr_y": mohr_y,
+                        "mohr_line_x": line_x,
+                        "mohr_line_y": line_y,
+                        "x_lims": x_lims,
+                        "y_lims": y_lims,
+                        "plot_data_m": self.plot_data_m,
+                        "plot_data_m_line": self.plot_data_m_line}
         else:
             return None
 

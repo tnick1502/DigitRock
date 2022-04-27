@@ -12,6 +12,7 @@ import time
 import shutil
 from general.reports import report_triaxial_cyclic, report_cyclic_damping
 import threading
+from authentication.request_qr import request_qr
 
 
 from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI, CyclicLoadingOpenTestUI, CyclicLoadingUISoilTest, CyclicDampingUI
@@ -587,7 +588,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             "Макс. деформ.": lambda lab: Cyclic_models[lab].get_test_results()['max_strain'],
             "Цикл разрушения": lambda lab: Cyclic_models[lab].get_test_results()['fail_cycle'],
             "Заключение": lambda lab: Cyclic_models[lab].get_test_results()['conclusion'],
-        })
+        }, qr=True)
 
         self.tab_3.popIn.connect(self.addTab)
         self.tab_3.popOut.connect(self.removeTab)
@@ -721,12 +722,65 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                 test_result["fail_cycle"] = "-"
 
             if statment.general_parameters.test_mode == "Сейсморазжижение" or statment.general_parameters.test_mode == "Штормовое разжижение" or statment.general_parameters.test_mode == "По заданным параметрам":
+                if statment.general_parameters.test_mode == "Сейсморазжижение":
+                    name = "cyclic"
+                elif statment.general_parameters.test_mode == "Штормовое разжижение":
+                    name = "storm"
+                elif statment.general_parameters.test_mode == "По заданным параметрам":
+                    name = "user_cyclic"
+
+                data = {
+                    "laboratory": "mdgt",
+                    "password": "it_user",
+
+                    "test_name": "Cyclic",
+                    "object": str(statment.general_data.object_number),
+                    "laboratory_number": str(statment.current_test),
+                    "test_type": name,
+
+                    "data": {
+                        "Лаболаторный номер:": str(statment.current_test),
+                        "Обжимающее давление 𝜎3, МПа:": str(np.round(statment[statment.current_test].mechanical_properties.sigma_3/1000, 3)),
+                        "К0:": str(statment[statment.current_test].mechanical_properties.K0),
+                        "Максимальное значение PPR, д.е.:": str(test_result["max_PPR"]),
+                        "Максимальное значение деформации, д.е.:": str(test_result["max_strain"]),
+                        "Результат испытания:": str(test_result["conclusion"]),
+                    }
+                }
+
+                if self.tab_3.qr:
+                    qr = None #qr = request_qr(data)
+                else:
+                    qr = None
+
                 report_triaxial_cyclic(file_name, data_customer,
                                        statment[statment.current_test].physical_properties,
                                        statment.getLaboratoryNumber(),
                                        os.getcwd() + "/project_data/", test_parameter, results,
-                                       self.tab_2.test_widget.save_canvas(), "{:.2f}".format(__version__))
+                                       self.tab_2.test_widget.save_canvas(), "{:.2f}".format(__version__), qr_code=qr)
             elif statment.general_parameters.test_mode == "Демпфирование":
+                data = {
+                    "laboratory": "mdgt",
+                    "password": "it_user",
+
+                    "test_name": "Cyclic",
+                    "object": str(statment.general_data.object_number),
+                    "laboratory_number": str(statment.current_test),
+                    "test_type": "damping",
+
+                    "data": {
+                        "Лаболаторный номер:": str(statment.current_test),
+                        "Обжимающее давление 𝜎3, МПа:": str(
+                            np.round(statment[statment.current_test].mechanical_properties.sigma_3 / 1000, 3)),
+                        "Коэффициент демпфирования, %:": str(test_result["damping_ratio"]),
+                    }
+                }
+
+                if self.tab_3.qr:
+                    qr = None  # qr = request_qr(data)
+                else:
+                    qr = None
+
                 report_cyclic_damping(file_name, data_customer,
                                        statment[statment.current_test].physical_properties,
                                        statment.getLaboratoryNumber(),

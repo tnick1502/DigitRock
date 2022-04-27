@@ -8,13 +8,14 @@ import sys
 import shutil
 import os
 import threading
+from authentication.request_qr import request_qr
 
 from excel_statment.initial_tables import LinePhysicalProperties
 from excel_statment.initial_statment_widgets import RayleighDampingStatment
 from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
 from general.reports import report_RayleighDamping, zap
 from general.save_widget import Save_Dir
-from rayleigh_damping.rayleigh_damping_widgets_UI import RayleighDampingUI, CyclicDampingUI
+from rayleigh_damping.rayleigh_damping_widgets_UI import RayleighDampingUI, CyclicDampingUI, ResultsUI
 from excel_statment.initial_tables import TableVertical
 from excel_statment.functions import set_cell_data
 from general.report_general_statment import save_report
@@ -46,6 +47,7 @@ class RayleighDampingWidget(TabMixin, QWidget):
             "qf": "Максимальный девиатор qf, кПа",
             "sigma_3": "Обжимающее давление 𝜎3, кПа",
             "frequency": "Частота, Гц",
+            "t": "Касательное напряжение",
         }
         self.identification = TableVertical(fill_keys)
         self.sliders = TriaxialStaticLoading_Sliders(
@@ -58,12 +60,16 @@ class RayleighDampingWidget(TabMixin, QWidget):
         #self.identification.setFixedHeight(700)
         self.layout_1 = QHBoxLayout()
         self.layout_1_1 = QVBoxLayout()
+        self.layout_1_1_1 = QHBoxLayout()
         self.rayleigh_widget = RayleighDampingUI()
         self.damping_widget = CyclicDampingUI()
         self.damping_widget.signal[object].connect(self._refresh_one)
+        self.result_widget = ResultsUI()
 
         self.layout_1_1.addWidget(self.identification)
-        self.layout_1_1.addWidget(self.sliders)
+        self.layout_1_1_1.addWidget(self.sliders)
+        self.layout_1_1_1.addWidget(self.result_widget)
+        self.layout_1_1.addLayout(self.layout_1_1_1)
 
         self.layout_1.addLayout(self.layout_1_1)
         self.layout_1.addWidget(self.rayleigh_widget)
@@ -120,10 +126,10 @@ class RayleighDampingWidget(TabMixin, QWidget):
 
         self.damping_widget.plot(plots, results)
 
-
         plot = RayleighDamping_models[statment.current_test].get_plot_data()
         res = RayleighDamping_models[statment.current_test].get_test_results()
         self.rayleigh_widget.plot(plot, res)
+        self.result_widget.set_data(res)
 
         #plots = self._model._static_test_data.get_plot_data()
         #res = self._model._static_test_data.get_test_results()
@@ -227,6 +233,30 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
             if date:
                 data_customer.end_date = date
 
+            test_result = RayleighDamping_models[statment.current_test].get_test_results()
+            data = {
+                "laboratory": "mdgt",
+                "password": "it_user",
+
+                "test_name": "Cyclic",
+                "object": str(statment.general_data.object_number),
+                "laboratory_number": str(statment.current_test),
+                "test_type": "rayleigh_damping",
+
+                "data": {
+                    "Лаболаторный номер:": str(statment.current_test),
+                    "Обжимающее давление 𝜎3, МПа:": str(
+                        np.round(statment[statment.current_test].mechanical_properties.sigma_3 / 1000, 3)),
+                    "Коэффициент Релея α, c:": str(test_result["alpha"]),
+                    "Коэффициент Релея β, 1 / c:": str(test_result["betta"])
+                }
+            }
+
+            if self.tab_4.qr:
+                qr = None  # qr = request_qr(data)
+            else:
+                qr = None
+
 
             report_RayleighDamping(save + "/" + file_name, data_customer,
                                   statment[statment.current_test].physical_properties,
@@ -235,7 +265,7 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
                                   test_parameter, RayleighDamping_models[statment.current_test].get_test_results(),
                                   [self.tab_3.rayleigh_widget.save_canvas(),
                                    *self.tab_3.damping_widget.save_canvas()],
-                                  "{:.2f}".format(__version__))
+                                  "{:.2f}".format(__version__), qr_code=qr)
 
 
             number = statment[statment.current_test].physical_properties.sample_number + 7
@@ -245,7 +275,7 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
 
             set_cell_data(self.tab_1.path, ("IL" + str(number), (number, 245)), damping_ratio, sheet="Лист1", color="FF6961")
             set_cell_data(self.tab_1.path, ("IM" + str(number), (number, 246)), zap(res["alpha"], 3), sheet="Лист1", color="FF6961")
-            set_cell_data(self.tab_1.path, ("IN" + str(number), (number, 247)), zap(res["betta"], 3), sheet="Лист1", color="FF6961")
+            set_cell_data(self.tab_1.path, ("IN" + str(number), (number, 247)), zap(res["betta"], 5), sheet="Лист1", color="FF6961")
             #set_cell_data(self.tab_1.path, ("CB" + str(number), (number, 79)), Kd, sheet="Лист1", color="FF6961")
 
 

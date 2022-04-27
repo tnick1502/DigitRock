@@ -255,7 +255,7 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
         canvas.line((158.75) * mm, (10) * mm, (158.75) * mm, (51.25) * mm)
         canvas.line((158.75) * mm, (51.25) * mm, (210-5) * mm, (51.25) * mm)
 
-        t = Table([["Аутентификация протокола"], ["Сервис georeport.ru"]], colWidths=46.25 * mm,
+        t = Table([["Сервис georeport.ru"], [""]], colWidths=46.25 * mm,
                   rowHeights=4* mm)
         t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
                     ("FONTSIZE", (0, 0), (-1, -1), 7),
@@ -267,7 +267,7 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
         t.wrapOn(canvas, 0, 0)
         t.drawOn(canvas, 158.75 * mm, 51.25 - 8 + 28* mm)
 
-        canvas.drawImage(qr_code, (8.25*0.5 + 158.75 + 0.5) * mm, 6.5 * mm,
+        canvas.drawImage(qr_code, (8.25*0.5 + 158.75 + 0.5) * mm, 8.5 * mm,
                          width=37 * mm, height=37 * mm)
 
     else:
@@ -311,11 +311,17 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
 
     borehole = str(Data_phiz.borehole) if Data_phiz.borehole else "-"
 
+    moove = int(len(Data_customer.object_name)/115) + 1
+    if moove <= 3:
+        moove = 3
+
+    moove = 3
+
     t = Table([[name[0], "", "", "", "", "", "", "", "", ""],
                [name[1]],
                ["Протокол испытаний №", "", str_for_excel(Lab + "/" + Data_customer.object_number + lname), "", "", "", "", "", "", ""],
                ['Заказчик:', Paragraph(Data_customer.customer, LeftStyle)],
-               ['Объект:', Paragraph(Data_customer.object_name, LeftStyle)], [""], [""], [""],
+               ['Объект:', Paragraph(Data_customer.object_name, LeftStyle)], *[[""] for _ in range(moove)],
                ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(borehole + "; " + strNone(Data_phiz.depth).replace(".",",") +" м", LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(strNone(Data_phiz.ige), LeftStyle)],
                ['Лабораторный номер №:', "", "", Lab],
                ['Наименование грунта:', "", Paragraph(Data_phiz.soil_name, LeftStyle)], [""]
@@ -336,24 +342,27 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
 
                  ('SPAN', (0, 2), (1, 2)), ('SPAN', (2, 2), (-1, 2)),
                  ('SPAN', (1, 3), (-1, 3)),
-                 ('SPAN', (0, 4), (0, 7)), ('SPAN', (1, 4), (-1, 7)),
-                 ('SPAN', (0, 8), (2, 8)), ('SPAN', (3, 8), (5, 8)), ('SPAN', (7, 8), (-1, 8)),
-                 ('SPAN', (0, 9), (2, 9)), ('SPAN', (3, 9), (-1, 9)),
-                 ('SPAN', (0, 10), (1, 11)), ('SPAN', (2, 10), (-1, 11)),
+                 ('SPAN', (0, 4), (0, 4+moove)), ('SPAN', (1, 4), (-1, 4+moove)),
+                 ('SPAN', (0, 5+moove), (2, 5+moove)), ('SPAN', (3, 5+moove), (5, 5+moove)), ('SPAN', (7, 5+moove), (-1, 5+moove)),
+                 ('SPAN', (0, 6+moove), (2, 6+moove)), ('SPAN', (3, 6+moove), (-1, 6+moove)),
+                 ('SPAN', (0, 7+moove), (1, 8+moove)), ('SPAN', (2, 7+moove), (-1, 8+moove)),
                  ("BACKGROUND", (0, 2), (1, 2), HexColor(0xebebeb)),
                  ("BACKGROUND", (0, 3), (0, 3), HexColor(0xebebeb)),
                  ("BACKGROUND", (0, 4), (0, 4), HexColor(0xebebeb)),
 
-                 ("BACKGROUND", (0, 8), (2, 8), HexColor(0xebebeb)),("BACKGROUND", (6, 8), (6, 8), HexColor(0xebebeb)),
-                 ("BACKGROUND", (0, 9), (2, 9), HexColor(0xebebeb)),
-                 ("BACKGROUND", (0, 10), (0, 10), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 5+moove), (2, 5+moove), HexColor(0xebebeb)),
+                 ("BACKGROUND", (6, 5+moove), (6, 5+moove), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 6+moove), (2, 6+moove), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 7+moove), (0, 7+moove), HexColor(0xebebeb)),
                  #("BACKGROUND", (0, 2), (1, 2), HexColor(0xd9d9d9)),
                  #('SPAN', (0, 2), (1, 2)),
                  ('BOX', (0, 2), (-1, -1), 0.3 * mm, "black"),
                  ('INNERGRID', (0, 2), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 221 * mm)
+    t.drawOn(canvas, 25 * mm, (221 - (moove - 3)*4) * mm)
+
+    return (moove-3)*4
 
 
 
@@ -494,7 +503,7 @@ def test_mode_rc(canvas, ro, Data):
 def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True):
 
     tau_text = '''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''' if tau else '''<p>σ<sub rise="2.5" size="6">d</sub>, кПа:</p>'''
-    tau = zap(test_parameter["tau"]) if tau else zap(test_parameter["tau"] * 2, 0)
+    tau = zap(test_parameter["tau"], 0) if tau else zap(test_parameter["tau"] * 2, 0)
 
     d = test_parameter["d"]
     h = test_parameter["h"]
@@ -1143,48 +1152,81 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E")
             tableData.append(
                 [Paragraph(E50w, LeftStyle), "", "", "",
                  E50, ""])
+            sss = 4
+            style = [('SPAN', (0, 0), (-1, 0)),
+                     ('SPAN', (0, 1), (-1, r)),
+
+                     ('SPAN', (0, -1), (3, -1)),
+                     ('SPAN', (-2, -1), (-1, -1)),
+                     # ('SPAN', (2, -1), (3, -1)),
+                     # ('SPAN', (4, -1), (5, -1)),
+                     ('SPAN', (0, -2), (3, -2)),
+                     ('SPAN', (-2, -2), (-1, -2)),
+                     # ('SPAN', (2, -2), (3, -2)),
+                     # ('SPAN', (4, -2), (5, -2)),
+                     ('SPAN', (0, -3), (3, -3)),
+                     ('SPAN', (-2, -3), (-1, -3)),
+
+                     ('SPAN', (0, -4), (3, -4)),
+                     ('SPAN', (-2, -4), (-1, -4)),
+                     # ('SPAN', (2, -3), (3, -3)),
+                     #  ('SPAN', (4, -3), (5, -3)),
+
+                     ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+
+                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                     ("FONTSIZE", (0, 0), (-1, -1), 8),
+                     # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                     ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                     ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                     ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
         else:
             tableData.append(
                 [Paragraph(Ew, LeftStyle), "", "", "",
                  E, ""])
+            sss = 0
+            style = [('SPAN', (0, 0), (-1, 0)),
+                     ('SPAN', (0, 1), (-1, r)),
+
+                     ('SPAN', (0, -1), (3, -1)),
+                     ('SPAN', (-2, -1), (-1, -1)),
+                     # ('SPAN', (2, -1), (3, -1)),
+                     # ('SPAN', (4, -1), (5, -1)),
+                     ('SPAN', (0, -2), (3, -2)),
+                     ('SPAN', (-2, -2), (-1, -2)),
+                     # ('SPAN', (2, -2), (3, -2)),
+                     # ('SPAN', (4, -2), (5, -2)),
+                     ('SPAN', (0, -3), (3, -3)),
+                     ('SPAN', (-2, -3), (-1, -3)),
+
+                     # ('SPAN', (2, -3), (3, -3)),
+                     #  ('SPAN', (4, -3), (5, -3)),
+
+                     ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+
+                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                     ("FONTSIZE", (0, 0), (-1, -1), 8),
+                     # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                     ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                     ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                     ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
         tableData.append(
             [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
         tableData.append(
             [Paragraph('''<p>Разгрузочный модуль E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "",
              "", Res["Eur"], ""])
 
-        style = [('SPAN', (0, 0), (-1, 0)),
-                 ('SPAN', (0, 1), (-1, r)),
-
-                 ('SPAN', (0, -1), (3, -1)),
-                 ('SPAN', (-2, -1), (-1, -1)),
-                 # ('SPAN', (2, -1), (3, -1)),
-                 # ('SPAN', (4, -1), (5, -1)),
-                 ('SPAN', (0, -2), (3, -2)),
-                 ('SPAN', (-2, -2), (-1, -2)),
-                 # ('SPAN', (2, -2), (3, -2)),
-                 # ('SPAN', (4, -2), (5, -2)),
-                 ('SPAN', (0, -3), (3, -3)),
-                 ('SPAN', (-2, -3), (-1, -3)),
-
-                 # ('SPAN', (2, -3), (3, -3)),
-                 #  ('SPAN', (4, -3), (5, -3)),
-
-                 ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                 ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                 ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
-
-                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-                 ("FONTSIZE", (0, 0), (-1, -1), 8),
-                 # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
-                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                 ("ALIGN", (0, 0), (-1, r), "CENTER"),
-                 ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
-                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
-
-        sss = 0
     else:
         #tableData.append(
             #[Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
@@ -1926,6 +1968,107 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
 
+def result_table_CF_res(canvas, Res, pick, scale = 0.8):
+
+    try:
+        a = svg2rlg(pick[0])
+        a.scale(scale, scale)
+        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        b = svg2rlg(pick[1])
+        b.scale(scale, scale)
+        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+    except AttributeError:
+        a = ImageReader(pick[0])
+        #canvas.drawImage(a, 31 * mm, 81 * mm,
+                            # width=80* mm, height=80 * mm)
+        b = ImageReader(pick[1])
+        canvas.drawImage(b, 115 * mm, 81 * mm,
+                             width=80 * mm, height=40 * mm)
+
+
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    r = 21
+    table_move = 3
+    for i in range(table_move):
+        tableData.append([""])
+
+
+    tableData.append(["Напряжение, МПа", "", "", "", "", "", "", ""])
+    tableData.append([Paragraph('''<p>σ<sub rise="0.5" size="5">3c</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ<sub rise="0.5" size="5">1c</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ<sub rise="0.5" size="5">1f</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ<sub rise="0.5" size="5">1res</sub></p>''', CentralStyle), "", "", "", ""])
+
+    tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), zap(Res["sigma_1_res"][0], 3), "", "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), zap(Res["sigma_1_res"][1], 3), "", "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_1_mohr"][2], 3), zap(Res["sigma_1_res"][2], 3), "", "", "", ""])
+
+    for i in range(r):
+        tableData.append([""])
+
+    tableData.append(
+        [Paragraph('''<p>Эффективное сцепление с', МПа:</p>''', LeftStyle), "", "", "",
+         zap(Res["c"], 3), ""])
+    tableData.append(
+        [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "", "",
+         zap(Res["fi"], 1), ""])
+
+    tableData.append(
+        [Paragraph('''<p>Угол внутреннего трения при постоянном объёме φ<sub rise="0.5" size="5">cv</sub>, град:</p>''', LeftStyle), "", "", "",
+         zap(Res["fi_res"], 1), ""])
+
+    #tableData.append(
+        #[Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
+         #zap(Res["m"], 2), ""])
+
+    t = Table(tableData, colWidths=175/8 * mm, rowHeights = 4 * mm)
+    t.setStyle([('SPAN', (0, 0), (-1, 0)),
+
+                ('SPAN', (0, 1), (-1, table_move)),
+
+                ('SPAN', (0, table_move+1), (3, table_move+1)),
+                ('SPAN', (4, 1), (-1, -4)),
+
+                ('SPAN', (0, 6+table_move), (-1, r+table_move+5)),
+
+
+
+                ('SPAN', (0, -1), (3, -1)),
+                ('SPAN', (-4, -1), (-1, -1)),
+                #('SPAN', (2, -1), (3, -1)),
+                #('SPAN', (4, -1), (5, -1)),
+                ('SPAN', (0, -2), (3, -2)),
+                ('SPAN', (-4, -2), (-1, -2)),
+
+                ('SPAN', (0, -3), (3, -3)),
+                ('SPAN', (-4, -3), (-1, -3)),
+
+                #('SPAN', (0, -3), (3, -3)),
+                #('SPAN', (-2, -3), (-1, -3)),
+                #('SPAN', (2, -2), (3, -2)),
+                #('SPAN', (4, -2), (5, -2)),
+                #('SPAN', (2, -3), (3, -3)),
+              #  ('SPAN', (4, -3), (5, -3)),
+
+                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+               # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+
+                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                ("ALIGN", (0, r+1), (0, -1), "LEFT"),
+                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, ((34 - 4-((r - 30)*4)) - table_move*6) * mm)
+
+
 def result_table_CF_NN(canvas, Res, pick, scale = 0.8):
 
 
@@ -2111,14 +2254,14 @@ def result_table_CF_KN(canvas, Res, pick, scale = 0.8):
 
 
     tableData.append(["Напряжение, МПа", "", "", "", "", "", "", ""])
-    tableData.append([Paragraph('''<p>σ<sub rise="0.5" size="5">3c</sub></p>''', CentralStyle),
-                      Paragraph('''<p>σ<sub rise="0.5" size="5">1c</sub></p>''', CentralStyle),
-                      Paragraph('''<p>σ<sub rise="0.5" size="5">1f</sub></p>''', CentralStyle),
+    tableData.append([Paragraph('''<p>σ'<sub rise="0.5" size="5">3c</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ'<sub rise="0.5" size="5">3f</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ'<sub rise="0.5" size="5">1f</sub></p>''', CentralStyle),
                       Paragraph('''<p>u<sub rise="0.5" size="5">f</sub></p>''', CentralStyle), "", "", "", ""])
 
-    tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), zap(Res["u_mohr"][0], 3) if Res["u_mohr"][0] != 0 else "-", "", "", "", ""])
-    tableData.append([zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), zap(Res["u_mohr"][1], 3) if Res["u_mohr"][1] != 0 else "-", "", "", "", ""])
-    tableData.append([zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_1_mohr"][2], 3), zap(Res["u_mohr"][2], 3) if Res["u_mohr"][2] != 0 else "-", "", "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][0] + Res["u_mohr"][0], 3), zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), zap(Res["u_mohr"][0], 3) if Res["u_mohr"][0] != 0 else "-", "", "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][1] + Res["u_mohr"][1], 3), zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), zap(Res["u_mohr"][1], 3) if Res["u_mohr"][1] != 0 else "-", "", "", "", ""])
+    tableData.append([zap(Res["sigma_3_mohr"][2] + Res["u_mohr"][2], 3), zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_1_mohr"][2], 3), zap(Res["u_mohr"][2], 3) if Res["u_mohr"][2] != 0 else "-", "", "", "", ""])
 
     for i in range(r):
         tableData.append([""])
@@ -2791,13 +2934,39 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
 
     canvas.save()
 
-def report_FC_NN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_FC_res(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
     test_parameter = dict(test_parameter)
     test_parameter["K0"] = test_parameter["K0"][1]
+    name = "ТД"
+    canvas = Canvas(Name, pagesize=A4)
+
+    code = SaveCode(version)
+
+    main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
+    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
+                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
+
+    parameter_table(canvas, Data_phiz, Lab)
+    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
+    test_mode_consolidation(canvas, test_parameter)
+
+    result_table_CF_res(canvas, res, [picks[0], picks[1]])
+
+    canvas.save()
+
+def report_FC_NN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+    test_parameter = dict(test_parameter)
+    test_parameter["K0"] = test_parameter["K0"][0]
+    test_parameter["mode"] = "НН, девиаторное нагружение в кинематическом режиме"
     name = "НН"
     canvas = Canvas(Name, pagesize=A4)
 
@@ -2881,7 +3050,7 @@ def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
 
     parameter_table(canvas, Data_phiz, Lab)
-    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
+    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0] + res["u_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1]+ res["u_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2] + res["u_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
 
     result_table_CF_KN(canvas, res, [picks[0],picks[1]])

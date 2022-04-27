@@ -269,6 +269,8 @@ class MechanicalProperties:
         """Считывание строки свойств"""
         if test_mode == "Трёхосное сжатие КН" or test_mode == "Вибропрочность":
             self.c, self.fi, self.E50, self.u = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
+            if self.u != None:
+                self.u *= 1000
         else:
             self.c, self.fi, self.E50 = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
 
@@ -1302,9 +1304,6 @@ class RCProperties(MechanicalProperties):
             if isinstance(getattr(RCProperties, key), DataTypeValidation):
                 object.__setattr__(self, key, None)
 
-    def __init__(self):
-        self._setNone()
-
     def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode) -> None:
         super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
         if self.c and self.fi and self.E50:
@@ -1353,13 +1352,17 @@ class VibrationCreepProperties(MechanicalProperties):
                 self.t = np.round(t/2, 1)
 
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
-            if physical_properties.type_ground in [1, 2, 3, 4, 5]:
-                self.Kd = [VibrationCreepProperties.define_Kd_sand(
-                    physical_properties.type_ground, physical_properties.e, frequency, self.sigma_3) for frequency in
-                    self.frequency]
+            Kd = float_df(data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]])
+            if Kd is not None:
+                self.Kd = VibrationCreepProperties.val_to_list(Kd)
             else:
-                self.Kd = [VibrationCreepProperties.define_Kd(
-                    self.qf, self.t, physical_properties.e, physical_properties.Il, frequency) for frequency in self.frequency]
+                if physical_properties.type_ground in [1, 2, 3, 4, 5]:
+                    self.Kd = [VibrationCreepProperties.define_Kd_sand(
+                        physical_properties.type_ground, physical_properties.e, frequency, self.sigma_3) for frequency in
+                        self.frequency]
+                else:
+                    self.Kd = [VibrationCreepProperties.define_Kd(self.qf, self.t,
+                                                                  physical_properties.e, physical_properties.Il, frequency) for frequency in self.frequency]
 
             """self.frequency = [float(frequency)] if str(frequency).isdigit() else list(map(
                 lambda frequency: float(frequency.replace(",", ".").strip(" ")), frequency.split(";")))
@@ -1381,10 +1384,14 @@ class VibrationCreepProperties(MechanicalProperties):
             return None
         else:
             try:
-                val = [float(val)]
+                return_value = [float(val)]
             except ValueError:
-                val = list(map(lambda val: float(val.replace(",", ".").strip(" ")), val.split(";")))
-            return val
+                array = val.replace(' ', '').split(';')
+                return_value = []
+                for i in array:
+                    if i:
+                        return_value.append(float(i.replace(",", ".").strip(" ")))
+            return return_value
 
     @staticmethod
     def define_Kd(qf: float, t: float, e: float, Il: float, frequency: float) -> float:
@@ -1930,25 +1937,44 @@ class RayleighDampingProperties(MechanicalProperties):
         super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
         if self.c and self.fi and self.E50:
 
-            physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
-            if physical_properties.depth <= physical_properties.ground_water_depth:
-                self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
-            elif physical_properties.depth > physical_properties.ground_water_depth:
-                self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
-                        9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+            sigma_3 = float_df(data_frame.iat[string, DynamicsPropertyPosition["reference_pressure"][1]])
 
-            if self.sigma_1 < 10:
-                self.sigma_1 = 10
+            if sigma_3:
+                self.sigma_1 = np.round(sigma_3*1000)
+                self.sigma_3 = np.round(sigma_3*1000)
+            else:
+                physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
+                if physical_properties.depth <= physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
+                elif physical_properties.depth > physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                            9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+                if self.sigma_1 < 50:
+                    self.sigma_1 = 50
+                self.sigma_3 = np.round(self.sigma_1 * self.K0)
 
-            self.sigma_3 = np.round(self.sigma_1 * self.K0)
-
-            self.cycles_count = 5
 
             sigma_d = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])
             if not sigma_d:
-                self.t = 25
+                acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]])
+                if acceleration:
+                    acceleration = np.round(acceleration, 3)
+                else:
+                    intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
+                    acceleration = CyclicProperties.define_acceleration(intensity)
+
+                if physical_properties.depth <= 9.15:
+                    rd = round((1 - (0.00765 * physical_properties.depth)), 3)
+                elif (physical_properties.depth > 9.15) and (physical_properties.depth < 23):
+                    rd = round((1.174 - (0.0267 * physical_properties.depth)), 3)
+                else:
+                    rd = round((1.174 - (0.0267 * 23)), 3)
+
+                self.t = np.round(0.65 * acceleration * self.sigma_1 * float(rd))
             else:
                 self.t = np.round(sigma_d / 2, 1)
+
+            self.cycles_count = 5
 
             frequency = data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]]
 
@@ -1960,8 +1986,28 @@ class RayleighDampingProperties(MechanicalProperties):
 
             self.Ms = np.round(np.random.uniform(150, 200), 2)
 
-            self.alpha = np.random.uniform(0.1, 0.2)
-            self.betta = np.random.uniform(0.001, 0.005)
+            #self.alpha = np.random.uniform(0.1, 0.2)
+            #self.betta = np.random.uniform(0.001, 0.005)
+
+            self.alpha = np.random.uniform(0.1, 0.14)
+            self.betta = np.random.uniform(0.0015, 0.003)
+
+            dependence_ground = {
+                1: np.random.uniform(0.8, 0.85),  # Песок гравелистый
+                2: np.random.uniform(0.85, 0.9),  # Песок крупный
+                3: np.random.uniform(0.9, 0.95),  # Песок средней крупности
+                4: np.random.uniform(0.95, 1),  # Песок мелкий
+                5: np.random.uniform(0.95, 1),  # Песок пылеватый
+                6: np.random.uniform(1, 1.05),  # Супесь
+                7: np.random.uniform(1.1, 1.2),  # Суглинок
+                8: np.random.uniform(1.2, 1.4),  # Глина
+                9: np.random.uniform(0.7, 0.8),  # Торф
+            }
+
+            K_ground_type = dependence_ground[physical_properties.type_ground]
+
+            self.alpha *= K_ground_type
+            self.betta *= K_ground_type
 
             self.damping_ratio = [np.round(RayleighDampingProperties.define_damping_ratio(self.alpha, self.betta, f) *
                                              np.random.uniform(0.9, 1.1), 2) for f in self.frequency]

@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QGroupBox, QHeaderView, QTableWidgetItem, \
-    QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton, QTableWidget
+    QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton, QTableWidget, QCheckBox
 import sys
 import os
 from pdf_watermark.widget import PDFWatermark
@@ -16,19 +16,19 @@ class Save_Dir(TabMixin, QWidget):
      после чего в этой директории создаются соответствующие папки.
      Название папки отчета передается в класс через коструктор mode"""
 
-    def __init__(self, report_type=None, result_table_params=None):
+    def __init__(self, report_type=None, result_table_params=None, qr=None):
         super().__init__()
 
         self._report_types = report_type
 
         self._result_table_params = result_table_params
 
-        self.create_UI()
+        self.create_UI(qr)
 
         self.save_directory_text.setText(statment.save_dir.save_directory)
         self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))
 
-    def create_UI(self):
+    def create_UI(self, qr):
 
         self.savebox_layout = QVBoxLayout()
         self.savebox_layout_line_1 = QHBoxLayout()
@@ -63,9 +63,16 @@ class Save_Dir(TabMixin, QWidget):
         self.jornal_button = QPushButton("Журнал опытов")
         self.advanced_box_layout.addWidget(self.jornal_button)
 
+        self.qr_checkbox = QCheckBox("QR аутентификации")
+        self.qr = False
+        self.qr_checkbox.stateChanged.connect(self.qr_changed)
+
         self.pdf_watermark_button = QPushButton("Маркировка отчетов")  # Button(icons + "Сохранить.png", 52, 52, 0.7)
         self.pdf_watermark_button.clicked.connect(self.pdf_watermark)
         self.advanced_box_layout.addWidget(self.pdf_watermark_button)
+
+        if qr:
+            self.advanced_box_layout.addWidget(self.qr_checkbox)
 
         self.advanced_box_layout.addStretch(-1)
 
@@ -149,6 +156,12 @@ class Save_Dir(TabMixin, QWidget):
             self.wm = PDFWatermark(statment.save_dir.save_directory)
         except Exception as err:
             print(str(err))
+
+    def qr_changed(self):
+        if self.qr_checkbox.isChecked():
+            self.qr = True
+        else:
+            self.qr = False
 
 class ReportType(QGroupBox):
 

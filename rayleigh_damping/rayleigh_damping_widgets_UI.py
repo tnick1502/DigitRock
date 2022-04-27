@@ -82,9 +82,8 @@ class RayleighDampingUI(QWidget):
                 self.ax.scatter(plots["frequency"], plots["damping_ratio"], s=50, color="tomato")
                 self.ax.plot(plots["frequency_rayleigh"], plots["damping_rayleigh"])
 
-                self.ax.plot([], [], label="alpha = " + str(res["alpha"]), color="#eeeeee")
-                self.ax.plot([], [], label="betta = " + str(res["betta"]), color="#eeeeee")
-                self.ax.legend()
+                self.ax.plot([], [], label=r"$\xi = \frac{\alpha}{2\omega} + \frac{\beta\omega}{2}$", color="#eeeeee")
+                self.ax.legend(fontsize=18)
             self.canvas.draw()
 
         except:
@@ -95,8 +94,8 @@ class RayleighDampingUI(QWidget):
 
         def save(figure, canvas, size_figure, ax, file_type):
             try:
-                ax.get_legend().remove()
-                canvas.draw()
+                #ax.get_legend().remove()
+                #canvas.draw()
 
                 path = BytesIO()
                 size = figure.get_size_inches()
@@ -269,6 +268,43 @@ class CyclicDampingUI(QWidget):
             test = getattr(self, f"test_{i + 1}")
             canvases.append(test.save_canvas())
         return canvases
+
+class ResultsUI(QGroupBox):
+    def __init__(self):
+        super().__init__()
+        self.add_UI()
+
+    def add_UI(self):
+        """Дополнительный интерфейс"""
+        self.setFixedWidth(100)
+        self.setTitle('Результаты испытания')
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+
+        self.layout_1 = QVBoxLayout()
+        self.layout_2 = QVBoxLayout()
+
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+
+        self.layout_1.addWidget(QLabel("alpha"))
+        self.layout_1.addWidget(QLabel("betta"))
+
+        self.alpha_line = QLineEdit()
+        self.alpha_line.setDisabled(True)
+
+        self.betta_line = QLineEdit()
+        self.betta_line.setDisabled(True)
+
+        self.layout_2.addWidget(self.alpha_line)
+        self.layout_2.addWidget(self.betta_line)
+
+        self.layout.addLayout(self.layout_1)
+        self.layout.addLayout(self.layout_2)
+
+    def set_data(self, res):
+        self.alpha_line.setText(str(res["alpha"]))
+        self.betta_line.setText(str(res["betta"]))
 
 
 
