@@ -110,6 +110,39 @@ prog_geometry = {
     }
 }
 
+
+def check_local_version(version):
+
+    def program_data_dir(path: str):
+        """Проверка наличия и создание пути в случае отсутствия"""
+
+        check_array = os.path.normcase(path).split("\\")
+        check_path = check_array[0]
+
+        for subdirectory in check_array[1:]:
+            check_path = f"{check_path}/{subdirectory}"
+            if not os.path.isdir(check_path):
+                os.mkdir(check_path)
+
+    def version_file(version: str, file_path, file_name='version.txt'):
+        file_path = os.path.normcase(file_path)
+        program_data_dir(file_path)
+
+        if not os.path.exists(file_path + '\\' + file_name):
+            with open(file_path + '\\' + file_name, 'w') as file:
+                file.write(version + '\n')
+            return True
+
+        with open(file_path + '\\' + file_name, 'r+') as file:
+            file_version = file.readlines()
+            if version > file_version[-1]:
+                file.write(version + '\n')
+                return True
+            return False
+
+    return version_file(version, file_path='C:/ProgramData/Digitrock')
+
+
 class VersionLog(QDialog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -206,6 +239,9 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.setCentralWidget(self.table_widget)
         self.show()
 
+        if check_local_version(f"{actual_version:.2f}"):
+            self.info("ВЫ ЗАПУСКАЕТЕ НОВУЮ ВЕРСИЮ"+f"{actual_version:.2f}")
+
     def buttons_click(self):
 
         sender = self.sender().objectName()
@@ -245,9 +281,11 @@ class App(QMainWindow):  # Окно и виджеты на нем
             else:
                 self.showFullScreen()
 
-    def info(self):
+    def info(self, window_title=None):
         dialog = VersionLog(self)
         dialog.show()
+        if window_title:
+            dialog.setWindowTitle(window_title)
 
 
 if __name__ == '__main__':
