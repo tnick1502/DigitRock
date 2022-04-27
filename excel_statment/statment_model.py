@@ -51,7 +51,7 @@ class StatmentData:
             start_date = datetime(*xlrd.xldate_as_tuple(sheet.cell(*GeneralDataColumns["start_date"][1]).value, wb.datemode))
             end_date = datetime(*xlrd.xldate_as_tuple(sheet.cell(*GeneralDataColumns["end_date"][1]).value, wb.datemode))
             shipment_number = sheet.cell(*GeneralDataColumns["shipment_number"][1]).value
-            print("dfg", shipment_number)
+            #print("dfg", shipment_number)
 
         if accreditation in ["OAO", "ОАО"]:
             accreditation = "АО"
