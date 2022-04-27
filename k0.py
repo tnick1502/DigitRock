@@ -32,7 +32,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
                                        f"Вы запускаете устаревшую версию программы. Актуальная версия {get_actual_version()}",
                                        QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
             if ret == QMessageBox.Yes:
-                self.table_widget = RezonantColumnSoilTestApp()
+                self.table_widget = K0SoilTestApp()
                 self.setCentralWidget(self.table_widget)
                 self.show()
 

@@ -452,14 +452,16 @@ class ModelK0SoilTest(ModelK0):
             #   консолидация стандартная
             consolidation_dict = None  # ModelK0SoilTest.dictionary_without_VFS(sigma_3=100, velocity=49)
             #
-            sigma_3 = self.test_data.sigma_3*1000
+            #   
+            sigma_1 = self.test_data.sigma_1*1000
             pore_pressure = np.asarray([])
             action = np.asarray([])
             time = np.asarray([])
-            for i in range(1, len(sigma_3)):
+
+            for i in range(1, len(sigma_1)):
                 sensor = np.random.uniform(self.SENSOR_LIMITS[0], self.SENSOR_LIMITS[1])
-                pore_pressure, action = ModelK0SoilTest._form_step(sigma_3[i], sigma_3[i-1], pore_pressure, action,
-                                                                   time, sensor)
+                pore_pressure, action, time = ModelK0SoilTest._form_step(sigma_1[i], sigma_1[i-1],
+                                                                         pore_pressure, action, time, sensor)
 
             #
             strain = np.zeros_like(pore_pressure)  # np.random.uniform(-0.1, 0.1, len(deviator))
@@ -472,18 +474,11 @@ class ModelK0SoilTest(ModelK0):
             #
             pore_volume_strain = np.zeros_like(deviator)  # np.random.uniform(-0.1, 0.1, len(deviator))
             #
-            # if TIME <= 499:
-            #     time = [i / 20 for i in range(len(deviator))]
-            # elif 499 < TIME <= 2999:
-            #     time = [i / 2 for i in range(len(deviator))]
-            # else:
-            #     time = [i * 3 for i in range(len(deviator))]
 
             deviator_loading_dict = ModelK0SoilTest.dictionary_deviator_loading_step(strain, deviator,
                                                                                      pore_volume_strain,
                                                                                      cell_volume_strain, reload_points,
-                                                                                     action,
-                                                                                     pore_pressure)
+                                                                                     action, pore_pressure, time)
 
         main_dict = ModelK0SoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
                                                                          consolidation_dict,
@@ -846,24 +841,14 @@ class ModelK0SoilTest(ModelK0):
 
     @staticmethod
     def dictionary_deviator_loading_step(strain, deviator, pore_volume_strain, cell_volume_strain, indexs_loop, action,
-                                         pore_pressure, delta_h_consolidation=0,):
+                                         pore_pressure, time, delta_h_consolidation=0,):
         """Формирует словарь девиаторного нагружения"""
-        # Массив времени
-        #   1 шаг стабилизации - 60 секунд
-        #   Шаги нагрузки:
-        time_load = [np.random.uniform(0.5, 1.0), np.random.uniform(1.0, 2.0), np.random.uniform(2.0, 3.0),
-                     np.random.uniform(5.0, 6.0), np.random.uniform(9.0, 11.0), np.random.uniform(20.0, 31.0),
-                     np.random.uniform(40.0, 46.0), np.random.uniform(49.0, 51.0)]
-        time = np.asarray([0])
-        for i in range(1, len(action)):
-
-
 
         # Разгрукза формируется так же как обычный шаг (экспонентой) вдвое выше текущего значения
         #   затем значения обращаются и экспонента стремится к нулю
         #   Однако разргрузка происходит не ровно до нуля!
         unload_point = 2*pore_pressure[-1]+np.random.randint(1, 3)*ModelK0SoilTest.SENSOR_LIMITS[0]
-        pore_pressure_reload, action_reload = ModelK0SoilTest._form_step(unload_point, pore_pressure[-1])
+        pore_pressure_reload, action_reload, time_reload = ModelK0SoilTest._form_step(unload_point, pore_pressure[-1])
         pore_pressure_reload = np.asarray([mirrow_element(elem, pore_pressure[-1]) for elem in pore_pressure_reload])
 
         action_reload = np.full(len(action_reload), 'Unload')
@@ -875,7 +860,8 @@ class ModelK0SoilTest(ModelK0):
         cell_volume_strain = np.hstack((cell_volume_strain, np.full(len(pore_pressure_reload), 0)))
         deviator = np.hstack((deviator, np.full(len(pore_pressure_reload), 0)))
 
-        time = np.hstack((time, np.linspace(time[-1], time[-1] + len(pore_pressure_reload)-1, len(pore_pressure_reload))))
+        time_reload += time[-1]
+        time = np.hstack((time, time_reload))
 
         action_changed = []
         for i in range(len(action) - 1):
@@ -1091,54 +1077,61 @@ class ModelK0SoilTest(ModelK0):
         return time
 
     @staticmethod
-    def _form_step(sigma_3_i, sigma_3_i_prev, deviator=np.asarray([]), action=np.asarray([]),
+    def _form_step(sigma_1_i, sigma_1_i_prev, deviator=np.asarray([]), action=np.asarray([]),
                    time=np.asarray([]), sensor=2.3088):
-        rnd = np.random.randint(5, 8)
+        rnd = np.random.randint(6, 8)
 
         time_load = [0, np.random.uniform(0.5, 1.0), np.random.uniform(1.0, 2.0), np.random.uniform(2.0, 3.0),
                      np.random.uniform(5.0, 6.0), np.random.uniform(9.0, 11.0), np.random.uniform(20.0, 31.0),
                      np.random.uniform(40.0, 46.0), np.random.uniform(49.0, 51.0)]
+        '''Временные тики во время этапов нагрузки и выхода на стабилизацию'''
 
         # Первый блок : нагрузка до значения
-        deviator_i = exponent((np.linspace(0, rnd-1, rnd)), sigma_3_i - sigma_3_i_prev, 10)
-        deviator_i = deviator_i + sigma_3_i_prev
-        # deviator_i = discrete_array(deviator_i, 0.5)
+        deviator_i = exponent((np.linspace(0, rnd-1, rnd)), sigma_1_i - sigma_1_i_prev, 10)
+        deviator_i = deviator_i + sigma_1_i_prev
 
+        #   Время во время нагрузки формируется исходя из "скоростей" нагрузок в time_load
         time_i = np.asarray([time_load[i] for i in range(len(deviator_i))])
-        if time:
-            time_i[0] += time[-1]
         for i in range(1, len(time_i)):
-            time[i] += time_i[-1]
+            time_i[i] += time_i[i-1]
+        if len(time) > 0:  # не забываем прибавить время с предыдущего участка
+            time_i += time[-1]
+
         time = np.hstack((time, time_i))
-
         deviator = np.hstack((deviator, deviator_i))
-
         action = np.hstack((action, np.full(len(deviator_i), 'LoadStage')))
 
         # Второй блок : стабилизация
         #   первая стаблизация повторяет последнюю нагрузку
         action = np.hstack((action, ['Stabilization']))
         time = np.hstack((time, np.asarray(time[-1])))
-        deviator = np.hstack((deviator, np.asarray(sigma_3_i)))
+        deviator = np.hstack((deviator, np.asarray(sigma_1_i)))
 
         #       коррекция для соблюдения погрешностей датчика - при стаблизации значение "скачет" туда-сюда
-        correction = sensor - (deviator[-1] - sigma_3_i)
+        correction = sensor - (deviator[-1] - sigma_1_i)
         deviator_i = np.full(365, deviator[-1]) + correction
         rnd = choices([0, 1], weights=[0.4, 0.8], k=len(deviator_i))
-        deviator_i = np.asarray([sigma_3_i if rnd[i] else deviator_i[i] for i in range(len(deviator_i))])
+        deviator_i = np.asarray([sigma_1_i if rnd[i] else deviator_i[i] for i in range(len(deviator_i))])
         # deviator_i = array_discreate_noise(deviator_i, 2.3, 4, koef_noise_before=0, koef_noise_after=0)
 
-        time_i = np.linspace(time[-1] + 60, time[-1] + 60 + (len(deviator_i) - 1)*60, len(deviator_i))
-        rnd = np.random.randint(4, 6)
-        for i in range(rnd):
+        #   Время во время стаблизации состоит из двух подэтапов
+        #       сначала идет "разгон" до нужного времени, а потом тики по 60 секунд
+        time_i = [time[-1] + time_load[1]]
 
-        time_i += np.random.uniform(0.1, 0.7, len(time_i))
+        for i in range(1, len(deviator_i)):
+            if i <= 6:
+                time_i.append(time_i[-1] + time_load[i+1])
+            else:
+                time_i.append(time_i[-1] + 60 + np.random.uniform(0.1, 0.7))
+
+        time_i = np.asarray(time_i)
 
         deviator = np.hstack((deviator, deviator_i))
         action = np.hstack((action, np.full(len(deviator_i), 'Stabilization')))
         time = np.hstack((time, time_i))
         #   последняя стабилизация дважды
-        deviator = np.hstack((deviator, np.asarray(sigma_3_i)))
+        deviator = np.hstack((deviator, np.asarray(sigma_1_i)))
         action = np.hstack((action, ['Stabilization']))
         time = np.hstack((time, np.asarray(time[-1])))
+
         return deviator, action, time
