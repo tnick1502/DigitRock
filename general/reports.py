@@ -1152,48 +1152,81 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E")
             tableData.append(
                 [Paragraph(E50w, LeftStyle), "", "", "",
                  E50, ""])
+            sss = 4
+            style = [('SPAN', (0, 0), (-1, 0)),
+                     ('SPAN', (0, 1), (-1, r)),
+
+                     ('SPAN', (0, -1), (3, -1)),
+                     ('SPAN', (-2, -1), (-1, -1)),
+                     # ('SPAN', (2, -1), (3, -1)),
+                     # ('SPAN', (4, -1), (5, -1)),
+                     ('SPAN', (0, -2), (3, -2)),
+                     ('SPAN', (-2, -2), (-1, -2)),
+                     # ('SPAN', (2, -2), (3, -2)),
+                     # ('SPAN', (4, -2), (5, -2)),
+                     ('SPAN', (0, -3), (3, -3)),
+                     ('SPAN', (-2, -3), (-1, -3)),
+
+                     ('SPAN', (0, -4), (3, -4)),
+                     ('SPAN', (-2, -4), (-1, -4)),
+                     # ('SPAN', (2, -3), (3, -3)),
+                     #  ('SPAN', (4, -3), (5, -3)),
+
+                     ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+
+                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                     ("FONTSIZE", (0, 0), (-1, -1), 8),
+                     # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                     ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                     ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                     ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
         else:
             tableData.append(
                 [Paragraph(Ew, LeftStyle), "", "", "",
                  E, ""])
+            sss = 0
+            style = [('SPAN', (0, 0), (-1, 0)),
+                     ('SPAN', (0, 1), (-1, r)),
+
+                     ('SPAN', (0, -1), (3, -1)),
+                     ('SPAN', (-2, -1), (-1, -1)),
+                     # ('SPAN', (2, -1), (3, -1)),
+                     # ('SPAN', (4, -1), (5, -1)),
+                     ('SPAN', (0, -2), (3, -2)),
+                     ('SPAN', (-2, -2), (-1, -2)),
+                     # ('SPAN', (2, -2), (3, -2)),
+                     # ('SPAN', (4, -2), (5, -2)),
+                     ('SPAN', (0, -3), (3, -3)),
+                     ('SPAN', (-2, -3), (-1, -3)),
+
+                     # ('SPAN', (2, -3), (3, -3)),
+                     #  ('SPAN', (4, -3), (5, -3)),
+
+                     ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+
+                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                     ("FONTSIZE", (0, 0), (-1, -1), 8),
+                     # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                     ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                     ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                     ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
         tableData.append(
             [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
         tableData.append(
             [Paragraph('''<p>Разгрузочный модуль E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "",
              "", Res["Eur"], ""])
 
-        style = [('SPAN', (0, 0), (-1, 0)),
-                 ('SPAN', (0, 1), (-1, r)),
-
-                 ('SPAN', (0, -1), (3, -1)),
-                 ('SPAN', (-2, -1), (-1, -1)),
-                 # ('SPAN', (2, -1), (3, -1)),
-                 # ('SPAN', (4, -1), (5, -1)),
-                 ('SPAN', (0, -2), (3, -2)),
-                 ('SPAN', (-2, -2), (-1, -2)),
-                 # ('SPAN', (2, -2), (3, -2)),
-                 # ('SPAN', (4, -2), (5, -2)),
-                 ('SPAN', (0, -3), (3, -3)),
-                 ('SPAN', (-2, -3), (-1, -3)),
-
-                 # ('SPAN', (2, -3), (3, -3)),
-                 #  ('SPAN', (4, -3), (5, -3)),
-
-                 ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                 ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                 ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
-
-                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-                 ("FONTSIZE", (0, 0), (-1, -1), 8),
-                 # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
-                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                 ("ALIGN", (0, 0), (-1, r), "CENTER"),
-                 ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
-                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
-
-        sss = 0
     else:
         #tableData.append(
             #[Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
