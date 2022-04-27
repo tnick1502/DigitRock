@@ -615,16 +615,8 @@ class ModelK0SoilTest(ModelK0):
         for i in range(fixed_point_index, len(sigma_3_noise)):
             if i == fixed_point_index:
                 continue
-            if i % 2 == 0:
-                if rnd == 0:
-                    sigma_3_noise[i] += noise
-                else:
-                    sigma_3_noise[i] -= noise
-            else:
-                if rnd == 0:
-                    sigma_3_noise[i] -= noise
-                else:
-                    sigma_3_noise[i] += noise
+
+            sigma_3_noise[i] += np.random.uniform(-noise, noise)
 
         def func(x):
             """x - массив sigma_3 без зафиксированной точки"""
@@ -636,8 +628,6 @@ class ModelK0SoilTest(ModelK0):
             __sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1_line))
 
             _K0_new, _sigma_p_new = ModelK0.define_ko(__sigma_1, x, no_round=True)
-
-            # print(abs(_K0_new - K0) + abs(_sigma_p_new - sigma_1_line_fixed))
 
             return abs(_K0_new - K0) + abs(_sigma_p_new - sigma_1_line_fixed)
 
@@ -654,7 +644,9 @@ class ModelK0SoilTest(ModelK0):
             # замыкаем последний на первый на всякий случай
             second = np.array([x[-1] - x[0]])
 
-            res = np.hstack((first, second))
+            third = np.array([0.025-abs(x[j]-sigma_3_line[j]) for j in range(len(x))])
+
+            res = np.hstack((first, second, third))
             return res
 
         cons = {'type': 'ineq',
@@ -678,10 +670,12 @@ class ModelK0SoilTest(ModelK0):
         print(f"Было:\n{K0} {sigma_1_line_fixed}\n"
               f"Стало:\n{K0_new} {sigma_p_new}")
 
-        if K0 != K0_new:
+        if K0 != K0_new or (sigma_p_new > sigma_1_line_fixed):
             print("Слишком большая ошибка в К0, Пробую уменьшить шум")
             if noise < 1:
                 print("Слишком большая ошибка в К0")
+                _sigma_1, _sigma_3 = ModelK0SoilTest.lse_faker(sigma_1_line, sigma_3_line, sigma_1_spl, sigma_3_spl,
+                                                               K0, noise=0)
             else:
                 _sigma_1, _sigma_3 = ModelK0SoilTest.lse_faker(sigma_1_line, sigma_3_line, sigma_1_spl, sigma_3_spl,
                                                                K0, noise=noise*0.95)
