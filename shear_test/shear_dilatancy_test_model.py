@@ -1140,7 +1140,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                 if data_phiz.Ip is not None and data_phiz.Il is not None:
                     if xc > XC_LIM_E and \
                             ((data_phiz.Ip <= 7 and data_phiz.Il <= 0) or (data_phiz.Ip > 7 and data_phiz.Il <= 0.25)):
-                        print('твердый')
+                        # print('твердый')
                         XC_LIM_E = 0.06
                         rnd = np.random.uniform(1.4, 1.6)
 

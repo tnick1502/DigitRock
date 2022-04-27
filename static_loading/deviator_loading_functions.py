@@ -1633,6 +1633,7 @@ def curve(qf, e50, **kwargs):
         time = [i*3 for i in range(len(x))]
 
     if U:
+        print('u', U)
         old_U = U
         if U < 150:
             k_low_u = 250/U
@@ -1668,6 +1669,19 @@ def curve(qf, e50, **kwargs):
         y_U += abs(y_U[0])
         y_U[0] = 0.
 
+        y1_U, v_d_given = volumetric_deformation(x_old, x_given, m_given, xc, v_d2, x_end, angle_of_dilatacy,
+                                               angle_of_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x,
+                                               point2_x,
+                                               point3_x)
+        y1_U = y1_U[:index_x2[0]]
+        y1_proiz_U = (y1_U[1] - y1_U[0]) / (x_U[1] - x_U[0])
+        y1_start = spline([x_start[0], 0], [0, y1_bias], x_start, 0, y1_proiz_U,
+                          k=3)  # метрвый ход штока кривой обьемной деформации
+        y1_U = np.hstack((y1_start, y1_U + y1_bias))  # добавление мертвого хода штока в функцию обьемной деформации
+        y1_U[0] = 0.  # искусственное зануление первой точки
+        y2_U = y1_U
+
+
         """u = exponent(x[len(x_start):np.argmax(y)] - x[len(x_start)], U, np.random.uniform(8, 10)) + amplitude
         y_start = np.linspace(0, amplitude, len(x_start))
         u *= (np.max(u)/(U+amplitude))
@@ -1693,7 +1707,7 @@ def curve(qf, e50, **kwargs):
         y_U[len(x_start) + 1] = amplitude
         y_U[len(x_start) - 1] = amplitude"""
 
-        return x, y, y1, y2, indexs_loop, time, len(x_start)
+        return x_U, y_U, y1_U, y2_U, indexs_loop, time, len(x_start)
 
     return x, y, y1, y2, indexs_loop, time, len(x_start)
 
@@ -1914,7 +1928,7 @@ if __name__ == '__main__':
     # (596.48, 382.8)
 
     x, y, y1, y2, indexs_loop, time, lenlen = curve(30, 500, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                         max_time=3000, angle_of_dilatacy=6, y_rel_p=12, point2_y=2)
+                                         max_time=3000, angle_of_dilatacy=6, y_rel_p=12, point2_y=2, U=50)
     print(len(x))
     print(time)
     #
@@ -1930,7 +1944,7 @@ if __name__ == '__main__':
     # #print(E)
     # i = np.argmax(y)
     # y -= y[0]
-    plt.plot(x, y)
+    plt.plot(x, y1)
     #with open("C:/Users/Пользователь/Desktop/test_file.txt", "w") as file:
         #for i in range(len(y)):
             #file.write(str(np.round(-x[i], 4)).replace(".", ",") + "\t" + str(np.round(y[i], 4)).replace(".", ",")+ "\n")

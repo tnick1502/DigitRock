@@ -435,7 +435,7 @@ class ModelShearSoilTest(ModelShear):
             else:
                 _k_all.append(1.3)
 
-        print(f"ХС ДО {_xc_all}")
+        # print(f"ХС ДО {_xc_all}")
 
         # Коррекция хс
         XC_LIM_k = 0.11
@@ -444,7 +444,7 @@ class ModelShearSoilTest(ModelShear):
         if _phys.Ip is not None and _phys.Il is not None:
             if (np.any(np.asarray(_xc_all) > XC_LIM_E) and np.any(np.asarray(_if_xc_all))) and\
                     ((_phys.Ip <= 7 and _phys.Il <= 0) or (_phys.Ip > 7 and _phys.Il <= 0.25)):
-                print('твердый')
+                # print('твердый')
                 XC_LIM_E = 0.06
 
         for i in range(len(sigma_array) - 1, -1, -1):
@@ -469,7 +469,7 @@ class ModelShearSoilTest(ModelShear):
 
                 indexes, = np.where(np.asarray(_xc_all) > XC_LIM_E)
 
-        print(f"ХС ПОСЛЕ {_xc_all}")
+        # print(f"ХС ПОСЛЕ {_xc_all}")
         # теперь, заная есть ли пики и расположения хс можем провести коррекции
         # формируем итератор и движемся с конца, если при максимальном давлении кривая "помещается",
         # то поместятся и остальные
