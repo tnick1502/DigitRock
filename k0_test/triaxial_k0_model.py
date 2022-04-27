@@ -207,21 +207,23 @@ class ModelK0:
         #   2. Сравниваем МНК ошибку с предыдущей
         #   3. Если ошибка выросла более чем на 100%, то завершаем поиск прямой
         #
+        #   Логика в следующем: если нашли точку перегиба, то, не учитывая ее, стороим К0
+        #   определенное давление в перегибе определяется в точке перегиба
 
         current_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
         prev_residuals = residuals
+        lse_pnts = lse_pnts + 1
 
-        while lse_pnts < len(sigma_1) - 1:
-            lse_pnts = lse_pnts + 1
+        while lse_pnts <= len(sigma_1) - 1:
             current_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
-
-            if residuals > prev_residuals and abs(residuals - prev_residuals)/prev_residuals*100 > 100:
-                # -1 за счет того, что необходима предыдущая точка
-                #  еще -1 за счет того, что в расчет принимается точка После перегиба
-                lse_pnts = lse_pnts - 2
+            if (residuals > 1e-8 and (residuals > prev_residuals)) \
+                    and abs(residuals - prev_residuals)/prev_residuals*100 > 100:
+                lse_pnts = lse_pnts - 1
                 break
             prev_residuals = residuals
+            lse_pnts = lse_pnts + 1
 
+        lse_pnts = lse_pnts - 1
         # Считаем полученный к0 по отобранным точкам
         defined_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
 
@@ -352,12 +354,17 @@ class ModelK0SoilTest(ModelK0):
                 `sigma_1_max` с шагом `sigma_1_step`.
             3. Создаем криволинейный участок кубическим сплайном в точку перегиба
             4. Далее два режима работы - ступенчатый и кинематический.
+
             В СТУПЕЧАТОМ
-            5. Производим уточнение сетки по сигма1 - она должна идти с заданным шагом
-            6. Накладываем шум на прямолинейный участок через `lse_faker()`.
+                Первая точка линейного участка (она же последняя точка криволинейного)
+                это Последняя точка перегиба! Таким образом, в зависимсоти от того, где реально располагается перегиб
+                это точка или опеределится как перегиб в define_k0 или нет, если перегиб фактически находится ниже нее
+
+                5. Производим уточнение сетки по сигма1 - она должна идти с заданным шагом
+                6. Накладываем шум на прямолинейный участок через `lse_faker()`.
             В КИНЕМАТИЧЕСКОМ
-            5. Производим формироавние сетки с учетом скорости нагружения
-            6. Накладываем шумы на график
+                5. Производим формироавние сетки с учетом скорости нагружения
+                6. Накладываем шумы на график
         """
         # Верификация заданных параметров моделирования
         self.verify_test_params()
@@ -452,7 +459,7 @@ class ModelK0SoilTest(ModelK0):
             #   консолидация стандартная
             consolidation_dict = None  # ModelK0SoilTest.dictionary_without_VFS(sigma_3=100, velocity=49)
             #
-            #   
+            #
             sigma_1 = self.test_data.sigma_1*1000
             pore_pressure = np.asarray([])
             action = np.asarray([])
@@ -519,7 +526,7 @@ class ModelK0SoilTest(ModelK0):
         # 6 - накладываем шум на прямолинейный участок и объединяем
         sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_synth, sgima_3_synth,
                                                      sigma_1_spl, sigma_3_spl,
-                                                     params.K0, params.sigma_p)
+                                                     params.K0)
 
         return sigma_1, sigma_3
 
@@ -553,7 +560,7 @@ class ModelK0SoilTest(ModelK0):
 
     @staticmethod
     def lse_faker(sigma_1_line: np.array, sigma_3_line: np.array,
-                  sigma_1_spl: np.array, sigma_3_spl: np.array, K0: float, sigma_p: float):
+                  sigma_1_spl: np.array, sigma_3_spl: np.array, K0: float, noise: float=None):
         """
             Принцип работы следующий:
                 шумы накладываются на линейный участок графика, по которому определяется К0.
@@ -570,12 +577,15 @@ class ModelK0SoilTest(ModelK0):
         :param sigma_1_spl: Сигма 1 нелинейного участка (включая первую точку линейного участка)
         :param sigma_3_spl: Сигма 3 нелинейного участка (включая первую точку линейного участка)
         :param K0: заданный К0
+        :param noise: уровень шума, при None определяется автоматически
         :return: Два массива Сигма 1 и Сигма 3 единой кривой (криволинейный и линейный участки)
         """
 
         # Точка начала прямолинейного участка должна быть зафиксирована,
         #   так как происходят некорретные сдвиги по шумам
         sigma_3_line_fixed = sigma_3_line[0]
+        '''точка начала прямолинейного участка'''
+        sigma_1_line_fixed = sigma_1_line[0]
         '''точка начала прямолинейного участка'''
 
         # Проверка числа узов
@@ -589,24 +599,32 @@ class ModelK0SoilTest(ModelK0):
         #   после добавления шума
         fixed_point_index = 1
 
-        noise = abs(sigma_3_line[fixed_point_index] - sigma_3_line[0]) * 0.2
+        if not noise:
+            noise = abs(sigma_3_line[fixed_point_index] - sigma_3_line[0]) * 0.05
 
         sigma_3_noise = copy.deepcopy(sigma_3_line)
 
         # добавляем шум к зафиксированной точке
-        if np.random.randint(0, 2) == 0:
+        rnd = np.random.randint(0, 2)
+        if rnd == 0:
             sigma_3_noise[fixed_point_index] -= noise
         else:
             sigma_3_noise[fixed_point_index] += noise
 
         # накладываем шумы на всю сигму
-        for i in range(1, len(sigma_3_noise)):
+        for i in range(fixed_point_index, len(sigma_3_noise)):
             if i == fixed_point_index:
                 continue
             if i % 2 == 0:
-                sigma_3_noise[i] += noise / 4
+                if rnd == 0:
+                    sigma_3_noise[i] += noise
+                else:
+                    sigma_3_noise[i] -= noise
             else:
-                sigma_3_noise[i] -= noise / 4
+                if rnd == 0:
+                    sigma_3_noise[i] -= noise
+                else:
+                    sigma_3_noise[i] += noise
 
         def func(x):
             """x - массив sigma_3 без зафиксированной точки"""
@@ -619,9 +637,9 @@ class ModelK0SoilTest(ModelK0):
 
             _K0_new, _sigma_p_new = ModelK0.define_ko(__sigma_1, x, no_round=True)
 
-            # print(abs(_K0_new - K0) + abs(_sigma_p_new - sigma_p))
+            # print(abs(_K0_new - K0) + abs(_sigma_p_new - sigma_1_line_fixed))
 
-            return abs(_K0_new - K0) + abs(_sigma_p_new - sigma_p)
+            return abs(_K0_new - K0) + abs(_sigma_p_new - sigma_1_line_fixed)
 
         initial = np.delete(sigma_3_noise, fixed_point_index)
         bnds = Bounds(np.zeros_like(initial), np.ones_like(initial) * np.inf)
@@ -636,17 +654,14 @@ class ModelK0SoilTest(ModelK0):
             # замыкаем последний на первый на всякий случай
             second = np.array([x[-1] - x[0]])
 
-            third = np.array([(x[j + 1] - x[j])/x[j]*100 - 2 for j in range(1, len(x) - 1)])
-
-            res = np.hstack((first, second, third))
+            res = np.hstack((first, second))
             return res
 
         cons = {'type': 'ineq',
-                'fun': constrains
-                }
+                'fun': constrains}
         '''Нелинейные ограничения типа cj(x)>=0'''
 
-        res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, options={'ftol': 1*10**(-6)})
+        res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, tol=1e-6)
         res = res.x
 
         # Результат:
@@ -660,11 +675,16 @@ class ModelK0SoilTest(ModelK0):
         # Проверка:
         K0_new, sigma_p_new = ModelK0.define_ko(_sigma_1, _sigma_3)
 
-        print(f"Было:\n{K0} {sigma_p}\n"
+        print(f"Было:\n{K0} {sigma_1_line_fixed}\n"
               f"Стало:\n{K0_new} {sigma_p_new}")
 
         if K0 != K0_new:
-            raise RuntimeWarning("Слишком большая ошибка в К0")
+            print("Слишком большая ошибка в К0, Пробую уменьшить шум")
+            if noise < 1:
+                print("Слишком большая ошибка в К0")
+            else:
+                _sigma_1, _sigma_3 = ModelK0SoilTest.lse_faker(sigma_1_line, sigma_3_line, sigma_1_spl, sigma_3_spl,
+                                                               K0, noise=noise*0.95)
 
         return _sigma_1, _sigma_3
 
