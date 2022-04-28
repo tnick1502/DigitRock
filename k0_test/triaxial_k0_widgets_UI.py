@@ -289,10 +289,10 @@ class K0SoilTestUI(K0UI):
                                                       })
         self.sliders.set_sliders_params(
             {
-                "OCR": {"value": 1.3, "borders": [1, 3]},
+                "OCR": {"value": 1.3, "borders": [0, 3]},
                 "depth": {"value": 1, "borders": [0, 100]},
                 "sigma_1_step": {"value": 3, "borders": [1, 10]},
-                "sigma_1_max": {"value": 1.200, "borders": [0.600, 2.000]}
+                "sigma_1_max": {"value": 1.200, "borders": [0.600, 3.000]}
             })
         self.layout.addWidget(self.sliders)
 

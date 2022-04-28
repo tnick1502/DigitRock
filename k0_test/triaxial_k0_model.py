@@ -30,7 +30,8 @@ class ModelK0:
     def __init__(self):
         """Определяем основную структуру данных"""
         # Структура дынных
-        self.test_data = AttrDict({'sigma_1': None, 'sigma_3': None, 'action': None})
+        self.test_data = AttrDict({'sigma_1': np.asarray([]), 'sigma_3': np.asarray([]),
+                                   'action': np.asarray([]), 'time': np.asarray([])})
         self._is_kinematic_mode = False
         '''Режим испытания'''
 
@@ -38,7 +39,11 @@ class ModelK0:
         self._test_cut_position = AttrDict({'left': None, 'right': None})
 
         # Результаты опыта
-        self._test_result = AttrDict({'K0': None, 'sigma_p': None})
+        self._test_result = AttrDict({'K0': None, 'sigma_p': None,
+                                      'sigma_1': np.asarray([]), 'sigma_3': np.asarray([])})
+
+        #
+        self.__debug_data = AttrDict({'sigma_1': np.asarray([]), 'sigma_3': np.asarray([]), 'is_ok': False})
 
     def set_test_data(self, test_data):
         """Получение и обработка массивов данных, считанных с файла прибора"""
@@ -52,6 +57,9 @@ class ModelK0:
             self.test_data.action = test_data['action']
             self._is_kinematic_mode = ModelK0.is_kinematic_mode(self.test_data.action)
 
+        if 'time' in test_data:
+            self.test_data.time = test_data['time']
+
         self._test_cut_position.left = 0
         self._test_cut_position.right = len(self.test_data.sigma_3)
 
@@ -59,8 +67,7 @@ class ModelK0:
 
     def get_test_results(self):
         """Получение результатов обработки опыта"""
-        _results = self.test_data.get_dict()
-        _results["K0"] = self._test_result.K0
+        _results = self._test_result
         return _results
 
     def open_path(self, path):
@@ -80,26 +87,35 @@ class ModelK0:
 
     def _test_processing(self):
         """Обработка опыта"""
-        try:
-            sigma_1_cut = self.test_data.sigma_1[self._test_cut_position.left: self._test_cut_position.right]
-            sigma_3_cut = self.test_data.sigma_3[self._test_cut_position.left: self._test_cut_position.right]
-            self._test_result.K0, self._test_result.sigma_p = ModelK0.define_ko(sigma_1_cut, sigma_3_cut)
-        except:
-            #app_logger.exception("Ошибка обработки данных РК")
-            pass
+        # try:
+        self._test_result.sigma_1, self._test_result.sigma_3 = self.test_data.sigma_1, self.test_data.sigma_3
+        if len(self.test_data.action) > 0:
+            if self._is_kinematic_mode:
+                pass
+            else:
+                self._test_result.sigma_1, self._test_result.sigma_3 = ModelK0.parse_step_mode_data(self.test_data)
+
+                if self.__debug_data:
+                    self.check_debug()
+
+        self._test_result.K0, self._test_result.sigma_p = ModelK0.define_ko(self._test_result.sigma_1,
+                                                                            self._test_result.sigma_3)
+        # except:
+        #     #app_logger.exception("Ошибка обработки данных РК")
+        #     pass
 
     def get_plot_data(self):
         """Возвращает данные для построения"""
-        if self.test_data.sigma_1 is None or self.test_data.sigma_3 is None:
+        if self._test_result.sigma_1 is None or self._test_result.sigma_3 is None:
             return None
         else:
             line_shift = 0.050  # сдвиги для отображения кривой
 
-            index_sigma_p, = np.where(self.test_data.sigma_1 >= self._test_result.sigma_p)
+            index_sigma_p, = np.where(self._test_result.sigma_1 >= self._test_result.sigma_p)
             index_sigma_p = index_sigma_p[0] if len(index_sigma_p) > 0 else 0
 
-            sigma_1_cut = self.test_data.sigma_1[index_sigma_p:]
-            sigma_3_cut = self.test_data.sigma_3[index_sigma_p:]
+            sigma_1_cut = self._test_result.sigma_1[index_sigma_p:]
+            sigma_3_cut = self._test_result.sigma_3[index_sigma_p:]
 
             first_point = sigma_1_cut[0] + line_shift
             k0_line_sigma_1 = np.linspace(first_point, sigma_1_cut[-1] + line_shift)
@@ -107,8 +123,8 @@ class ModelK0:
 
             k0_line_sigma_3 = self._test_result.K0 * k0_line_sigma_1 + b
 
-            return {"sigma_1": self.test_data.sigma_1,
-                    "sigma_3": self.test_data.sigma_3,
+            return {"sigma_1": self._test_result.sigma_1,
+                    "sigma_3": self._test_result.sigma_3,
                     "k0_line_x": k0_line_sigma_3,
                     "k0_line_y": k0_line_sigma_1}
 
@@ -140,18 +156,36 @@ class ModelK0:
 
             plt.show()
 
+    def set_debug_data(self, data):
+        self.__debug_data.sigma_1 = data[0]
+        self.__debug_data.sigma_3 = data[1]
+
+    def check_debug(self):
+
+        assert len(self.__debug_data.sigma_1) == len(self._test_result.sigma_1)
+        assert len(self.__debug_data.sigma_3) == len(self._test_result.sigma_3)
+
+        for i in range(len(self._test_result.sigma_1)):
+            assert round(self.__debug_data.sigma_1[i], 3) == round(self._test_result.sigma_1[i], 3)
+            assert round(self.__debug_data.sigma_3[i], 3) == round(self._test_result.sigma_3[i], 3)
+
+        self.__debug_data.is_ok = True
+
+    @property
+    def is_debug_ok(self):
+        return self.__debug_data.is_ok
+
     @staticmethod
     def is_kinematic_mode(action):
         """
             Определяет режим испытания по массиву action из файла прибора .log
             Ступенчатый режим должен содержать участки стаблизации 'Stabilization'
             Кинематический режим должен содержать записи 'WaitLimit'
-
         """
-        if not action:
+        if len(action) < 1:
             return False
 
-        if 'Stabilization' in action:
+        if 'Stabilization' in action and 'WaitLimit' not in action:
             return False
 
         if 'WaitLimit' in action:
@@ -181,6 +215,50 @@ class ModelK0:
         test_data["sigma_3"] = read_data['G1[MPa]']
 
         return test_data
+
+    @staticmethod
+    def parse_step_mode_data(test_data: 'AttrDict'):
+        action = copy.deepcopy(test_data.action)
+        sigma_1 = np.asarray([])
+        sigma_3 = np.asarray([])
+
+        first_load_i, = np.where(action == 'LoadStage')
+        if len(first_load_i) < 1:
+            return sigma_1, sigma_3
+        cut = first_load_i[0]
+        action = action[first_load_i[0]:]
+
+        sigma_1 = np.append(sigma_1, test_data.sigma_1[cut])
+        sigma_3 = np.append(sigma_3, test_data.sigma_3[cut])
+
+        first_stab_i, = np.where(action == 'Stabilization')
+        if len(first_stab_i) < 1:
+            return sigma_1, sigma_3
+        cut += first_stab_i[0]
+        action = action[first_stab_i[0]:]
+
+        while len(action) > 0:
+            first_load_i, = np.where(action == 'LoadStage')
+
+            if len(first_load_i) < 1:
+                sigma_1 = np.append(sigma_1, test_data.sigma_1[-1])
+                sigma_3 = np.append(sigma_3, test_data.sigma_3[-1])
+                break
+
+            cut += first_load_i[0]
+            action = action[first_load_i[0]:]
+
+            sigma_1 = np.append(sigma_1, test_data.sigma_1[cut - 1])
+            sigma_3 = np.append(sigma_3, test_data.sigma_3[cut - 1])
+
+            first_stab_i, = np.where(action == 'Stabilization')
+            cut += first_stab_i[0]
+            action = action[first_stab_i[0]:]
+
+        sigma_1 = np.round(sigma_1, 0) / 1000
+        sigma_3 = np.round(sigma_3, 0) / 1000
+
+        return sigma_1, sigma_3
 
     @staticmethod
     def define_ko(sigma_1, sigma_3, no_round=False):
@@ -342,7 +420,7 @@ class ModelK0SoilTest(ModelK0):
                                                                                              self._test_params.K0)
 
         self._test_params.sigma_1_step = int(params["sigma_1_step"])*0.050
-        self._test_params.sigma_1_max = round(params["sigma_1_max"], 3)
+        self._test_params.sigma_1_max = round(params["sigma_1_max"], 2)
 
         self._test_modeling()
 
@@ -390,10 +468,12 @@ class ModelK0SoilTest(ModelK0):
                                                                         sigma_3_spl, sgima_3_synth, self._test_params)
         # Ступенчатый режим:
         else:
-            sigma_1, sigma_3 = ModelK0SoilTest._step_mode_modeling(sigma_1_spl, sgima_1_synth,
-                                                                   sigma_3_spl, sgima_3_synth, self._test_params)
+            sigma_1, sigma_3, action, time, debug_data = ModelK0SoilTest._step_mode_modeling(sigma_1_spl, sgima_1_synth,
+                                                                                             sigma_3_spl, sgima_3_synth,
+                                                                                             self._test_params)
 
-        self.set_test_data({"sigma_1": sigma_1, "sigma_3": sigma_3})
+        self.set_debug_data(debug_data)
+        self.set_test_data({'sigma_1': sigma_1, 'sigma_3': sigma_3, 'action': action, 'time': time})
 
     def verify_test_params(self):
         """
@@ -459,24 +539,14 @@ class ModelK0SoilTest(ModelK0):
             #   консолидация стандартная
             consolidation_dict = None  # ModelK0SoilTest.dictionary_without_VFS(sigma_3=100, velocity=49)
             #
-            #
-            sigma_1 = self.test_data.sigma_1 * 1000
-            sigma_3 = self.test_data.sigma_3 * 1000
-            vertical_pressure = np.asarray([])
-            action = np.asarray([])
-            time = np.asarray([])
-            pore_pressure = np.asarray([])
-
-            for i in range(1, len(sigma_1)):
-                sensor = np.random.uniform(self.SENSOR_LIMITS[0], self.SENSOR_LIMITS[1])
-
-                res = ModelK0SoilTest._form_step(sigma_1[i], sigma_1[i - 1], sigma_3[i], sigma_3[i - 1],
-                                                 vertical_pressure, pore_pressure,
-                                                 action, time, sensor)
-                vertical_pressure, action, time, pore_pressure = res
             #   Подготовка под наличие разгрузки
             reload_points = [0, 0, 0]
             #
+
+            pore_pressure = self.test_data.sigma_1
+            vertical_pressure = self.test_data.sigma_3
+            action = self.test_data.action
+            time = self.test_data.time
 
             deviator_loading_dict = ModelK0SoilTest.dictionary_deviator_loading_step(pore_pressure, vertical_pressure,
                                                                                      reload_points,
@@ -523,7 +593,22 @@ class ModelK0SoilTest(ModelK0):
                                                      sigma_1_spl, sigma_3_spl,
                                                      params.K0)
 
-        return sigma_1, sigma_3
+        sigma_1_res = sigma_1 * 1000
+        sigma_3_res = sigma_3 * 1000
+        sigma_1_as_v_p = np.asarray([])
+        action = np.asarray([])
+        time = np.asarray([])
+        sigma_3_as_p_p = np.asarray([])
+
+        for i in range(1, len(sigma_1_res)):
+            sensor = np.random.uniform(ModelK0SoilTest.SENSOR_LIMITS[0], ModelK0SoilTest.SENSOR_LIMITS[1])
+
+            res = ModelK0SoilTest._form_step(sigma_1_res[i], sigma_1_res[i - 1], sigma_3_res[i], sigma_3_res[i - 1],
+                                             sigma_1_as_v_p, sigma_3_as_p_p,
+                                             action, time, sensor)
+            sigma_1_as_v_p, action, time, sigma_3_as_p_p = res
+
+        return sigma_1_as_v_p, sigma_3_as_p_p, action, time, (sigma_1, sigma_3)
 
     @staticmethod
     def _kinematic_mode_modeling(sigma_1_spl, sgima_1_synth, sigma_3_spl, sgima_3_synth, params: 'AttrDict'):

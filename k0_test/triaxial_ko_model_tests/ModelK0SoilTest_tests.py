@@ -20,7 +20,9 @@ def test_model_k0_simple():
 
         model.plotter()
 
-    check_test(model.test_data, model._test_params)
+    assert ModelK0SoilTest.is_debug_ok, "Выходные массивы модели не сходятся с входными массивами на обработку"
+
+    check_test(model._test_result, model._test_params)
 
     assert model.get_test_results()["K0"] == 0.62
 
@@ -41,7 +43,9 @@ def test_model_k0_zero_depth():
 
         model.plotter()
 
-    check_test(model.test_data, model._test_params)
+    assert ModelK0SoilTest.is_debug_ok, "Выходные массивы модели не сходятся с входными массивами на обработку"
+
+    check_test(model._test_result, model._test_params)
 
     assert model.get_test_results()["K0"] == 0.62
 
@@ -62,7 +66,9 @@ def test_model_k0():
 
         model.plotter()
 
-    check_test(model.test_data, model._test_params)
+    assert ModelK0SoilTest.is_debug_ok, "Выходные массивы модели не сходятся с входными массивами на обработку"
+
+    check_test(model._test_result, model._test_params)
 
     assert model.get_test_results()["K0"] == 0.43
 
@@ -83,7 +89,9 @@ def test_model_k0_2():
 
         model.plotter()
 
-    check_test(model.test_data, model._test_params)
+    assert ModelK0SoilTest.is_debug_ok, "Выходные массивы модели не сходятся с входными массивами на обработку"
+
+    check_test(model._test_result, model._test_params)
 
     assert model.get_test_results()["K0"] == 0.63
 
@@ -104,7 +112,9 @@ def test_model_k0_3():
 
         model.plotter()
 
-    check_test(model.test_data, model._test_params)
+    assert ModelK0SoilTest.is_debug_ok, "Выходные массивы модели не сходятся с входными массивами на обработку"
+
+    check_test(model._test_result, model._test_params)
 
     assert model.get_test_results()["K0"] == 0.63
 
