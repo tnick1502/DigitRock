@@ -419,8 +419,10 @@ class ModelK0SoilTest(ModelK0):
                                                                                              self._test_params.depth,
                                                                                              self._test_params.K0)
 
-        self._test_params.sigma_1_step = int(params["sigma_1_step"])*0.050
-        self._test_params.sigma_1_max = round(params["sigma_1_max"], 2)
+        self._test_params.sigma_1_step = round(round(params["sigma_1_step"], 0)*0.050, 2)
+
+        num_steps = ((round(params["sigma_1_max"], 2)*1000) // (self._test_params.sigma_1_step*1000))
+        self._test_params.sigma_1_max = num_steps * self._test_params.sigma_1_step
 
         self._test_modeling()
 
