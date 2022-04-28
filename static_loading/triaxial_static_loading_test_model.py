@@ -526,6 +526,86 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
         save_cvi_E(file_path=os.path.join(file_path,file_name), data=data)
 
+    def set_pickle_data(self, test):
+
+        if test.reconsolidation is None:
+            self.reconsolidation = None
+        else:
+            self.reconsolidation._test_data = copy.deepcopy(test.reconsolidation._test_data)
+            self.reconsolidation._test_result = copy.deepcopy(test.reconsolidation._test_result)
+            self.reconsolidation._test_data_all = copy.deepcopy(test.reconsolidation._test_data_all)
+            self.reconsolidation.params = copy.deepcopy(test.reconsolidation.params)
+
+        if test.consolidation is None:
+            self.consolidation = None
+        else:
+            self.consolidation._test_data = copy.deepcopy(test.consolidation._test_data)
+            self.consolidation._test_cut_position = copy.deepcopy(test.consolidation._test_cut_position)
+            self.consolidation.processed_points_sqrt = copy.deepcopy(test.consolidation.processed_points_sqrt)
+            self.consolidation.processed_points_log = copy.deepcopy(test.consolidation.processed_points_log)
+            self.consolidation._test_result = copy.deepcopy(test.consolidation._test_result)
+            self.consolidation._test_params = copy.deepcopy(test.consolidation._test_params)
+            self.consolidation._test_result = copy.deepcopy(test.consolidation._test_result)
+            self.consolidation._test_params = copy.deepcopy(test.consolidation._test_params)
+
+        self.deviator_loading._test_data = copy.deepcopy(test.deviator_loading._test_data)
+        self.deviator_loading._test_params = copy.deepcopy(test.deviator_loading._test_params)
+        self.deviator_loading._draw_params = copy.deepcopy(test.deviator_loading._draw_params)
+        self.deviator_loading._test_cut_position = copy.deepcopy(test.deviator_loading._test_cut_position)
+        self.deviator_loading._test_result = copy.deepcopy(test.deviator_loading._test_result)
+
+        try:
+            self.deviator_loading._test_data.time
+        except AttributeError:
+            self.deviator_loading._test_data.time = self.deviator_loading._test_data.strain/self.deviator_loading._test_params.velocity
+
+        q_c = self.deviator_loading._test_params.sigma_3 * ((1 / self.deviator_loading._test_params.K0) - 1)
+
+        q_c2 = self.deviator_loading._test_params.sigma_3 * ((1.6 / self.deviator_loading._test_params.K0) - 1)
+
+        if self.deviator_loading._test_params.K0 == 1:
+            i_start_E = 0
+        else:
+            i_start_E, = np.where(self.deviator_loading._test_data.deviator_cut >= q_c)
+            if len(i_start_E):
+                i_start_E = i_start_E[0]
+            else:
+                i_start_E = 0
+
+        if q_c == 0:
+            i_end_E, = np.where(
+                self.deviator_loading._test_data.deviator_cut >= np.max(self.deviator_loading._test_data.deviator_cut) * np.random.uniform(0.2, 0.3))
+            if len(i_end_E):
+                i_end_E = i_end_E[0]
+            else:
+                i_end_E = len(self.deviator_loading._test_data.deviator_cut) - 1
+        else:
+            i_end_E, = np.where(self.deviator_loading._test_data.deviator_cut >= q_c2)
+            if len(i_end_E):
+                i_end_E = i_end_E[0]
+            else:
+                i_end_E = len(self.deviator_loading._test_data.deviator_cut) - 1
+
+        if i_end_E <= i_start_E:
+            i_end_E = i_start_E + 1
+
+        self.deviator_loading._test_params.E_processing_points_index = [i_start_E, i_end_E]
+
+
+
+        self.deviator_loading._test_result.E = ModelTriaxialDeviatorLoading.define_E(self.deviator_loading._test_data.strain_cut,
+                                                                    self.deviator_loading._test_data.deviator_cut,
+                                                                    self.deviator_loading._test_params.E_processing_points_index)
+
+        if self.deviator_loading._test_result.E[0] <= self.deviator_loading._test_result.E50 / 1000:
+            i_start_E = 0
+            i_end_E, = np.where(
+                self.deviator_loading._test_data.deviator_cut >= np.max(self.deviator_loading._test_data.deviator_cut) * np.random.uniform(0.25, 0.35))
+            i_end_E = i_end_E[0]
+            self.deviator_loading._test_params.E_processing_points_index = [i_start_E, i_end_E]
+
+        #self.deviator_loading._test_processing()
+
     @property
     def test_duration(self):
         time_in_min = 0
