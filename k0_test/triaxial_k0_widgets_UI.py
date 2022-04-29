@@ -105,120 +105,6 @@ class K0UI(QWidget):
         return path
 
 
-class K0IdentificationUI_old(QWidget):
-    """Интерфейс обработчика Резонансной колонки"""
-    def __init__(self):
-        """Определяем основную структуру данных"""
-        super().__init__()
-        self._create_UI()
-        self.setFixedHeight(100)
-
-    def _create_UI(self):
-        """Создание данных интерфейса"""
-        self.layout = QVBoxLayout()
-        self.box = QGroupBox("Идентификация пробы")
-        self.box_layout = QHBoxLayout()
-        self.box.setLayout(self.box_layout)
-
-        self.lab_number_label = QLabel("Лабораторный номер")
-        self.lab_number_label.setAlignment(Qt.AlignRight)
-        self.lab_number_label.setFixedWidth(120)
-        self.lab_number_text = QLineEdit()
-        self.lab_number_text.setFixedWidth(80)
-        self.lab_number_text.setDisabled(True)
-
-        self.borehole_label = QLabel("Скважина")
-        self.borehole_label.setAlignment(Qt.AlignRight)
-        self.borehole_label.setFixedWidth(60)
-        self.borehole_text = QLineEdit()
-        self.borehole_text.setFixedWidth(80)
-        self.borehole_text.setDisabled(True)
-
-        self.depth_label = QLabel("Глубина")
-        self.depth_label.setAlignment(Qt.AlignRight)
-        self.depth_label.setFixedWidth(60)
-        self.depth_text = QLineEdit()
-        self.depth_text.setFixedWidth(80)
-        self.depth_text.setDisabled(True)
-
-        self.name_label = QLabel("Наименование")
-        self.name_label.setAlignment(Qt.AlignRight)
-        self.name_label.setFixedWidth(80)
-        self.name_text = QTextEdit()
-        self.name_text.setDisabled(True)
-
-        self.p_ref_label = QLabel("Референтное давление")
-        self.p_ref_label.setAlignment(Qt.AlignRight)
-        self.p_ref_label.setFixedWidth(120)
-        self.p_ref_text = QLineEdit()
-        self.p_ref_text.setDisabled(True)
-        self.p_ref_text.setFixedWidth(80)
-
-        self.e_label = QLabel("Коэф. пористости")
-        self.e_label.setAlignment(Qt.AlignRight)
-        self.e_label.setFixedWidth(100)
-        self.e_text = QLineEdit()
-        self.e_text.setFixedWidth(80)
-        self.e_text.setDisabled(True)
-
-        self.E_label = QLabel("Модуль Е50")
-        self.E_label.setAlignment(Qt.AlignRight)
-        self.E_label.setFixedWidth(100)
-        self.E_text = QLineEdit()
-        self.E_text.setFixedWidth(80)
-        self.E_text.setDisabled(True)
-
-        self.column_1 = QVBoxLayout()
-        self.column_2 = QVBoxLayout()
-        self.column_3 = QVBoxLayout()
-        self.column_4 = QVBoxLayout()
-        self.column_5 = QVBoxLayout()
-        self.column_6 = QVBoxLayout()
-        self.column_7 = QVBoxLayout()
-        self.column_8 = QVBoxLayout()
-
-        self.column_1.addWidget(self.lab_number_label)
-        self.column_1.addWidget(self.p_ref_label)
-        self.column_2.addWidget(self.lab_number_text)
-        self.column_2.addWidget(self.p_ref_text)
-
-        self.column_3.addWidget(self.depth_label)
-        self.column_3.addWidget(self.borehole_label)
-        self.column_4.addWidget(self.depth_text)
-        self.column_4.addWidget(self.borehole_text)
-
-        self.column_5.addWidget(self.e_label)
-        self.column_5.addWidget(self.E_label)
-        self.column_6.addWidget(self.e_text)
-        self.column_6.addWidget(self.E_text)
-
-        self.column_7.addWidget(self.name_label)
-        self.column_7.addStretch(-1)
-        self.column_8.addWidget(self.name_text)
-
-        self.box_layout.addLayout(self.column_1)
-        self.box_layout.addLayout(self.column_2)
-        self.box_layout.addLayout(self.column_3)
-        self.box_layout.addLayout(self.column_4)
-        self.box_layout.addLayout(self.column_5)
-        self.box_layout.addLayout(self.column_6)
-        self.box_layout.addLayout(self.column_7)
-        self.box_layout.addLayout(self.column_8)
-
-        self.layout.addWidget(self.box)
-        self.setLayout(self.layout)
-        self.layout.setContentsMargins(5, 5, 5, 5)
-
-    def set_params(self):
-        self.lab_number_text.setText(str(statment[statment.current_test].physical_properties.laboratory_number))
-        self.borehole_text.setText(str(statment[statment.current_test].physical_properties.borehole))
-        self.depth_text.setText(str(statment[statment.current_test].physical_properties.depth))
-        self.name_text.setText(str(statment[statment.current_test].physical_properties.soil_name))
-        self.p_ref_text.setText(str(statment[statment.current_test].mechanical_properties.reference_pressure))
-        self.e_text.setText(str(statment[statment.current_test].physical_properties.e))
-        self.E_text.setText(str(statment[statment.current_test].mechanical_properties.E50))
-
-
 class K0IdentificationUI(TableVertical):
 
     def __init__(self):
@@ -283,16 +169,14 @@ class K0SoilTestUI(K0UI):
         """Создание данных интерфейса"""
         self.sliders = TriaxialStaticLoading_Sliders({
                                                       "OCR": "OCR",
-                                                      "depth": "Глубина, м",
                                                       "sigma_1_step": "Шаг нагружения, 0.050 МПа",
-                                                      "sigma_1_max": "Максимальное давление, МПа"
+                                                      "sigma_1_max": "Максимальное давление, кПа"
                                                       })
         self.sliders.set_sliders_params(
             {
                 "OCR": {"value": 1.3, "borders": [0, 3]},
-                "depth": {"value": 1, "borders": [0, 100]},
-                "sigma_1_step": {"value": 3, "borders": [1, 10]},
-                "sigma_1_max": {"value": 1.200, "borders": [0.600, 3.000]}
+                "sigma_1_step": {"value": 3, "borders": [0, 100]},
+                "sigma_1_max": {"value": 1200, "borders": [600, 3000]}
             })
         self.layout.addWidget(self.sliders)
 

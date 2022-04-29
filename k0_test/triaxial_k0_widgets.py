@@ -97,6 +97,7 @@ class K0SoilTestWidget(QWidget):
 
     def set_test_params(self, params):
         try:
+            self.test_widget.sliders.set_sliders_params(K0_models[statment.current_test].get_draw_params())
             self._plot()
         except KeyError:
             pass
@@ -113,6 +114,7 @@ class K0SoilTestWidget(QWidget):
     def _refresh(self):
         try:
             K0_models[statment.current_test].set_test_params()
+            self.test_widget.sliders.set_sliders_params(K0_models[statment.current_test].get_draw_params())
             self._plot()
         except KeyError:
             pass
@@ -231,8 +233,7 @@ class K0SoilTestApp(QWidget):
 
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
-        self.tab_1.statment_directory[str].connect(lambda x:
-                                                   self.tab_2.save_widget.update())
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_widget.update())
         self.tab_1.signal[bool].connect(self.tab_2.set_test_params)
         self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_data)
         self.tab_2.save_widget.save_button.clicked.connect(self.save_report)

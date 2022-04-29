@@ -412,8 +412,9 @@ class ModelK0SoilTest(ModelK0):
         """Считывание параметров отрисовки(для передачи на слайдеры)"""
         from excel_statment.properties_model import K0Properties
 
+        if params["OCR"] is None:
+            params["OCR"] = 0
         self._test_params.OCR = round(params["OCR"], 2)
-        self._test_params.depth = round(params["depth"], 2)
 
         self._test_params.sigma_p, self._test_params.sigma_3_p = K0Properties.define_sigma_p(self._test_params.OCR,
                                                                                              self._test_params.depth,
@@ -421,7 +422,7 @@ class ModelK0SoilTest(ModelK0):
 
         self._test_params.sigma_1_step = round(round(params["sigma_1_step"], 0)*0.050, 2)
 
-        num_steps = ((round(params["sigma_1_max"], 2)*1000) // (self._test_params.sigma_1_step*1000))
+        num_steps = (round(params["sigma_1_max"], 2) // (self._test_params.sigma_1_step*1000))
         self._test_params.sigma_1_max = num_steps * self._test_params.sigma_1_step
 
         self._test_modeling()
@@ -570,6 +571,16 @@ class ModelK0SoilTest(ModelK0):
         #             file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
         # except Exception as err:
         #     app_logger.exception(f"Проблема сохранения массива для plaxis {statment.current_test}")
+
+    def get_draw_params(self):
+        """Возвращает параметры отрисовки для установки на ползунки"""
+
+        params = {"OCR": {"value": self._test_params.OCR, "borders": [0, 3]},
+                  "sigma_1_step": {"value": round((self._test_params.sigma_1_step*1000)/(0.050*1000), 0),
+                                   "borders": [0, 100]},
+                  "sigma_1_max": {"value": self._test_params.sigma_1_max*1000, "borders": [600, 3000]}}
+
+        return params
 
     @staticmethod
     def _step_mode_modeling(sigma_1_spl, sgima_1_synth, sigma_3_spl, sgima_3_synth, params: 'AttrDict'):
