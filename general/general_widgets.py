@@ -45,8 +45,11 @@ class Float_Slider(QSlider):  # получает на входе размер о
 
     def set_value(self, val):
         if val:
+            self.disabled = False
+            self.setDisabled(False)
             self.setValue(val * self.slider_order)
         else:
+            self.disabled = True
             self.setDisabled(True)
 
 
