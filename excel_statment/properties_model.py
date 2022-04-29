@@ -365,7 +365,7 @@ class MechanicalProperties:
                     self.build_press, self.pit_depth, physical_properties.depth, self.K0),
 
                 "state_standard": MechanicalProperties.define_reference_pressure_array_state_standard(
-                    physical_properties.e, physical_properties.Il, physical_properties.type_ground)
+                    physical_properties.e, physical_properties.Il, physical_properties.type_ground, physical_properties.Ir)
             }
             if self.pressure_array["set_by_user"] is not None:
                 self.pressure_array["current"] = self.pressure_array["set_by_user"]
@@ -910,12 +910,17 @@ class MechanicalProperties:
         return dict_dilatancy(type_ground)
 
     @staticmethod
-    def define_reference_pressure_array_state_standard(e: float, Il: float, type_ground: int) -> list:
+    def define_reference_pressure_array_state_standard(e: float, Il: float, type_ground: int, Ir: float = 0) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
         e = e if e else 0.65
         Il = Il if Il else 0.5
 
-        if (type_ground == 1) or (type_ground == 2) or (type_ground == 3 and e <= 0.55) or (
+        Ir = 0 if not Ir else Ir
+
+        if type_ground == 9 or Ir >= 10:
+            return [50, 75, 100]
+
+        elif (type_ground == 1) or (type_ground == 2) or (type_ground == 3 and e <= 0.55) or (
                 type_ground == 8 and Il <= 0.25):
             return [100, 300, 500]
 

@@ -1,14 +1,17 @@
-import os
+import numpy as np
+import matplotlib.pyplot as plt
 
-def program_data_dir(path: str):
-    """Проверка наличия и создание пути в случае отсутствия"""
+def exponent(x, amplitude, slant):
+    """Функция построения экспоненты
+        Входные параметры: x - значение или массив абсцисс,
+                           amplitude - значение верхней асимптоты,
+                           slant - приведенный угол наклона (пологая - 1...3, резкая - 10...20 )"""
 
-    check_array = os.path.normcase(path).split("\\")
-    check_path = check_array[0]
+    k = slant/(max(x))
+    return amplitude*(-np.e**(-k*x) + 1)
 
-    for subdirectory in check_array[1:]:
-        check_path = f"{check_path}/{subdirectory}"
-        if not os.path.isdir(check_path):
-            os.mkdir(check_path)
 
-program_data_dir("C:/111/111/1111/11111/11111")
+x = np.linspace(0, 10, 1000)
+
+plt.plot(x, -exponent(x, 1, 1))
+plt.show()

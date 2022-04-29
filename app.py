@@ -240,7 +240,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.show()
 
         if check_local_version(f"{actual_version:.2f}"):
-            self.info("ВЫ ЗАПУСКАЕТЕ НОВУЮ ВЕРСИЮ"+f"{actual_version:.2f}")
+            self.info(f"ВЫ ЗАПУСКАЕТЕ НОВУЮ ВЕРСИЮ {actual_version:.2f}")
 
     def buttons_click(self):
 

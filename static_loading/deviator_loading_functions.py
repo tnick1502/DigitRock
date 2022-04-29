@@ -650,7 +650,7 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     min_E0 = point1_y / point1_x  # максимальный угол наклона петли
 
     if Eur < 1.1 * min_E0:
-        print("\nВНИМАНИЕ: Eur изменен!\n")
+        #print("\nВНИМАНИЕ: Eur изменен!\n")
         Eur = 1.1 * min_E0
         E0 = 1.1 * Eur
 
@@ -660,7 +660,7 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     point2_x = x[ip2x[0]]  # ???
 
     if ip2x[0] >= ip1[0]: # если точка 2 совпадает с точкой один или правее, то меняем точку 2 на предыдущую
-        print("\nВНИМАНИЕ: Eur изменен!\n")
+        #print("\nВНИМАНИЕ: Eur изменен!\n")
         ip2x[0] = ip1[0] - 1
         point2_x = x[ip2x[0]]
 

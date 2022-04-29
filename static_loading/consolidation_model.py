@@ -1142,7 +1142,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         k = sigma_3 / velocity
         if k <= 2:
             velocity = velocity / (2 / k) - 1
-        print(velocity)
+        #print(velocity)
         load_stage_time = round(sigma_3 / velocity, 2)
         load_stage_time_array = np.arange(1, load_stage_time, 1)
         time_max = np.random.uniform(20, 30)
@@ -1215,7 +1215,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             trajectory_start[i] = 'HC'
         trajectory = np.hstack((trajectory_start, trajectory))
 
-        print(len(time), len(action))
+        #print(len(time), len(action))
         data = {
             "Time": time,
             "Action": action,
