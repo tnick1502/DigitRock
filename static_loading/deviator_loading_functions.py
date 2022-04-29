@@ -1,8 +1,7 @@
 # coding: utf-8
 
 # In[34]:
-
-
+import copy
 import os
 
 from intersect import intersection
@@ -560,19 +559,58 @@ def form_kp(x: float, qf, k, xocr, xc, qocr, x50):
 def sensor_accuracy(x, y, qf, x50, xc):
     '''возвразщает зашумеленную функцию без шума в характерных точках'''
 
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    max_y = np.max(y)
+
     sh = np.random.uniform(-0.4, 0.4, len(x))
-    index_qf_half, = np.where(y >= np.max(y) / 2)
-    index_qf, = np.where(y >= np.max(y))
-    if xc > max(x):  # если хс последня точка в массиве или дальше
-        index_qf, = np.where(x >= max(x))
-    for i in range(len(y)):  # наложение шума кроме промежутков для характерных точек
-        if (i < index_qf_half[0] - 2) or ((i > index_qf_half[0] + 2) and ([i] < index_qf[0] - 2)) or (
-                i > index_qf[0] + 2):
-            if (y[i] + sh[i] < np.max(y)):
-                y[i] = y[i] + sh[i]
-            else:
-                y[i] = y[i] - np.random.uniform(0.05, 0.025)  # в районе максимума шум меньше первоначального
-    return y
+    index_qf_half, = np.where(y >= max_y / 2)
+    index_qf, = np.where(y >= max_y)
+
+    max_x = np.max(x)
+
+    if xc > max_x:  # если хс последня точка в массиве или дальше
+        index_qf, = np.where(x >= max_x)
+
+    y_res = y + sh
+
+    # пропускаем нужные точки
+    y_res[index_qf_half[0] - 2] = y[index_qf_half[0] - 2]
+    y_res[index_qf_half[0] - 1] = y[index_qf_half[0] - 1]
+    y_res[index_qf_half[0] - 0] = y[index_qf_half[0] - 0]
+    y_res[index_qf_half[0] + 1] = y[index_qf_half[0] + 1]
+    y_res[index_qf_half[0] + 2] = y[index_qf_half[0] + 2]
+
+    y_res[index_qf[0] - 2] = y[index_qf[0] - 2]
+    y_res[index_qf[0] - 1] = y[index_qf[0] - 1]
+    y_res[index_qf[0] - 0] = y[index_qf[0] - 0]
+    y_res[index_qf[0] + 1] = y[index_qf[0] + 1]
+    y_res[index_qf[0] + 2] = y[index_qf[0] + 2]
+
+    # в районе максимума шум меньше первоначального
+    indexes, = np.where(y_res > max_y)
+    if len(indexes) > 0:
+        for i in indexes:
+            y_res[i] = y[i] - np.random.uniform(0.05, 0.025)
+    # print(indexes, index_qf_half[0], index_qf[0])
+
+    # y_test = copy.deepcopy(y)
+    # for i in range(len(y_test)):  # наложение шума кроме промежутков для характерных точек
+    #     if (i < index_qf_half[0] - 2) or ((i > index_qf_half[0] + 2) and ([i] < index_qf[0] - 2)) or (
+    #             i > index_qf[0] + 2):
+    #         if (y_test[i] + sh[i] < np.max(y_test)):
+    #             y_test[i] = y_test[i] + sh[i]
+    #         else:
+    #             y_test[i] = y_test[i] - np.random.uniform(0.05, 0.025)  # в районе максимума шум меньше первоначального
+    #
+    # for i in range(len(y_test)):
+    #     errr = abs(y_test[i] - y_res[i])
+    #     if errr > 0.05:
+    #         print(i, errr)
+
+    return y_res
+
 
 
 def loop(x, y, Eur, y_rel_p, point2_y):
@@ -1170,8 +1208,6 @@ def curve(qf, e50, **kwargs):
         amount_points = amount_points*10
 
 
-
-
     qf_old = qf
     if qf < 150:
         k_low_qf = 250 / qf
@@ -1333,7 +1369,10 @@ def curve(qf, e50, **kwargs):
     else:
         y += deviator_loading_deviation(x, y, xc)
 
+    import time
+    start_time = time.time()
     y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
+    # print("--- %s seconds ---" % (time.time() - start_time))
     y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
 
     #
@@ -1351,7 +1390,6 @@ def curve(qf, e50, **kwargs):
         y_ocr = y_ocr / k
         y = copy.deepcopy(y_ocr)
 
-
     y1_l = y1_l + np.random.uniform(-0.4, 0.4, len(y1_l))  # шум на петле
     y2_l = y2_l + np.random.uniform(-0.4, 0.4, len(y2_l))  # шум на петле
     y1_l = discrete_array(y1_l, 1)  # ступени на петле
@@ -1368,8 +1406,36 @@ def curve(qf, e50, **kwargs):
     point3_x_index = index_point1_x[0] + len(x_loop) - 2  # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
     y[0] = 0.
 
-    #current_Eur = define_eur(x, y, [point1_x_index - 1, point2_x_index - 1, point3_x_index + 1])
+    # current_Eur = define_eur(x, y, [point1_x_index - 1, point2_x_index - 1, point3_x_index + 1])
     # print(f"Еур ПОСЛЕ ПРИСОЕДИНЕНИЯ: {current_Eur} : ОШИБКА : {abs(Eur - current_Eur)/Eur*100}")
+    # with open('x_old.txt', 'w') as file:
+    #     for item in x_old:
+    #         file.write(str(item) + '\n')
+    #
+    # with open('x.txt', 'w') as file:
+    #     for item in x:
+    #         file.write(str(item) + '\n')
+    #
+    # with open('y.txt', 'w') as file:
+    #     for item in y:
+    #         file.write(str(item) + '\n')
+    # print(point1_x, point2_x,point3_x,point1_x_index, point2_x_index, point3_x_index)
+    # with open('x_old.txt', 'r') as file:
+    #     input = file.readlines()
+    #     x_old = np.asarray([float(item) for item in input])
+    # with open('x.txt', 'r') as file:
+    #     input = file.readlines()
+    #     x = np.asarray([float(item) for item in input])
+    # with open('y.txt', 'r') as file:
+    #     input = file.readlines()
+    #     y = np.asarray([float(item) for item in input])
+    #
+    # point1_x = 0.004394139186956799
+    # point2_x = 0.004094137716361355
+    # point3_x = 0.005332379080289609
+    # point1_x_index = 1495
+    # point2_x_index = 1596
+    # point3_x_index = 2014
 
     # ограничение на хс (не меньше чем x_given)
     if xc <= 0.025:
@@ -1633,6 +1699,7 @@ def curve(qf, e50, **kwargs):
         time = [i*3 for i in range(len(x))]
 
     if U:
+        # print('u', U)
         old_U = U
         if U < 150:
             k_low_u = 250/U
@@ -1668,6 +1735,19 @@ def curve(qf, e50, **kwargs):
         y_U += abs(y_U[0])
         y_U[0] = 0.
 
+        y1_U, v_d_given = volumetric_deformation(x_old, x_given, m_given, xc, v_d2, x_end, angle_of_dilatacy,
+                                               angle_of_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x,
+                                               point2_x,
+                                               point3_x)
+        y1_U = y1_U[:index_x2[0]]
+        y1_proiz_U = (y1_U[1] - y1_U[0]) / (x_U[1] - x_U[0])
+        y1_start = spline([x_start[0], 0], [0, y1_bias], x_start, 0, y1_proiz_U,
+                          k=3)  # метрвый ход штока кривой обьемной деформации
+        y1_U = np.hstack((y1_start, y1_U + y1_bias))  # добавление мертвого хода штока в функцию обьемной деформации
+        y1_U[0] = 0.  # искусственное зануление первой точки
+        y2_U = y1_U
+
+
         """u = exponent(x[len(x_start):np.argmax(y)] - x[len(x_start)], U, np.random.uniform(8, 10)) + amplitude
         y_start = np.linspace(0, amplitude, len(x_start))
         u *= (np.max(u)/(U+amplitude))
@@ -1693,7 +1773,7 @@ def curve(qf, e50, **kwargs):
         y_U[len(x_start) + 1] = amplitude
         y_U[len(x_start) - 1] = amplitude"""
 
-        return x, y, y1, y2, indexs_loop, time, len(x_start)
+        return x_U, y_U, y1_U, y2_U, indexs_loop, time, len(x_start)
 
     return x, y, y1, y2, indexs_loop, time, len(x_start)
 
@@ -1913,10 +1993,9 @@ if __name__ == '__main__':
     #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
     # (596.48, 382.8)
 
-    x, y, y1, y2, indexs_loop, time, lenlen = curve(30, 500, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                         max_time=3000, angle_of_dilatacy=6, y_rel_p=12, point2_y=2)
-    print(len(x))
-    print(time)
+    x, y, y1, y2, indexs_loop, time, lenlen = curve(300, 20000, Eur=50000)
+    # print(len(x))
+    # print(time)
     #
     # i, = np.where(x >= max(x) - 0.15)
     # x = x[i[0]:] - x[i[0]]
