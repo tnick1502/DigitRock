@@ -262,6 +262,8 @@ def define_final_deformation(p, Eref, m, pref=0.15):
         p_i += step
         E_i = Eref * ((p_i) / (pref)) ** m
         eps = step / E_i + eps
+    if eps >= 0.3:
+        eps = np.random.uniform(0.3, 0.35)
     return -eps
 
 
@@ -369,8 +371,8 @@ def ordering(time_model, strain_model):
 if __name__ == "__main__":
     e = define_final_deformation(0.3, 1, 0.3)
 
-    x1, y1, a, b = function_consalidation(e, Cv=0.1, reverse=True, max_time=130.3552717734859, point_time=0.001,
-                                          Ca=-0.01)
+    x1, y1, a, b = function_consalidation(e, Cv=0.021, reverse=True, max_time=130.3552717734859, point_time=0.001,
+                                          Ca=-0.002)
     xsqrt = np.array([x**0.5 for x in x1])
     xnormal = np.array([x ** 2 for x in xsqrt])
     # vol_test()
