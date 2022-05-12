@@ -144,7 +144,7 @@ def function_consalidation(final_volume_strain,
     time_line_log = np.log10(time_line_sqrt ** 2)
 
     # Расчет t_creep_sqrt, volume_strain_creep
-    t_creep_log = t_90_log + abs(max_time_log - t_90_log)*np.random.uniform(0.7, 0.7) # 0.4 0.6
+    t_creep_log = t_90_log + abs(max_time_log - t_90_log)*np.random.uniform(0.6, 0.7) # 0.4 0.6
     t_creep_sqrt = (10**t_creep_log)**0.5
     volume_strain_creep = Ca*t_creep_log + final_volume_strain - Ca * max_time_log
 
@@ -154,7 +154,7 @@ def function_consalidation(final_volume_strain,
     min_volume_strain = Ca*t_90_log + final_volume_strain - Ca * max_time_log # последний линейный участок
 
     #volume_strain_90 = abs(max_volume_strain_90-min_volume_strain) * np.random.uniform(0.3, 0.35) + min_volume_strain
-    volume_strain_90 = abs(max_volume_strain_90 - min_volume_strain) * np.random.uniform(0.1, 0.13) + min_volume_strain
+    volume_strain_90 = abs(max_volume_strain_90 - min_volume_strain) * np.random.uniform(0.14, 0.15) + min_volume_strain #(0.1, 0.13)
     # volume_strain_90 = max_volume_strain_90
 
     yP = np.random.uniform(load_stage_strain - 0.3 * abs(volume_strain_90 - load_stage_strain),
@@ -242,12 +242,12 @@ def function_consalidation(final_volume_strain,
     # print(f"final_volume_strain : {final_volume_strain - delta}; result : {y_time[-1]}")
     # print(f"max_time : {max_time_sqrt**2}; result : {x_time[-1]}")
     # print(f"x_time : {x_time[0]}")
-    y_time -= consolidation_deviation(x_time, t_90_sqrt, deviation)
-    y_time += np.random.uniform(-0.0004, 0.0004, len(y_time))
+    # y_time -= consolidation_deviation(x_time, t_90_sqrt, deviation)
+    # y_time += np.random.uniform(-0.0004, 0.0004, len(y_time))
     # y_time = discrete_array(y_time, 0.0008)
     #return x_time, y_time
     return x_time, y_time, np.array([10**t_90_log, 10**t_creep_log, 10**max_time_log, (xP**2),  (xK**2)]), \
-         np.array([volume_strain_90, volume_strain_creep, final_volume_strain, yP, yK])
+         np.array([volume_strain_90, volume_strain_creep, final_volume_strain, yP, yK])-delta
     # return x_time, y_time, [t_90_sqrt, max_time_sqrt, xP, xK], \
     #        [volume_strain_90,
     #                  final_volume_strain, yP, yK]
@@ -284,12 +284,13 @@ def vol_test():
                     for n in range(len(Ca_TEST)):
                         print(f"FINALE DEFORMATION = {define_final_deformation(P_TEST[i], Eref_TEST[k], M_TEST[l])}")
                         x1, y1, xp, yp = function_consalidation(define_final_deformation(P_TEST[i], Eref_TEST[k], M_TEST[l]), Cv=Cv_TEST[m], Ca=Ca_TEST[n],
-                                                                reverse=True, max_time=1200,
+                                                                reverse=True, max_time=1300,
                                                                 point_time=0.001)
 
                         plt.figure(str(i + 1) + str(k + 1) + str(l + 1) + str(m + 1)+ str(n + 1))
                         print(str(i + 1) + str(k + 1) + str(l + 1) + str(m + 1)+ str(n + 1))
-                        plt.plot(np.log10(x1+1), y1)
+                        # plt.plot(np.log10(x1+1), y1)
+                        plt.plot(x1, y1)
                         plt.scatter(xp, yp, color=['yellow', 'green','blue', 'red', 'pink'] )
                         plt.savefig(str(i + 1) + str(k + 1) + str(l + 1) + str(m + 1) + str(n + 1) + '.png')
 
@@ -369,9 +370,11 @@ def ordering(time_model, strain_model):
     return time, np.array(strain)
 
 if __name__ == "__main__":
-    e = define_final_deformation(0.3, 1, 0.3)
 
-    x1, y1, a, b = function_consalidation(e, Cv=0.021, reverse=True, max_time=130.3552717734859, point_time=0.001,
+    e = define_final_deformation(0.3, 1, 0.8)
+    print('e', e)
+
+    x1, y1, a, b = function_consalidation(e, Cv=0.008, reverse=True, max_time=1300.3552717734859, point_time=0.001,
                                           Ca=-0.002)
     xsqrt = np.array([x**0.5 for x in x1])
     xnormal = np.array([x ** 2 for x in xsqrt])
@@ -403,13 +406,13 @@ if __name__ == "__main__":
 
     axes[1].plot((x1), y1)
     axes[1].set_xscale("log")
-    #axes[1].scatter(a, b, color=['yellow', 'green', 'blue', 'red', 'pink'])
+    axes[1].scatter(a, b, color=['yellow', 'green', 'blue', 'red', 'pink'])
 
     axes[0].plot(xsqrt, y1)
     plt.show()
 
-    # for i in range(len(x1)):
-    #     print(f"{x1[i] ** 0.5}\t{y1[i]}".replace(".",","))
+    for i in range(len(x1)):
+        print(f"{x1[i] ** 0.5}\t{y1[i]}".replace(".",","))
 
 '''    e=define_final_deformation(0.3, 1, 0.3)
     x1, y1, a, b= function_consalidation(e, Cv=0.1, reverse=True, max_time=130.3552717734859, point_time=0.001, Ca=-0.1)
