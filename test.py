@@ -11,19 +11,15 @@ async def get_pages_data(site_name, page):
 
 async def get(site_name):
     pages = await get_pages(site_name)
-    all_data =[]
     for page in pages:
         data = await get_pages_data(site_name, page)
-        all_data.append(data)
-    return all_data
+        print(data)
 
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-
+async def main():
     tasks = []
     for i in ["site_1", "site_2", "site_3"]:
-        tasks.append(asyncio.ensure_future(get(i)))
+        tasks.append(asyncio.create_task(get(i)))
+    await asyncio.gather(*tasks)
 
-    res = loop.run_until_complete(asyncio.gather(*tasks))
-    print(res)
-    loop.close()
+if __name__ == "__main__":
+    asyncio.run(main())

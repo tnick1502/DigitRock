@@ -380,6 +380,17 @@ class MechanicalProperties:
 
             if test_mode == "Трёхосное сжатие КН":
                 self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
+                if max(self.u) <= 5:
+                    self.u[0] = np.random.uniform(1.6, 2.5)
+                    self.u[1] = np.random.uniform(2.6, 3)
+                else:
+                    if self.u[0] <= 1.5:
+                        self.u[0] = np.random.uniform(1.6, 2.9)
+
+                    if (self.u[1] <= 1.5) or (self.u[1] <= self.u[0]):
+                        self.u[1] = np.random.uniform(3.6, 5)
+
+
 
     @staticmethod
     def round_sigma_3(sigma_3, param=5):

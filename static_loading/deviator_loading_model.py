@@ -423,9 +423,9 @@ class ModelTriaxialDeviatorLoading:
         self._test_result.E = ModelTriaxialDeviatorLoading.define_E(self._test_data.strain_cut,
                                   self._test_data.deviator_cut, self._test_params.E_processing_points_index)
 
-        self._test_result.max_pore_pressure = np.round(np.max(self._test_data.pore_pressure_cut))
+        self._test_result.max_pore_pressure = np.round(np.max(self._test_data.pore_pressure_cut), 1)
 
-        if self._test_result.max_pore_pressure <= 2:
+        if self._test_result.max_pore_pressure <= 1.3:
             self._test_result.max_pore_pressure = 0
 
         self._test_result.Eps50 = (self._test_result.qf*0.5) / self._test_result.E50
