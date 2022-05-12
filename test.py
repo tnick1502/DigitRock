@@ -1,17 +1,29 @@
-import numpy as np
-import matplotlib.pyplot as plt
+import asyncio
 
-def exponent(x, amplitude, slant):
-    """Функция построения экспоненты
-        Входные параметры: x - значение или массив абсцисс,
-                           amplitude - значение верхней асимптоты,
-                           slant - приведенный угол наклона (пологая - 1...3, резкая - 10...20 )"""
+async def get_pages(site_name):
+    await asyncio.sleep(1)
+    print(f"get pages for {site_name}")
+    return range(1, 4)
 
-    k = slant/(max(x))
-    return amplitude*(-np.e**(-k*x) + 1)
+async def get_pages_data(site_name, page):
+    await asyncio.sleep(1)
+    return f"data from page {page}, ({site_name})"
 
+async def get(site_name):
+    pages = await get_pages(site_name)
+    all_data =[]
+    for page in pages:
+        data = await get_pages_data(site_name, page)
+        all_data.append(data)
+    return all_data
 
-x = np.linspace(0, 10, 1000)
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
 
-plt.plot(x, -exponent(x, 1, 1))
-plt.show()
+    tasks = []
+    for i in ["site_1", "site_2", "site_3"]:
+        tasks.append(asyncio.ensure_future(get(i)))
+
+    res = loop.run_until_complete(asyncio.gather(*tasks))
+    print(res)
+    loop.close()
