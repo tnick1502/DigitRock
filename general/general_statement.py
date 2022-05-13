@@ -11,7 +11,7 @@ import numpy as np
 from openpyxl import load_workbook
 
 # from general.excel_functions import read_customer, form_xlsx_dictionary, table_data
-from general.general_functions import create_json_file, read_json_file, unique_number
+from general.general_functions import create_json_file, read_json_file, unique_number, number_format
 from general.initial_tables import Table
 from general.report_general_statment import save_report
 import xlrd
@@ -628,7 +628,8 @@ class StatementGenerator(QDialog):
             if str(count) != 'None' and str(count) != '*' and str(count) != '':
                 for i in range(len(matrix)):
                     try:
-                        matrix[i][j] = self.number_format(self.float_float(matrix[i][j]), characters_number=int(count), split='.')
+                        matrix[i][j] = number_format(self.float_float(matrix[i][j]),
+                                                          characters_number=int(count), split=',')
 
                     except:
                         pass
@@ -649,7 +650,7 @@ class StatementGenerator(QDialog):
             return a
         except ValueError:
             try:
-                a = float(a.replace(",", "."))
+                a = float(a.replace(",", '.'))
                 return a
             except ValueError:
                 return a

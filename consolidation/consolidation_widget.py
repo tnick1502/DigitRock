@@ -33,6 +33,9 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
+
+    MIN_SLIDER_LEN = 10  # in pnts
+
     def __init__(self, model=None):
         super().__init__()
 
@@ -63,6 +66,9 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
 
 
         self.consolidation_sliders.signal[object].connect(self._consolidation_sliders_moove)
+
+        self._slider_cut_low_best_position = 0
+        self._slider_cut_high_best_position = self.MIN_SLIDER_LEN + 1
 
         self._create_UI()
         self._wigets_connect()
@@ -123,11 +129,24 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
 
     def _cut_slider_consolidation_moove(self):
         if Consolidation_models[statment.current_test].check_none():
-            if (int(self.consolidation.slider_cut.high()) - int(self.consolidation.slider_cut.low())) >= 50:
-                Consolidation_models[statment.current_test].consolidation.change_borders(int(self.consolidation.slider_cut.low()),
-                                                            int(self.consolidation.slider_cut.high()))
-                self._plot_consolidation_sqrt()
-                self._plot_consolidation_log()
+
+            _left = int(self.consolidation.slider_cut.low())
+            _right = int(self.consolidation.slider_cut.high())
+
+            curr_len = _right - _left
+
+            if curr_len < self.MIN_SLIDER_LEN:
+                _left = int(self._slider_cut_low_best_position)
+                _right = int(self._slider_cut_high_best_position)
+                # self.consolidation.slider_cut.setLow(self._slider_cut_low_best_position)
+                # self.consolidation.slider_cut.setHigh(self._slider_cut_high_best_position)
+
+            Consolidation_models[statment.current_test].change_borders(_left, _right)
+            self._plot_consolidation_sqrt()
+            self._plot_consolidation_log()
+
+            self._slider_cut_low_best_position = int(_left)
+            self._slider_cut_high_best_position = int(_right)
 
     def _consolidation_interpolation_type(self, button):
         """Смена метода интерполяции консолидации"""
@@ -157,11 +176,7 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
 
     def _interpolate_slider_consolidation_release(self):
         """Обработка консолидации при окончании движения слайдера"""
-        if Consolidation_models[statment.current_test].check_none():
-            Consolidation_models[statment.current_test].change_borders(int(self.consolidation.slider_cut.low()),
-                                                     int(self.consolidation.slider_cut.high()))
-            self._plot_consolidation_sqrt()
-            self._plot_consolidation_log()
+        self._cut_slider_consolidation_moove()
 
     def _canvas_click(self, event):
         """Метод обрабатывает нажатие на канвас"""
