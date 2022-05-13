@@ -32,11 +32,11 @@ class Float_Slider(QSlider):  # получает на входе размер о
         if minimum <= 0:
             self.setMinimum(0)
             self.slider_order = 100 / (maximum)
-            self.setMaximum(maximum * self.slider_order)
+            self.setMaximum(int(maximum * self.slider_order))
         else:
             self.slider_order = max([self.order(minimum), 100 / (maximum - minimum)])
-            self.setMinimum(minimum * self.slider_order)
-            self.setMaximum(maximum * self.slider_order)
+            self.setMinimum(int(minimum * self.slider_order))
+            self.setMaximum(int(maximum * self.slider_order))
 
     def current_value(self):
         if self.disabled:
@@ -45,7 +45,7 @@ class Float_Slider(QSlider):  # получает на входе размер о
 
     def set_value(self, val):
         if val:
-            self.setValue(val * self.slider_order)
+            self.setValue(int(val * self.slider_order))
         else:
             self.setDisabled(True)
 

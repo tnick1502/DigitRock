@@ -20,4 +20,12 @@ SoilTest - программы моделирования.
     4. В случае запуска генерации опыта, запускается интерфейс с ползунками для подгона параметров. Из ведомости данные
         по опыту передаются в матмодель, там генерируются основные параметры, после чего они отправляются на ползунки
 
+Для установки:
+1. Установить requirements.txt
+2. Проверить версию sip-pyqt5
+3. Для linux:
+	sudo apt-get install python3-pyqt5  
+	sudo apt-get install pyqt5-dev-tools
+	sudo apt-get install qttools5-dev-tools
+
 developed by Tishin Nick
