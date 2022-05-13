@@ -823,6 +823,10 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             set_cell_data(self.tab_1.path, ("ID" + str(number), (number, 237)), test_result["fail_cycle"],
                           sheet="Лист1")
 
+            if statment.general_parameters.test_mode == "Демпфирование":
+                set_cell_data(self.tab_1.path, ("HM" + str(number), (number, 220)), test_result["damping_ratio"],
+                              sheet="Лист1")
+
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")

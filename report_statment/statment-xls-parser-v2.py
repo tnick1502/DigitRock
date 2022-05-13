@@ -420,6 +420,7 @@ if __name__ == "__main__":
 
     # Построение графика
     x.update()
+    print(str_reports())
     plot = x.get_interval_count(6)
     import matplotlib.pyplot as plt
 
