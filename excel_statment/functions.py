@@ -10,10 +10,8 @@ def float_df(x):
     if str(x) != "nan" and str(x) != "NaT":
         try:
             return float(x)
-        except ValueError:
-            return x
-        except TypeError:
-            return x
+        except:
+            return None
     else:
         return None
 
