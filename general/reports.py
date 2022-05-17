@@ -629,8 +629,11 @@ def test_mode_vibration_creep(canvas, test_parameter):
     h = test_parameter["h"]
 
     frequency = ""
-    for i in range(len(test_parameter["frequency"])):
-        frequency += zap(test_parameter["frequency"][i], 1) + "; "
+    if len(test_parameter["frequency"]) == 1:
+        frequency = zap(test_parameter["frequency"][0], 1)
+    else:
+        for i in range(len(test_parameter["frequency"])):
+            frequency += zap(test_parameter["frequency"][i], 1) + "; "
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", test_parameter["Rezhim"], "", "", "", "", "", ""],
@@ -3073,11 +3076,14 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
     parameter_table(canvas, Data_phiz, Lab)
+    test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"
     test_mode_vibration_creep(canvas, test_parameter)
 
     result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]])
 
     canvas.showPage()
+
+    test_parameter['Oborudovanie'] = "Wille Geotechnik 13-HG/020:001"
 
     main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
@@ -3104,7 +3110,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
-
+    test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"
     main_frame(canvas, path, Data_customer, code, f"1/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
@@ -3113,7 +3119,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     parameter_table(canvas, Data_phiz, Lab)
     test_mode_vibration_creep(canvas, test_parameter)
 
-
+    test_parameter['Oborudovanie'] = "Wille Geotechnik 13-HG/020:001"
 
     result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]])
 
