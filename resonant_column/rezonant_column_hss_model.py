@@ -437,6 +437,10 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
             resonant_curves[i] = ModelRezonantColumnSoilTest.generate_resonant_curve(frequency_array,
                                                                                      resonant_frequency_array[i],
                                                                                      shear_strain[i])
+            k = shear_strain[i] / np.max(resonant_curves[i])
+            resonant_curves[i] *= k
+            resonant_curves[i][np.argmax(resonant_curves[i])] = shear_strain[i]
+
             frequency[i] = frequency_array
 
         return frequency, resonant_curves
