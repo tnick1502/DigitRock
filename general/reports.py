@@ -2690,8 +2690,8 @@ def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
 
     test_parameter.h = 100
     test_parameter.d = 50
-    test_parameter.Rezhim = "Статическое нагружение"
-    test_parameter.Oborudovanie = "АСИС ГТ.2.0.5"
+    test_parameter.Rezhim = "Нагружение динамическим крутящим моментом"
+    test_parameter.Oborudovanie = "Система измерительная 'АСИС' резонансная колонка, динамический прибор трехосного нагружения"
 
     code = SaveCode(version)
 

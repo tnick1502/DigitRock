@@ -84,6 +84,11 @@ class PhysicalProperties:
             else:
                 self.complete_flag = False
 
+        try:
+            self.ige = str(int(float(self.ige)))
+        except:
+            pass
+
         self.sample_number = string
 
         self.type_ground = PhysicalProperties.define_type_ground(self._granulometric_to_dict(), self.Ip,
