@@ -469,7 +469,7 @@ def test_mode_rc(canvas, ro, Data):
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", Data.Rezhim, "", "", "", "", "", ""],
-               [Paragraph('''<p>Опорное давление p<sup rise="2.5" size="5">ref</sup>, МПа:</p>''', LeftStyle), "", zap(Data.reference_pressure, 2)],
+               [Paragraph('''<p>Опорное давление p<sup rise="2.5" size="5">ref</sup>, МПа:</p>''', LeftStyle), "", zap(Data.reference_pressure, 3)],
                ["Оборудование:", "", Data.Oborudovanie],
                ["Параметры образца:", "", "Высота, мм:", zap(Data.h, 2), "Диаметр, мм:", zap(Data.d, 2), Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(ro, 2)]], colWidths=19.444444* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
