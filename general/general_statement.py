@@ -286,6 +286,14 @@ class StatementGenerator(QDialog):
                                            ["customer", "object_name", "data", "accreditation"]]], "Stretch")
             self.text_file_path.setText(self.path)
             self.statment_data = self.form_excel_dictionary(self.path, last_key='IV')
+            self.accreditation = self.customer["accreditation"]
+            self.accreditation_key = "новая"
+
+            if self.accreditation in ["AO", "АО"]:
+                self.accreditation_key = "новая"
+            elif self.accreditation == "ООО" or self.accreditation == "OOO":
+                self.accreditation_key = "2"
+
         except FileNotFoundError as error:
             print(error)
 
@@ -375,7 +383,8 @@ class StatementGenerator(QDialog):
                         if save_file_pass:
                             save_report(titles, data, scales, data_report, customer_data_info, customer_data,
                                         statement_title, save_file_pass, unique_number(length=7, postfix="-СВД"),
-                                        save_file_name)
+                                        save_file_name, accred1={'accreditation': self.accreditation,
+                                                                'accreditation_key': self.accreditation_key})
                             QMessageBox.about(self, "Сообщение", "Успешно сохранено")
                     except PermissionError:
                         QMessageBox.critical(self, "Ошибка", "Закройте файл для записи", QMessageBox.Ok)
