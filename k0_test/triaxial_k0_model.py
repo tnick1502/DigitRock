@@ -540,7 +540,7 @@ class ModelK0SoilTest(ModelK0):
             #   реконсолидации нет
             reconsolidation_dict = None
             #   консолидация стандартная
-            consolidation_dict = None  # ModelK0SoilTest.dictionary_without_VFS(sigma_3=100, velocity=49)
+            consolidation_dict = ModelK0SoilTest.dictionary_without_VFS(sigma_3=100, velocity=49)
             #
             #   Подготовка под наличие разгрузки
             reload_points = [0, 0, 0]
