@@ -104,12 +104,13 @@ class PhysicalProperties:
             self.laboratory_number = str(int(self.laboratory_number))
 
         try:
-            borehole = float(self.borehole)
+            if '_' not in self.borehole:
+                borehole = float(self.borehole)
 
-            if borehole % 1 < 0.001:
-                self.borehole = str(int(borehole))
-            else:
-                self.borehole = str(borehole)
+                if borehole % 1 < 0.001:
+                    self.borehole = str(int(borehole))
+                else:
+                    self.borehole = str(borehole)
         except:
             pass
 
