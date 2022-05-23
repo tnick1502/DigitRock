@@ -535,12 +535,15 @@ class ModelK0SoilTest(ModelK0):
                                                                                           reload_points,
                                                                                           pore_pressure=vertical_pressure,
                                                                                           time=time)
+            main_dict = ModelK0SoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
+                                                                             consolidation_dict,
+                                                                             deviator_loading_dict)
         else:
             # Формируем словари с данными
             #   реконсолидации нет
             reconsolidation_dict = None
             #   консолидация стандартная
-            consolidation_dict = ModelK0SoilTest.dictionary_without_VFS(sigma_3=100, velocity=49)
+            consolidation_dict = ModelK0SoilTest.dictionary_without_VFS(sigma_3=100+np.random.uniform(0.5, 1.5))
             #
             #   Подготовка под наличие разгрузки
             reload_points = [0, 0, 0]
@@ -555,9 +558,9 @@ class ModelK0SoilTest(ModelK0):
                                                                                      reload_points,
                                                                                      action, time)
 
-        main_dict = ModelK0SoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
-                                                                         consolidation_dict,
-                                                                         deviator_loading_dict)
+            main_dict = ModelK0SoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
+                                                                             consolidation_dict,
+                                                                             deviator_loading_dict, no_last_start=True)
 
         ModelK0SoilTest.text_file(file_path, main_dict)
 
@@ -777,70 +780,70 @@ class ModelK0SoilTest(ModelK0):
 
     @staticmethod
     def dictionary_without_VFS(sigma_3=100, velocity=49):
-        # Создаем массив набора нагрузки до обжимающего давления консолидации
-        # sigma_3 -= effective_stress_after_reconsolidation
-        k = sigma_3 / velocity
-        if k <= 2:
-            velocity = velocity / (2 / k) - 1
-        load_stage_time = round(sigma_3 / velocity, 2)
-        load_stage_time_array = np.arange(1, load_stage_time, 1)
-        time_max = np.random.uniform(20, 30)
-        time_array = np.arange(0, time_max, 1)
-        # Добавим набор нагрузки к основным массивам
-        time = np.hstack((load_stage_time_array, time_array + load_stage_time_array[-1]))
 
-        load_stage_cell_press = np.linspace(0, sigma_3, len(load_stage_time_array) + 1)
-        cell_press = np.hstack((load_stage_cell_press[1:], np.full(len(time_array), sigma_3))) + \
-                     np.random.uniform(-0.1, 0.1, len(time))
+        time = [np.random.uniform(10.0, 15.0)]
+        action = ['Start']
+        action_changed = ['True']
+        trajectory = ['ReconsolidationWoDrain']
 
-        final_volume_strain = np.random.uniform(0.14, 0.2)
-        load_stage_cell_volume_strain = exponent(load_stage_time_array[:-1], final_volume_strain,
-                                                 np.random.uniform(1, 1))
-        # load_stage_cell_volume_strain[0] = 0
-        cell_volume_strain = np.hstack((load_stage_cell_volume_strain,
-                                        np.full(len(time_array) + 1, final_volume_strain))) * np.pi * (19 ** 2) * 76 + \
-                             np.random.uniform(-0.1, 0.1, len(time))
-        cell_volume_strain[0] = 0
-        vertical_press = cell_press + np.random.uniform(-0.1, 0.1, len(time))
+        time.append(time[-1])
+        action.append('LoadStage')
+        action_changed.append('')
+        trajectory.append(trajectory[-1])
 
-        # На нэтапе нагружения 'LoadStage', на основном опыте Stabilization
-        load_stage = ['LoadStage' for _ in range(len(load_stage_time_array))]
-        wait = ['Wait' for _ in range(len(time_array))]
-        action = load_stage + wait
+        time.append(time[-1]+np.random.uniform(1.0, 2.0))
+        action.append('LoadStage')
+        action_changed.append('True')
+        trajectory.append(trajectory[-1])
 
-        action_changed = ['' for _ in range(len(time))]
-        action_changed[len(load_stage_time_array) - 1] = "True"
-        action_changed[-1] = 'True'
+        time.append(time[-1])
+        action.append('Wait')
+        action_changed.append('')
+        trajectory.append(trajectory[-1])
 
-        # Значения на последнем LoadStage и Первом Wait (следующая точка) - равны
-        cell_press[len(load_stage)] = cell_press[len(load_stage) - 1]
-        vertical_press[len(load_stage)] = vertical_press[len(load_stage) - 1]
-        cell_volume_strain[len(load_stage)] = cell_volume_strain[len(load_stage) - 1]
+        time.append(time[-1] + np.random.uniform(4.0, 5.0))
+        action.append('Wait')
+        action_changed.append('True')
+        trajectory.append('Consolidation')
 
-        trajectory = np.full(len(time), 'ReconsolidationWoDrain')
-        trajectory[-1] = "CTC"
+        time.append(time[-1])
+        action.append('LoadStage')
+        action_changed.append('')
+        trajectory.append('Consolidation')
 
-        # Подключение запуска опыта
-        time_start = [time[0]]
-        time = np.hstack((time_start, time))
+        rnd = 3#np.random.randint(3, 3)
+        exp_grid = np.linspace(0, rnd - 1, rnd)
+        vertical_press_exp = exponent(exp_grid, sigma_3, slant=20)
+        vertical_press = np.zeros_like(time)
+        vertical_press = np.hstack((vertical_press, vertical_press_exp))
 
-        action_start = ['Start']
-        action = np.hstack((action_start, action))
+        time_load = [np.random.uniform(5.0, 6.0), np.random.uniform(9.0, 11.0), np.random.uniform(20.0, 31.0),
+                     np.random.uniform(40.0, 46.0), np.random.uniform(49.0, 51.0)]
 
-        action_changed_start = ['True']
-        action_changed = np.hstack((action_changed_start, action_changed))
+        for i in range(rnd):
+            time.append(time[-1] + time_load[i])
 
-        cell_press_start = [cell_press[0]]
-        cell_press = np.hstack((cell_press_start, cell_press))
+        action = np.hstack((np.asarray(action), np.full(rnd, 'LoadStage')))
+        action_changed = np.hstack((np.asarray(action_changed), np.full(rnd, '')))
+        trajectory = np.hstack((np.asarray(trajectory), np.full(rnd, 'Consolidation')))
 
-        cell_volume_strain_start = [cell_volume_strain[0]]
-        cell_volume_strain = np.hstack((cell_volume_strain_start, cell_volume_strain))
+        time = np.hstack((np.asarray(time), np.asarray(time[-1])))
+        action = np.hstack((action, ['LoadStage']))
+        action_changed = np.hstack((action_changed, ['True']))
+        trajectory = np.hstack((trajectory, ['Consolidation']))
+        vertical_press = np.hstack((vertical_press, np.asarray(vertical_press[-1])))
 
-        vertical_press_start = [vertical_press[0]]
-        vertical_press = np.hstack((vertical_press_start, vertical_press))
+        time = np.hstack((time, np.asarray(time[-1])))
+        action = np.hstack((action, ['Stabilization']))
+        action_changed = np.hstack((action_changed, ['']))
+        trajectory = np.hstack((trajectory, ['Consolidation']))
+        vertical_press = np.hstack((vertical_press, np.asarray(vertical_press[-1])))
 
-        trajectory_start = [trajectory[0]]
-        trajectory = np.hstack((trajectory_start, trajectory))
+        time = np.hstack((time, np.asarray(time[-1]) + np.random.uniform(1.0, 2.0)))
+        action = np.hstack((action, ['Stabilization']))
+        action_changed = np.hstack((action_changed, ['True']))
+        trajectory = np.hstack((trajectory, ['CTC']))
+        vertical_press = np.hstack((vertical_press, np.asarray(vertical_press[-1])))
 
         data = {
             "Time": time,
@@ -850,8 +853,8 @@ class ModelK0SoilTest(ModelK0):
             "SampleDiameter_mm": np.round(np.full(len(time), 38)),
             "Deviator_kPa": np.full(len(time), 0),
             "VerticalDeformation_mm": np.full(len(time), 0),
-            "CellPress_kPa": cell_press,
-            "CellVolume_mm3": cell_volume_strain,
+            "CellPress_kPa": choices([-0.5221, 0, 0.5221, 2*0.5221], k=len(vertical_press)),
+            "CellVolume_mm3": np.zeros_like(vertical_press),
             "PorePress_kPa": np.full(len(time), 0),
             "PoreVolume_mm3": np.full(len(time), 0),
             "VerticalPress_kPa": vertical_press,
@@ -987,13 +990,16 @@ class ModelK0SoilTest(ModelK0):
                 action_changed.append('')
         action_changed.append('')
 
+        deviator = np.round(vertical_pressure, 4) + np.random.uniform(-0.1, 0.1, len(vertical_pressure))
+        deviator[0] = 0.0
+
         data = {
             "Time": time,
             "Action": action,
             "Action_Changed": action_changed,
             "SampleHeight_mm": np.round(np.full(len(time), 76)),
             "SampleDiameter_mm": np.round(np.full(len(time), 38)),
-            "Deviator_kPa": np.round(vertical_pressure, 4) + np.random.uniform(-0.1, 0.1, len(vertical_pressure)),
+            "Deviator_kPa": deviator,
             "VerticalDeformation_mm": np.zeros_like(vertical_pressure),
             "CellPress_kPa": choices([-0.5221, 0, 0.5221, 2*0.5221], k=len(vertical_pressure)),
             "CellVolume_mm3": np.zeros_like(vertical_pressure),
@@ -1005,24 +1011,41 @@ class ModelK0SoilTest(ModelK0):
         return data
 
     @staticmethod
-    def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading):
+    def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading, no_last_start=False):
 
         start = np.random.uniform(0.5, 0.8)
-        dict = {
-            'Time': [0, 0, np.round(start, 3), np.round(start + 0.1, 3), np.round(start + 2, 3)],
-            'Action': ["", "", "Start", "Start", "Start"],
-            'Action_Changed': ["", "True", "", "", "True"],
-            'SampleHeight_mm': np.full(5, 76),
-            'SampleDiameter_mm': np.full(5, 38),
-            'Deviator_kPa': np.full(5, 0),
-            'VerticalDeformation_mm': np.full(5, 0),
-            'CellPress_kPa': np.full(5, 0),
-            'CellVolume_mm3': np.full(5, 0),
-            'PorePress_kPa': np.full(5, 0),
-            'PoreVolume_mm3': np.full(5, 0),
-            'VerticalPress_kPa': np.full(5, 0),
-            'Trajectory': np.full(5, "HC")
-        }
+        if no_last_start:
+            dict = {
+                'Time': [0, 0, np.round(start, 3), np.round(start + 0.1, 3)],
+                'Action': ["", "", "Start", "Start"],
+                'Action_Changed': ["", "True", "", ""],
+                'SampleHeight_mm': np.full(4, 76),
+                'SampleDiameter_mm': np.full(4, 38),
+                'Deviator_kPa': np.full(4, 0),
+                'VerticalDeformation_mm': np.full(4, 0),
+                'CellPress_kPa': np.full(4, 0),
+                'CellVolume_mm3': np.full(4, 0),
+                'PorePress_kPa': np.full(4, 0),
+                'PoreVolume_mm3': np.full(4, 0),
+                'VerticalPress_kPa': np.full(4, 0),
+                'Trajectory': np.full(4, "HC")
+            }
+        else:
+            dict = {
+                'Time': [0, 0, np.round(start, 3), np.round(start + 0.1, 3), np.round(start + 2, 3)],
+                'Action': ["", "", "Start", "Start", "Start"],
+                'Action_Changed': ["", "True", "", "", "True"],
+                'SampleHeight_mm': np.full(5, 76),
+                'SampleDiameter_mm': np.full(5, 38),
+                'Deviator_kPa': np.full(5, 0),
+                'VerticalDeformation_mm': np.full(5, 0),
+                'CellPress_kPa': np.full(5, 0),
+                'CellVolume_mm3': np.full(5, 0),
+                'PorePress_kPa': np.full(5, 0),
+                'PoreVolume_mm3': np.full(5, 0),
+                'VerticalPress_kPa': np.full(5, 0),
+                'Trajectory': np.full(5, "HC")
+            }
 
         data_start = ModelK0SoilTest.addition_of_dictionaries(dict, b_test, initial=True,
                                                                         skip_keys=["SampleHeight_mm",
