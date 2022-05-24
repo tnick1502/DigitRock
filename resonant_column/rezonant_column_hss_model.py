@@ -18,6 +18,9 @@
 
 __version__ = 1
 
+import copy
+import random
+
 import numpy as np
 import os
 import warnings
@@ -40,8 +43,8 @@ except FileNotFoundError:
     except FileNotFoundError:
         pass
 
-
 plt.style.use('bmh')
+
 
 class ModelRezonantColumn:
     """Модель обработки резонансной колонки
@@ -52,6 +55,7 @@ class ModelRezonantColumn:
 
         - Метод get_plot_data подготавливает данные для построения. Метод plotter позволяет построить графики с помощью
         matplotlib"""
+
     def __init__(self):
         """Определяем основную структуру данных"""
         # Структура дынных
@@ -114,18 +118,20 @@ class ModelRezonantColumn:
                                                    300)
 
             G_approximate = ModelRezonantColumn.Hardin_Drnevick(shear_strain_approximate,
-                                                                0.278/(0.722 *
-                                                                       (self._test_result.threshold_shear_strain/10000)),
+                                                                0.278 / (0.722 *
+                                                                         (
+                                                                                     self._test_result.threshold_shear_strain / 10000)),
                                                                 self._test_result.G0)
             return {
-                "G": self._test_data.G_array[self._test_cut_position.left : self._test_cut_position.right],
-                "shear_strain": self._test_data.shear_strain[self._test_cut_position.left : self._test_cut_position.right],
+                "G": self._test_data.G_array[self._test_cut_position.left: self._test_cut_position.right],
+                "shear_strain": self._test_data.shear_strain[
+                                self._test_cut_position.left: self._test_cut_position.right],
                 "G_approximate": G_approximate,
                 "shear_strain_approximate": shear_strain_approximate,
                 "frequency": self._test_data.frequency[self._test_cut_position.left:
-                                                                                self._test_cut_position.right],
+                                                       self._test_cut_position.right],
                 "resonant_curves": self._test_data.resonant_curves[self._test_cut_position.left:
-                                                                                self._test_cut_position.right]
+                                                                   self._test_cut_position.right]
             }
 
     def plotter(self, save_path=None):
@@ -170,12 +176,12 @@ class ModelRezonantColumn:
         """Обработка опыта"""
         try:
             self._test_result.G0, self._test_result.threshold_shear_strain = \
-                ModelRezonantColumn.approximate_Hardin_Drnevick(self._test_data.shear_strain[self._test_cut_position.left : self._test_cut_position.right],
-                                                                self._test_data.G_array[self._test_cut_position.left : self._test_cut_position.right])
+                ModelRezonantColumn.approximate_Hardin_Drnevick(
+                    self._test_data.shear_strain[self._test_cut_position.left: self._test_cut_position.right],
+                    self._test_data.G_array[self._test_cut_position.left: self._test_cut_position.right])
         except:
             app_logger.exception("Ошибка обработки данных РК")
             pass
-
 
     @staticmethod
     def open_G0_log(file_path):
@@ -270,7 +276,8 @@ class ModelRezonantColumn:
         aa, G = popt
         threshold_shear_strain = 0.278 / (aa * 0.722)
 
-        return np.round(G, 2), np.round(threshold_shear_strain*10000, 2)
+        return np.round(G, 2), np.round(threshold_shear_strain * 10000, 2)
+
 
 class ModelRezonantColumnSoilTest(ModelRezonantColumn):
     """Модель моделирования девиаторного нагружения
@@ -284,6 +291,7 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
 
         - Метод set_draw_params(params) установливает параметры, считанные с позунков и производит отрисовку новых
          данных опыта"""
+
     def __init__(self):
         super().__init__()
         self._test_params = AttrDict({"p_ref": None,
@@ -310,7 +318,8 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         self._test_params.K0 = statment[statment.current_test].mechanical_properties.K0
         self._test_params.physical = statment[statment.current_test].physical_properties
         self._test_params.G0 = statment[statment.current_test].mechanical_properties.G0
-        self._test_params.threshold_shear_strain = statment[statment.current_test].mechanical_properties.threshold_shear_strain
+        self._test_params.threshold_shear_strain = statment[
+            statment.current_test].mechanical_properties.threshold_shear_strain
         self._test_modeling()
 
     def set_draw_params(self, params):
@@ -322,23 +331,22 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
 
     def _test_modeling(self):
         """Моделирование данных опыта"""
-        #G0, threshold_shear_strain = define_G0_threshold_shear_strain(self._test_params.p_ref,
-                                                                      #self._test_params.physical,
-                                                                      #self._test_params.E, self._test_params.c,
-                                                                      #self._test_params.fi, self._test_params.K0)
+        # G0, threshold_shear_strain = define_G0_threshold_shear_strain(self._test_params.p_ref,
+        # self._test_params.physical,
+        # self._test_params.E, self._test_params.c,
+        # self._test_params.fi, self._test_params.K0)
         self._test_params.G0 *= self._draw_params.G0_ratio
         self._test_params.threshold_shear_strain *= self._draw_params.threshold_shear_strain_ratio
 
         self._test_data.G_array, self._test_data.shear_strain = \
             ModelRezonantColumnSoilTest.generate_G_array(self._test_params.G0, self._test_params.threshold_shear_strain)
 
-
         self._test_data.frequency, self._test_data.resonant_curves = \
             ModelRezonantColumnSoilTest.generate_resonant_curves(self._test_data.shear_strain, self._test_data.G_array,
                                                                  frequency_step=self._draw_params.frequency_step,
                                                                  ro=self._test_params.physical.r * 1000)
-        #print(len(self._test_data.G_array), len(self._test_data.frequency[0]))
-        #print([len(i) for i in self._test_data.frequency])
+        # print(len(self._test_data.G_array), len(self._test_data.frequency[0]))
+        # print([len(i) for i in self._test_data.frequency])
         self._test_processing()
 
     def save_log_file(self, director):
@@ -392,10 +400,10 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         first_point = np.log((6 + 5 * np.random.uniform(0, 1)) * 10e-8)
         last_point = np.log(np.random.uniform(0.7 * 10e-4, 1.1 * 10e-4))
         shear_strain = np.linspace(first_point, last_point, point_count)
-        shear_strain = np.e**(shear_strain)
+        shear_strain = np.e ** (shear_strain)
 
         # Моделирование модуля
-        G = ModelRezonantColumn.Hardin_Drnevick(shear_strain, 0.278 / (0.722 * threshold_shear_strain/10000), G0) \
+        G = ModelRezonantColumn.Hardin_Drnevick(shear_strain, 0.278 / (0.722 * threshold_shear_strain / 10000), G0) \
             + np.random.uniform(-0.03 * G0, 0.03 * G0, np.size(shear_strain))
 
         # Значение не может быть больше предыдущего
@@ -421,13 +429,13 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         frequency_array = []
         i = 0
         while len(frequency_array) < len(G):
-            min_test_frequency = np.round((0.8 - i/10) * np.min(resonant_frequency_array))
-            max_test_frequency = np.round((1.2 + i/10) * np.max(resonant_frequency_array)) + frequency_step
+            min_test_frequency = np.round((0.8 - i / 10) * np.min(resonant_frequency_array))
+            max_test_frequency = np.round((1.2 + i / 10) * np.max(resonant_frequency_array)) + frequency_step
             frequency_array = np.arange(min_test_frequency - min_test_frequency % frequency_step,
-                                    max_test_frequency - min_test_frequency % frequency_step, frequency_step)
+                                        max_test_frequency - min_test_frequency % frequency_step, frequency_step)
             i += 1
 
-        #print(len(G), len(frequency_array))
+        # print(len(G), len(frequency_array))
 
         len_array = len(resonant_frequency_array)
         resonant_curves = [list() for _ in range(len_array)]
@@ -443,6 +451,8 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
 
             frequency[i] = frequency_array
 
+        resonant_curves = ModelRezonantColumnSoilTest.apply_noise(resonant_curves)
+
         return frequency, resonant_curves
 
     @staticmethod
@@ -450,36 +460,104 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         """Функция генерафии резонансной кривой"""
         max_shear_strain /= 10000
 
-        alpha = -np.log(1/max_shear_strain)/(frequency[-1] - frequency[0])**2
-        betta = alpha/5
+        alpha = -np.log(1 / max_shear_strain) / (frequency[-1] - frequency[0]) ** 2
+        betta = alpha / 5
         """alpha = -(10e-12/(max_shear_strain))*(frequency[-1] - frequency[0])#-0.005
         betta = alpha/5#10e12*  alpha*max_shear_strain#np.array([alpha/i for i in range(1, len(frequency) + 1)][::-1])"""
 
-        i_resonance, = np.where(frequency>resonant_frequency)
+        i_resonance, = np.where(frequency > resonant_frequency)
         resonant_curve = np.hstack(((0.6 * np.exp(10 * alpha * (frequency[:i_resonance[0]] - resonant_frequency) ** 2) +
-                          0.2 * np.exp(3*betta * (frequency[:i_resonance[0]] - resonant_frequency) ** 2)) * \
-                         max_shear_strain + max_shear_strain*0.2,
+                                     0.2 * np.exp(3 * betta * (frequency[:i_resonance[0]] - resonant_frequency) ** 2)) * \
+                                    max_shear_strain + max_shear_strain * 0.2,
                                     (0.4 * np.exp(alpha * (frequency[i_resonance[0]:] - resonant_frequency) ** 2) +
                                      0.4 * np.exp(betta * (frequency[i_resonance[0]:] - resonant_frequency) ** 2)) * \
                                     max_shear_strain + max_shear_strain * 0.2))
-        #resonant_curve = (0.6 * np.exp(alpha * (frequency - resonant_frequency) ** 2) +
+        # resonant_curve = (0.6 * np.exp(alpha * (frequency - resonant_frequency) ** 2) +
         # 0.2 * np.exp(betta * (frequency - resonant_frequency) ** 2)) * max_shear_strain + max_shear_strain * 0.2
         return resonant_curve
 
+    @staticmethod
+    def apply_noise(resonant_curves):
+        """
+        Накладывает шум на каждую кривую внутри `resonant_curves`,
+         чем больше индекс внутри `resonant_curves` тем меньше уровень шума.
+        """
+        NOISE_LEVELS = (3, 8)  # изнач. (5, 12)
+        'нижний и верхний уровни шума в процентах от arg_max в зависимости от порядка в массиве resonant_curves'
+        # чем выше значение индекса в resonant_curves, тем меньше деформации и тем ниже значение процентной ошибки
 
+        STAT_ERR = 1e-9
+        'уровень ошибки в режиме сезонности, статически выбирается с +,- или его нет'
+
+        noised_resonant_curves = copy.deepcopy(np.asarray(resonant_curves))
+
+        # Шум постепенно уменьшается от точки (0, NOISE_LEVELS[1]) до точки (len(resonant_curves), NOISE_LEVELS[0])
+        #   поэтмоу проводим прямую с коэф. b и k и уровень шума в процентах будем определять исходя из них
+        b = NOISE_LEVELS[1]
+        k = (NOISE_LEVELS[0] - b) / len(resonant_curves)
+
+        for i, resonant_curve in enumerate(noised_resonant_curves):
+
+            arg_max = np.argmax(resonant_curve)
+            max_val = resonant_curve[arg_max]
+
+            resonant_curve_len = len(resonant_curve)
+
+            # уровень шума - значение в точке прямой, поделить на 100% и умножить на максимальное значение кривой
+            level = (k * i + b) / 100 * max_val
+
+            rnd = np.random.uniform(-STAT_ERR, STAT_ERR, resonant_curve_len)
+            pre_max_part = copy.deepcopy(resonant_curve[:arg_max]) + rnd[:arg_max]
+            after_max_part = copy.deepcopy(resonant_curve[arg_max + 1:]) + rnd[arg_max + 1:]
+
+            after_max_part += np.random.uniform(-level, level, len(after_max_part))
+            pre_max_part += np.random.uniform(-level, level, len(pre_max_part))
+
+            noised_resonant_curve = np.asarray([*pre_max_part, max_val, *after_max_part])
+
+            # проводим коррекцию значений так, чтобы дельта была не больше чем уровень шума
+            # делается для того, чтобы значения не скакали друг отноительно друга слишком сильно
+            for index in range(resonant_curve_len - 1):
+                if noised_resonant_curve[index + 1] - noised_resonant_curve[index] > level:
+                    noised_resonant_curve[index + 1] = resonant_curve[index + 1] + np.random.uniform(-STAT_ERR, STAT_ERR)
+                elif noised_resonant_curve[index + 1] - noised_resonant_curve[index] < -level:
+                    noised_resonant_curve[index + 1] = resonant_curve[index + 1] + np.random.uniform(-STAT_ERR, STAT_ERR)
+            noised_resonant_curve[arg_max] = max_val  # так быстрее чем проверять внутри цикла что это не оно
+
+            # проводим проверку, что шум нигде не вылез за максимум
+            noised_arg_max = np.argmax(noised_resonant_curve)
+            count = 1
+            while (noised_arg_max != arg_max
+                    or (noised_resonant_curve[noised_arg_max] - resonant_curve[arg_max]) > STAT_ERR)\
+                    and count <= 100000:
+                # если значение максимума куда-то ушло, то убираем шум и оставляем только незначительное колебание
+                local_noise = np.random.uniform(-STAT_ERR, 0)
+                noised_resonant_curve[noised_arg_max] = resonant_curve[noised_arg_max] + local_noise
+
+                noised_arg_max = np.argmax(noised_resonant_curve)
+                count += 1
+
+            noised_arg_max = np.argmax(noised_resonant_curve)
+            if noised_arg_max != arg_max \
+                    or (noised_resonant_curve[noised_arg_max] - resonant_curve[arg_max]) > STAT_ERR:
+                raise RuntimeWarning('Ошибка при генерации шумов для resonant_curves')
+
+            noised_resonant_curves[i] = noised_resonant_curve
+
+        return noised_resonant_curves
 
 
 if __name__ == '__main__':
-    #file = "C:/Users/Пользователь/Desktop/Тест/Циклическое трехосное нагружение/Архив/19-1/Косинусное значение напряжения.txt"
-    #file = "Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1/RCCT.txt"
-    #m = ModelRezonantColumn()
-    #m.open_path(
-        #"Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1")
-    #m.plotter()
-    #plt.show()
-    #ModelRezonantColumnSoilTest.create_G_array(100, 4.34)
+    # file = "C:/Users/Пользователь/Desktop/Тест/Циклическое трехосное нагружение/Архив/19-1/Косинусное значение напряжения.txt"
+    # file = "Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1/RCCT.txt"
+    # m = ModelRezonantColumn()
+    # m.open_path(
+    # "Z:/МДГТ - (Заказчики)/Инженерная Геология ООО (Аверин)/2021/332-21 Раменки/G0/Для отправки заказчику/1Х-1")
+    # m.plotter()
+    # plt.show()
+    # ModelRezonantColumnSoilTest.create_G_array(100, 4.34)
 
-    #ModelRezonantColumnSoilTest.generate_resonant_curves(0, np.array([150 , 120 , 100]), ro=2000)
+    # ModelRezonantColumnSoilTest.generate_resonant_curves(0, np.array([150 , 120 , 100]), ro=2000)
     data_physical = {"Ip": "-", "e": 0.3, "Ir": "-", "r": 2,
                      "10": "-", "5": "-", "2": "-", "1": "-", "05": "-", "025": 50, "01": 40, "005": "-", "001": "-",
                      "0002": "-", "0000": "-"}
