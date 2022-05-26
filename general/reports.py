@@ -2969,7 +2969,7 @@ def report_FC_NN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
     test_parameter = dict(test_parameter)
     test_parameter["K0"] = test_parameter["K0"][0]
-    test_parameter["mode"] = "НН, девиаторное нагружение в кинематическом режиме"
+    # test_parameter["mode"] = "НН, девиаторное нагружение в кинематическом режиме"
     name = "НН"
     canvas = Canvas(Name, pagesize=A4)
 
