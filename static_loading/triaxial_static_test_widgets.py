@@ -1083,6 +1083,9 @@ class StatickSoilTestApp(AppMixin, QWidget):
                               test_result["fi"], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
+
+                test_parameter["mode"] = "НН, девиаторное нагружение в кинематическом режиме " + s
+
                 name = file_path_name + " " + statment.general_data.object_number + " НН" + ".pdf"
 
                 FC_models[statment.current_test].save_log_files(save, file_path_name)
