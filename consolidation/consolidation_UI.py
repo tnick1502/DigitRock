@@ -285,7 +285,7 @@ class ModelTriaxialConsolidationUI(QWidget):
                 self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"], color="tomato", linewidth=1)
 
                 # Линии обработки
-                if plots["log_line_points"] and res["Cv_log"] and res["Ca_log"]:
+                if plots["log_line_points"] and res["Cv_log"] and res["Ca_log"] != None:
                     # Основные линии обработки
                     self.log_ax.plot(*point_to_xy(plots["log_line_points"].first_line_start_point,
                                              plots["log_line_points"].first_line_end_point),
@@ -332,11 +332,16 @@ class ModelTriaxialConsolidationUI(QWidget):
                         self.log_ax.text(*plots["d0"], '$d_{0}$', horizontalalignment='center',
                                          verticalalignment='center')
 
+                    def str_Kf(x):
+                        s = "{:.2e}".format(x).replace(".", ",")
+                        return s[:-4], str(int(s[5:]))
+
+                    kf, pow = str_Kf(res["Kf_log"])  # '${kf}*10^{{pow}}>$'
 
                     self.log_ax.plot([], [], label="$C_{v}$" + " = " + str(res["Cv_log"]), color="#eeeeee")
-                    self.log_ax.plot([], [], label="$t_{100}$" + " = " + str(res["t100_log"]),
-                                color="#eeeeee")
+                    self.log_ax.plot([], [], label="$t_{100}$" + " = " + str(res["t100_log"]), color="#eeeeee")
                     self.log_ax.plot([], [], label="$C_{a}$" + " = " + str(res["Ca_log"]), color="#eeeeee")
+                    self.log_ax.plot([], [], label="$kf$" + " = " + '$' + f'{kf}*10^' + '{' + str(pow) + '}' + '$', color="#eeeeee")
                     self.log_ax.legend()
 
             self.sqrt_canvas.draw()
