@@ -315,7 +315,6 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
     if moove <= 3:
         moove = 3
 
-    moove = 3
 
     t = Table([[name[0], "", "", "", "", "", "", "", "", ""],
                [name[1]],
@@ -366,7 +365,7 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
 
 
 
-def parameter_table(canvas, Data_phiz, Lab):  # Таблица характеристик
+def parameter_table(canvas, Data_phiz, Lab, moove=0):  # Таблица характеристик
 
     data_signature = [Paragraph('''<p>ρ<sub rise="2.5" size="6">s</sub>, г/см<sup rise="2.5" size="5">3</sup></p>''', CentralStyle),
                     Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup></p>''', CentralStyle),
@@ -403,7 +402,7 @@ def parameter_table(canvas, Data_phiz, Lab):  # Таблица характер�
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 207 * mm)
+    t.drawOn(canvas, 25 * mm, (207-moove) * mm)
 
 def parameter_table_ice(canvas, wb, Nop):  # Таблица характеристик
 
@@ -674,7 +673,7 @@ def test_mode_vibration_creep(canvas, test_parameter):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, 185 * mm)
 
-def test_mode_consolidation(canvas, Data):
+def test_mode_consolidation(canvas, Data, moove=0):
 
     if "/" in str(Data["sigma_3"]):
         sigma_3 = str(Data["sigma_3"])
@@ -718,7 +717,7 @@ def test_mode_consolidation(canvas, Data):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 185 * mm)
+    t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
 
 def test_mode_shear(canvas, Data):
@@ -1123,7 +1122,7 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (48-((r-30)*4) - 4) * mm)
 
-def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E"):
+def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E", moove=0):
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
     r = 28
@@ -1147,7 +1146,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E")
     if Res["Eur"]:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 66 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (66-moove) * mm)
         if result_E == "all":
             tableData.append(
                 [Paragraph(Ew, LeftStyle), "", "", "",
@@ -1253,10 +1252,10 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E")
         try:
             a = svg2rlg(pick[0])
             a.scale(scale, scale)
-            renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+            renderPDF.draw(a, canvas, 36 * mm, (120-moove) * mm)
             b = svg2rlg(pick[1])
             b.scale(scale, scale)
-            renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
+            renderPDF.draw(b, canvas, 36 * mm, (66-moove) * mm)
         except AttributeError:
             a = ImageReader(pick[1])
             canvas.drawImage(a, 32 * mm, 60 * mm,
@@ -1347,10 +1346,10 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E")
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (46 - sss -((r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (46 - sss -moove-((r-30)*4)) * mm)
 
 
-def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8):
+def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8, moove=0):
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
     r = 28
@@ -1360,7 +1359,7 @@ def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8):
     if Res["Eur"]:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 66 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (66-moove) * mm)
         tableData.append(
             [Paragraph('''<p>Девиатор напряжений при разрушении образца q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
              Res["qf"], ""])
@@ -1444,10 +1443,10 @@ def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8):
         try:
             a = svg2rlg(pick[0])
             a.scale(scale, scale)
-            renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+            renderPDF.draw(a, canvas, 36 * mm, (120-moove) * mm)
             b = svg2rlg(pick[1])
             b.scale(scale, scale)
-            renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
+            renderPDF.draw(b, canvas, 36 * mm, (66-moove) * mm)
         except AttributeError:
             a = ImageReader(pick[1])
             canvas.drawImage(a, 32 * mm, 60 * mm,
@@ -1493,7 +1492,7 @@ def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 44 * mm)
+    t.drawOn(canvas, 25 * mm, (44-moove) * mm)
 
 
 
@@ -1881,16 +1880,16 @@ def result_vibration_creep3(canvas, Res, pick, test_parameter):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (38-((r-30)*4)) * mm)
 
-def result_table_CF(canvas, Res, pick, scale = 0.8):
+def result_table_CF(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (65-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+        renderPDF.draw(b, canvas, 120 * mm, (133-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[0])
         #canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -1969,7 +1968,7 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
+    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6 - moove) * mm)
 
 def result_table_CF_res(canvas, Res, pick, scale = 0.8):
 
@@ -2072,16 +2071,16 @@ def result_table_CF_res(canvas, Res, pick, scale = 0.8):
     t.drawOn(canvas, 25 * mm, ((34 - 4-((r - 30)*4)) - table_move*6) * mm)
 
 
-def result_table_CF_NN(canvas, Res, pick, scale = 0.8):
+def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (65-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+        renderPDF.draw(b, canvas, 120 * mm, (133-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[0])
         #canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -2185,7 +2184,7 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8):
                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((40-((r - 30)*4)) - table_move*6) * mm)
+    t.drawOn(canvas, 25 * mm, ((40-((r - 30)*4)) - table_move*6-moove) * mm)
 
 
 def result_table_m(canvas, Res, pick, scale = 0.8):
@@ -2230,16 +2229,16 @@ def result_table_m(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (54 - ((r - 30) * 4)) * mm)
 
-def result_table_CF_KN(canvas, Res, pick, scale = 0.8):
+def result_table_CF_KN(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (65-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+        renderPDF.draw(b, canvas, 120 * mm, (133-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[0])
         #canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -2311,18 +2310,18 @@ def result_table_CF_KN(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
+    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6-moove) * mm)
 
-def result_table_CF_KN_vs(canvas, Res, pick, scale = 0.8):
+def result_table_CF_KN_vs(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (65-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+        renderPDF.draw(b, canvas, 120 * mm, (133-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[0])
         #canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -2409,7 +2408,7 @@ def result_table_CF_KN_vs(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 45 * mm)
+    t.drawOn(canvas, 25 * mm, (45-moove) * mm)
 
 
 def result_table_statment_cyclic(canvas, Data):
@@ -2813,31 +2812,31 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
     #canvas.showPage()
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
     if res["Eur"]:
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТС/Р")
     else:
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                                  "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТС")
 
     K0 = test_parameter["K0"]
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
 
     test_parameter["K0"] = K0[0]
 
-    test_mode_consolidation(canvas, test_parameter)
+    test_mode_consolidation(canvas, test_parameter, moove=moove)
     if report_type == "standart_E":
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E")
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E", moove=moove)
     elif report_type == "standart_E50":
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50")
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
     elif report_type == "E_E50":
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all")
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all", moove=moove)
     elif report_type == "user_define_1":
-        result_table_deviator_user_1(canvas, res, [picks[2], picks[3]])
+        result_table_deviator_user_1(canvas, res, [picks[2], picks[3]], moove=moove)
     else:
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50")
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
 
     canvas.showPage()
 
@@ -2859,54 +2858,54 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
         main_frame(canvas, path, Data_customer, code, "1/3", qr_code=qr_code)
     else:
         main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["K0"] = K0[0]
-    test_mode_consolidation(canvas, test_parameter)
+    test_mode_consolidation(canvas, test_parameter, moove=moove)
 
     if report_type == "standart_E":
-        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E")
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E", moove=moove)
     elif report_type == "standart_E50":
-        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50")
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50", moove=moove)
     elif report_type == "E_E50":
-        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="all")
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="all", moove=moove)
     elif report_type == "user_define_1":
-        result_table_deviator_user_1(canvas, res, [picks[0], picks[1]])
+        result_table_deviator_user_1(canvas, res, [picks[0], picks[1]], moove=moove)
     else:
-        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50")
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50", moove=moove)
 
     canvas.showPage()
     if report_type == "plaxis":
         main_frame(canvas, path, Data_customer, code, "2/3", qr_code=qr_code)
     else:
         main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["K0"] = K0[1]
     test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
-    test_mode_consolidation(canvas, test_parameter)
+    test_mode_consolidation(canvas, test_parameter, moove=moove)
 
-    result_table_CF(canvas, res, [picks[2], picks[3]])
+    result_table_CF(canvas, res, [picks[2], picks[3]], moove=moove)
 
     if report_type == "plaxis":
         canvas.showPage()
 
         main_frame(canvas, path, Data_customer, code, "3/3", qr_code=qr_code)
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                                  "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
-        parameter_table(canvas, Data_phiz, Lab)
+        parameter_table(canvas, Data_phiz, Lab, moove=moove)
         test_parameter["K0"] = K0[1]
         test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(
             res["sigma_3_mohr"][2], 3)
-        test_mode_consolidation(canvas, test_parameter)
+        test_mode_consolidation(canvas, test_parameter, moove=moove)
 
         result_table_m(canvas, res, picks[4])
 
@@ -2925,15 +2924,15 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     code = SaveCode(version)
 
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
-    test_mode_consolidation(canvas, test_parameter)
+    test_mode_consolidation(canvas, test_parameter, moove=moove)
 
-    result_table_CF(canvas, res, [picks[0],picks[1]])
+    result_table_CF(canvas, res, [picks[0],picks[1]], moove=moove)
 
     canvas.save()
 
