@@ -551,9 +551,9 @@ class CyclicStatment(InitialStatment):
                 assert not marker, "Проверьте " + customer
 
                 if combo_params["test_mode"] == "Демпфирование":
-                    assert column_fullness_test(self.path, columns=[("AO", 40), ("AN", 39)],
+                    assert column_fullness_test(self.path, columns=[("AN", 39)],
                                                 initial_columns=columns_marker), \
-                        "Заполните амплитуду ('AO') и частоту ('AN')"
+                        "Заполните частоту ('AN')"
 
                 if combo_params["test_mode"] == "Штормовое разжижение":
                     assert column_fullness_test(self.path, columns=[('HR', 225), ('HS', 226), ('HT', 227), ('HU', 228)],

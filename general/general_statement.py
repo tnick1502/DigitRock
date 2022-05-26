@@ -360,10 +360,14 @@ class StatementGenerator(QDialog):
                     # self.StatementStructure._additional_parameters = \
                     #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
                     titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
-                    if statment.general_parameters.test_mode == "Виброползучесть":
-                       data = convert_data(data)
-                    elif statment.general_parameters.test_mode == "Демпфирование по Релею":
-                        data = convert_data2(data)
+
+                    try:
+                        if statment.general_parameters.test_mode == "Виброползучесть":
+                           data = convert_data(data)
+                        elif statment.general_parameters.test_mode == "Демпфирование по Релею":
+                            data = convert_data2(data)
+                    except:
+                        pass
 
                     for i in range(len(data)):
                         for j in range(len(data[i])):
