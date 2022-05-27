@@ -720,7 +720,7 @@ def test_mode_consolidation(canvas, Data, moove=0):
     t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
 
-def test_mode_shear(canvas, Data):
+def test_mode_shear(canvas, Data, moove=0):
 
     if "/" in str(Data["sigma"]):
         sigma = str(Data["sigma"])
@@ -766,9 +766,9 @@ def test_mode_shear(canvas, Data):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 185 * mm)
+    t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
-def test_mode_shear_dilatancy(canvas, Data):
+def test_mode_shear_dilatancy(canvas, Data, moove=0):
 
     if "/" in str(Data["sigma"]):
         sigma = str(Data["sigma"])
@@ -814,7 +814,7 @@ def test_mode_shear_dilatancy(canvas, Data):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 185 * mm)
+    t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
 def test_mode_consolidation_1(canvas, Data):
 
@@ -3219,16 +3219,16 @@ def report_cyclic_damping(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     canvas.save()
 
-def result_table_shear(canvas, Res, pick, scale = 0.8):
+def result_table_shear(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (65-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+        renderPDF.draw(b, canvas, 120 * mm, (133-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[0])
         #canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -3307,9 +3307,9 @@ def result_table_shear(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
+    t.drawOn(canvas, 25 * mm, ((34 - moove -((r - 30)*4)) - table_move*6) * mm)
 
-def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8):
+def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
@@ -3327,10 +3327,10 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8):
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (120-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
+        renderPDF.draw(b, canvas, 36 * mm,(66-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[1])
         canvas.drawImage(a, 32 * mm, 60 * mm,
@@ -3377,7 +3377,7 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (50-((r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (50 - moove -((r-30)*4)) * mm)
 
 
 def StampReport(M, R, p1, p2, Nop, path, version = 1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
@@ -3472,17 +3472,15 @@ def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_param
     #canvas.showPage()
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
 
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ УГЛА ДИЛАТАНСИИ МЕТОДОМ",
                              "ОДНОПЛОСКОСТНОГО СРЕЗА (12248.1-2020)"], "/" + name)
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
 
+    test_mode_shear_dilatancy(canvas, test_parameter, moove=moove)
 
-
-    test_mode_shear_dilatancy(canvas, test_parameter)
-
-    result_table_shear_dilatancy(canvas, res, [picks[0], picks[1]])
+    result_table_shear_dilatancy(canvas, res, [picks[0], picks[1]], moove=moove)
 
     canvas.showPage()
 
@@ -3500,16 +3498,16 @@ def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     code = SaveCode(version)
 
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЕ ГРУНТОВ МЕТОДОМ ОДНОПЛОСКОСТНОГО",
                              "СРЕЗА (ГОСТ 12248.1-2020)"], "/" + name)
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["sigma"] = zap(res["sigma_shear"][0], 3) + "/" + zap(res["sigma_shear"][1], 3) + "/" + zap(res["sigma_shear"][2], 3)
     res["tau_max"] = [i/1000. for i in res["tau_max"]]
-    test_mode_shear(canvas, test_parameter)
+    test_mode_shear(canvas, test_parameter, moove=moove)
 
-    result_table_shear(canvas, res, [picks[0], picks[1]])
+    result_table_shear(canvas, res, [picks[0], picks[1]], moove=moove)
 
     canvas.save()
 
