@@ -428,6 +428,11 @@ class ModelTriaxialDeviatorLoading:
         if self._test_result.max_pore_pressure <= 1.3:
             self._test_result.max_pore_pressure = 0
 
+        if statment.general_parameters.test_mode != 'Трёхосное сжатие КН':
+            self._test_result.max_pore_pressure = 0
+
+
+
         self._test_result.Eps50 = (self._test_result.qf*0.5) / self._test_result.E50
         self._test_result.qf50 = self._test_result.qf*0.5 / 1000
 
