@@ -293,8 +293,9 @@ class MechanicalProperties:
 
             self.Ca = Ca if Ca else np.round(np.random.uniform(0.01, 0.03), 5)
 
-            self.K0 = MechanicalProperties.define_K0(data_frame, K0_mode, string, physical_properties.Il,
-                                                     self.fi, physical_properties.stratigraphic_index)
+            self.K0 = MechanicalProperties.define_K0(
+                data_frame, K0_mode, string, physical_properties.Il, self.fi,
+                physical_properties.stratigraphic_index, physical_properties.type_ground)
             if not self.K0:
                 raise ValueError(f"Ошибка определения K0 в пробе {physical_properties.laboratory_number}")
 
@@ -505,10 +506,13 @@ class MechanicalProperties:
         return np.round(Cv, 4)
 
     @staticmethod
-    def define_K0(data_frame: pd.DataFrame, K0_mode: str, string: int, Il: float, fi: float, stratigraphic_index: str) -> float:
+    def define_K0(data_frame: pd.DataFrame, K0_mode: str, string: int, Il: float, fi: float, stratigraphic_index: str, type_ground) -> float:
         """Функция определения K0"""
 
-        def define_K0_GOST(Il) -> float:
+        def define_K0_GOST(Il, type_ground) -> float:
+            if type_ground == 9:
+                return 1
+
             if not Il:
                 return 0.5
             elif Il < 0:
@@ -533,7 +537,7 @@ class MechanicalProperties:
             return np.round(K0, 2) if K0 else None
 
         dict_K0 = {
-            "K0: По ГОСТ-56353": define_K0_GOST(Il),
+            "K0: По ГОСТ-56353": define_K0_GOST(Il, type_ground),
             "K0: K0nc из ведомости": readDataFrame(string, MechanicalPropertyPosition["K0nc"][1]),
             "K0: K0 из ведомости": readDataFrame(string, MechanicalPropertyPosition["K0oc"][1]),
             "K0: Формула Джекки": np.round((1 - np.sin(np.pi * fi / 180)), 2),
