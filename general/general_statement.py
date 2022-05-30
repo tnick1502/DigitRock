@@ -289,6 +289,11 @@ class StatementGenerator(QDialog):
             self.accreditation = self.customer["accreditation"]
             self.accreditation_key = "новая"
 
+            if self.accreditation in ["OAO", "ОАО"]:
+                self.accreditation = "АО"
+            elif self.accreditation == "OOO":
+                self.accreditation = "ООО"
+
             if self.accreditation in ["AO", "АО"]:
                 self.accreditation_key = "новая"
             elif self.accreditation == "ООО" or self.accreditation == "OOO":
