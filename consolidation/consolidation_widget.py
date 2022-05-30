@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFrame, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, \
-    QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout,\
-    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog
+    QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout, \
+    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog, QCheckBox
 from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject
 from PyQt5.QtGui import QPalette, QBrush
 import matplotlib.pyplot as plt
@@ -261,6 +261,12 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         self.tab_2 = ConsilidationSoilTestWidget()
         self.tab_3 = Save_Dir()
 
+        self.save_cv_ca_btn = QCheckBox('Сохранить cv ca')
+        self.save_cv_ca_btn.setChecked(False)
+        self.cv_ca_save_path = None
+        self.save_cv_ca_btn.clicked.connect(self.on_save_cv_ca_btn)
+        self.tab_3.advanced_box_layout.insertWidget(self.tab_3.advanced_box_layout.count() - 1, self.save_cv_ca_btn)
+
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
         self.tab_widget.addTab(self.tab_2, "Опыт консолидации")
         self.tab_widget.addTab(self.tab_3, "Сохранение отчетов")
@@ -357,37 +363,44 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
             Consolidation_models[statment.current_test].save_log(save, file_path_name + " " + statment.general_data.object_number + "ВК")
 
             # Запись в xls параметров ca и cv
-            cv_ca_file_name = 'Параметры cv ca.xlsx'
-            if os.path.isfile(statment.save_dir.arhive_directory + "/" + cv_ca_file_name):
-                pass
-            else:
-                shutil.copy('./consolidation/'+cv_ca_file_name, statment.save_dir.arhive_directory + "/" + cv_ca_file_name)
+            if self.save_cv_ca_btn.isChecked():
+                cv_ca_file_name = 'Параметры cv ca.xlsx'
 
-            set_cell_data(statment.save_dir.arhive_directory + "/" + cv_ca_file_name,
-                          ('A' + str(statment[statment.current_test].physical_properties.sample_number + 2),
-                          (statment[statment.current_test].physical_properties.sample_number + 2, 0)),
-                          statment[statment.current_test].physical_properties.laboratory_number,
-                          sheet="Лист1")
-            set_cell_data(statment.save_dir.arhive_directory + "/" + cv_ca_file_name,
-                          ('B' + str(statment[statment.current_test].physical_properties.sample_number + 2),
-                          (statment[statment.current_test].physical_properties.sample_number + 2, 1)),
-                          statment[statment.current_test].physical_properties.borehole,
-                          sheet="Лист1")
-            set_cell_data(statment.save_dir.arhive_directory + "/" + cv_ca_file_name,
-                          ('C' + str(statment[statment.current_test].physical_properties.sample_number + 2),
-                          (statment[statment.current_test].physical_properties.sample_number + 2, 2)),
-                          statment[statment.current_test].physical_properties.depth,
-                          sheet="Лист1")
-            set_cell_data(statment.save_dir.arhive_directory + "/" + cv_ca_file_name,
-                          ('D' + str(statment[statment.current_test].physical_properties.sample_number + 2),
-                          (statment[statment.current_test].physical_properties.sample_number + 2, 3)),
-                          test_result["Cv_log"],
-                          sheet="Лист1")
-            set_cell_data(statment.save_dir.arhive_directory + "/" + cv_ca_file_name,
-                          ('E' + str(statment[statment.current_test].physical_properties.sample_number + 2),
-                          (statment[statment.current_test].physical_properties.sample_number + 2, 4)),
-                          test_result["Ca_log"],
-                          sheet="Лист1")
+                if self.cv_ca_save_path:
+                    cv_ca_save_path = self.cv_ca_save_path + "/" + cv_ca_file_name
+                else:
+                    cv_ca_save_path = statment.save_dir.arhive_directory + "/" + cv_ca_file_name
+
+                if os.path.isfile(cv_ca_save_path):
+                    pass
+                else:
+                    shutil.copy('./consolidation/'+cv_ca_file_name, cv_ca_save_path)
+
+                set_cell_data(cv_ca_save_path,
+                              ('A' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                              (statment[statment.current_test].physical_properties.sample_number + 2, 0)),
+                              statment[statment.current_test].physical_properties.laboratory_number,
+                              sheet="Лист1")
+                set_cell_data(cv_ca_save_path,
+                              ('B' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                              (statment[statment.current_test].physical_properties.sample_number + 2, 1)),
+                              statment[statment.current_test].physical_properties.borehole,
+                              sheet="Лист1")
+                set_cell_data(cv_ca_save_path,
+                              ('C' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                              (statment[statment.current_test].physical_properties.sample_number + 2, 2)),
+                              statment[statment.current_test].physical_properties.depth,
+                              sheet="Лист1")
+                set_cell_data(cv_ca_save_path,
+                              ('D' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                              (statment[statment.current_test].physical_properties.sample_number + 2, 3)),
+                              test_result["Cv_log"],
+                              sheet="Лист1")
+                set_cell_data(cv_ca_save_path,
+                              ('E' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                              (statment[statment.current_test].physical_properties.sample_number + 2, 4)),
+                              test_result["Ca_log"],
+                              sheet="Лист1")
 
 
             if self.save_massage:
@@ -452,6 +465,10 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
     def jornal(self):
         self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogCyclic, self.tab_1.path)
         self.dialog.show()
+
+    def on_save_cv_ca_btn(self, checked):
+        if checked and self.cv_ca_save_path is None:
+            self.cv_ca_save_path = QFileDialog.getExistingDirectoryUrl(self, 'Папка для сохранения cv ca').toLocalFile()
 
 
 if __name__ == '__main__':
