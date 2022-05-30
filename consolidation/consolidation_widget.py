@@ -14,7 +14,7 @@ from excel_statment.initial_statment_widgets import ConsolidationStatment
 from general.save_widget import Save_Dir
 from excel_statment.initial_tables import TableVertical, LinePhysicalProperties
 from excel_statment.functions import set_cell_data
-from general.reports import report_consolidation, report_FCE, report_FC
+from general.reports import report_consolidation, report_FCE, report_FC, zap
 from consolidation.consolidation_UI import ModelTriaxialConsolidationUI
 import numpy as np
 from general.general_widgets import Float_Slider
@@ -355,6 +355,40 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
                           #test_result["E50"], sheet="Лист1", color="FF6961")
 
             Consolidation_models[statment.current_test].save_log(save, file_path_name + " " + statment.general_data.object_number + "ВК")
+
+            # Запись в xls параметров ca и cv
+            cv_ca_file_name = 'Параметры cv ca.xlsx'
+            if os.path.isfile(statment.save_dir.arhive_directory + "/" + cv_ca_file_name):
+                pass
+            else:
+                shutil.copy('./consolidation/'+cv_ca_file_name, statment.save_dir.arhive_directory + "/" + cv_ca_file_name)
+
+            set_cell_data(statment.save_dir.arhive_directory + "/" + cv_ca_file_name,
+                          ('A' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                          (statment[statment.current_test].physical_properties.sample_number + 2, 0)),
+                          statment[statment.current_test].physical_properties.laboratory_number,
+                          sheet="Лист1")
+            set_cell_data(statment.save_dir.arhive_directory + "/" + cv_ca_file_name,
+                          ('B' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                          (statment[statment.current_test].physical_properties.sample_number + 2, 1)),
+                          statment[statment.current_test].physical_properties.borehole,
+                          sheet="Лист1")
+            set_cell_data(statment.save_dir.arhive_directory + "/" + cv_ca_file_name,
+                          ('C' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                          (statment[statment.current_test].physical_properties.sample_number + 2, 2)),
+                          statment[statment.current_test].physical_properties.depth,
+                          sheet="Лист1")
+            set_cell_data(statment.save_dir.arhive_directory + "/" + cv_ca_file_name,
+                          ('D' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                          (statment[statment.current_test].physical_properties.sample_number + 2, 3)),
+                          test_result["Cv_log"],
+                          sheet="Лист1")
+            set_cell_data(statment.save_dir.arhive_directory + "/" + cv_ca_file_name,
+                          ('E' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                          (statment[statment.current_test].physical_properties.sample_number + 2, 4)),
+                          test_result["Ca_log"],
+                          sheet="Лист1")
+
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
