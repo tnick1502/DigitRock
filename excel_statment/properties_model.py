@@ -1396,7 +1396,8 @@ class VibrationCreepProperties(MechanicalProperties):
                 self.t = np.round(t/2, 1)
 
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
-            Kd = float_df(data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]])
+            Kd = data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]]
+
             if Kd is not None:
                 self.Kd = VibrationCreepProperties.val_to_list(Kd)
             else:
