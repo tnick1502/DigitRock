@@ -315,7 +315,6 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
     if moove <= 3:
         moove = 3
 
-    moove = 3
 
     t = Table([[name[0], "", "", "", "", "", "", "", "", ""],
                [name[1]],
@@ -366,7 +365,7 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
 
 
 
-def parameter_table(canvas, Data_phiz, Lab):  # Таблица характеристик
+def parameter_table(canvas, Data_phiz, Lab, moove=0):  # Таблица характеристик
 
     data_signature = [Paragraph('''<p>ρ<sub rise="2.5" size="6">s</sub>, г/см<sup rise="2.5" size="5">3</sup></p>''', CentralStyle),
                     Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup></p>''', CentralStyle),
@@ -403,7 +402,7 @@ def parameter_table(canvas, Data_phiz, Lab):  # Таблица характер�
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 207 * mm)
+    t.drawOn(canvas, 25 * mm, (207-moove) * mm)
 
 def parameter_table_ice(canvas, wb, Nop):  # Таблица характеристик
 
@@ -462,7 +461,7 @@ def parameter_table_ice(canvas, wb, Nop):  # Таблица характерис
 
 
 
-def test_mode_rc(canvas, ro, Data):
+def test_mode_rc(canvas, ro, Data, moove=0):
 
 
     DataSignature = ["Режим Испытания", "Изотропная консолидация, циклическое нагружение крутящим моментом"]
@@ -498,9 +497,9 @@ def test_mode_rc(canvas, ro, Data):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 185 * mm)
+    t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
-def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True):
+def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True, moove=0):
 
     tau_text = '''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''' if tau else '''<p>σ<sub rise="2.5" size="6">d</sub>, кПа:</p>'''
     tau = zap(test_parameter["tau"], 0) if tau else zap(test_parameter["tau"] * 2, 0)
@@ -621,9 +620,9 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True):
         a = 177
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, a * mm)
+    t.drawOn(canvas, 25 * mm, (a-moove) * mm)
 
-def test_mode_vibration_creep(canvas, test_parameter):
+def test_mode_vibration_creep(canvas, test_parameter, moove = 0):
 
     d = test_parameter["d"]
     h = test_parameter["h"]
@@ -672,9 +671,9 @@ def test_mode_vibration_creep(canvas, test_parameter):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 185 * mm)
+    t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
-def test_mode_consolidation(canvas, Data):
+def test_mode_consolidation(canvas, Data, moove=0):
 
     if "/" in str(Data["sigma_3"]):
         sigma_3 = str(Data["sigma_3"])
@@ -718,10 +717,10 @@ def test_mode_consolidation(canvas, Data):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 185 * mm)
+    t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
 
-def test_mode_shear(canvas, Data):
+def test_mode_shear(canvas, Data, moove=0):
 
     if "/" in str(Data["sigma"]):
         sigma = str(Data["sigma"])
@@ -767,9 +766,9 @@ def test_mode_shear(canvas, Data):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 185 * mm)
+    t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
-def test_mode_shear_dilatancy(canvas, Data):
+def test_mode_shear_dilatancy(canvas, Data, moove=0):
 
     if "/" in str(Data["sigma"]):
         sigma = str(Data["sigma"])
@@ -815,9 +814,9 @@ def test_mode_shear_dilatancy(canvas, Data):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 185 * mm)
+    t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
-def test_mode_consolidation_1(canvas, Data):
+def test_mode_consolidation_1(canvas, Data, moove=0):
 
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
@@ -851,7 +850,7 @@ def test_mode_consolidation_1(canvas, Data):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 185 * mm)
+    t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
 def testModeStamm(canvas, wb, Nop, Data):
 
@@ -897,13 +896,13 @@ def testModeStamm(canvas, wb, Nop, Data):
 
 
 
-def result_table_rc(canvas, Res, pick, scale = 0.8):
+def result_table_rc(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     #a = Image(pick, 320, 240)
     a = svg2rlg(pick)
     a.scale(scale, scale)
-    renderPDF.draw(a, canvas, 38 * mm, 95 * mm)
+    renderPDF.draw(a, canvas, 38 * mm, (95-moove) * mm)
     #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", ""]]
@@ -928,9 +927,9 @@ def result_table_rc(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (51-(( r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (51-moove -(( r-30)*4)) * mm)
 
-def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8):
+def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     #a = Image(pick, 320, 240)
@@ -938,10 +937,10 @@ def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8):
         try:
             a = svg2rlg(pick[0])
             a.scale(scale, scale)
-            renderPDF.draw(a, canvas, 36 * mm, 81 * mm)
+            renderPDF.draw(a, canvas, 36 * mm, (81-moove) * mm)
             b = svg2rlg(pick[1])
             b.scale(scale, scale)
-            renderPDF.draw(b, canvas, 120 * mm, 81 * mm)
+            renderPDF.draw(b, canvas, 120 * mm, (81-moove) * mm)
         except AttributeError:
             a = ImageReader(pick[0])
             canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -954,7 +953,7 @@ def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8):
         try:
             a = svg2rlg(pick[0])
             a.scale(scale, scale)
-            renderPDF.draw(a, canvas, 36 * mm, 81 * mm)
+            renderPDF.draw(a, canvas, 36 * mm, (81-moove) * mm)
         except AttributeError:
             a = ImageReader(pick[0])
             canvas.drawImage(a, 36 * mm, 81 * mm,
@@ -989,7 +988,7 @@ def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (42-(( r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (42- moove -(( r-30)*4)) * mm)
 
 def result_table_consolidation(canvas, Res, pick, scale = 0.8):
 
@@ -1049,7 +1048,7 @@ def result_table_consolidation(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (42-(( r-30)*4)) * mm)
 
-def result_table_deviator(canvas, Res, pick, scale = 0.8):
+def result_table_deviator(canvas, Res, pick, scale = 0.8, moove =0):
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
     r = 30
@@ -1076,10 +1075,10 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 118 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (118-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 36 * mm, 62 * mm)
+        renderPDF.draw(b, canvas, 36 * mm, (62-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[1])
         canvas.drawImage(a, 32 * mm, 60 * mm,
@@ -1121,9 +1120,9 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (48-((r-30)*4) - 4) * mm)
+    t.drawOn(canvas, 25 * mm, (48 - moove-((r-30)*4) - 4) * mm)
 
-def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E"):
+def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E", moove=0):
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
     r = 28
@@ -1147,7 +1146,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E")
     if Res["Eur"]:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 66 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (66-moove) * mm)
         if result_E == "all":
             tableData.append(
                 [Paragraph(Ew, LeftStyle), "", "", "",
@@ -1253,10 +1252,10 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E")
         try:
             a = svg2rlg(pick[0])
             a.scale(scale, scale)
-            renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+            renderPDF.draw(a, canvas, 36 * mm, (120-moove) * mm)
             b = svg2rlg(pick[1])
             b.scale(scale, scale)
-            renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
+            renderPDF.draw(b, canvas, 36 * mm, (66-moove) * mm)
         except AttributeError:
             a = ImageReader(pick[1])
             canvas.drawImage(a, 32 * mm, 60 * mm,
@@ -1347,10 +1346,10 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E")
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (46 - sss -((r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (46 - sss -moove-((r-30)*4)) * mm)
 
 
-def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8):
+def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8, moove=0):
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
     r = 28
@@ -1360,7 +1359,7 @@ def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8):
     if Res["Eur"]:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 66 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (66-moove) * mm)
         tableData.append(
             [Paragraph('''<p>Девиатор напряжений при разрушении образца q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
              Res["qf"], ""])
@@ -1444,10 +1443,10 @@ def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8):
         try:
             a = svg2rlg(pick[0])
             a.scale(scale, scale)
-            renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+            renderPDF.draw(a, canvas, 36 * mm, (120-moove) * mm)
             b = svg2rlg(pick[1])
             b.scale(scale, scale)
-            renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
+            renderPDF.draw(b, canvas, 36 * mm, (66-moove) * mm)
         except AttributeError:
             a = ImageReader(pick[1])
             canvas.drawImage(a, 32 * mm, 60 * mm,
@@ -1493,11 +1492,11 @@ def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 44 * mm)
+    t.drawOn(canvas, 25 * mm, (44-moove) * mm)
 
 
 
-def result_table_deviator_vc(canvas, Res, pick, scale = 0.8):
+def result_table_deviator_vc(canvas, Res, pick, scale = 0.8, moove=0):
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
     r = 29
@@ -1509,10 +1508,10 @@ def result_table_deviator_vc(canvas, Res, pick, scale = 0.8):
          Res["qf"], ""])
 
     a = ImageReader(pick[1])
-    canvas.drawImage(a, 32 * mm, 60 * mm,
+    canvas.drawImage(a, 32 * mm, (60-moove) * mm,
                      width=160 * mm, height=54 * mm)
     b = ImageReader(pick[0])
-    canvas.drawImage(b, 32 * mm, 114 * mm,
+    canvas.drawImage(b, 32 * mm, (114-moove) * mm,
                      width=160 * mm, height=54 * mm)
 
 
@@ -1537,7 +1536,7 @@ def result_table_deviator_vc(canvas, Res, pick, scale = 0.8):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (50-((r-30)*4) - 4) * mm)
+    t.drawOn(canvas, 25 * mm, (50- moove -((r-30)*4) - 4) * mm)
 
 
 
@@ -1604,11 +1603,11 @@ def result_table_deviator_reload(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (42-(( r-30)*4)) * mm)
 
-def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False):
+def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False, moove=0):
     try:
         a = svg2rlg(pick)
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 50 * mm, 45 * mm)
+        renderPDF.draw(a, canvas, 50 * mm, (45-moove) * mm)
     except AttributeError:
         a = ImageReader(pick)
         if long:
@@ -1682,18 +1681,18 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False):
                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (60 - s) * mm)
+    t.drawOn(canvas, 25 * mm, (60 - moove - s) * mm)
 
 
 
-def result_vibration_creep(canvas, Res, pick, scale = 0.8):
+def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0):
 
     try:
         a = ImageReader(pick[1])
-        canvas.drawImage(a, 32 * mm, 63 * mm,
+        canvas.drawImage(a, 32 * mm, (63-moove) * mm,
                          width=160 * mm, height=54 * mm)
         b = ImageReader(pick[0])
-        canvas.drawImage(b, 32 * mm, 117 * mm,
+        canvas.drawImage(b, 32 * mm, (117-moove) * mm,
                          width=160 * mm, height=54 * mm)
 
     except AttributeError:
@@ -1776,7 +1775,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (42-((r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (42-moove-((r-30)*4)) * mm)
 
 def result_vibration_creep3(canvas, Res, pick, test_parameter):
 
@@ -1881,16 +1880,16 @@ def result_vibration_creep3(canvas, Res, pick, test_parameter):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (38-((r-30)*4)) * mm)
 
-def result_table_CF(canvas, Res, pick, scale = 0.8):
+def result_table_CF(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (65-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+        renderPDF.draw(b, canvas, 120 * mm, (133-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[0])
         #canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -1969,7 +1968,7 @@ def result_table_CF(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
+    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6 - moove) * mm)
 
 def result_table_CF_res(canvas, Res, pick, scale = 0.8):
 
@@ -2072,16 +2071,16 @@ def result_table_CF_res(canvas, Res, pick, scale = 0.8):
     t.drawOn(canvas, 25 * mm, ((34 - 4-((r - 30)*4)) - table_move*6) * mm)
 
 
-def result_table_CF_NN(canvas, Res, pick, scale = 0.8):
+def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (65-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+        renderPDF.draw(b, canvas, 120 * mm, (133-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[0])
         #canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -2185,7 +2184,7 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8):
                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((40-((r - 30)*4)) - table_move*6) * mm)
+    t.drawOn(canvas, 25 * mm, ((40-((r - 30)*4)) - table_move*6-moove) * mm)
 
 
 def result_table_m(canvas, Res, pick, scale = 0.8):
@@ -2230,16 +2229,16 @@ def result_table_m(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (54 - ((r - 30) * 4)) * mm)
 
-def result_table_CF_KN(canvas, Res, pick, scale = 0.8):
+def result_table_CF_KN(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (65-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+        renderPDF.draw(b, canvas, 120 * mm, (133-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[0])
         #canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -2311,18 +2310,18 @@ def result_table_CF_KN(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
+    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6-moove) * mm)
 
-def result_table_CF_KN_vs(canvas, Res, pick, scale = 0.8):
+def result_table_CF_KN_vs(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (65-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+        renderPDF.draw(b, canvas, 120 * mm, (133-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[0])
         #canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -2409,7 +2408,7 @@ def result_table_CF_KN_vs(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, 45 * mm)
+    t.drawOn(canvas, 25 * mm, (45-moove) * mm)
 
 
 def result_table_statment_cyclic(canvas, Data):
@@ -2696,13 +2695,13 @@ def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     code = SaveCode(version)
 
     main_frame(canvas, path,  Data_customer, code, "1/1", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ИСПЫТАНИЯ ГРУНТА МЕТОДОМ МАЛОАМПЛИТУДНЫХ ДИНАМИЧЕСКИХ",
                                 "КОЛЕБАНИЙ В РЕЗОНАНСНОЙ КОЛОНКЕ (ГОСТ Р 56353-2015)"], "/РК")
 
-    parameter_table(canvas, Data_phiz, Lab)
-    test_mode_rc(canvas, Data_phiz.r, test_parameter)
-    result_table_rc(canvas, res, picks)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
+    test_mode_rc(canvas, Data_phiz.r, test_parameter, moove=moove)
+    result_table_rc(canvas, res, picks, moove=moove)
 
 
     canvas.showPage()
@@ -2721,20 +2720,20 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     main_frame(canvas, path,  Data_customer, code, "1/2", qr_code=qr_code)
     if test_parameter["type"] == "Сейсморазжижение":
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
                                 "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/С")
     elif test_parameter["type"] == "По заданным параметрам":
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                                 "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/С")
     elif test_parameter["type"] == "Штормовое разжижение":
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
                                  "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"], "/ШТ")
-    parameter_table(canvas, Data_phiz, Lab)
-    test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter)
-    result_table__triaxial_cyclic(canvas, res, [picks[0], picks[1]])
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
+    test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
+    result_table__triaxial_cyclic(canvas, res, [picks[0], picks[1]], moove=moove)
 
 
     canvas.showPage()
@@ -2786,14 +2785,14 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
 
     #canvas.showPage()
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КОНСОЛИДАЦИИ ГРУНТОВ МЕТОДОМ",
                              "КОМПРЕССИОННОГО СЖАТИЯ (ГОСТ 12248.4-2020)"], "/ВК")
 
-    parameter_table(canvas, Data_phiz, Lab)
-    test_mode_consolidation_1(canvas, test_parameter)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
+    test_mode_consolidation_1(canvas, test_parameter, moove=moove)
 
-    result_table_deviator(canvas, res, [picks[0], picks[1]])
+    result_table_deviator(canvas, res, [picks[0], picks[1]], moove=moove)
 
     canvas.showPage()
 
@@ -2813,31 +2812,31 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
     #canvas.showPage()
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
     if res["Eur"]:
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТС/Р")
     else:
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                                  "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТС")
 
     K0 = test_parameter["K0"]
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
 
     test_parameter["K0"] = K0[0]
 
-    test_mode_consolidation(canvas, test_parameter)
+    test_mode_consolidation(canvas, test_parameter, moove=moove)
     if report_type == "standart_E":
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E")
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E", moove=moove)
     elif report_type == "standart_E50":
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50")
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
     elif report_type == "E_E50":
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all")
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all", moove=moove)
     elif report_type == "user_define_1":
-        result_table_deviator_user_1(canvas, res, [picks[2], picks[3]])
+        result_table_deviator_user_1(canvas, res, [picks[2], picks[3]], moove=moove)
     else:
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50")
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
 
     canvas.showPage()
 
@@ -2859,54 +2858,54 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
         main_frame(canvas, path, Data_customer, code, "1/3", qr_code=qr_code)
     else:
         main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["K0"] = K0[0]
-    test_mode_consolidation(canvas, test_parameter)
+    test_mode_consolidation(canvas, test_parameter, moove=moove)
 
     if report_type == "standart_E":
-        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E")
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E", moove=moove)
     elif report_type == "standart_E50":
-        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50")
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50", moove=moove)
     elif report_type == "E_E50":
-        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="all")
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="all", moove=moove)
     elif report_type == "user_define_1":
-        result_table_deviator_user_1(canvas, res, [picks[0], picks[1]])
+        result_table_deviator_user_1(canvas, res, [picks[0], picks[1]], moove=moove)
     else:
-        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50")
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50", moove=moove)
 
     canvas.showPage()
     if report_type == "plaxis":
         main_frame(canvas, path, Data_customer, code, "2/3", qr_code=qr_code)
     else:
         main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["K0"] = K0[1]
     test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
-    test_mode_consolidation(canvas, test_parameter)
+    test_mode_consolidation(canvas, test_parameter, moove=moove)
 
-    result_table_CF(canvas, res, [picks[2], picks[3]])
+    result_table_CF(canvas, res, [picks[2], picks[3]], moove=moove)
 
     if report_type == "plaxis":
         canvas.showPage()
 
         main_frame(canvas, path, Data_customer, code, "3/3", qr_code=qr_code)
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                                  "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
-        parameter_table(canvas, Data_phiz, Lab)
+        parameter_table(canvas, Data_phiz, Lab, moove=moove)
         test_parameter["K0"] = K0[1]
         test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(
             res["sigma_3_mohr"][2], 3)
-        test_mode_consolidation(canvas, test_parameter)
+        test_mode_consolidation(canvas, test_parameter, moove=moove)
 
         result_table_m(canvas, res, picks[4])
 
@@ -2925,15 +2924,15 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     code = SaveCode(version)
 
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
-    test_mode_consolidation(canvas, test_parameter)
+    test_mode_consolidation(canvas, test_parameter, moove=moove)
 
-    result_table_CF(canvas, res, [picks[0],picks[1]])
+    result_table_CF(canvas, res, [picks[0],picks[1]], moove=moove)
 
     canvas.save()
 
@@ -3071,29 +3070,29 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     code = SaveCode(version)
 
     main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"
-    test_mode_vibration_creep(canvas, test_parameter)
+    test_mode_vibration_creep(canvas, test_parameter, moove=moove)
 
-    result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]])
+    result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]], moove=moove)
 
     canvas.showPage()
 
     test_parameter['Oborudovanie'] = "Wille Geotechnik 13-HG/020:001"
 
     main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
-    parameter_table(canvas, Data_phiz, Lab)
-    test_mode_vibration_creep(canvas, test_parameter)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
+    test_mode_vibration_creep(canvas, test_parameter, moove=moove)
 
-    result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]])
+    result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]], moove=moove)
 
     canvas.save()
 
@@ -3112,31 +3111,31 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     code = SaveCode(version)
     test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"
     main_frame(canvas, path, Data_customer, code, f"1/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
-    parameter_table(canvas, Data_phiz, Lab)
-    test_mode_vibration_creep(canvas, test_parameter)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
+    test_mode_vibration_creep(canvas, test_parameter, moove=moove)
 
     test_parameter['Oborudovanie'] = "Wille Geotechnik 13-HG/020:001"
 
-    result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]])
+    result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]], moove=moove)
 
     canvas.showPage()
 
     for i in range(len(test_parameter["frequency"])):
         main_frame(canvas, path, Data_customer, code, f"{i+2}/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                                  "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
-        parameter_table(canvas, Data_phiz, Lab)
+        parameter_table(canvas, Data_phiz, Lab, moove=moove)
         t = dict(test_parameter)
         t["frequency"] = [test_parameter["frequency"][i]]
-        test_mode_vibration_creep(canvas, t)
+        test_mode_vibration_creep(canvas, t, moove=moove)
 
-        result_vibration_creep(canvas, [res_dynamic[i]], [pick_vc_array[i], pick_c_array[i]], test_parameter)
+        result_vibration_creep(canvas, [res_dynamic[i]], [pick_vc_array[i], pick_c_array[i]], test_parameter, moove=moove)
         canvas.showPage()
 
     #main_frame(canvas, path, Data_customer, code, f"{2+len(test_parameter['frequency'])}/{2+len(test_parameter['frequency'])}", qr_code=qr_code)
@@ -3208,28 +3207,28 @@ def report_cyclic_damping(Name, Data_customer, Data_phiz, Lab, path, test_parame
     code = SaveCode(version)
 
     main_frame(canvas, path,  Data_customer, code, "1/1", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ДЕМПФИРУЮЩИХ СВОЙСТ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
                              "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2015, ASTM D5311/ASTM D5311M-13)"],
                             "/Д")
-    parameter_table(canvas, Data_phiz, Lab)
-    test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter)
-    result_table_cyclic_damping(canvas, res, picks[0])
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
+    test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
+    result_table_cyclic_damping(canvas, res, picks[0], moove=moove)
 
     canvas.showPage()
 
     canvas.save()
 
-def result_table_shear(canvas, Res, pick, scale = 0.8):
+def result_table_shear(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 65 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (65-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 120 * mm, 133 * mm)
+        renderPDF.draw(b, canvas, 120 * mm, (133-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[0])
         #canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -3308,9 +3307,9 @@ def result_table_shear(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6) * mm)
+    t.drawOn(canvas, 25 * mm, ((34 - moove -((r - 30)*4)) - table_move*6) * mm)
 
-def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8):
+def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
@@ -3328,10 +3327,10 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8):
     try:
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, 120 * mm)
+        renderPDF.draw(a, canvas, 36 * mm, (120-moove) * mm)
         b = svg2rlg(pick[1])
         b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 36 * mm, 66 * mm)
+        renderPDF.draw(b, canvas, 36 * mm,(66-moove) * mm)
     except AttributeError:
         a = ImageReader(pick[1])
         canvas.drawImage(a, 32 * mm, 60 * mm,
@@ -3378,7 +3377,7 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (50-((r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (50 - moove -((r-30)*4)) * mm)
 
 
 def StampReport(M, R, p1, p2, Nop, path, version = 1):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
@@ -3473,17 +3472,15 @@ def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_param
     #canvas.showPage()
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
 
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ УГЛА ДИЛАТАНСИИ МЕТОДОМ",
                              "ОДНОПЛОСКОСТНОГО СРЕЗА (12248.1-2020)"], "/" + name)
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
 
+    test_mode_shear_dilatancy(canvas, test_parameter, moove=moove)
 
-
-    test_mode_shear_dilatancy(canvas, test_parameter)
-
-    result_table_shear_dilatancy(canvas, res, [picks[0], picks[1]])
+    result_table_shear_dilatancy(canvas, res, [picks[0], picks[1]], moove=moove)
 
     canvas.showPage()
 
@@ -3501,16 +3498,16 @@ def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     code = SaveCode(version)
 
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЕ ГРУНТОВ МЕТОДОМ ОДНОПЛОСКОСТНОГО",
                              "СРЕЗА (ГОСТ 12248.1-2020)"], "/" + name)
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["sigma"] = zap(res["sigma_shear"][0], 3) + "/" + zap(res["sigma_shear"][1], 3) + "/" + zap(res["sigma_shear"][2], 3)
     res["tau_max"] = [i/1000. for i in res["tau_max"]]
-    test_mode_shear(canvas, test_parameter)
+    test_mode_shear(canvas, test_parameter, moove=moove)
 
-    result_table_shear(canvas, res, [picks[0], picks[1]])
+    result_table_shear(canvas, res, [picks[0], picks[1]], moove=moove)
 
     canvas.save()
 
