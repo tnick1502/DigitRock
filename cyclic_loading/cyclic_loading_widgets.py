@@ -893,19 +893,26 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             s = None
 
         key = None
+        test_mode_file_name = None
         try:
             if statment.general_parameters.test_mode == "Сейсморазжижение":
                 key = "Seismic liquefaction"
+                test_mode_file_name = "сейсмо"
             elif statment.general_parameters.test_mode == "Штормовое разжижение":
                 key = "Storm liquefaction"
+                test_mode_file_name = "шторм"
             elif statment.general_parameters.test_mode == "Демпфирование":
                 key = "damping"
+                test_mode_file_name = 'демпфирование'
             elif statment.general_parameters.test_mode == "По заданным параметрам":
                 key = "Seismic liquefaction"
+                test_mode_file_name = 'по заданным параметрам'
         except:
             key = None
 
-        _statment = StatementGenerator(self, path=s, statement_structure_key=key)
+        _statment = StatementGenerator(self, path=s, statement_structure_key=key,
+                                       test_mode_and_shipment=(test_mode_file_name,
+                                                               statment.general_data.get_shipment_number()))
         _statment.show()
 
     def save_report_and_continue(self):

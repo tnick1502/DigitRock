@@ -518,7 +518,13 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
         except:
             s = None
 
-        _statment = StatementGenerator(self, path=s, statement_structure_key="triaxial_cyclic")
+        test_mode_file_name = None
+        if statment.general_parameters.test_mode == "Виброползучесть":
+            test_mode_file_name = 'вибро'
+
+        _statment = StatementGenerator(self, path=s, statement_structure_key="triaxial_cyclic",
+                                       test_mode_and_shipment=(test_mode_file_name,
+                                                               statment.general_data.get_shipment_number()))
         _statment.show()
 
     def save_report_and_continue(self):
