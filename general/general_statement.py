@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Tuple
 
 from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QGroupBox, QDialog, \
     QComboBox, QWidget, QLineEdit, QPushButton, QVBoxLayout, QLabel, QMessageBox, QApplication
@@ -217,7 +218,8 @@ class StatementGenerator(QDialog):
 
     """
 
-    def __init__(self, parent, path=None, statment_data=None, statement_structure_key=None):
+    def __init__(self, parent, path=None, statment_data=None, statement_structure_key=None,
+                 test_mode_and_shipment: Tuple[str, str] = (None, None)):
         super().__init__(parent)
 
         self.setGeometry(100, 50, 1000, 950)
@@ -228,6 +230,8 @@ class StatementGenerator(QDialog):
         self.statment_data = statment_data
 
         self._statement_structure_key = statement_structure_key if statement_structure_key else "triaxial_cyclic"
+
+        self.statment_test_mode, self.shipment = test_mode_and_shipment
 
         self.create_UI()
 
@@ -357,7 +361,10 @@ class StatementGenerator(QDialog):
                     # file = QFileDialog.getOpenFileName(self, 'Open file')[0]
                     save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
-                    save_file_name = 'Общая ведомость.pdf'
+                    if self.statment_test_mode and self.shipment:
+                        save_file_name = f'Ведомость {self.statment_test_mode} {self.shipment}.pdf'
+                    else:
+                        save_file_name = 'Общая ведомость.pdf'
                     # считывание параметра "Заголовок"
 
                     statement_title = self.StatementStructure.get_structure().get("statement_title", '')
