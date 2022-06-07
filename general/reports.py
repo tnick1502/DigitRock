@@ -523,7 +523,7 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True, moove=0):
                     "Частота, Гц:", "", str(test_parameter["frequency"]).replace(".", ","), "I, балл:",  "", str(test_parameter["I"]).replace(".", ",") if test_parameter["I"] else "-"],
                    ["M, ед.:", "", str(test_parameter["M"]).replace(".", ",") if test_parameter["M"] else "-", "MSF, ед.:", "",str(test_parameter["MSF"]).replace(".", ",") if test_parameter["MSF"] else "-", Paragraph('''<p>r<sub rise="2.5" size="6">d</sub>, ед.:</p>''', LeftStyle), "",str(test_parameter["rd"]).replace(".", ","),]], colWidths=19.444444* mm, rowHeights=4 * mm)
 
-    elif test_parameter["type"] == "Демпфирование" or test_parameter["type"] == "По заданным параметрам":
+    elif test_parameter["type"] == "Демпфирование" or test_parameter["type"] == "По заданным параметрам" or test_parameter["type"] == "Динамическая прочность на сдвиг":
         t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                    ["Режим испытания:", "", test_parameter["Rezhim"], "", "", "", "", "", ""],
                    ["Оборудование:", "", test_parameter["Oborudovanie"]],
@@ -929,7 +929,7 @@ def result_table_rc(canvas, Res, pick, scale = 0.8, moove=0):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (51-moove -(( r-30)*4)) * mm)
 
-def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8, moove=0):
+def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8, moove=0, tttyytuyuuk=1):
 
 
     #a = Image(pick, 320, 240)
@@ -964,31 +964,77 @@ def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8, moove=0):
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
     r = 25
+    trt = 0
     for i in range(r):
         tableData.append([""])
 
-    tableData.append([Paragraph('''<p>PPR<sub rise="0.5" size="6">max</sub>, д.е.:</p>''', LeftStyle), zap(Res["PPRmax"], 3), Paragraph('''<p>ε<sub rise="0.5" size="6">max</sub>, д.е.:</p>''', LeftStyle), zap(Res["EPSmax"],3), Paragraph('''<p>N<sub rise="0.5" size="6">fail</sub>, ед.:</p>''', LeftStyle), zap(Res["nc"],0)])
-    tableData.append(["Итог испытания:", Res["res"], "", "", "", ""])
-    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
-    t.setStyle([('SPAN', (0, 0), (-1, 0)),
-                ('SPAN', (0, 1), (-1, r)),
-                ('SPAN', (1, -1), (-1, -1)),
-                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("BACKGROUND", (2, -2), (2, -2), HexColor(0xebebeb)),
-                ("BACKGROUND", (4, -2), (4, -2), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -2), (0, -2), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -1), (0, -1), HexColor(0xebebeb)),
-                #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (0, 0), (-1, r), "CENTER"),
-                ("ALIGN", (0, r+1), (0, -1), "LEFT"),
-                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+    t = Table(tableData, colWidths=175 / 6 * mm, rowHeights=4 * mm)
+
+    if tttyytuyuuk == 1:
+        tableData.append([Paragraph('''<p>PPR<sub rise="0.5" size="6">max</sub>, д.е.:</p>''', LeftStyle), zap(Res["PPRmax"], 3), Paragraph('''<p>ε<sub rise="0.5" size="6">max</sub>, д.е.:</p>''', LeftStyle), zap(Res["EPSmax"],3), Paragraph('''<p>N<sub rise="0.5" size="6">fail</sub>, ед.:</p>''', LeftStyle), zap(Res["nc"],0)])
+        tableData.append(["Итог испытания:", Res["res"], "", "", "", ""])
+
+    else:
+
+        tableData.append(
+            [Paragraph('''<p>PPR<sub rise="0.5" size="6">max</sub>, д.е.:</p>''', CentralStyle), "", zap(Res["PPRmax"], 3),
+             Paragraph('''<p>ε<sub rise="0.5" size="6">max</sub>, д.е.:</p>''', CentralStyle), "", zap(Res["EPSmax"], 3)])
+
+        tableData.append(
+            ["Динамическая прочность грунта на сдвиг, ед.:", "", "", zap(Res["nc"], 0) if Res["nc"] != "-" else "1500", "", ""])
+        tableData.append(
+            ["Критическое значение сдвиговых деформаций, д.е.:", "", "", zap(Res["gamma_critical"], 6), "", ""])
+        trt = 4
+
+    t = Table(tableData, colWidths=175 / 6 * mm, rowHeights=4 * mm)
+
+
+    if tttyytuyuuk == 1:
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                    ('SPAN', (0, 1), (-1, r)),
+                    ('SPAN', (1, -1), (-1, -1)),
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("BACKGROUND", (2, -2), (2, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (4, -2), (4, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -2), (0, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -1), (0, -1), HexColor(0xebebeb)),
+                    # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                    ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+    else:
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                    ('SPAN', (0, 1), (-1, r)),
+
+                    ('SPAN', (0, -3), (1, -3)),
+                    ('SPAN', (3, -3), (4, -3)),
+
+
+                    ('SPAN', (0, -1), (2, -1)),
+                    ('SPAN', (3, -1), (-1, -1)),
+                    ('SPAN', (0, -2), (2, -2)),
+                    ('SPAN', (3, -2), (-1, -2)),
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("BACKGROUND", (0, -3), (1, -3), HexColor(0xebebeb)),
+                    ("BACKGROUND", (3, -3), (4, -3), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -2), (0, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -1), (0, -1), HexColor(0xebebeb)),
+                    # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (42- moove -(( r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (42 - trt - moove - ((r - 30) * 4)) * mm)
 
 def result_table_consolidation(canvas, Res, pick, scale = 0.8):
 
@@ -2759,6 +2805,44 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
     canvas.showPage()
 
     canvas.save()
+
+def report_triaxial_cyclic_shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    canvas = Canvas(Name, pagesize=A4)
+
+    code = SaveCode(version)
+
+    main_frame(canvas, path,  Data_customer, code, "1/2", qr_code=qr_code)
+
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                    ["ОПРЕДЕЛЕНИЕ ДИНАМИЧЕСКОЙ ПРОЧНОСТИ НА СДВИГ И КРИТИЧЕСКОГО ЗНАЧЕНИЯ",
+                                     "СДВИГОВЫХ ДЕФОРМАЦИЙ (СП 23.13330.2018)"],
+                                    "/ДС")
+
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
+    test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
+    result_table__triaxial_cyclic(canvas, res, [picks[0], picks[1]], moove=moove, tttyytuyuuk=2)
+
+
+    canvas.showPage()
+
+    main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                    ["ОПРЕДЕЛЕНИЕ ДИНАМИЧЕСКОЙ ПРОЧНОСТИ НА СДВИГ И КРИТИЧЕСКОГО ЗНАЧЕНИЯ",
+                                     "СДВИГОВЫХ ДЕФОРМАЦИЙ (СП 23.13330.2018)"],
+                                    "/ДС")
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
+    test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
+    result_table__triaxial_cyclic(canvas, res, [picks[2]], moove=moove, tttyytuyuuk=2)
+
+    canvas.showPage()
+
+    canvas.save()
+
 
 def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты

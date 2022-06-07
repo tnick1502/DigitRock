@@ -213,12 +213,23 @@ class ModelTriaxialCyclicLoading:
         self._test_result.max_PPR = round(np.max(self._test_data.PPR), 3)
         self._test_result.max_strain = round(np.max(self._test_data.strain), 3)
 
-        self._test_result.fail_cycle_criterion_strain = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                          (self._test_data.strain >= 0.05))
-        self._test_result.fail_cycle_criterion_stress = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                          (self._test_data.mean_effective_stress <= 0))
-        self._test_result.fail_cycle_criterion_PPR = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                       (self._test_data.PPR >= 1))
+        if statment.general_parameters.test_mode == "Динамическая прочность на сдвиг":
+            self._test_result.fail_cycle_criterion_strain = ModelTriaxialCyclicLoading.define_fail_cycle(
+                self._test_data.cycles,
+                (self._test_data.strain >= 0.20))
+            self._test_result.fail_cycle_criterion_stress = ModelTriaxialCyclicLoading.define_fail_cycle(
+                self._test_data.cycles,
+                (self._test_data.mean_effective_stress <= 0))
+            self._test_result.fail_cycle_criterion_PPR = ModelTriaxialCyclicLoading.define_fail_cycle(
+                self._test_data.cycles,
+                (self._test_data.PPR >= 0.95))
+        else:
+            self._test_result.fail_cycle_criterion_strain = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
+                                                                              (self._test_data.strain >= 0.05))
+            self._test_result.fail_cycle_criterion_stress = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
+                                                                              (self._test_data.mean_effective_stress <= 0))
+            self._test_result.fail_cycle_criterion_PPR = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
+                                                                           (self._test_data.PPR >= 1))
 
         self._test_result.fail_cycle = min([i for i in [self._test_result.fail_cycle_criterion_strain,
                                                         self._test_result.fail_cycle_criterion_stress,
@@ -238,6 +249,11 @@ class ModelTriaxialCyclicLoading:
         #plt.plot(self._test_data.strain, self._test_data.deviator)
         #plt.fill(strain, deviator, color="tomato", alpha=0.5, zorder=5)
         #plt.show()
+
+        if statment.general_parameters.test_mode == "Динамическая прочность на сдвиг":
+            dyn_puasson = 0.2
+            G = self._test_result.E_values[1] / (2 * (1 + dyn_puasson))
+            self._test_result.gamma_critical = self._test_params.t / G
 
         if self._test_result.fail_cycle_criterion_stress or self._test_result.fail_cycle_criterion_PPR:
             self._test_result.conclusion = "Грунт склонен к разжижению"
@@ -1110,7 +1126,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         #self._test_data.strain = np.hstack((self._load_stage.strain, self._test_data.strain)) [len(self._load_stage.time):]
         # Накладываем погрешности на вертикальную деформацию
-
+        self._test_result.E_values = (E_module[0], E_module[-1])
         self._test_data.strain = ndimage.gaussian_filter(self._test_data.strain, self._draw_params.strain_filter,
                                                          order=0)
         self._test_data.strain[0] = 0
