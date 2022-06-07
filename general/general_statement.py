@@ -1,8 +1,9 @@
+import copy
 from datetime import datetime
 from typing import Tuple
 
 from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QGroupBox, QDialog, \
-    QComboBox, QWidget, QLineEdit, QPushButton, QVBoxLayout, QLabel, QMessageBox, QApplication
+    QComboBox, QWidget, QLineEdit, QPushButton, QVBoxLayout, QLabel, QMessageBox, QApplication, QCheckBox
 from PyQt5.QtCore import Qt
 import sys
 import os
@@ -222,6 +223,8 @@ class StatementGenerator(QDialog):
                  test_mode_and_shipment: Tuple[str, str] = (None, None)):
         super().__init__(parent)
 
+        self.sort = False
+
         self.setGeometry(100, 50, 1000, 950)
 
         self.path = path
@@ -274,6 +277,8 @@ class StatementGenerator(QDialog):
 
         self.StatementStructure.save_button.clicked.connect(self._save_report)
 
+        self.StatementStructure.sort_btn.clicked.connect(self._on_sort)
+
         self.setLayout(self.layout)
 
     def open_excel(self, path=None):
@@ -316,7 +321,12 @@ class StatementGenerator(QDialog):
                     for j in range(len(data[i])):
                         if data[i][j] == 'None':
                             data[i][j] = ' '
+
+                if self.sort:
+                    data = self.sort_data_by_skv_depth(data)
+
                 self.statment_table.set_data([titles] + data, "Stretch")
+
             else:
                 pass
 
@@ -385,6 +395,8 @@ class StatementGenerator(QDialog):
                         for j in range(len(data[i])):
                             if data[i][j] == 'None':
                                 data[i][j] = ' '
+                    if self.sort:
+                        data = self.sort_data_by_skv_depth(data)
                     # ["customer", "object_name", "data", "accreditation"]
                     # ["Заказчик", "Объект", "Дата", "Аккредитация"]
                     # Дата
@@ -701,6 +713,21 @@ class StatementGenerator(QDialog):
             return "None"
         return value
 
+    def _on_sort(self, checked: bool):
+        if not checked:
+            self.sort = False
+        else:
+            self.sort = True
+
+        self._plot()
+
+    def sort_data_by_skv_depth(self, data):
+        result = copy.deepcopy(data[:-1])
+
+        result = sorted(result, key=lambda x: [x[1], x[2]] if len(x) > 2 else x[0])
+
+        return [*result, data[-1]]
+
 class StatementStructure(QWidget):
     """
     Класс для представления пользовательского интерфейса и механизмов создания и хранения шаблонов
@@ -826,6 +853,12 @@ class StatementStructure(QWidget):
         self.save_button.setFixedWidth(140)
         self.save_button.setFixedHeight(70)
         self.end_line.addWidget(self.save_button)
+
+        self.sort_btn = QCheckBox("Сортировка по скв/глуб")
+        self.sort_btn.setFixedHeight(30)
+        self.sort_btn.setFixedWidth(150)
+        self.end_line.addWidget(self.sort_btn)
+
         self.end_line.addStretch(-1)
         self.parameter_box_layout.addLayout(self.end_line)
         self.layout.addWidget(self.parameter_box)
