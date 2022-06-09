@@ -651,6 +651,10 @@ class ModelTriaxialDeviatorLoading:
             i_begin, = np.where(strain >= strain[i_top] - x_area)
             i_end, = np.where(strain >= strain[i_top] + x_area)
 
+            if len(i_end) < 1:
+                i_end = [len(strain) - 1]
+                i_begin = [i_top - (i_end[0] - i_top)]
+
             A1, B1 = line_approximate(strain[i_begin[0]:i_end[0]], volume_strain[i_begin[0]:i_end[0]])
             B1 = volume_strain[i_top] - A1 * strain[i_top]
 
