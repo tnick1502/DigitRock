@@ -10,7 +10,7 @@ import os
 import time
 #import pyautogui
 import shutil
-from general.reports import report_triaxial_cyclic, report_cyclic_damping
+from general.reports import report_triaxial_cyclic, report_cyclic_damping, report_triaxial_cyclic_shear
 import threading
 from authentication.request_qr import request_qr
 
@@ -687,6 +687,8 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                 file_name = save + "/" + "Отчет " + file_path_name + "-Д" + ".pdf"
             elif statment.general_parameters.test_mode == "По заданным параметрам":
                 file_name = save + "/" + "Отчет " + file_path_name + "-Д" + ".pdf"
+            elif statment.general_parameters.test_mode == "Динамическая прочность на сдвиг":
+                file_name = save + "/" + "Отчет " + file_path_name + "-С" + ".pdf"
 
 
             test_parameter = {'sigma3': statment[statment.current_test].mechanical_properties.sigma_3,
@@ -786,6 +788,39 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                                        statment.getLaboratoryNumber(),
                                        os.getcwd() + "/project_data/", test_parameter, results,
                                        [self.tab_2.damping.save_canvas()], "{:.2f}".format(__version__))
+
+            elif statment.general_parameters.test_mode == "Динамическая прочность на сдвиг":
+                results["gamma_critical"] = test_result['gamma_critical']
+                data = {
+                    "laboratory": "mdgt",
+                    "password": "it_user",
+
+                    "test_name": "Cyclic",
+                    "object": str(statment.general_data.object_number),
+                    "laboratory_number": str(statment.current_test),
+                    "test_type": "Dynamic_shear",
+
+                    "data": {
+                        "Лаболаторный номер:": str(statment.current_test),
+                        "Обжимающее давление 𝜎3, МПа:": str(
+                            np.round(statment[statment.current_test].mechanical_properties.sigma_3 / 1000, 3)),
+                        "К0:": str(statment[statment.current_test].mechanical_properties.K0),
+                        "Максимальное значение PPR, д.е.:": str(test_result["max_PPR"]),
+                        "Максимальное значение деформации, д.е.:": str(test_result["max_strain"]),
+                        "Динамическая прочностьт грунта на сдвиг, ед.": str(test_result["fail_cycle"]) if test_result["fail_cycle"] else "1500",
+                    }
+                }
+
+                if self.tab_3.qr:
+                    qr = None  # qr = request_qr(data)
+                else:
+                    qr = None
+
+                report_triaxial_cyclic_shear(file_name, data_customer,
+                                       statment[statment.current_test].physical_properties,
+                                       statment.getLaboratoryNumber(),
+                                       os.getcwd() + "/project_data/", test_parameter, results,
+                                       self.tab_2.test_widget.save_canvas(), "{:.2f}".format(__version__), qr_code=qr)
 
 
             Cyclic_models[statment.current_test].generate_log_file(save)

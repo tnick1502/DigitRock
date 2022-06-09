@@ -118,13 +118,15 @@ class InitialStatment(QWidget):
     statment_directory = pyqtSignal(str)
     signal = pyqtSignal(bool)
 
-    def __init__(self, test_parameters, fill_keys, identification_column=None):
+    def __init__(self, test_parameters, fill_keys, identification_column=None, generate=True):
         super().__init__()
 
         self.identification_column = identification_column if identification_column else None
         self.test_parameters = test_parameters
 
         self.path = ""
+
+        self.generate = generate
 
         self.create_IU(fill_keys)
         self.open_line.combo_changes_signal.connect(self.file_open)
@@ -229,7 +231,7 @@ class InitialStatment(QWidget):
             models.load(model_file)
             app_logger.info(f"Загружен файл модели {models_name.split('.')[0] + shipment_number + '.pickle'}")
         else:
-            models.generateTests()
+            models.generateTests(generate=self.generate)
             models.dump(model_file)
             app_logger.info(f"Сгенерирован сохраненен новый файл модели {models_name.split('.')[0] + shipment_number + '.pickle'}")
 
@@ -240,7 +242,7 @@ class InitialStatment(QWidget):
 
 class RezonantColumnStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
-    def __init__(self):
+    def __init__(self, generate=True):
         data_test_parameters = {#"p_ref": ["Выберите референтное давление", "Pref: Pref из столбца FV",
                                           #"Pref: Через бытовое давление"],
                                 "K0_mode": {
@@ -262,7 +264,7 @@ class RezonantColumnStatment(InitialStatment):
             "reference_pressure": "Референтное давление, МПа",
             "K0": "K0"}
 
-        super().__init__(data_test_parameters, fill_keys)
+        super().__init__(data_test_parameters, fill_keys, generate=generate)
 
     @log_this(app_logger, "debug")
     def file_open(self):
@@ -494,7 +496,8 @@ class CyclicStatment(InitialStatment):
                     "Сейсморазжижение",
                     "Штормовое разжижение",
                     "Демпфирование",
-                    "По заданным параметрам"
+                    "По заданным параметрам",
+                    "Динамическая прочность на сдвиг"
                     ]
             },
 

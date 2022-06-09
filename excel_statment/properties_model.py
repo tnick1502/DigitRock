@@ -1210,7 +1210,7 @@ class CyclicProperties(MechanicalProperties):
                 self.t = np.round(self.t, 1)
 
 
-            elif test_mode == "По заданным параметрам":
+            elif test_mode == "Динамическая прочность на сдвиг":
 
                 sigma_1 = float_df(data_frame.iat[string,
                                         DynamicsPropertyPosition["reference_pressure"][1]])
@@ -1231,11 +1231,61 @@ class CyclicProperties(MechanicalProperties):
 
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
 
-                self.cycles_count = int(float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]]))
+                cycles_count = float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]])
+                if cycles_count:
+                    self.cycles_count = int(cycles_count)
+                else:
+                    self.cycles_count = 1500
 
                 self.frequency = np.round(float_df(data_frame.iat[string,
                                                                   DynamicsPropertyPosition["frequency_vibration_creep"][
                                                                       1]]), 1)
+
+            elif test_mode == "Демпфирование":
+
+                sigma_3 = float_df(data_frame.iat[string, DynamicsPropertyPosition["reference_pressure"][1]])
+
+                if sigma_3:
+                    self.sigma_1 = np.round(sigma_3 * 1000)
+                    self.sigma_3 = np.round(sigma_3 * 1000)
+                else:
+                    physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
+                    if physical_properties.depth <= physical_properties.ground_water_depth:
+                        self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
+                    elif physical_properties.depth > physical_properties.ground_water_depth:
+                        self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                                9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+
+                    if self.sigma_1 < 10:
+                        self.sigma_1 = 10
+
+                    self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
+                self.cycles_count = 5
+
+                self.frequency = np.round(float_df(data_frame.iat[string,
+                                                         DynamicsPropertyPosition["frequency_vibration_creep"][1]]), 1)
+                try:
+                    self.t = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]]) / 2
+                except:
+                    self.acceleration = float_df(
+                        data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]])  # В долях g
+                    if self.acceleration:
+                        self.acceleration = np.round(self.acceleration, 3)
+                        self.intensity = CyclicProperties.define_intensity(self.acceleration)
+                    else:
+                        self.intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
+                        self.acceleration = CyclicProperties.define_acceleration(self.intensity)
+
+                    self.magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
+
+                    self.t = np.round(0.65 * self.acceleration * self.sigma_1 * float(self.rd))
+                    self.MSF = np.round((10 ** (2.24) / ((self.magnitude) ** (2.56))), 2)
+                    self.t *= self.MSF
+
+                self.t = np.round(self.t, 1)
+
+
 
 
             self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,

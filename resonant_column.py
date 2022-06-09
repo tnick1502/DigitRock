@@ -2,7 +2,7 @@ import os
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 
-from resonant_column.resonant_column_widgets import RezonantColumnSoilTestApp, __version__
+from resonant_column.resonant_column_widgets import RezonantColumnSoilTestApp, RezonantColumnProcessingApp, __version__
 from version_control.json_management import test_version, get_actual_version
 from version_control.configs import actual_version
 from loggers.logger import app_logger

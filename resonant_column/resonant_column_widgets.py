@@ -28,62 +28,92 @@ __version__ = actual_version
 from general.general_statement import StatementGenerator
 from authentication.request_qr import request_qr
 
-class RezonantColumnProcessingWidget(QWidget):
+class RezonantColumnProcessingWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора"""
+    signal = pyqtSignal()
+
     def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__()
-        self._model = ModelRezonantColumn()
         self._create_Ui()
-        #self.open_widget.button_open_file.clicked.connect(self._open_file)
+        self.test_widget.cut_slider.sliderMoved.connect(self._cut_sliders_moove)
         self.open_widget.button_open_path.clicked.connect(self._open_path)
-        self.test_processing_widget.cut_slider.sliderMoved.connect(self._cut_sliders_moove)
 
     def _create_Ui(self):
         self.layout = QVBoxLayout(self)
+        self.line_1 = QHBoxLayout()
         self.identification_widget = RezonantColumnIdentificationUI()
+        self.test_widget = RezonantColumnUI()
+        self.identification_widget.setFixedHeight(180)
+        self.identification_widget.setFixedWidth(300)
+        self.line_1.addWidget(self.identification_widget)
+
         self.open_widget = RezonantColumnOpenTestUI()
-        self.layout.addWidget(self.identification_widget)
         self.open_widget.setFixedHeight(100)
         self.layout.addWidget(self.open_widget)
-        self.test_processing_widget = RezonantColumnUI()
-        self.layout.addWidget(self.test_processing_widget)
-        self.save_widget = Save_Dir()
-        self.layout.addWidget(self.save_widget)
+
+        self.layout.addLayout(self.line_1)
+        self.layout.addWidget(self.test_widget)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
     def _cut_sliders_moove(self):
-        if self._model._test_data.G_array is not None:
-            self._model.set_borders(int(self.test_processing_widget.cut_slider.low()),
-                                                        int(self.test_processing_widget.cut_slider.high()))
-            self._plot()
+        try:
+            if RC_models[statment.current_test]._test_data.G_array is not None:
+                RC_models[statment.current_test].set_borders(int(self.test_widget.cut_slider.low()),
+                                                             int(self.test_widget.cut_slider.high()))
+                self._plot()
+        except:
+            pass
 
     def _cut_slider_set_len(self, len):
         """Определение размера слайдера. Через длину массива"""
-        self.test_processing_widget.cut_slider.setMinimum(0)
-        self.test_processing_widget.cut_slider.setMaximum(len)
-        self.test_processing_widget.cut_slider.setLow(0)
-        self.test_processing_widget.cut_slider.setHigh(len)
+        self.test_widget.cut_slider.setMinimum(0)
+        self.test_widget.cut_slider.setMaximum(len)
+        self.test_widget.cut_slider.setLow(0)
+        self.test_widget.cut_slider.setHigh(len)
+
+    def set_test_params(self, params):
+        try:
+            self._cut_slider_set_len(len(RC_models[statment.current_test]._test_data.G_array))
+            self._plot()
+        except KeyError:
+            pass
+
+    @log_this(app_logger, "debug")
+    def _params_slider_moove(self, params):
+        try:
+            RC_models[statment.current_test].set_draw_params(params)
+            self.set_test_params(True)
+            self.signal.emit()
+        except KeyError:
+            pass
+
+    # @log_this(app_logger, "debug")
+    def _refresh(self):
+        pass
+
+    def _plot(self):
+        """Построение графиков опыта"""
+        try:
+            plots = RC_models[statment.current_test].get_plot_data()
+            res = RC_models[statment.current_test].get_test_results()
+            self._cut_slider_set_len(len(RC_models[statment.current_test]._test_data.G_array))
+            self.test_widget.plot(plots, res)
+        except:
+            self.test_widget.clear()
 
     def _open_path(self):
         """Открытие файла опыта"""
         path = QFileDialog.getExistingDirectory(self, "Select Directory")
         if path:
             self.open_widget.set_file_path("")
-            self._plot()
             try:
-                self._model.open_path(path)
-                self._cut_slider_set_len(len(self._model._test_data.G_array))
+                RC_models[statment.current_test].open_path(path)
+                self._cut_slider_set_len(len(RC_models[statment.current_test]._test_data.G_array))
                 self.open_widget.set_file_path(path)
-            except (ValueError, IndexError, FileNotFoundError):
+            except:
                 pass
             self._plot()
-
-    def _plot(self):
-        """Построение графиков опыта"""
-        plots = self._model.get_plot_data()
-        res = self._model.get_test_results()
-        self.test_processing_widget.plot(plots, res)
 
 class RezonantColumnSoilTestWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -331,39 +361,85 @@ class PredictRCTestResults(QDialog):
 
         return (titles, data_structure, scale)
 
-class RezonantColumnProcessingApp(QWidget):
-    def __init__(self):
+class RezonantColumnProcessingApp(AppMixin, QWidget):
+    def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
-        super().__init__()
+        super().__init__(parent=parent)
+
+        if geometry is not None:
+            self.setGeometry(geometry["left"], geometry["top"], geometry["width"], geometry["height"])
+
         # Создаем вкладки
-        self.layout = QVBoxLayout(self)
+        self.layout = QHBoxLayout(self)
+        self.save_massage = True
 
         self.tab_widget = QTabWidget()
-        self.tab_1 = RezonantColumnStatment()
+        self.tab_1 = RezonantColumnStatment(generate=False)
         self.tab_2 = RezonantColumnProcessingWidget()
+        self.tab_2.popIn.connect(self.addTab)
+        self.tab_2.popOut.connect(self.removeTab)
+
+        self.tab_3 = Save_Dir(result_table_params={
+            "G0": lambda lab: RC_models[lab].get_test_results()['G0'],
+            "gam_07": lambda lab: RC_models[lab].get_test_results()["threshold_shear_strain"],
+        }, qr=True)
+        self.tab_3.popIn.connect(self.addTab)
+        self.tab_3.popOut.connect(self.removeTab)
 
         self.tab_widget.addTab(self.tab_1, "Идентификация пробы")
         self.tab_widget.addTab(self.tab_2, "Обработка")
+        self.tab_widget.addTab(self.tab_3, "Сохранение отчета")
         self.layout.addWidget(self.tab_widget)
+        self.log_widget = QTextEdit()
+        self.log_widget.setFixedWidth(300)
+        self.layout.addWidget(self.log_widget)
 
-        self.tab_1.statment_directory[str].connect(self._set_save_directory)
-        self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_params)
-        self.tab_2.save_widget .save_button.clicked.connect(self.save_report)
+        handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
-    def _set_save_directory(self, signal):
-        self.tab_2.save_widget.set_directory(signal, "Резонансная колонка")
+        self.tab_1.statment_directory[str].connect(lambda x:
+                                                   self.tab_3.update())
+        self.physical_line = LinePhysicalProperties()
 
-    def _set_save_directory(self, signal):
-        self.tab_4.save.set_directory(signal, "Резонансная колонка")
+        self.tab_1.signal[bool].connect(lambda x: self.tab_2._plot())
+        self.tab_1.signal[bool].connect(lambda x: self.physical_line.set_data())
 
+        self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_data)
+        self.tab_3.save_button.clicked.connect(self.save_report)
+        self.tab_3.save_all_button.clicked.connect(self.save_all_reports)
+        self.tab_2.signal.connect(self.tab_3.update)
+
+        self.button_predict = QPushButton("Прогнозирование")
+        self.button_predict.setFixedHeight(50)
+        self.button_predict.clicked.connect(self._predict)
+        self.tab_1.layuot_for_button.addWidget(self.button_predict)
+
+        self.tab_3.general_statment_button.clicked.connect(self.general_statment)
+
+        self.tab_2.line_1.addWidget(self.physical_line)
+        self.physical_line.refresh_button.clicked.connect(self.tab_2._refresh)
+        self.physical_line.save_button.clicked.connect(self.save_report_and_continue)
+
+    def _predict(self):
+        if len(statment):
+            dialog = PredictRCTestResults()
+            dialog.show()
+
+            if dialog.exec() == QDialog.Accepted:
+                dialog.get_data()
+                RC_models.generateTests()
+                RC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
+                # statment.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]),
+                # name="Резонансная колонка.pickle")
+                app_logger.info("Новые параметры ведомости и модели сохранены")
+
+    # @log_this(app_logger, "debug")
     def save_report(self):
         try:
-            assert self.tab_1.get_lab_number(), "Не выбран образец в ведомости"
-            len(self.tab_2.test._model._test_data.G_array)
-            # assert self.tab_2.test_processing_widget.model._test_data.cycles, "Не выбран файл прибора"
-            file_path_name = self.tab_1.get_lab_number().replace("/", "-").replace("*", "")
+            assert statment.current_test, "Не выбран образец в ведомости"
+            file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
 
-            save = self.tab_2.save.arhive_directory + "/" + file_path_name
+            save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
 
             if os.path.isdir(save):
@@ -373,47 +449,121 @@ class RezonantColumnProcessingApp(QWidget):
 
             file_name = save + "/" + "Отчет " + file_path_name + "-РК" + ".pdf"
 
-            """if test_parameter['equipment'] == "Прибор: Геотек":
-                test_time = geoteck_text_file(save, self.Powerf, self.Arrays["PPR"], self.Arrays["Strain"], self.Data["sigma3"], self.Data["frequency"], self.Data["Points"], self.file.Data_phiz[self.file.Lab]["Ip"])
-
-            elif test_parameter['equipment'] == "Прибор: Вилли":
-                test_time = willie_text_file(save, self.Powerf, self.Arrays["PPR"], self.Arrays["Strain"], self.Data["frequency"], self.Data["N"], self.Data["Points"],
-                                 self.Setpoint, self.Arrays["cell_press"], self.file.Data_phiz[self.file.Lab]["Ip"])"""
-            test_param = self.tab_1.get_data()
-            test_parameter = {"reference_pressure": test_param.reference_pressure}
-
-            test_result = self.tab_2.test._model.get_test_results()
+            test_result = RC_models[statment.current_test].get_test_results()
 
             results = {"G0": test_result["G0"], "gam07": test_result["threshold_shear_strain"]}
 
-            report_rc(file_name, self.tab_1.get_customer_data(),
-                      self.tab_1.get_physical_data(),
-                      self.tab_1.get_lab_number(),
-                      os.getcwd() + "/project_data/", test_parameter, results,
-                      self.tab_2.test.test_processing_widget.save_canvas(), __version__)
+            data_customer = statment.general_data
+            date = statment[statment.current_test].physical_properties.date
+            if date:
+                data_customer.end_date = date
 
-            shutil.copy(file_name, self.tab_2.save.report_directory + "/" + file_name[len(file_name) -
-                                                                                      file_name[::-1].index("/"):])
-            QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
+            data = {
+                "laboratory": "mdgt",
+                "password": "it_user",
 
-            set_cell_data(self.tab_1.path,
-                          "HL" + str(self.tab_1.get_physical_data()[self.tab_1.get_lab_number()]["Nop"]),
-                          test_result["G0"], sheet="Лист1")
-            set_cell_data(self.tab_1.path,
-                          "HK" + str(self.tab_1.get_physical_data()[self.tab_1.get_lab_number()]["Nop"]),
-                          test_result["threshold_shear_strain"], sheet="Лист1")
+                "test_name": "Cyclic",
+                "object": str(statment.general_data.object_number),
+                "laboratory_number": str(statment.current_test),
+                "test_type": "rezonant_column",
+
+                "data": {
+                    "Лаболаторный номер:": str(statment.current_test),
+                    "Референтное давление Pref, МПа:": str(
+                        np.round(statment[statment.current_test].mechanical_properties.reference_pressure / 1000, 3)),
+                    "Модуль сдвига при сверхмалых деформациях G0, МПа:": str(test_result["G0"]),
+                    "Пороговое значение сдвиговой деформации γ0.7, д.е.:": str(
+                        test_result["threshold_shear_strain"]) + "10(-4)",
+                }
+            }
+
+            if self.tab_3.qr:
+                qr = request_qr(data)
+            else:
+                qr = None
+
+            report_rc(file_name, data_customer,
+                      statment[statment.current_test].physical_properties,
+                      statment.getLaboratoryNumber(),
+                      os.getcwd() + "/project_data/", statment[statment.current_test].mechanical_properties, results,
+                      self.tab_2.test_widget.save_canvas(), __version__, qr_code=qr)
+
+            number = statment[statment.current_test].physical_properties.sample_number + 7
+
+            set_cell_data(self.tab_1.path, ("HL" + str(number), (number, 219)), test_result["G0"], sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("HK" + str(number), (number, 218)), test_result["threshold_shear_strain"],
+                          sheet="Лист1")
+
+            shutil.copy(file_name, statment.save_dir.report_directory + "/" + file_name[len(file_name) -
+                                                                                        file_name[::-1].index("/"):])
+            RC_models[statment.current_test].save_log_file(save)
+            if self.save_massage:
+                QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
+                app_logger.info(f"Проба {statment.current_test} успешно сохранена в папке {save}")
 
             self.tab_1.table_physical_properties.set_row_color(
-                self.tab_1.table_physical_properties.get_row_by_lab_naumber(self.tab_1.get_lab_number()))
+                self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
+
+            RC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                        f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
+
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
-        except TypeError:
-            QMessageBox.critical(self, "Ошибка", "Не загружен файл опыта", QMessageBox.Ok)
-
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
+
+    def save_all_reports(self):
+        statment.save_dir.clear_dirs()
+        progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
+        progress.setCancelButton(None)
+        progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setValue(0)
+
+        def save():
+            for i, test in enumerate(statment):
+                self.save_massage = False
+                statment.setCurrentTest(test)
+                self.tab_2.set_test_params(True)
+                self.save_report()
+                progress.setValue(i)
+            progress.setValue(len(statment))
+            progress.close()
+            QMessageBox.about(self, "Сообщение", "Объект выгнан")
+            self.save_massage = True
+
+        t = threading.Thread(target=save)
+        progress.show()
+        t.start()
+
+    def save_report_and_continue(self):
+        try:
+            self.save_report()
+        except:
+            pass
+        keys = [key for key in statment]
+        for i, val in enumerate(keys):
+            if (val == statment.current_test) and (i < len(keys) - 1):
+                statment.current_test = keys[i + 1]
+                self.tab_2.set_test_params(True)
+                self.physical_line.set_data()
+                break
+            else:
+                pass
+
+    def general_statment(self):
+        try:
+            s = statment.general_data.path
+        except:
+            s = None
+
+
+        _statment = StatementGenerator(self, path=s, statement_structure_key="Resonance column",
+                                       test_mode_and_shipment=(test_mode_file_name,
+                                                               statment.general_data.get_shipment_number()))
+        _statment.show()
 
 class RezonantColumnSoilTestApp(AppMixin, QWidget):
     def __init__(self, parent=None, geometry=None):
@@ -611,9 +761,6 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         except:
             s = None
 
-        test_mode_file_name = None
-        if statment.general_parameters.test_mode == 'Резонансная колонка':
-            test_mode_file_name = "G0"
 
         _statment = StatementGenerator(self, path=s, statement_structure_key="Resonance column",
                                        test_mode_and_shipment=(test_mode_file_name,
