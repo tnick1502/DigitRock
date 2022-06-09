@@ -585,8 +585,16 @@ def sensor_accuracy(x, y, qf, x50, xc):
     y_res[index_qf[0] - 2] = y[index_qf[0] - 2]
     y_res[index_qf[0] - 1] = y[index_qf[0] - 1]
     y_res[index_qf[0] - 0] = y[index_qf[0] - 0]
-    y_res[index_qf[0] + 1] = y[index_qf[0] + 1]
-    y_res[index_qf[0] + 2] = y[index_qf[0] + 2]
+
+    try:
+        y_res[index_qf[0] + 1] = y[index_qf[0] + 1]
+    except IndexError:
+        pass
+    try:
+        y_res[index_qf[0] + 2] = y[index_qf[0] + 2]
+    except IndexError:
+        pass
+
 
     # в районе максимума шум меньше первоначального
     indexes, = np.where(y_res > max_y)
@@ -755,6 +763,9 @@ def cos_ocr(x, y,  qf, qocr, xc):
     # plt.plot(x[:-1], proiz_ocr)
 
     extremums = argrelextrema(y+cos_par, np.greater)
+
+    if len(extremums) < 1 or len(extremums[0]) < 1:
+        extremums = [[0]]
 
     y_ocr = y + cos_par
 
