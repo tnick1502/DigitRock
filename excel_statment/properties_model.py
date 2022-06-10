@@ -312,6 +312,10 @@ class MechanicalProperties:
                 self.sigma_3 = MechanicalProperties.round_sigma_3(
                     MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
 
+            if self.sigma_3 >= 1600:
+                self.sigma_3 = 1600
+                self.sigma_1 = self.sigma_3 / self.K0
+
             if test_mode == "Трёхосное сжатие НН":
                 if self.sigma_3 < 25:
                     self.sigma_3 = 25
