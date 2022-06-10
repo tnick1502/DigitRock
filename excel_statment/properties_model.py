@@ -389,6 +389,8 @@ class MechanicalProperties:
                 self.pressure_array["calculated_by_pressure"] = \
                     MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3)
 
+
+
             if test_mode == "Трёхосное сжатие КН":
                 self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
                 if max(self.u) <= 5:
@@ -975,7 +977,10 @@ class MechanicalProperties:
             sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.5)
             sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.25)
 
-            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+            if sigma_max_1 < 1600:
+                return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+            else:
+                return [400, 800, 1600]
         else:
             return None
 
@@ -988,8 +993,10 @@ class MechanicalProperties:
         sigma_max_1 = MechanicalProperties.round_sigma_3(sigma_max)
         sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * 0.5)
         sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * 0.25)
-
-        return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+        if sigma_max_1 < 1600:
+            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+        else:
+            return [400, 800, 1600]
 
 
     @staticmethod
