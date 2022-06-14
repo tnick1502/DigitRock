@@ -12,9 +12,9 @@ from excel_statment.functions import read_general_prameters, k0_test_type_column
 from excel_statment.initial_tables import TableCastomer, ComboBox_Initial_Parameters, TableVertical, TablePhysicalProperties, ComboBox_Initial_ParametersV2
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, CyclicProperties, \
-    DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties, ShearProperties, RayleighDampingProperties
+    DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties, ShearProperties, RayleighDampingProperties, K0Properties
 from loggers.logger import app_logger, log_this
-from singletons import statment, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, Shear_models, Shear_Dilatancy_models, VibrationFC_models, RayleighDamping_models
+from singletons import statment, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, Shear_models, Shear_Dilatancy_models, VibrationFC_models, RayleighDamping_models, K0_models
 
 from resonant_column.rezonant_column_hss_model import ModelRezonantColumnSoilTest
 from consolidation.consolidation_model import ModelTriaxialConsolidationSoilTest
@@ -25,6 +25,8 @@ from static_loading.mohr_circles_test_model import ModelMohrCirclesSoilTest
 from vibration_creep.vibration_creep_model import ModelVibrationCreepSoilTest
 from shear_test.shear_test_model import ModelShearSoilTest
 from shear_test.shear_dilatancy_test_model import ModelShearDilatancySoilTest
+from k0_test.triaxial_k0_model import ModelK0SoilTest
+
 from excel_statment.params import accreditation
 from excel_statment.position_configs import c_fi_E_PropertyPosition, GeneralDataColumns
 from excel_statment.functions import set_cell_data
@@ -1084,6 +1086,70 @@ class RayleighDampingStatment(InitialStatment):
                     self.open_line.text_file_path.setText(self.path)
 
 
+
+class K0Statment(InitialStatment):
+    """Класс обработки файла задания для трехосника"""
+
+    def __init__(self):
+        data_test_parameters = {
+            "test_mode": {
+                "label": "Режим испытания",
+                "vars": [
+                    "Ступенчатый",
+                    "Кинематический"]
+            }
+        }
+
+        fill_keys = {
+            "laboratory_number": "Лаб. ном.",
+            "depth": "Глубина, м",
+            "OCR": "OCR",
+            "K0": "K0",
+            "sigma_1_step": "Шаг нагружения, МПа",
+            "sigma_1_max": "Максимальное давление, МПа"}
+
+        super().__init__(data_test_parameters, fill_keys)
+
+    @log_this(app_logger, "debug")
+    def file_open(self):
+        """Открытие и проверка заполненности всего файла веддомости"""
+        if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
+            combo_params = self.open_line.get_data()
+
+            columns_marker = [("FV", 177)]
+
+            marker, customer = read_general_prameters(self.path)
+
+            try:
+                # assert column_fullness_test(self.path, columns=list(zip(*c_fi_E_PropertyPosition["Резонансная колонка"])),
+                #                             initial_columns=columns_marker), \
+                #     "Заполните параметры прочности и деформируемости (BD, BC, BE)"
+
+                assert not marker, "Проверьте " + customer
+
+            except AssertionError as error:
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
+            else:
+                # combo_params["test_mode"] = "Трехосное сжатие K0"
+
+                self.load_statment(statment_name="Трехосное сжатие K0.pickle",
+                                   properties_type=K0Properties, general_params=combo_params)
+
+                keys = list(statment.tests.keys())
+                for test in keys:
+                    if not statment[test].mechanical_properties.K0:
+                        del statment.tests[test]
+
+                if len(statment) < 1:
+                    QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
+                                        + str(columns_marker), QMessageBox.Ok)
+                else:
+                    self.table_physical_properties.set_data()
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
+
+                    self.load_models(models_name="k0_models.pickle", models=K0_models, models_type=ModelK0SoilTest)
 
 
 if __name__ == "__main__":
