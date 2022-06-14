@@ -276,9 +276,9 @@ class ModelK0:
         sigma_1 = np.round(np.asarray(sigma_1), ModelK0.SIGMA_PREC)
         sigma_3 = np.round(np.asarray(sigma_3), ModelK0.SIGMA_PREC)
 
-        print('sigmas 1,3 from processing')
-        print(sigma_1)
-        print(sigma_3)
+        # print('sigmas 1,3 from processing')
+        # print(sigma_1)
+        # print(sigma_3)
 
         lse_pnts = ModelK0.MIN_LSE_PNTS
 
@@ -770,8 +770,8 @@ class ModelK0SoilTest(ModelK0):
         # Проверка:
         K0_new, sigma_p_new = ModelK0.define_ko(_sigma_1, _sigma_3)
 
-        print(f"Было:\n{K0} {sigma_1_line_fixed}\n"
-              f"Стало:\n{K0_new} {sigma_p_new}")
+        # print(f"Было:\n{K0} {sigma_1_line_fixed}\n"
+        #       f"Стало:\n{K0_new} {sigma_p_new}")
 
         if K0 != K0_new or (sigma_p_new > sigma_1_line_fixed):
             print("Слишком большая ошибка в К0, Пробую уменьшить шум")
@@ -782,9 +782,9 @@ class ModelK0SoilTest(ModelK0):
             else:
                 _sigma_1, _sigma_3 = ModelK0SoilTest.lse_faker(sigma_1_line, sigma_3_line, sigma_1_spl, sigma_3_spl,
                                                                K0, noise=noise*0.95)
-        print('sigmas 1,3 from modeling')
-        print(_sigma_1)
-        print(_sigma_3)
+        # print('sigmas 1,3 from modeling')
+        # print(_sigma_1)
+        # print(_sigma_3)
         return _sigma_1, _sigma_3
 
     @staticmethod
