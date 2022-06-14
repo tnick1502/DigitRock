@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFrame, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, \
-    QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout,\
-    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog
+    QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout, \
+    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog, QCheckBox
 from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject
 from PyQt5.QtGui import QPalette, QBrush
 import matplotlib.pyplot as plt
@@ -14,7 +14,7 @@ from excel_statment.initial_statment_widgets import ConsolidationStatment
 from general.save_widget import Save_Dir
 from excel_statment.initial_tables import TableVertical, LinePhysicalProperties
 from excel_statment.functions import set_cell_data
-from general.reports import report_consolidation, report_FCE, report_FC
+from general.reports import report_consolidation, report_FCE, report_FC, zap
 from consolidation.consolidation_UI import ModelTriaxialConsolidationUI
 import numpy as np
 from general.general_widgets import Float_Slider
@@ -33,6 +33,9 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
+
+    MIN_SLIDER_LEN = 10  # in pnts
+
     def __init__(self, model=None):
         super().__init__()
 
@@ -63,6 +66,9 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
 
 
         self.consolidation_sliders.signal[object].connect(self._consolidation_sliders_moove)
+
+        self._slider_cut_low_best_position = 0
+        self._slider_cut_high_best_position = self.MIN_SLIDER_LEN + 1
 
         self._create_UI()
         self._wigets_connect()
@@ -123,11 +129,24 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
 
     def _cut_slider_consolidation_moove(self):
         if Consolidation_models[statment.current_test].check_none():
-            if (int(self.consolidation.slider_cut.high()) - int(self.consolidation.slider_cut.low())) >= 50:
-                Consolidation_models[statment.current_test].consolidation.change_borders(int(self.consolidation.slider_cut.low()),
-                                                            int(self.consolidation.slider_cut.high()))
-                self._plot_consolidation_sqrt()
-                self._plot_consolidation_log()
+
+            _left = int(self.consolidation.slider_cut.low())
+            _right = int(self.consolidation.slider_cut.high())
+
+            curr_len = _right - _left
+
+            if curr_len < self.MIN_SLIDER_LEN:
+                _left = int(self._slider_cut_low_best_position)
+                _right = int(self._slider_cut_high_best_position)
+                # self.consolidation.slider_cut.setLow(self._slider_cut_low_best_position)
+                # self.consolidation.slider_cut.setHigh(self._slider_cut_high_best_position)
+
+            Consolidation_models[statment.current_test].change_borders(_left, _right)
+            self._plot_consolidation_sqrt()
+            self._plot_consolidation_log()
+
+            self._slider_cut_low_best_position = int(_left)
+            self._slider_cut_high_best_position = int(_right)
 
     def _consolidation_interpolation_type(self, button):
         """Смена метода интерполяции консолидации"""
@@ -157,11 +176,7 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
 
     def _interpolate_slider_consolidation_release(self):
         """Обработка консолидации при окончании движения слайдера"""
-        if Consolidation_models[statment.current_test].check_none():
-            Consolidation_models[statment.current_test].change_borders(int(self.consolidation.slider_cut.low()),
-                                                     int(self.consolidation.slider_cut.high()))
-            self._plot_consolidation_sqrt()
-            self._plot_consolidation_log()
+        self._cut_slider_consolidation_moove()
 
     def _canvas_click(self, event):
         """Метод обрабатывает нажатие на канвас"""
@@ -245,6 +260,12 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         self.tab_1 = ConsolidationStatment()
         self.tab_2 = ConsilidationSoilTestWidget()
         self.tab_3 = Save_Dir()
+
+        self.save_cv_ca_btn = QCheckBox('Сохранить cv ca')
+        self.save_cv_ca_btn.setChecked(False)
+        self.cv_ca_save_path = None
+        self.save_cv_ca_btn.clicked.connect(self.on_save_cv_ca_btn)
+        self.tab_3.advanced_box_layout.insertWidget(self.tab_3.advanced_box_layout.count() - 1, self.save_cv_ca_btn)
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
         self.tab_widget.addTab(self.tab_2, "Опыт консолидации")
@@ -341,6 +362,47 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
 
             Consolidation_models[statment.current_test].save_log(save, file_path_name + " " + statment.general_data.object_number + "ВК")
 
+            # Запись в xls параметров ca и cv
+            if self.save_cv_ca_btn.isChecked():
+                cv_ca_file_name = 'Параметры cv ca.xlsx'
+
+                if self.cv_ca_save_path:
+                    cv_ca_save_path = self.cv_ca_save_path + "/" + cv_ca_file_name
+                else:
+                    cv_ca_save_path = statment.save_dir.arhive_directory + "/" + cv_ca_file_name
+
+                if os.path.isfile(cv_ca_save_path):
+                    pass
+                else:
+                    shutil.copy('./consolidation/'+cv_ca_file_name, cv_ca_save_path)
+
+                set_cell_data(cv_ca_save_path,
+                              ('A' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                              (statment[statment.current_test].physical_properties.sample_number + 2, 0)),
+                              statment[statment.current_test].physical_properties.laboratory_number,
+                              sheet="Лист1")
+                set_cell_data(cv_ca_save_path,
+                              ('B' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                              (statment[statment.current_test].physical_properties.sample_number + 2, 1)),
+                              statment[statment.current_test].physical_properties.borehole,
+                              sheet="Лист1")
+                set_cell_data(cv_ca_save_path,
+                              ('C' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                              (statment[statment.current_test].physical_properties.sample_number + 2, 2)),
+                              statment[statment.current_test].physical_properties.depth,
+                              sheet="Лист1")
+                set_cell_data(cv_ca_save_path,
+                              ('D' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                              (statment[statment.current_test].physical_properties.sample_number + 2, 3)),
+                              test_result["Cv_log"],
+                              sheet="Лист1")
+                set_cell_data(cv_ca_save_path,
+                              ('E' + str(statment[statment.current_test].physical_properties.sample_number + 2),
+                              (statment[statment.current_test].physical_properties.sample_number + 2, 4)),
+                              test_result["Ca_log"],
+                              sheet="Лист1")
+
+
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
                 app_logger.info(
@@ -403,6 +465,10 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
     def jornal(self):
         self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogCyclic, self.tab_1.path)
         self.dialog.show()
+
+    def on_save_cv_ca_btn(self, checked):
+        if checked and self.cv_ca_save_path is None:
+            self.cv_ca_save_path = QFileDialog.getExistingDirectoryUrl(self, 'Папка для сохранения cv ca').toLocalFile()
 
 
 if __name__ == '__main__':

@@ -348,13 +348,25 @@ class MohrWidget(QWidget):
 
             if plots is not None:
                 for i in range(len(plots["strain"])):
-                    self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
-                    self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
-
-                self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
+                    if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                        self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
+                        self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], color="green", linewidth=2, alpha=0.6)
+                        self.mohr_ax.plot(plots["mohr_x_res"][i], plots["mohr_y_res"][i], color="black", linewidth=1, linestyle="--", alpha=0.6)
+                    else:
+                        self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
+                        self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
 
                 self.mohr_ax.plot([], [], label="c" + ", МПа = " + str(res["c"]), color="#eeeeee")
                 self.mohr_ax.plot([], [], label="fi" + ", град. = " + str(res["fi"]), color="#eeeeee")
+
+                if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                    self.mohr_ax.plot([], [], label="c_res" + ", МПа = " + str(res["c_res"]), color="#eeeeee")
+                    self.mohr_ax.plot([], [], label="fi_res" + ", град. = " + str(res["fi_res"]), color="#eeeeee")
+                    self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], color="green", linewidth=2, alpha=0.6)
+                    self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y_res"], color="black", linewidth=2, alpha=0.6)
+
+                else:
+                    self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
 
                 self.mohr_ax.set_xlim(*plots["x_lims"])
                 self.mohr_ax.set_ylim(*plots["y_lims"])
@@ -555,8 +567,10 @@ class MohrWidgetSoilTest(TabMixin, MohrWidget):
         # показывает диалог и после нажатия Ok передаёт виджету модель из диалога
         if dialog.exec() == QDialog.Accepted:
             FC_models[statment.current_test]._tests[test_id] = dialog._model
+            FC_models[statment.current_test]._test_processing()
             self._create_test_tables()
             self._plot()
+
 
 class PressureArray(QGroupBox):
     def __init__(self):
@@ -898,7 +912,7 @@ class StaticSoilTestDialog(QDialog):
                                                                        "dilatancy": "Угол дилатансии",
                                                                        "volumetric_strain_xc": "Объемн. деформ. в пике",
                                                                        "Eur": "Модуль разгрузки"})
-        self.deviator_loading_sliders.setFixedHeight(180)
+        self.deviator_loading_sliders.setFixedHeight(200)
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)
 
@@ -964,12 +978,15 @@ class StaticSoilTestDialog(QDialog):
 
     def _cut_slider_deviator_moove(self):
         """Обработчик перемещения слайдера обрезки"""
-        if E_models[statment.current_test].deviator_loading.check_none():
-            if (int(self.deviator_loading.slider_cut.high()) - int(self.deviator_loading.slider_cut.low())) >= 50:
-                self._model.deviator_loading.change_borders(
-                    int(self.deviator_loading.slider_cut.low()),
-                    int(self.deviator_loading.slider_cut.high()))
-            self._plot_deviator_loading()
+        try:
+            if self._model.deviator_loading.check_none():
+                if (int(self.deviator_loading.slider_cut.high()) - int(self.deviator_loading.slider_cut.low())) >= 50:
+                    self._model.deviator_loading.change_borders(
+                        int(self.deviator_loading.slider_cut.low()),
+                        int(self.deviator_loading.slider_cut.high()))
+                self._plot_deviator_loading()
+        except:
+            pass
 
     def _deviator_loading_sliders_moove(self, params):
         """Обработчик движения слайдера"""

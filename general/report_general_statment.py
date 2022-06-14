@@ -21,6 +21,8 @@ from reportlab.platypus.tables import TableStyle, Table
 from reportlab.graphics.shapes import (Group, Path)
 from reportlab.lib.pagesizes import A4, landscape
 
+from excel_statment.params import accreditation
+
 
 class AttrDict:
     """ Класс преобразующий словарь в объект с набором атрибутов
@@ -930,9 +932,14 @@ def testStampReport(objectData, examData):
     report.build(objectData, examData)
 
 
-def save_report(titles1, data1, scales1, data_report1, customer_data_info1, customer_data1, heading_title1, path_save1, code_report="", save_file_name = 'Файл_Отчёт.pdf'):
+def save_report(titles1, data1, scales1, data_report1, customer_data_info1,
+                customer_data1, heading_title1, path_save1,
+                code_report="", save_file_name = 'Файл_Отчёт.pdf',
+                accred1=None):
     # глобальные переменные
     # Шапка у информации о заказчиках и их объектах
+    if accred1 is None:
+        accred1 = {'acrreditation': 'AO', 'acrreditation_key': 'новая'}
     global customer_data_info
     customer_data_info = customer_data_info1
     # Сама информация о заказчиках и их объектах
@@ -1051,10 +1058,14 @@ def save_report(titles1, data1, scales1, data_report1, customer_data_info1, cust
 
     })
     # Шапочка
-    accred = [
-        'АТТЕСТАТ АККРЕДИТАЦИИ №RU.MCC.АЛ.988 Срок действия с 09 января 2020г.',
-        'РЕЕСТР ГЕОНАДЗОРА г. МОСКВЫ №27 (РЕЙТИНГ №4)'
-    ]
+    if accred1:
+        accred = [accreditation[accred1['accreditation']][accred1['accreditation_key']][0],
+                  accreditation[accred1['accreditation']][accred1['accreditation_key']][1]]
+    else:
+        accred = [
+            'АТТЕСТАТ АККРЕДИТАЦИИ №RU.MCC.АЛ.988 Срок действия с 09 января 2020г.',
+            'РЕЕСТР ГЕОНАДЗОРА г. МОСКВЫ №27 (РЕЙТИНГ №4)'
+        ]
     # Исполнители
     participants = [
         ["Исполнители:",

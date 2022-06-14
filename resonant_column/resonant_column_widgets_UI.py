@@ -82,6 +82,7 @@ class RezonantColumnUI(QWidget):
             self.ax_G.set_ylabel("Модуль сдвига G, МПа")
 
             self.ax_rezonant.clear()
+            self.ax_rezonant.set_yscale('log')
             self.ax_rezonant.set_xlabel("Частота f, Гц")
             self.ax_rezonant.set_ylabel("Деформация сдвига γ, д.е.")
 
@@ -119,6 +120,19 @@ class RezonantColumnUI(QWidget):
         self.canvas.draw()
 
         return path
+
+    def clear(self):
+        self.ax_G.clear()
+        self.ax_G.set_xscale("log")
+        self.ax_G.set_xlabel("Деформация сдвига γ, д.е.")
+        self.ax_G.set_ylabel("Модуль сдвига G, МПа")
+
+        self.ax_rezonant.clear()
+        self.ax_rezonant.set_yscale('log')
+        self.ax_rezonant.set_xlabel("Частота f, Гц")
+        self.ax_rezonant.set_ylabel("Деформация сдвига γ, д.е.")
+
+        self.canvas.draw()
 
 class RezonantColumnIdentificationUI_old(QWidget):
     """Интерфейс обработчика Резонансной колонки"""

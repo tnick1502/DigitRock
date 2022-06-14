@@ -27,12 +27,13 @@ class Models:
     def setModelType(self, model):
         self.model_class = model
 
-    def generateTests(self):
+    def generateTests(self, generate=True):
         for test_name in statment:
             try:
                 statment.current_test = test_name
                 self.tests[test_name] = self.model_class()
-                self.tests[test_name].set_test_params()
+                if generate:
+                    self.tests[test_name].set_test_params()
             except:
                 app_logger.exception(f"Ошибка моделирования опыта {test_name}")
                 break

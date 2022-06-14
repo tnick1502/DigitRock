@@ -114,6 +114,7 @@ class ModelVibrationCreep:
         static_plots = E_models[statment.current_test].deviator_loading.get_plot_data()
         E50 = []
         E50d = []
+        creep_curve = []
         approximate_curve = []
 
         for dyn_test, test_result in zip(self._dynamic_tests, self._test_results):
@@ -139,12 +140,12 @@ class ModelVibrationCreep:
                     test_result.prediction["alpha"]*np.log(time_prediction) + test_result.prediction["betta"]])
             else:
                 approximate_curve.append(None)
-
+            creep_curve.append(dyn_test.creep_curve + dyn_test.strain_dynamic[dyn_test.start_dynamic])
 
         return {"strain_dynamic": [i.strain_dynamic for i in self._dynamic_tests],
                 "deviator_dynamic": [i.deviator_dynamic/1000 for i in self._dynamic_tests],
                 "time": [i.time for i in self._dynamic_tests],
-                "creep_curve": [i.creep_curve for i in self._dynamic_tests],
+                "creep_curve": creep_curve,
                 "strain": static_plots["strain"],
                 "deviator": static_plots["deviator"],
                 "E50d": E50d,

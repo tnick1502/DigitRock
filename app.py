@@ -3,7 +3,8 @@ import PyQt5
 pyqt = os.path.dirname(PyQt5.__file__)
 os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt, "Qt5/plugins")
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget, QGridLayout, QPushButton
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget, QGridLayout, QPushButton, QDialog, \
+    QHBoxLayout, QVBoxLayout, QTextEdit
 from PyQt5.QtGui import QIcon, QPixmap, QFont
 from PyQt5.QtCore import QSize
 import traceback
@@ -25,6 +26,7 @@ from vibration_creep.vibration_creep_widgets import VibrationCreepSoilTestApp
 from consolidation.consolidation_widget import ConsolidationSoilTestApp
 from resonant_column.resonant_column_widgets import RezonantColumnSoilTestApp
 from vibration_strength.vibration_strangth_widgets import VibrationStrangthSoilTestApp
+from rayleigh_damping.rayleigh_damping_widgets import RayleighDampingSoilTestApp
 
 icon_path = "project_data/icons/"
 
@@ -35,7 +37,8 @@ prog_dict = {
     "shear": ShearSoilTestApp,
     "consolidation": ConsolidationSoilTestApp,
     "resonant_column": RezonantColumnSoilTestApp,
-    "vibration_strangth": VibrationStrangthSoilTestApp
+    "vibration_strength": VibrationStrangthSoilTestApp,
+    "rayleigh_damping": RayleighDampingSoilTestApp
 }
 
 prog_name = {
@@ -45,7 +48,8 @@ prog_name = {
     "shear": "Сдвиг",
     "consolidation": "Консолидация",
     "resonant_column": "Резонансная колонка",
-    "vibration_strangth": "Вибропрочность",
+    "vibration_strength": "Вибропрочность",
+    "rayleigh_damping": "Демпфирование"
 }
 
 prog_geometry = {
@@ -63,7 +67,7 @@ prog_geometry = {
         "height": 1000
     },
 
-   "vibration_creep": {
+    "vibration_creep": {
         "left": 100,
         "top": 30,
         "width": 1500,
@@ -90,13 +94,90 @@ prog_geometry = {
         "width": 1800,
         "height": 1000
     },
-    "vibration_strangth": {
+
+    "vibration_strength": {
+            "left": 100,
+            "top": 30,
+            "width": 1500,
+            "height": 950
+    },
+
+    "rayleigh_damping": {
             "left": 100,
             "top": 30,
             "width": 1500,
             "height": 950
     }
 }
+
+
+def check_local_version(version):
+
+    def program_data_dir(path: str):
+        """Проверка наличия и создание пути в случае отсутствия"""
+
+        check_array = os.path.normcase(path).split("\\")
+        check_path = check_array[0]
+
+        for subdirectory in check_array[1:]:
+            check_path = f"{check_path}/{subdirectory}"
+            if not os.path.isdir(check_path):
+                os.mkdir(check_path)
+
+    def version_file(version: str, file_path, file_name='version.txt'):
+        file_path = os.path.normcase(file_path)
+        program_data_dir(file_path)
+
+        if not os.path.exists(file_path + '\\' + file_name):
+            with open(file_path + '\\' + file_name, 'w') as file:
+                file.write(version + '\n')
+            return True
+
+        with open(file_path + '\\' + file_name, 'r+') as file:
+            file_version = file.readlines()
+            if version > file_version[-1]:
+                file.write(version + '\n')
+                return True
+            return False
+
+    return version_file(version, file_path='C:/ProgramData/Digitrock')
+
+
+class VersionLog(QDialog):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.path = "Z:/НАУКА/Разработка/!Программы/Digitrock/version_log.json"
+        self._UI()
+        self.update()
+
+    def _UI(self):
+        self.setWindowTitle("Лог версий")
+        self.setFixedWidth(500)
+        self.setFixedHeight(600)
+        self.layout = QVBoxLayout()
+        self.layout_buttons = QHBoxLayout()
+        self.setLayout(self.layout)
+        self.textbox = QTextEdit()
+
+        self.ok_button = QPushButton("Ok")
+        self.ok_button.clicked.connect(lambda: self.close())
+
+        self.layout_buttons.addStretch(-1)
+        self.layout_buttons.addWidget(self.ok_button)
+
+        self.layout.addWidget(self.textbox)
+        self.layout.addLayout(self.layout_buttons)
+
+    def update(self):
+        def open_json(path: str) -> dict:
+            """Считывание json файла в словарь"""
+            with open(path, 'r', encoding='utf-8') as file:
+                json_data = json.load(file)
+            return "\n\n".join([f"{version}:\n{info}" for version, info in json_data.items()])
+
+        self.textbox.setText(open_json(path))
+
 
 class App(QMainWindow):  # Окно и виджеты на нем
 
@@ -158,6 +239,9 @@ class App(QMainWindow):  # Окно и виджеты на нем
         self.setCentralWidget(self.table_widget)
         self.show()
 
+        if check_local_version(f"{actual_version:.2f}"):
+            self.info(f"ВЫ ЗАПУСКАЕТЕ НОВУЮ ВЕРСИЮ {actual_version:.2f}")
+
     def buttons_click(self):
 
         sender = self.sender().objectName()
@@ -197,17 +281,11 @@ class App(QMainWindow):  # Окно и виджеты на нем
             else:
                 self.showFullScreen()
 
-    def info(self):
-        path = "Z:/НАУКА/Разработка/!Программы/Digitrock/version_log.json"
-
-        def open_json(path: str) -> dict:
-            """Считывание json файла в словарь"""
-            with open(path, 'r', encoding='utf-8') as file:
-                json_data = json.load(file)
-
-            return "\n\n".join([f"{version}:\n{info}" for version, info in json_data.items()])
-
-        QMessageBox.about(self, "Лог версий", open_json(path))
+    def info(self, window_title=None):
+        dialog = VersionLog(self)
+        dialog.show()
+        if window_title:
+            dialog.setWindowTitle(window_title)
 
 
 if __name__ == '__main__':

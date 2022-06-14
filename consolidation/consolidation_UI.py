@@ -173,13 +173,13 @@ class ModelTriaxialConsolidationUI(QWidget):
                 self.sqrt_ax.scatter(*plots["sqrt_line_points"].line_end_point, zorder=5, color="dimgray")
 
                 # Линии обработки
-                if plots["sqrt_line_points"].line_start_point and plots["sqrt_line_points"].line_end_point:
+                if plots["sqrt_line_points"].line_start_point and plots["sqrt_line_points"].line_end_point and res["Cv_sqrt"]:
                     # Основные линии обработки
                     self.sqrt_ax.plot(*point_to_xy(plots["sqrt_line_points"].line_start_point,
                                               plots["sqrt_line_points"].line_end_point),
                                  **plotter_params["consolidation_sandybrown_line"])
 
-                if plots["sqrt_line_points"].Cv:
+                if plots["sqrt_line_points"].Cv and res["Cv_sqrt"]:
                     self.sqrt_ax.plot(
                         *point_to_xy(plots["sqrt_line_points"].line_start_point, plots["sqrt_line_points"].Cv),
                         **plotter_params["consolidation_sandybrown_line"])
@@ -279,14 +279,13 @@ class ModelTriaxialConsolidationUI(QWidget):
                 # Логарифм
                 # Основной график
 
-                self.log_ax.plot(np.log10(plots["time"] ), plots["volume_strain"], linewidth=2, alpha=0.6)
-                self.log_ax.scatter(np.log10(plots["time"] ), plots["volume_strain"], s=15)
+                self.log_ax.plot(np.log10(plots["time"]), plots["volume_strain"], linewidth=2, alpha=0.6)
+                self.log_ax.scatter(np.log10(plots["time"]), plots["volume_strain"], s=15)
 
                 self.log_ax.plot(plots["time_log"], plots["volume_strain_approximate"], color="tomato", linewidth=1)
 
-
                 # Линии обработки
-                if plots["log_line_points"]:
+                if plots["log_line_points"] and res["Cv_log"] and res["Ca_log"] != None:
                     # Основные линии обработки
                     self.log_ax.plot(*point_to_xy(plots["log_line_points"].first_line_start_point,
                                              plots["log_line_points"].first_line_end_point),
@@ -333,11 +332,16 @@ class ModelTriaxialConsolidationUI(QWidget):
                         self.log_ax.text(*plots["d0"], '$d_{0}$', horizontalalignment='center',
                                          verticalalignment='center')
 
+                    def str_Kf(x):
+                        s = "{:.2e}".format(x).replace(".", ",")
+                        return s[:-4], str(int(s[5:]))
+
+                    kf, pow = str_Kf(res["Kf_log"])  # '${kf}*10^{{pow}}>$'
 
                     self.log_ax.plot([], [], label="$C_{v}$" + " = " + str(res["Cv_log"]), color="#eeeeee")
-                    self.log_ax.plot([], [], label="$t_{100}$" + " = " + str(res["t100_log"]),
-                                color="#eeeeee")
+                    self.log_ax.plot([], [], label="$t_{100}$" + " = " + str(res["t100_log"]), color="#eeeeee")
                     self.log_ax.plot([], [], label="$C_{a}$" + " = " + str(res["Ca_log"]), color="#eeeeee")
+                    self.log_ax.plot([], [], label="$kf$" + " = " + '$' + f'{kf}*10^' + '{' + str(pow) + '}' + '$', color="#eeeeee")
                     self.log_ax.legend()
 
             self.sqrt_canvas.draw()

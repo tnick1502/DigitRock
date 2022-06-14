@@ -120,13 +120,15 @@ class InitialStatment(QWidget):
     statment_directory = pyqtSignal(str)
     signal = pyqtSignal(bool)
 
-    def __init__(self, test_parameters, fill_keys, identification_column=None):
+    def __init__(self, test_parameters, fill_keys, identification_column=None, generate=True):
         super().__init__()
 
         self.identification_column = identification_column if identification_column else None
         self.test_parameters = test_parameters
 
         self.path = ""
+
+        self.generate = generate
 
         self.create_IU(fill_keys)
         self.open_line.combo_changes_signal.connect(self.file_open)
@@ -231,7 +233,7 @@ class InitialStatment(QWidget):
             models.load(model_file)
             app_logger.info(f"Загружен файл модели {models_name.split('.')[0] + shipment_number + '.pickle'}")
         else:
-            models.generateTests()
+            models.generateTests(generate=self.generate)
             models.dump(model_file)
             app_logger.info(f"Сгенерирован сохраненен новый файл модели {models_name.split('.')[0] + shipment_number + '.pickle'}")
 
@@ -242,7 +244,7 @@ class InitialStatment(QWidget):
 
 class RezonantColumnStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
-    def __init__(self):
+    def __init__(self, generate=True):
         data_test_parameters = {#"p_ref": ["Выберите референтное давление", "Pref: Pref из столбца FV",
                                           #"Pref: Через бытовое давление"],
                                 "K0_mode": {
@@ -264,7 +266,7 @@ class RezonantColumnStatment(InitialStatment):
             "reference_pressure": "Референтное давление, МПа",
             "K0": "K0"}
 
-        super().__init__(data_test_parameters, fill_keys)
+        super().__init__(data_test_parameters, fill_keys, generate=generate)
 
     @log_this(app_logger, "debug")
     def file_open(self):
@@ -337,7 +339,8 @@ class TriaxialStaticStatment(InitialStatment):
                     "Трёхосное сжатие с разгрузкой",
                     "Трёхосное сжатие (F, C, Eur)",
                     "Трёхосное сжатие КН",
-                    "Трёхосное сжатие НН"]
+                    "Трёхосное сжатие НН",
+                    "Трёхосное сжатие (F, C) res"]
             },
 
             "K0_mode": {
@@ -458,7 +461,8 @@ class TriaxialStaticStatment(InitialStatment):
 
                     if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C)" or \
                             statment.general_parameters.test_mode == "Трёхосное сжатие КН" or \
-                            statment.general_parameters.test_mode == "Трёхосное сжатие НН":
+                            statment.general_parameters.test_mode == "Трёхосное сжатие НН" or \
+                            statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
                         self.load_models(models_name="FC_models.pickle",
                                          models=FC_models, models_type=ModelMohrCirclesSoilTest)
 
@@ -494,7 +498,8 @@ class CyclicStatment(InitialStatment):
                     "Сейсморазжижение",
                     "Штормовое разжижение",
                     "Демпфирование",
-                    "По заданным параметрам"
+                    "По заданным параметрам",
+                    "Динамическая прочность на сдвиг"
                     ]
             },
 
@@ -551,9 +556,9 @@ class CyclicStatment(InitialStatment):
                 assert not marker, "Проверьте " + customer
 
                 if combo_params["test_mode"] == "Демпфирование":
-                    assert column_fullness_test(self.path, columns=[("AO", 40), ("AN", 39)],
+                    assert column_fullness_test(self.path, columns=[("AN", 39)],
                                                 initial_columns=columns_marker), \
-                        "Заполните амплитуду ('AO') и частоту ('AN')"
+                        "Заполните частоту ('AN')"
 
                 if combo_params["test_mode"] == "Штормовое разжижение":
                     assert column_fullness_test(self.path, columns=[('HR', 225), ('HS', 226), ('HT', 227), ('HU', 228)],

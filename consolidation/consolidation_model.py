@@ -381,7 +381,7 @@ class ModelTriaxialConsolidation:
                     "sqrt_line_points": self.processed_points_sqrt,
 
                     "time": self._test_data.time_cut**0.5,
-                    "volume_strain": self._test_data.volume_strain,
+                    "volume_strain": self._test_data.volume_strain_cut,
 
                     "sqrt_t50_vertical_line": sqrt_t50_vertical_line,
                     "sqrt_t50_horizontal_line": sqrt_t50_horizontal_line,
@@ -404,7 +404,18 @@ class ModelTriaxialConsolidation:
     def get_plot_data_log(self):
         """Получение данных для построения графиков"""
         if self._test_data.volume_strain_approximate is not None:
-            if self.processed_points_log.Cv:
+            log_t100_vertical_line = None
+            log_t100_horizontal_line = None
+            log_t100_text = None
+            log_strain100_text = None
+            log_t50_vertical_line = None
+            log_t50_horizontal_line = None
+            log_t50_text = None
+            log_strain50_text = None
+            d0 = None
+            d0_line = None
+
+            if self.processed_points_log.Cv and self._test_result.d0:
                 mooveX = (self._test_data.time_log[-1] - self._test_data.time_log[0]) * 2 / 100
                 mooveY = (-self._test_data.volume_strain_approximate[-1] + self._test_data.volume_strain_approximate[0]) \
                          *3 / 100
@@ -417,47 +428,37 @@ class ModelTriaxialConsolidation:
                     y2=self._test_data.volume_strain_approximate,
                 )
 
-                t50, strain50 = x[0], y[0]
+                if len(x) > 0 and len(y) > 0:
+                    t50, strain50 = x[0], y[0]
 
-                log_t50_vertical_line = point_to_xy(
-                    Point(x=t50,
-                          y=self._test_data.volume_strain_approximate[0] - 4 * mooveY),
-                    Point(x=t50, y=strain50))
-                log_t50_horizontal_line = point_to_xy(Point(x=2 * mooveX, y=strain50),
-                                                       Point(x=t50,
-                                                             y=strain50))
+                    log_t50_vertical_line = point_to_xy(
+                        Point(x=t50,
+                              y=self._test_data.volume_strain_approximate[0] - 4 * mooveY),
+                        Point(x=t50, y=strain50))
+                    log_t50_horizontal_line = point_to_xy(Point(x=2 * mooveX, y=strain50),
+                                                           Point(x=t50,
+                                                                 y=strain50))
 
-                log_t50_text = Point(x=t50, y=self._test_data.volume_strain_approximate[0] - 3 * mooveY)
-                log_strain50_text = Point(x=mooveX, y=strain50)
+                    log_t50_text = Point(x=t50, y=self._test_data.volume_strain_approximate[0] - 3 * mooveY)
+                    log_strain50_text = Point(x=mooveX, y=strain50)
 
 
-                log_t100_vertical_line = point_to_xy(
-                    Point(x=self.processed_points_log.Cv.x,
-                          y=self._test_data.volume_strain_approximate[0] - 4 * mooveY),
-                    Point(x=self.processed_points_log.Cv.x, y=self.processed_points_log.Cv.y))
-                log_t100_horizontal_line = point_to_xy(Point(x=2 * mooveX, y=self.processed_points_log.Cv.y),
-                                                       Point(x=self.processed_points_log.Cv.x,
-                                                             y=self.processed_points_log.Cv.y))
+                    log_t100_vertical_line = point_to_xy(
+                        Point(x=self.processed_points_log.Cv.x,
+                              y=self._test_data.volume_strain_approximate[0] - 4 * mooveY),
+                        Point(x=self.processed_points_log.Cv.x, y=self.processed_points_log.Cv.y))
+                    log_t100_horizontal_line = point_to_xy(Point(x=2 * mooveX, y=self.processed_points_log.Cv.y),
+                                                           Point(x=self.processed_points_log.Cv.x,
+                                                                 y=self.processed_points_log.Cv.y))
 
-                log_t100_text = Point(x=self.processed_points_log.Cv.x,
-                                      y=self._test_data.volume_strain_approximate[0] - 3 * mooveY)
-                log_strain100_text = Point(x=mooveX, y=self.processed_points_log.Cv.y)
-                d0 = Point(x=self._test_data.time_log[0], y=self._test_result.d0)
-                d0_line = point_to_xy(Point(x=self._test_data.time_log[0] + 1.5 * mooveX,
-                                            y=self._test_result.d0),
-                                        Point(x=self._test_data.time_log[-1],
-                                              y=self._test_result.d0))
-            else:
-                log_t100_vertical_line = None
-                log_t100_horizontal_line = None
-                log_t100_text = None
-                log_strain100_text = None
-                log_t50_vertical_line = None
-                log_t50_horizontal_line = None
-                log_t50_text = None
-                log_strain50_text = None
-                d0 = None
-                d0_line = None
+                    log_t100_text = Point(x=self.processed_points_log.Cv.x,
+                                          y=self._test_data.volume_strain_approximate[0] - 3 * mooveY)
+                    log_strain100_text = Point(x=mooveX, y=self.processed_points_log.Cv.y)
+                    d0 = Point(x=self._test_data.time_log[0], y=self._test_result.d0)
+                    d0_line = point_to_xy(Point(x=self._test_data.time_log[0] + 1.5 * mooveX,
+                                                y=self._test_result.d0),
+                                            Point(x=self._test_data.time_log[-1],
+                                                  y=self._test_result.d0))
 
             return {"volume_strain_approximate": self._test_data.volume_strain_approximate,
                     "time": self._test_data.time_cut,
@@ -838,9 +839,20 @@ class ModelTriaxialConsolidation:
         self.processed_points_log.Cv = ModelTriaxialConsolidation.define_cv_log(self._test_data.time_log,
                                                                                 self.processed_points_log,
                                                                                 self._test_data.volume_strain_approximate)
+
+        self._test_result.d0 = None
+        self._test_result.t50_log = None
+        self._test_result.Cv_log = None
+        self._test_result.Ca_log = None
+        self._test_result.t100_log = None
+        self._test_result.strain100_log = None
+        self._test_result.Kf_log = None
+
         if self.processed_points_log.Cv:
             if self.processed_points_log.Cv.y > np.max(self._test_data.volume_strain_approximate):
                 self.processed_points_log.Cv = None
+                return
+
             self._test_result.d0 = ModelTriaxialConsolidation.find_d0(10**self._test_data.time_log,
                                                                       self._test_data.volume_strain_approximate)
 
@@ -857,30 +869,23 @@ class ModelTriaxialConsolidation:
                 y2=self._test_data.volume_strain_approximate,
             )
 
-            self._test_result.t50_log = 10**x[0]
+            if len(x) > 0:
+                self._test_result.t50_log = 10**x[0]
 
-            self._test_result.Cv_log = np.round(((2 * 2 * 0.197) / (4 * self._test_result.t50_log)), 4)
+                self._test_result.Cv_log = np.round(((2 * 2 * 0.197) / (4 * self._test_result.t50_log)), 4)
 
-            self._test_result.Ca_log = np.round(((abs(self.processed_points_log.second_line_end_point.y) -
-                                               abs(abs(self.processed_points_log.second_line_start_point.y)))
-                                              / (self.processed_points_log.second_line_end_point.x -
-                                                 self.processed_points_log.second_line_start_point.x)), 4)
+                self._test_result.Ca_log = np.round(((abs(self.processed_points_log.second_line_end_point.y) -
+                                                   abs(abs(self.processed_points_log.second_line_start_point.y)))
+                                                  / (self.processed_points_log.second_line_end_point.x -
+                                                     self.processed_points_log.second_line_start_point.x)), 4)
 
-            self._test_result.t100_log = np.round(10**self.processed_points_log.Cv.x )
-            self._test_result.strain100_log = self.processed_points_log.Cv.y
+                self._test_result.t100_log = np.round(10**self.processed_points_log.Cv.x )
+                self._test_result.strain100_log = self.processed_points_log.Cv.y
 
-            self._test_result.Kf_log = ModelTriaxialConsolidation.define_Kf(self._test_result.strain100_log,
-                                                                            self._test_result.d0, self._test_params.p_max,
-                                                                            self._test_result.Cv_log)
-
-        else:
-            self._test_result.d0 = None
-            self._test_result.t50_log = None
-            self._test_result.Cv_log = None
-            self._test_result.Ca_log = None
-            self._test_result.t100_log = None
-            self._test_result.strain100_log = None
-            self._test_result.Kf_log = None
+                self._test_result.Kf_log = ModelTriaxialConsolidation.define_Kf(self._test_result.strain100_log,
+                                                                                self._test_result.d0,
+                                                                                self._test_params.p_max,
+                                                                                self._test_result.Cv_log)
 
     @staticmethod
     def define_Kf(strain100, strain0, pmax, Cv):

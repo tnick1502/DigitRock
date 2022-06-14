@@ -357,7 +357,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                               't': statment[statment.current_test].mechanical_properties.t,
                               'frequency': statment[statment.current_test].mechanical_properties.frequency,
                               'Rezhim': 'Изотропная реконсолидация, девиаторное циклическое нагружение',
-                              'Oborudovanie': "Wille Geotechnik 13-HG/020:001", 'h': 76, 'd': 38}
+                              'Oborudovanie': "Wille Geotechnik 13-HG/020:001", 'h': "76,00", 'd': "38,00"}
 
             save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
@@ -518,7 +518,13 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
         except:
             s = None
 
-        _statment = StatementGenerator(self, path=s, statement_structure_key="triaxial_cyclic")
+        test_mode_file_name = None
+        if statment.general_parameters.test_mode == "Виброползучесть":
+            test_mode_file_name = 'вибро'
+
+        _statment = StatementGenerator(self, path=s, statement_structure_key="triaxial_cyclic",
+                                       test_mode_and_shipment=(test_mode_file_name,
+                                                               statment.general_data.get_shipment_number()))
         _statment.show()
 
     def save_report_and_continue(self):

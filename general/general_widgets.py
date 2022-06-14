@@ -19,7 +19,9 @@ from loggers.logger import app_logger, log_this
 
 from singletons import statment
 
-class Float_Slider(QSlider):  # получает на входе размер окна. Если передать 0 то размер автоматический
+
+# получает на входе размер окна. Если передать 0 то размер автоматический
+class Float_Slider(QSlider):
     def __init__(self, m):
         super().__init__(m)
         self.slider_order = 1
@@ -32,11 +34,12 @@ class Float_Slider(QSlider):  # получает на входе размер о
         if minimum <= 0:
             self.setMinimum(0)
             self.slider_order = 100 / (maximum)
-            self.setMaximum(maximum * self.slider_order)
+            self.setMaximum(int(maximum * self.slider_order))
         else:
-            self.slider_order = max([self.order(minimum), 100 / (maximum - minimum)])
-            self.setMinimum(minimum * self.slider_order)
-            self.setMaximum(maximum * self.slider_order)
+            self.slider_order = max(
+                [self.order(minimum), 100 / (maximum - minimum)])
+            self.setMinimum(int(minimum * self.slider_order))
+            self.setMaximum(int(maximum * self.slider_order))
 
     def current_value(self):
         if self.disabled:
@@ -47,7 +50,7 @@ class Float_Slider(QSlider):  # получает на входе размер о
         if val:
             self.disabled = False
             self.setDisabled(False)
-            self.setValue(val * self.slider_order)
+            self.setValue(int(val * self.slider_order))
         else:
             self.disabled = True
             self.setDisabled(True)
@@ -76,7 +79,8 @@ class Slider(QSlider):  # получает на входе размер окна
                 self.delta = minimum + 1
             minimum = minimum + self.delta
             maximum = maximum + self.delta
-            self.slider_order = max([self.order(minimum), 100 / (maximum - minimum)])
+            self.slider_order = max(
+                [self.order(minimum), 100 / (maximum - minimum)])
             self.setMinimum(minimum * self.slider_order)
             self.setMaximum(maximum * self.slider_order)
 
@@ -150,7 +154,8 @@ class RangeSlider(QSlider):
         if self.tickPosition() != self.NoTicks:
             opt.subControls |= QStyle.SC_SliderTickmarks
         style.drawComplexControl(QStyle.CC_Slider, opt, painter, self)
-        groove = style.subControlRect(QStyle.CC_Slider, opt, QStyle.SC_SliderGroove, self)
+        groove = style.subControlRect(
+            QStyle.CC_Slider, opt, QStyle.SC_SliderGroove, self)
 
         # drawSpan
         # opt = QtWidgets.QStyleOptionSlider()
@@ -161,9 +166,11 @@ class RangeSlider(QSlider):
         opt.siderValue = 0
         # print(self._low)
         opt.sliderPosition = self._low
-        low_rect = style.subControlRect(QStyle.CC_Slider, opt, QStyle.SC_SliderHandle, self)
+        low_rect = style.subControlRect(
+            QStyle.CC_Slider, opt, QStyle.SC_SliderHandle, self)
         opt.sliderPosition = self._high
-        high_rect = style.subControlRect(QStyle.CC_Slider, opt, QStyle.SC_SliderHandle, self)
+        high_rect = style.subControlRect(
+            QStyle.CC_Slider, opt, QStyle.SC_SliderHandle, self)
 
         # print(low_rect, high_rect)
         low_pos = self.__pick(low_rect.center())
@@ -175,9 +182,11 @@ class RangeSlider(QSlider):
         c = QtCore.QRect(low_rect.center(), high_rect.center()).center()
         # print(min_pos, max_pos, c)
         if opt.orientation == QtCore.Qt.Horizontal:
-            span_rect = QtCore.QRect(QtCore.QPoint(min_pos, c.y() - 2), QtCore.QPoint(max_pos, c.y() + 1))
+            span_rect = QtCore.QRect(QtCore.QPoint(
+                min_pos, c.y() - 2), QtCore.QPoint(max_pos, c.y() + 1))
         else:
-            span_rect = QtCore.QRect(QtCore.QPoint(c.x() - 2, min_pos), QtCore.QPoint(c.x() + 1, max_pos))
+            span_rect = QtCore.QRect(QtCore.QPoint(
+                c.x() - 2, min_pos), QtCore.QPoint(c.x() + 1, max_pos))
 
         # self.initStyleOption(opt)
         # print(groove.x(), groove.y(), groove.width(), groove.height())
@@ -244,7 +253,8 @@ class RangeSlider(QSlider):
 
             for i, value in enumerate([self._low, self._high]):
                 opt.sliderPosition = value
-                hit = style.hitTestComplexControl(style.CC_Slider, opt, event.pos(), self)
+                hit = style.hitTestComplexControl(
+                    style.CC_Slider, opt, event.pos(), self)
                 if hit == style.SC_SliderHandle:
                     self.active_slider = i
                     self.pressed_control = hit
@@ -256,7 +266,8 @@ class RangeSlider(QSlider):
 
             if self.active_slider < 0:
                 self.pressed_control = QStyle.SC_SliderHandle
-                self.click_offset = self.__pixelPosToRangeValue(self.__pick(event.pos()))
+                self.click_offset = self.__pixelPosToRangeValue(
+                    self.__pick(event.pos()))
                 self.triggerAction(self.SliderMove)
                 self.setRepeatAction(self.SliderNoAction)
         else:
@@ -311,8 +322,10 @@ class RangeSlider(QSlider):
         self.initStyleOption(opt)
         style = QApplication.style()
 
-        gr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderGroove, self)
-        sr = style.subControlRect(style.CC_Slider, opt, style.SC_SliderHandle, self)
+        gr = style.subControlRect(
+            style.CC_Slider, opt, style.SC_SliderGroove, self)
+        sr = style.subControlRect(
+            style.CC_Slider, opt, style.SC_SliderHandle, self)
 
         if self.orientation() == QtCore.Qt.Horizontal:
             slider_length = sr.width()
@@ -327,8 +340,10 @@ class RangeSlider(QSlider):
                                              pos - slider_min, slider_max - slider_min,
                                              opt.upsideDown)
 
+
 if __name__ == "__main__":
     pass
+
 
 class Progressbar(QWidget):
     def __init__(self, count):
@@ -344,7 +359,8 @@ class Progressbar(QWidget):
 
     def set_params(self, val):
         self.progressBar.setProperty("value", round(val*100/self.count))
-        self.label.setText("Процесс выполнения: {} из {}".format(val, self.count))
+        self.label.setText(
+            "Процесс выполнения: {} из {}".format(val, self.count))
 
 
 if __name__ == "__main__":

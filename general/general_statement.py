@@ -1,7 +1,9 @@
+import copy
 from datetime import datetime
+from typing import Tuple
 
 from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QGroupBox, QDialog, \
-    QComboBox, QWidget, QLineEdit, QPushButton, QVBoxLayout, QLabel, QMessageBox, QApplication
+    QComboBox, QWidget, QLineEdit, QPushButton, QVBoxLayout, QLabel, QMessageBox, QApplication, QCheckBox
 from PyQt5.QtCore import Qt
 import sys
 import os
@@ -11,11 +13,12 @@ import numpy as np
 from openpyxl import load_workbook
 
 # from general.excel_functions import read_customer, form_xlsx_dictionary, table_data
-from general.general_functions import create_json_file, read_json_file, unique_number
+from general.general_functions import create_json_file, read_json_file, unique_number, number_format
 from general.initial_tables import Table
 from general.report_general_statment import save_report
 import xlrd
 from openpyxl.utils import get_column_letter, column_index_from_string
+from singletons import statment
 
 
 def convert_data(data):
@@ -216,8 +219,11 @@ class StatementGenerator(QDialog):
 
     """
 
-    def __init__(self, parent, path=None, statment_data=None, statement_structure_key=None):
+    def __init__(self, parent, path=None, statment_data=None, statement_structure_key=None,
+                 test_mode_and_shipment: Tuple[str, str] = (None, None)):
         super().__init__(parent)
+
+        self.sort = False
 
         self.setGeometry(100, 50, 1000, 950)
 
@@ -227,6 +233,8 @@ class StatementGenerator(QDialog):
         self.statment_data = statment_data
 
         self._statement_structure_key = statement_structure_key if statement_structure_key else "triaxial_cyclic"
+
+        self.statment_test_mode, self.shipment = test_mode_and_shipment
 
         self.create_UI()
 
@@ -269,6 +277,8 @@ class StatementGenerator(QDialog):
 
         self.StatementStructure.save_button.clicked.connect(self._save_report)
 
+        self.StatementStructure.sort_btn.clicked.connect(self._on_sort)
+
         self.setLayout(self.layout)
 
     def open_excel(self, path=None):
@@ -285,6 +295,19 @@ class StatementGenerator(QDialog):
                                            ["customer", "object_name", "data", "accreditation"]]], "Stretch")
             self.text_file_path.setText(self.path)
             self.statment_data = self.form_excel_dictionary(self.path, last_key='IV')
+            self.accreditation = self.customer["accreditation"]
+            self.accreditation_key = "новая"
+
+            if self.accreditation in ["OAO", "ОАО"]:
+                self.accreditation = "АО"
+            elif self.accreditation == "OOO":
+                self.accreditation = "ООО"
+
+            if self.accreditation in ["AO", "АО"]:
+                self.accreditation_key = "новая"
+            elif self.accreditation == "ООО" or self.accreditation == "OOO":
+                self.accreditation_key = "2"
+
         except FileNotFoundError as error:
             print(error)
 
@@ -298,7 +321,12 @@ class StatementGenerator(QDialog):
                     for j in range(len(data[i])):
                         if data[i][j] == 'None':
                             data[i][j] = ' '
+
+                if self.sort:
+                    data = self.sort_data_by_skv_depth(data)
+
                 self.statment_table.set_data([titles] + data, "Stretch")
+
             else:
                 pass
 
@@ -343,7 +371,10 @@ class StatementGenerator(QDialog):
                     # file = QFileDialog.getOpenFileName(self, 'Open file')[0]
                     save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
-                    save_file_name = 'Общая ведомость.pdf'
+                    if self.statment_test_mode and self.shipment:
+                        save_file_name = f'Ведомость {self.statment_test_mode} {self.shipment}.pdf'
+                    else:
+                        save_file_name = 'Общая ведомость.pdf'
                     # считывание параметра "Заголовок"
 
                     statement_title = self.StatementStructure.get_structure().get("statement_title", '')
@@ -351,11 +382,21 @@ class StatementGenerator(QDialog):
                     # self.StatementStructure._additional_parameters = \
                     #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
                     titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
-                    #data = convert_data2(data)
+
+                    try:
+                        if statment.general_parameters.test_mode == "Виброползучесть":
+                           data = convert_data(data)
+                        elif statment.general_parameters.test_mode == "Демпфирование по Релею":
+                            data = convert_data2(data)
+                    except:
+                        pass
+
                     for i in range(len(data)):
                         for j in range(len(data[i])):
                             if data[i][j] == 'None':
                                 data[i][j] = ' '
+                    if self.sort:
+                        data = self.sort_data_by_skv_depth(data)
                     # ["customer", "object_name", "data", "accreditation"]
                     # ["Заказчик", "Объект", "Дата", "Аккредитация"]
                     # Дата
@@ -370,7 +411,8 @@ class StatementGenerator(QDialog):
                         if save_file_pass:
                             save_report(titles, data, scales, data_report, customer_data_info, customer_data,
                                         statement_title, save_file_pass, unique_number(length=7, postfix="-СВД"),
-                                        save_file_name)
+                                        save_file_name, accred1={'accreditation': self.accreditation,
+                                                                'accreditation_key': self.accreditation_key})
                             QMessageBox.about(self, "Сообщение", "Успешно сохранено")
                     except PermissionError:
                         QMessageBox.critical(self, "Ошибка", "Закройте файл для записи", QMessageBox.Ok)
@@ -623,7 +665,8 @@ class StatementGenerator(QDialog):
             if str(count) != 'None' and str(count) != '*' and str(count) != '':
                 for i in range(len(matrix)):
                     try:
-                        matrix[i][j] = self.number_format(self.float_float(matrix[i][j]), characters_number=int(count), split='.')
+                        matrix[i][j] = number_format(self.float_float(matrix[i][j]),
+                                                          characters_number=int(count), split=',')
 
                     except:
                         pass
@@ -644,7 +687,7 @@ class StatementGenerator(QDialog):
             return a
         except ValueError:
             try:
-                a = float(a.replace(",", "."))
+                a = float(a.replace(",", '.'))
                 return a
             except ValueError:
                 return a
@@ -669,6 +712,21 @@ class StatementGenerator(QDialog):
         if value == " ":
             return "None"
         return value
+
+    def _on_sort(self, checked: bool):
+        if not checked:
+            self.sort = False
+        else:
+            self.sort = True
+
+        self._plot()
+
+    def sort_data_by_skv_depth(self, data):
+        result = copy.deepcopy(data[:-1])
+
+        result = sorted(result, key=lambda x: [x[1], x[2]] if len(x) > 2 else x[0])
+
+        return [*result, data[-1]]
 
 class StatementStructure(QWidget):
     """
@@ -795,6 +853,12 @@ class StatementStructure(QWidget):
         self.save_button.setFixedWidth(140)
         self.save_button.setFixedHeight(70)
         self.end_line.addWidget(self.save_button)
+
+        self.sort_btn = QCheckBox("Сортировка по скв/глуб")
+        self.sort_btn.setFixedHeight(30)
+        self.sort_btn.setFixedWidth(150)
+        self.end_line.addWidget(self.sort_btn)
+
         self.end_line.addStretch(-1)
         self.parameter_box_layout.addLayout(self.end_line)
         self.layout.addWidget(self.parameter_box)
