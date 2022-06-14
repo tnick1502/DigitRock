@@ -27,6 +27,9 @@ class ModelK0:
     MIN_LSE_PNTS = 4
     '''Минимальное число точек, необходимых для расчета'''
 
+    SIGMA_PREC = 3
+    '''Точность определения К0 по сигме'''
+
     def __init__(self):
         """Определяем основную структуру данных"""
         # Структура дынных
@@ -270,8 +273,12 @@ class ModelK0:
         :param no_round: bool, True - если необходимо не округлять результат
         :return: defined_k0 и defined_m
         """
-        sigma_1 = np.asarray(sigma_1)
-        sigma_3 = np.asarray(sigma_3)
+        sigma_1 = np.round(np.asarray(sigma_1), ModelK0.SIGMA_PREC)
+        sigma_3 = np.round(np.asarray(sigma_3), ModelK0.SIGMA_PREC)
+
+        print('sigmas 1,3 from processing')
+        print(sigma_1)
+        print(sigma_3)
 
         lse_pnts = ModelK0.MIN_LSE_PNTS
 
@@ -679,9 +686,9 @@ class ModelK0SoilTest(ModelK0):
 
         # Точка начала прямолинейного участка должна быть зафиксирована,
         #   так как происходят некорретные сдвиги по шумам
-        sigma_3_line_fixed = sigma_3_line[0]
+        sigma_3_line_fixed = round(sigma_3_line[0],ModelK0.SIGMA_PREC)
         '''точка начала прямолинейного участка'''
-        sigma_1_line_fixed = sigma_1_line[0]
+        sigma_1_line_fixed = round(sigma_1_line[0],ModelK0.SIGMA_PREC)
         '''точка начала прямолинейного участка'''
 
         # Проверка числа узов
@@ -775,7 +782,9 @@ class ModelK0SoilTest(ModelK0):
             else:
                 _sigma_1, _sigma_3 = ModelK0SoilTest.lse_faker(sigma_1_line, sigma_3_line, sigma_1_spl, sigma_3_spl,
                                                                K0, noise=noise*0.95)
-
+        print('sigmas 1,3 from modeling')
+        print(_sigma_1)
+        print(_sigma_3)
         return _sigma_1, _sigma_3
 
     @staticmethod
