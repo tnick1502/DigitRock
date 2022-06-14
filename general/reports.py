@@ -501,8 +501,8 @@ def test_mode_rc(canvas, ro, Data, moove=0):
 
 def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True, moove=0):
 
-    tau_text = '''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''' if tau else '''<p>σ<sub rise="2.5" size="6">d</sub>, кПа:</p>'''
-    tau = zap(test_parameter["tau"], 0) if tau else zap(test_parameter["tau"] * 2, 0)
+    tau_text = '''<p>σ<sub rise="2.5" size="6">d</sub>, кПа:</p>''' if tau else '''<p>σ<sub rise="2.5" size="6">d</sub>, кПа:</p>'''
+    tau = zap(test_parameter["tau"], 0)
 
     d = test_parameter["d"]
     h = test_parameter["h"]
@@ -981,7 +981,7 @@ def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8, moove=0, tttyy
              Paragraph('''<p>ε<sub rise="0.5" size="6">max</sub>, д.е.:</p>''', CentralStyle), "", zap(Res["EPSmax"], 3)])
 
         tableData.append(
-            ["Динамическая прочность грунта на сдвиг, ед.:", "", "", zap(Res["nc"], 0) if Res["nc"] != "-" else "1500", "", ""])
+            ["Предельное число циклов при разрушении, ед.:", "", "", zap(Res["nc"], 0) if Res["nc"] != "-" else "1500", "", ""])
         tableData.append(
             ["Критическое значение сдвиговых деформаций, д.е.:", "", "", zap(Res["gamma_critical"], 6), "", ""])
         trt = 4
