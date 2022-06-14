@@ -1213,9 +1213,18 @@ class CyclicProperties(MechanicalProperties):
             elif test_mode == "Динамическая прочность на сдвиг":
 
                 sigma_1 = float_df(data_frame.iat[string,
-                                        DynamicsPropertyPosition["reference_pressure"][1]])
-                if sigma_1:
+                                        DynamicsPropertyPosition["sigma_1"][1]])
+
+                sigma_3 = float_df(data_frame.iat[string,
+                                                  DynamicsPropertyPosition["reference_pressure"][1]])
+
+                if sigma_1 and sigma_3:
                     self.sigma_1 = np.round(sigma_1 * 1000)
+                    self.sigma_3 = np.round(sigma_3 * 1000)
+                    print(sigma_3, sigma_1)
+                elif sigma_3:
+                    self.sigma_3 = np.round(sigma_3 * 1000)
+                    self.sigma_1 = np.round(self.sigma_3 / self.K0)
                 else:
                     physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
                     if physical_properties.depth <= physical_properties.ground_water_depth:
@@ -1228,8 +1237,6 @@ class CyclicProperties(MechanicalProperties):
                         self.sigma_1 = 10
 
                 self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2)
-
-                self.sigma_3 = np.round(self.sigma_1 * self.K0)
 
                 cycles_count = float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]])
                 if cycles_count:

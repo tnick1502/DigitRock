@@ -216,7 +216,7 @@ class ModelTriaxialCyclicLoading:
         if statment.general_parameters.test_mode == "Динамическая прочность на сдвиг":
             self._test_result.fail_cycle_criterion_strain = ModelTriaxialCyclicLoading.define_fail_cycle(
                 self._test_data.cycles,
-                (self._test_data.strain >= 0.20))
+                (self._test_data.strain >= 0.10))
             self._test_result.fail_cycle_criterion_stress = ModelTriaxialCyclicLoading.define_fail_cycle(
                 self._test_data.cycles,
                 (self._test_data.mean_effective_stress <= 0))

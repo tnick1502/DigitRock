@@ -981,7 +981,7 @@ def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8, moove=0, tttyy
              Paragraph('''<p>ε<sub rise="0.5" size="6">max</sub>, д.е.:</p>''', CentralStyle), "", zap(Res["EPSmax"], 3)])
 
         tableData.append(
-            ["Предельное число циклов при разрушении, ед.:", "", "", zap(Res["nc"], 0) if Res["nc"] != "-" else "1500", "", ""])
+            [Paragraph('''<p>Предельное число циклов при разрушении N<sub rise="0.5" size="6">fail</sub>, ед.:</p>''', CentralStyle), "", "", zap(Res["nc"], 0) if Res["nc"] != "-" else "1500", "", ""])
         tableData.append(
             ["Критическое значение сдвиговых деформаций, д.е.:", "", "", zap(Res["gamma_critical"], 6), "", ""])
         trt = 4
