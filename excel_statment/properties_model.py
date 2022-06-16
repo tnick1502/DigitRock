@@ -1714,7 +1714,7 @@ class ShearProperties(MechanicalProperties):
                     self.build_press, self.pit_depth, physical_properties.depth)),
 
                 "state_standard": (ShearProperties.define_reference_pressure_array_state_standard(
-                    physical_properties.e, physical_properties.Il, physical_properties.type_ground))
+                    physical_properties.e, physical_properties.Il, physical_properties.type_ground, physical_properties.Ir))
             }
 
 
@@ -2000,16 +2000,20 @@ class ShearProperties(MechanicalProperties):
             return None
 
     @staticmethod
-    def define_reference_pressure_array_state_standard(e: float, Il: float, type_ground: int) -> list:
+    def define_reference_pressure_array_state_standard(e: float, Il: float, type_ground: int, Ir: float) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
         e = e if e else 0.65
         Il = Il if Il else 0.5
+
+        if Ir != None:
+            if Il >= 1 and Ir >= 10 or Ir >= 50:
+                return [25, 75, 125]
 
         if (type_ground == 1) or (type_ground == 2) or (type_ground == 3) or (
                 type_ground == 8 and Il <= 0.25):
             return [100, 300, 500]
 
-        elif (type_ground == 4) or (type_ground == 5) or\
+        elif (type_ground == 4) or (type_ground == 5) or \
                 ((type_ground == 6 or type_ground == 7 or type_ground == 9) and Il <= 0.5) or \
                 (type_ground == 8 and Il <= 0.5):
             return [100, 200, 300]

@@ -627,13 +627,14 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         return np.round(qf_with_noise, 1)
 
     @staticmethod
-    def new_noise_for_mohrs_circles(sigma3: list, sigma1: list, fi: float, c: float) -> list:
+    def new_noise_for_mohrs_circles(sigma3: list, sigma1: list, fi: float, c: float, loops: int = 0) -> list:
         """ Генерация шума для кругов мора
         Аргументы:
             :param sigma3: массив sigma3 для количества кругов > 2
             :param sigma1: массив sigma1 для количества кругов > 2
             :param fi: угол внутреннего трения
-            :param с: сцепление
+            :param c: сцепление
+            :param loops: число самозацикливаний
             :return: значение девиатора с шумом"""
 
         '''fi - в градусах, так что
@@ -662,7 +663,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
             # определяем новые фи и с для измененной окружности
             c_new, fi_new = ModelMohrCirclesSoilTest.mohr_cf_stab(sigma3, x)
             # критерий минимизации - ошибка между fi и c для несмещенных кругов
-            return abs(abs((c_new - c)) + abs(100 * (fi_new - fi)))
+            return abs(abs(c_new - c) + abs(100 * (fi_new - fi)))
 
         initial = np.delete(sigma1_with_noise, fixed_circle_index)
         from scipy.optimize import Bounds, minimize
@@ -671,7 +672,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         def constrains(x):
             """
             Функция ограничений на икс, должна подаваться в cons.
-            Должна представлять собой массивы ограничений вида x1 - x2 < 0
+            Должна представлять собой массивы ограничений вида x1 - x2 >= 0
             """
 
             # икс для фукнции оптимизации это два круга, поэтому возвращаем в икс убранный круг
@@ -696,6 +697,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, options={'ftol': 1e-9})
         # res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds,
         #                options={'ftol': 1e-9, 'maxiter': 50}) # отбойник на 50
+        error = res.fun
         res = res.x
         sigma1_with_noise = np.insert(res, fixed_circle_index, sigma1_with_noise[fixed_circle_index])
 
@@ -706,6 +708,11 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
 
         assert sum([abs(sigma1[i] - sigma1_with_noise[i]) < 10 ** (-1) for i in range(len(sigma1))]) < 2, \
             "Два круга не зашумлены!"
+
+        if error > 5 and loops < 100:
+            print(f'looping with error = {error}')
+            loops = loops + 1
+            qf_with_noise = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(sigma3, sigma1, np.rad2deg(np.arctan(fi)), c, loops)
 
         return np.round(qf_with_noise, 1)
 
