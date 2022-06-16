@@ -847,7 +847,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
     def get_draw_params(self):
         """Считывание параметров отрисовки(для передачи на слайдеры)"""
         strain_params = {
-            "strain_max": {"value": self._draw_params.strain_max, "borders": [0, 0.08]},
+            "strain_max": {"value": self._draw_params.strain_max, "borders": [0, 0.12]},
             "strain_slant": {"value": self._draw_params.strain_slant,
                               "borders": [self._draw_params.strain_slant/5, int(self._test_params.cycles_count*0.9)]},
             "strain_E0": {"value": self._draw_params.strain_E0,
