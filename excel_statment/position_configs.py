@@ -86,6 +86,7 @@ DynamicsPropertyPosition = {
     "frequency_vibration_creep": ["AN", 39],
     "Kd_vibration_creep": ["CB", 79],
     "sigma_d_vibration_creep": ["AO", 40],
+    "sigma_1": ["FU", 176],
 }
 
 IdentificationColumns = {

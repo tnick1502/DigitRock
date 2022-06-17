@@ -1224,9 +1224,18 @@ class CyclicProperties(MechanicalProperties):
             elif test_mode == "Динамическая прочность на сдвиг":
 
                 sigma_1 = float_df(data_frame.iat[string,
-                                        DynamicsPropertyPosition["reference_pressure"][1]])
-                if sigma_1:
+                                        DynamicsPropertyPosition["sigma_1"][1]])
+
+                sigma_3 = float_df(data_frame.iat[string,
+                                                  DynamicsPropertyPosition["reference_pressure"][1]])
+
+                if sigma_1 and sigma_3:
                     self.sigma_1 = np.round(sigma_1 * 1000)
+                    self.sigma_3 = np.round(sigma_3 * 1000)
+                    print(sigma_3, sigma_1)
+                elif sigma_3:
+                    self.sigma_3 = np.round(sigma_3 * 1000)
+                    self.sigma_1 = np.round(self.sigma_3 / self.K0)
                 else:
                     physical_properties.ground_water_depth = 0 if not physical_properties.ground_water_depth else physical_properties.ground_water_depth
                     if physical_properties.depth <= physical_properties.ground_water_depth:
@@ -1239,8 +1248,6 @@ class CyclicProperties(MechanicalProperties):
                         self.sigma_1 = 10
 
                 self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2)
-
-                self.sigma_3 = np.round(self.sigma_1 * self.K0)
 
                 cycles_count = float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]])
                 if cycles_count:
@@ -2028,6 +2035,55 @@ class ShearProperties(MechanicalProperties):
               type_ground == 8 or type_ground == 9) and (Il > 1.0):
             return [25, 75, 125]
 
+
+class K0Properties(MechanicalProperties):
+    sigma_1_step = DataTypeValidation(float, int)
+    sigma_1_max = DataTypeValidation(float, int)
+    sigma_p = DataTypeValidation(float, int)
+    sigma_3_p = DataTypeValidation(float, int)
+
+    def __init__(self):
+        for key in K0Properties.__dict__:
+            if isinstance(getattr(K0Properties, key), DataTypeValidation):
+                object.__setattr__(self, key, None)
+
+    @log_this(app_logger, "debug")
+    def defineProperties(self, physical_properties, data_frame: pd.DataFrame, string: int,
+                         test_mode=None, K0_mode=None) -> None:
+        """Считывание строки свойств"""
+
+        self.K0 = float_df(data_frame.iat[string, MechanicalPropertyPosition["K0nc"][1]])
+
+        if self.K0:
+            self.OCR = float_df(data_frame.iat[string, MechanicalPropertyPosition["OCR"][1]])
+
+            self.sigma_p, self.sigma_3_p = K0Properties.define_sigma_p(self.OCR, physical_properties.depth, self.K0)
+
+            self.sigma_1_step = 0.150
+            self.sigma_1_max = 1.200
+
+    @staticmethod
+    def define_sigma_p(OCR, depth, K0):
+        # бытовое давление (точка перегиба) определяется из OCR через ro*g*h, где h - глубина залгания грунта
+        _sigma_p = OCR * 2 * 10 * depth
+
+        # максимальное бытовое давление - 2000 МПа
+        if _sigma_p > 2000*1000:
+            _sigma_p = 2000*1000
+
+        # сигма 3 при этом давлении неизвестно, но мы знаем, что наклон точно больше, чем наклон прямолинейного участка
+        _sigma_3_p = K0 * (1/np.random.uniform(2.5, 3.0)) * _sigma_p
+
+        # значения получаем в кпа, поэтому делим на 1000
+        return _sigma_p/1000, _sigma_3_p/1000
+
+    @staticmethod
+    def is_kinematic_mode(_test_mode):
+        if _test_mode == 'Кинематический':
+            return True
+        return False
+
+
 class RayleighDampingProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
     t = DataTypeValidation(float, int, np.int32)
@@ -2134,13 +2190,15 @@ class RayleighDampingProperties(MechanicalProperties):
         damping_ratio = 0.5 * (alpha / (frequency * 2 * np.pi) + betta * frequency * 2 * np.pi)
         return damping_ratio * 100
 
+
 PropertiesDict = {
     "PhysicalProperties": PhysicalProperties,
     "MechanicalProperties": MechanicalProperties,
     "CyclicProperties": CyclicProperties,
     "RCProperties": RCProperties,
     "VibrationCreepProperties": VibrationCreepProperties,
-    "ShearProperties": ShearProperties
+    "ShearProperties": ShearProperties,
+    "K0Properties": K0Properties
 }
 
 

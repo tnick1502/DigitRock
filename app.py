@@ -27,6 +27,7 @@ from consolidation.consolidation_widget import ConsolidationSoilTestApp
 from resonant_column.resonant_column_widgets import RezonantColumnSoilTestApp
 from vibration_strength.vibration_strangth_widgets import VibrationStrangthSoilTestApp
 from rayleigh_damping.rayleigh_damping_widgets import RayleighDampingSoilTestApp
+from k0_test.triaxial_k0_widgets import K0SoilTestApp
 
 icon_path = "project_data/icons/"
 
@@ -38,7 +39,8 @@ prog_dict = {
     "consolidation": ConsolidationSoilTestApp,
     "resonant_column": RezonantColumnSoilTestApp,
     "vibration_strength": VibrationStrangthSoilTestApp,
-    "rayleigh_damping": RayleighDampingSoilTestApp
+    "rayleigh_damping": RayleighDampingSoilTestApp,
+    "k0": K0SoilTestApp
 }
 
 prog_name = {
@@ -49,7 +51,8 @@ prog_name = {
     "consolidation": "Консолидация",
     "resonant_column": "Резонансная колонка",
     "vibration_strength": "Вибропрочность",
-    "rayleigh_damping": "Демпфирование"
+    "rayleigh_damping": "Демпфирование",
+    "k0": "Трехосное нагружение K0"
 }
 
 prog_geometry = {
@@ -184,7 +187,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
     def __init__(self):
         super().__init__()
         self.title = "DigitRock SoilTest " + "{:.2f}".format(actual_version)
-        self.left = 100
+        self.left = 50
         self.top = 50
         self.width = 1350
         self.height = 950
@@ -226,7 +229,7 @@ class App(QMainWindow):  # Окно и виджеты на нем
             btn.setStyleSheet("QPushButton { text-align: left; }")
             btn.setFont(QFont('Times', 24))
             btn.setIcon(QIcon(QPixmap(os.path.join(icon_path, key + ".jpg"))))
-            btn.setIconSize(QSize(280, 280))
+            btn.setIconSize(QSize(250, 280))
 
             self.layout.addWidget(btn, string, col)
 
