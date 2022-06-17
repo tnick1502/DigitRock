@@ -1916,43 +1916,45 @@ class ShearProperties(MechanicalProperties):
 
             if e < 0.65:
                 e = 0.65
-            if e > 1.35:
-                e = 1.35
+            if e > 1.25:
+                e = 1.25
 
-            if Il < 0:
-                Il = 0
-            if Il > 0.75:
-                # Il = 0.75
-                return (tau_max / 0.15) * np.random.uniform(3.0, 4.0) / 1000
+            return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05, 1.25]), np.array([4, 3.5, 3, 2.5, 2,  1.7]))
 
-            if 0 <= Il <= 0.25:
-                if 0.05 <= Ir <= 0.1:
-                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
-                                     np.array([13, 12, 11, 10]))
-                elif 0.1 < Ir <= 0.25:
-                    return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
-                                     np.array([8.5, 8, 7, 5]))
-            elif 0.25 < Il <= 0.5:
-                if 0.05 <= Ir <= 0.1:
-                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
-                                     np.array([11, 10, 8.5, 7.5]))
-                elif 0.1 < Ir <= 0.25:
-                    return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
-                                     np.array([7, 6, 5.5, 5]))
-            elif 0.5 < Il <= 0.75:
-                if 0.05 <= Ir <= 0.1:
-                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
-                                     np.array([8, 7, 6, 5.5]))
-                elif 0.1 < Ir <= 0.25:
-                    return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
-                                     np.array([5, 5, 4.5, 4]))
-            elif 0.75 < Il <= 1:
-                if 0.05 <= Ir <= 0.1:
-                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
-                                     np.array([6, 5, 4.5, 4]))
-                elif 0.1 < Ir <= 0.25:
-                    return np.interp(e, np.array([1.05, 1.05, 1.25]),
-                                     np.array([3.5, 3, 2.5]))
+            # if Il < 0:
+            #     Il = 0
+            # if Il > 0.75:
+            #     # Il = 0.75
+            #     return (tau_max / 0.15) * np.random.uniform(3.0, 4.0) / 1000
+            #
+            # if 0 <= Il <= 0.25:
+            #     if 0.05 <= Ir <= 0.1:
+            #         return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+            #                          np.array([13, 12, 11, 10]))
+            #     elif 0.1 < Ir <= 0.25:
+            #         return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
+            #                          np.array([8.5, 8, 7, 5]))
+            # elif 0.25 < Il <= 0.5:
+            #     if 0.05 <= Ir <= 0.1:
+            #         return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+            #                          np.array([11, 10, 8.5, 7.5]))
+            #     elif 0.1 < Ir <= 0.25:
+            #         return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
+            #                          np.array([7, 6, 5.5, 5]))
+            # elif 0.5 < Il <= 0.75:
+            #     if 0.05 <= Ir <= 0.1:
+            #         return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+            #                          np.array([8, 7, 6, 5.5]))
+            #     elif 0.1 < Ir <= 0.25:
+            #         return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
+            #                          np.array([5, 5, 4.5, 4]))
+            # elif 0.75 < Il <= 1:
+            #     if 0.05 <= Ir <= 0.1:
+            #         return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+            #                          np.array([6, 5, 4.5, 4]))
+            #     elif 0.1 < Ir <= 0.25:
+            #         return np.interp(e, np.array([1.05, 1.05, 1.25]),
+            #                          np.array([3.5, 3, 2.5]))
 
         __E50_for_clay = define_E50_for_clay(Il, e, stratigraphic_index, type_ground)
         __E50_for_peat = define_E50_for_peat(Il, Ir, e)
