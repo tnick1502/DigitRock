@@ -93,8 +93,6 @@ class PhysicalProperties:
         if not self.description:
             self.description = "-"
 
-        print(self.description)
-
         self.sample_number = string
 
         self.type_ground = PhysicalProperties.define_type_ground(self._granulometric_to_dict(), self.Ip,
