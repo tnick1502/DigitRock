@@ -312,6 +312,10 @@ class MechanicalProperties:
                 self.sigma_3 = MechanicalProperties.round_sigma_3(
                     MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
 
+            if self.sigma_3 >= 1600:
+                self.sigma_3 = 1600
+                self.sigma_1 = self.sigma_3 / self.K0
+
             if test_mode == "Трёхосное сжатие НН":
                 if self.sigma_3 < 25:
                     self.sigma_3 = 25
@@ -384,6 +388,8 @@ class MechanicalProperties:
             if self.pressure_array["calculated_by_pressure"] is None:
                 self.pressure_array["calculated_by_pressure"] = \
                     MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3)
+
+
 
             if test_mode == "Трёхосное сжатие КН":
                 self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
@@ -971,7 +977,10 @@ class MechanicalProperties:
             sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.5)
             sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.25)
 
-            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+            if sigma_max_1 < 1600:
+                return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+            else:
+                return [400, 800, 1600]
         else:
             return None
 
@@ -984,8 +993,10 @@ class MechanicalProperties:
         sigma_max_1 = MechanicalProperties.round_sigma_3(sigma_max)
         sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * 0.5)
         sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * 0.25)
-
-        return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+        if sigma_max_1 < 1600:
+            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+        else:
+            return [400, 800, 1600]
 
 
     @staticmethod
@@ -1710,7 +1721,7 @@ class ShearProperties(MechanicalProperties):
                     self.build_press, self.pit_depth, physical_properties.depth)),
 
                 "state_standard": (ShearProperties.define_reference_pressure_array_state_standard(
-                    physical_properties.e, physical_properties.Il, physical_properties.type_ground))
+                    physical_properties.e, physical_properties.Il, physical_properties.type_ground, physical_properties.Ir))
             }
 
 
@@ -1912,43 +1923,45 @@ class ShearProperties(MechanicalProperties):
 
             if e < 0.65:
                 e = 0.65
-            if e > 1.35:
-                e = 1.35
+            if e > 1.25:
+                e = 1.25
 
-            if Il < 0:
-                Il = 0
-            if Il > 0.75:
-                # Il = 0.75
-                return (tau_max / 0.15) * np.random.uniform(3.0, 4.0) / 1000
+            return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05, 1.25]), np.array([4, 3.5, 3, 2.5, 2,  1.7]))
 
-            if 0 <= Il <= 0.25:
-                if 0.05 <= Ir <= 0.1:
-                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
-                                     np.array([13, 12, 11, 10]))
-                elif 0.1 < Ir <= 0.25:
-                    return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
-                                     np.array([8.5, 8, 7, 5]))
-            elif 0.25 < Il <= 0.5:
-                if 0.05 <= Ir <= 0.1:
-                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
-                                     np.array([11, 10, 8.5, 7.5]))
-                elif 0.1 < Ir <= 0.25:
-                    return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
-                                     np.array([7, 6, 5.5, 5]))
-            elif 0.5 < Il <= 0.75:
-                if 0.05 <= Ir <= 0.1:
-                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
-                                     np.array([8, 7, 6, 5.5]))
-                elif 0.1 < Ir <= 0.25:
-                    return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
-                                     np.array([5, 5, 4.5, 4]))
-            elif 0.75 < Il <= 1:
-                if 0.05 <= Ir <= 0.1:
-                    return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
-                                     np.array([6, 5, 4.5, 4]))
-                elif 0.1 < Ir <= 0.25:
-                    return np.interp(e, np.array([1.05, 1.05, 1.25]),
-                                     np.array([3.5, 3, 2.5]))
+            # if Il < 0:
+            #     Il = 0
+            # if Il > 0.75:
+            #     # Il = 0.75
+            #     return (tau_max / 0.15) * np.random.uniform(3.0, 4.0) / 1000
+            #
+            # if 0 <= Il <= 0.25:
+            #     if 0.05 <= Ir <= 0.1:
+            #         return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+            #                          np.array([13, 12, 11, 10]))
+            #     elif 0.1 < Ir <= 0.25:
+            #         return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
+            #                          np.array([8.5, 8, 7, 5]))
+            # elif 0.25 < Il <= 0.5:
+            #     if 0.05 <= Ir <= 0.1:
+            #         return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+            #                          np.array([11, 10, 8.5, 7.5]))
+            #     elif 0.1 < Ir <= 0.25:
+            #         return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
+            #                          np.array([7, 6, 5.5, 5]))
+            # elif 0.5 < Il <= 0.75:
+            #     if 0.05 <= Ir <= 0.1:
+            #         return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+            #                          np.array([8, 7, 6, 5.5]))
+            #     elif 0.1 < Ir <= 0.25:
+            #         return np.interp(e, np.array([1.05, 1.05, 1.25, 1.35]),
+            #                          np.array([5, 5, 4.5, 4]))
+            # elif 0.75 < Il <= 1:
+            #     if 0.05 <= Ir <= 0.1:
+            #         return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95]),
+            #                          np.array([6, 5, 4.5, 4]))
+            #     elif 0.1 < Ir <= 0.25:
+            #         return np.interp(e, np.array([1.05, 1.05, 1.25]),
+            #                          np.array([3.5, 3, 2.5]))
 
         __E50_for_clay = define_E50_for_clay(Il, e, stratigraphic_index, type_ground)
         __E50_for_peat = define_E50_for_peat(Il, Ir, e)
@@ -1996,16 +2009,20 @@ class ShearProperties(MechanicalProperties):
             return None
 
     @staticmethod
-    def define_reference_pressure_array_state_standard(e: float, Il: float, type_ground: int) -> list:
+    def define_reference_pressure_array_state_standard(e: float, Il: float, type_ground: int, Ir: float) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
         e = e if e else 0.65
         Il = Il if Il else 0.5
+
+        if Ir != None:
+            if Il >= 1 and Ir >= 10 or Ir >= 50:
+                return [25, 75, 125]
 
         if (type_ground == 1) or (type_ground == 2) or (type_ground == 3) or (
                 type_ground == 8 and Il <= 0.25):
             return [100, 300, 500]
 
-        elif (type_ground == 4) or (type_ground == 5) or\
+        elif (type_ground == 4) or (type_ground == 5) or \
                 ((type_ground == 6 or type_ground == 7 or type_ground == 9) and Il <= 0.5) or \
                 (type_ground == 8 and Il <= 0.5):
             return [100, 200, 300]
