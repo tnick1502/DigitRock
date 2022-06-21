@@ -3192,11 +3192,15 @@ def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
 
     canvas.save()
 
-def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, report_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+    if report_type == "standart":
+        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+    else:
+        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КРИОВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
 
     res_static["description"] = Data_phiz.description
 
@@ -3206,7 +3210,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                            [name,
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
@@ -3231,10 +3235,15 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     canvas.save()
 
-def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, report_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
 
     res_static["description"] = Data_phiz.description
+
+    if report_type == "standart":
+        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+    else:
+        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КРИОВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
 
     pick_vc_array = picks[0]
     pick_c_array = picks[1]
@@ -3249,7 +3258,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"
     main_frame(canvas, path, Data_customer, code, f"1/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                            [name,
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
@@ -3264,7 +3273,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     for i in range(len(test_parameter["frequency"])):
         main_frame(canvas, path, Data_customer, code, f"{i+2}/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                                [name,
                                  "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
         parameter_table(canvas, Data_phiz, Lab, moove=moove)
