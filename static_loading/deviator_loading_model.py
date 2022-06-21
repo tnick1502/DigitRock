@@ -210,7 +210,7 @@ class ModelTriaxialDeviatorLoading:
             i_end_E = i_end_E[0]
             self._test_params.E_processing_points_index = [i_start_E, i_end_E]
         else:
-            print(self._test_params.data_physical.laboratory_number, self._test_params.sigma_3, q_c, q_c2)
+            pass#print(self._test_params.data_physical.laboratory_number, self._test_params.sigma_3, q_c, q_c2)
 
         self._test_processing()
 

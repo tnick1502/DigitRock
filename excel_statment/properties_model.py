@@ -57,6 +57,7 @@ class PhysicalProperties:
     sample_size = DataTypeValidation(tuple, list)
     new_laboratory_number = DataTypeValidation(str)
     skempton_initial = DataTypeValidation(float)
+    description = DataTypeValidation(str)
 
     def __init__(self):
         self._setNone()
@@ -71,7 +72,7 @@ class PhysicalProperties:
     def defineProperties(self, data_frame, string, identification_column=None) -> None:
         """Считывание строки свойств"""
         for attr_name in PhysicalPropertyPosition:
-            if attr_name in ["laboratory_number", "borehole", "soil_name", "ige", "stratigraphic_index", "new_laboratory_number"]:
+            if attr_name in ["laboratory_number", "borehole", "soil_name", "ige", "stratigraphic_index", "new_laboratory_number", "description"]:
                 setattr(self, attr_name, str_df(data_frame.iat[string, PhysicalPropertyPosition[attr_name][1]]))
             elif attr_name == "date":
                 setattr(self, attr_name, date_df(data_frame.iat[string, PhysicalPropertyPosition[attr_name][1]]))
@@ -88,6 +89,11 @@ class PhysicalProperties:
             self.ige = str(int(float(self.ige)))
         except:
             pass
+
+        if not self.description:
+            self.description = "-"
+
+        print(self.description)
 
         self.sample_number = string
 
@@ -1232,7 +1238,6 @@ class CyclicProperties(MechanicalProperties):
                 if sigma_1 and sigma_3:
                     self.sigma_1 = np.round(sigma_1 * 1000)
                     self.sigma_3 = np.round(sigma_3 * 1000)
-                    print(sigma_3, sigma_1)
                 elif sigma_3:
                     self.sigma_3 = np.round(sigma_3 * 1000)
                     self.sigma_1 = np.round(self.sigma_3 / self.K0)

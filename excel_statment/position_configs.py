@@ -32,6 +32,7 @@ PhysicalPropertyPosition = {
     "Rc": ['ER', 147],
     "date": ['IF', 239],
     "new_laboratory_number": ["IG", 240],
+    "description": ["AR", 43]
 }
 
 MechanicalPropertyPosition = {
