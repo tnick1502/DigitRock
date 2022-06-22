@@ -358,17 +358,29 @@ def params_gip_exp_tg(x, e50, qf, x50, xc, qocr):
 
     else:
         nach_pr_a1_e, nach_pr_k1_e = 600, 1
-        a1_e, k1_e = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e))
+        result = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e), full_output=1)
+        a1_e, k1_e = result[0]
+
+        bad_progress_count = 0 # если в result[2] находится 4 или 5, то вылезает предупреждение с прохой сходимостью
+        # мы будем делать 50 итераций чтобы попытаться избавиться от этого предупреждения
+
         nach_pr_a1_e = 1
         error = equations_e([a1_e, k1_e])
         count = 0
         while (a1_e <= 0) or (k1_e <= 0) or (a1_e == nach_pr_a1_e or k1_e == nach_pr_k1_e) or (
                 a1_e * k1_e < 1000) or (
-                (abs(error[0]) >= 550 or abs(error[1]) >= 550) and count < 50):  # если начальное приближение a1_e
+                (abs(error[0]) >= 550 or abs(error[1]) >= 550) and
+                count < 50) or (
+                result[2] in (4, 5) and bad_progress_count < 50 and qf < 251):  # если начальное приближение a1_e
             # или k1_e равно 1 или произведение коээфициентов (приблизительно равно e50)
             #  меньше 1000, то ищутся другие начальные приближения
             nach_pr_a1_e += 1
-            a1_e, k1_e = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e))
+            result = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e), full_output=1)
+            a1_e, k1_e = result[0]
+
+            if result[2] in (4, 5):
+                bad_progress_count += 1
+
             error = equations_e([a1_e, k1_e])
             if (abs(error[0]) >= 550 or abs(error[1]) >= 550):
                 count += 1
@@ -837,7 +849,7 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
         for i in range(len(x)):
             y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp[i], k, qocr,
                                      xocr) + cos_par(x[i], e50, qf, x50,
-                                                     xc)  # формирование функции девиаторного нагружения
+                                                     xc, 0)  # формирование функции девиаторного нагружения
         x2 = xc  # x2,qf2 не выводится
         qf2 = qf  # x2,qf2 не выводится
 

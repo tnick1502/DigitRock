@@ -1115,13 +1115,15 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8, moove =0):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Коэффициент фильтрационной консолидации C<sub rise="0.5" size="6">v</sub>, см<sup rise="2" size="6">2</sup>/мин:</p>''', LeftStyle), "", "", "",
-         zap(Res["Cv_log"], 4), ""])
+        [Paragraph('''<p>Коэффициент фильтрационной консолидации C<sub rise="0.5" size="6">v</sub>, см<sup rise="2" size="6">2</sup>/мин:</p>''', LeftStyle), "", "", zap(Res["Cv_log"], 4),
+         "", ""])
     tableData.append(
-        [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", "",
-         zap(Res["Ca_log"], 4), ""])
-    tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", "",
-                      Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle), ""])
+        [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", zap(Res["Ca_log"], 4),
+         "", ""])
+    tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle),
+                      "", ""])
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+    tableData.append(["", "", "", "", "", ""])
 
 
     try:
@@ -1139,24 +1141,29 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8, moove =0):
         canvas.drawImage(b, 32 * mm, 114 * mm,
                          width=160 * mm, height=54 * mm)
 
-    style = [('SPAN', (0, 0), (-1, 0)),
+    style = [('SPAN', (0, -2), (2, -1)),
+             ('SPAN', (-3, -2), (-1, -1)),
+             ('SPAN', (0, 0), (-1, 0)),
+
              ('SPAN', (0, 1), (-1, r)),
 
-             ('SPAN', (0, -1), (3, -1)),
-             ('SPAN', (-2, -1), (-1, -1)),
+             ('SPAN', (0, -3), (2, -3)),
+             ('SPAN', (-3, -3), (-1, -3)),
              # ('SPAN', (2, -1), (3, -1)),
              # ('SPAN', (4, -1), (5, -1)),
-             ('SPAN', (0, -2), (3, -2)),
-             ('SPAN', (-2, -2), (-1, -2)),
+             ('SPAN', (0, -4), (2, -4)),
+             ('SPAN', (-3, -4), (-1, -4)),
              # ('SPAN', (2, -2), (3, -2)),
              # ('SPAN', (4, -2), (5, -2)),
-             ('SPAN', (0, -3), (3, -3)),
-             ('SPAN', (-2, -3), (-1, -3)),
+             ('SPAN', (0, -5), (2, -5)),
+             ('SPAN', (-3, -5), (-1, -5)),
 
 
-             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-             ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-             ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+             # ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+             # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+             # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+
+             ("BACKGROUND", (0, -5), (2, -1), HexColor(0xebebeb)),
 
              ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
              ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -1172,7 +1179,7 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8, moove =0):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (48 - moove-((r-30)*4) - 4) * mm)
+    t.drawOn(canvas, 25 * mm, (48 - 8 - moove-((r-30)*4) - 4) * mm)
 
 def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E", moove=0):
 
@@ -1284,7 +1291,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
             [Paragraph('''<p>Модуль повторного нагружения E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "",
              "", zap(Res["Eur"], 1), "", ""])
 
-        tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+        tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
         tableData.append(["", "", "", "", "", ""])
 
     else:
@@ -1307,7 +1314,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
         tableData.append(
             [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", zap(Res["poissons_ratio"], 2), "", ""])
 
-        tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+        tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
         tableData.append(["", "", "", "", "", ""])
 
         try:
@@ -1574,7 +1581,7 @@ def result_table_deviator_vc(canvas, Res, pick, scale = 0.8, moove=0):
          Res["qf"], "", ""])
 
     tableData.append(
-        ["Примечание:", "", "", Res["description"], "", ""])
+        ["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(
         ["", "", "", "", "", ""])
 
@@ -2003,7 +2010,7 @@ def result_table_CF(canvas, Res, pick, scale = 0.8, moove=0):
         [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "",
          zap(Res["fi"], 1), "", ""])
 
-    tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(["", "", "", "", "", ""])
     #tableData.append(
         #[Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
@@ -2102,7 +2109,7 @@ def result_table_CF_res(canvas, Res, pick, scale = 0.8):
         [Paragraph('''<p>Угол внутреннего трения при постоянном объёме φ<sub rise="0.5" size="5">cv</sub>, град:</p>''', LeftStyle), "", "", "",
          zap(Res["fi_res"], 1), ""])
 
-    tableData.append(["Примечание:", "", "", "", Res["description"], ""])
+    tableData.append(["Примечание:", "", "", "", Paragraph(Res["description"], LeftStyle), ""])
     tableData.append(["", "", "", "", "", ""])
 
     #tableData.append(
@@ -2203,7 +2210,7 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
         [Paragraph('''<p>Недренированная прочность с<sub rise="0.5" size="5">u</sub>, МПа:</p>''', LeftStyle), "", "",
          zap(Res["c"], 3), "", ""])
 
-    tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(["", "", "", "", "", ""])
 
     #tableData.append(
@@ -2366,7 +2373,7 @@ def result_table_CF_KN(canvas, Res, pick, scale = 0.8, moove=0):
         [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "", "",
          zap(Res["fi"], 1), "", "", ""])
 
-    tableData.append(["Примечание:", "", "", "", Res["description"], "", "", ""])
+    tableData.append(["Примечание:", "", "", "", Paragraph(Res["description"], LeftStyle), "", "", ""])
     tableData.append(["", "", "", "", "", "", "", ""])
 
     t = Table(tableData, colWidths=175/8 * mm, rowHeights = 4 * mm)
@@ -2902,6 +2909,8 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
 
+    res["description"] = Data_phiz.description
+
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
@@ -3415,11 +3424,14 @@ def result_table_shear(canvas, Res, pick, scale = 0.8, moove=0):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Сцепление с, МПа:</p>''', LeftStyle), "", "", "",
-         zap(Res["c"], 3), ""])
+        [Paragraph('''<p>Сцепление с, МПа:</p>''', LeftStyle), "", "", zap(Res["c"], 3),
+         "", ""])
     tableData.append(
-        [Paragraph('''<p>Угол внутреннего трения φ, град:</p>''', LeftStyle), "", "", "",
-         zap(Res["fi"], 1), ""])
+        [Paragraph('''<p>Угол внутреннего трения φ, град:</p>''', LeftStyle), "", "", zap(Res["fi"], 1),
+         "", ""])
+
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+    tableData.append(["", "", "", "", "", ""])
 
     #tableData.append(
         #[Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
@@ -3431,27 +3443,20 @@ def result_table_shear(canvas, Res, pick, scale = 0.8, moove=0):
                 ('SPAN', (0, 1), (-1, table_move)),
 
                 ('SPAN', (0, table_move+1), (1, table_move+1)),
-                ('SPAN', (2, 1), (-1, -4)),
+                ('SPAN', (2, 1), (-1, -5)),
 
                 ('SPAN', (0, 6+table_move), (-1, r+table_move+5)),
 
-                ('SPAN', (0, -1), (3, -1)),
-                ('SPAN', (-2, -1), (-1, -1)),
-                #('SPAN', (2, -1), (3, -1)),
-                #('SPAN', (4, -1), (5, -1)),
-                ('SPAN', (0, -2), (3, -2)),
-                ('SPAN', (-2, -2), (-1, -2)),
+                ('SPAN', (0, -3), (2, -3)),
+                ('SPAN', (-3, -3), (-1, -3)),
 
-                #('SPAN', (0, -3), (3, -3)),
-                #('SPAN', (-2, -3), (-1, -3)),
-                #('SPAN', (2, -2), (3, -2)),
-                #('SPAN', (4, -2), (5, -2)),
-                #('SPAN', (2, -3), (3, -3)),
-              #  ('SPAN', (4, -3), (5, -3)),
+                ('SPAN', (0, -4), (2, -4)),
+                ('SPAN', (-3, -4), (-1, -4)),
 
-                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-               # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                ('SPAN', (0, -2), (2, -1)),
+                ('SPAN', (-3, -2), (-1, -1)),
+
+                ("BACKGROUND", (0, -4), (2, -1), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -3464,7 +3469,7 @@ def result_table_shear(canvas, Res, pick, scale = 0.8, moove=0):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34 - moove -((r - 30)*4)) - table_move*6) * mm)
+    t.drawOn(canvas, 25 * mm, ((26 - moove -((r - 30)*4)) - table_move*6) * mm)
 
 def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
 
@@ -3475,8 +3480,12 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Угол дилатансии ψ, град:</p>''', LeftStyle), "", "", "",
-         zap(Res["dilatancy_angle"][0], 1), ""])
+        [Paragraph('''<p>Угол дилатансии ψ, град:</p>''', LeftStyle), "", "", zap(Res["dilatancy_angle"][0], 1),
+         "", ""])
+
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+    tableData.append(["", "", "", "", "", ""])
+
     # tableData.append(
     #     [Paragraph('''<p>Вертикальное давление p, МПа:</p>''', LeftStyle), "", "", "",
     #      zap(Res["sigma"], 3), ""])
@@ -3499,23 +3508,30 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
     style = [('SPAN', (0, 0), (-1, 0)),
              ('SPAN', (0, 1), (-1, r)),
 
-             ('SPAN', (0, -1), (3, -1)),
-             ('SPAN', (-2, -1), (-1, -1)),
-             ('SPAN', (2, -1), (3, -1)),
-             ('SPAN', (4, -1), (5, -1)),
-             ('SPAN', (0, -2), (3, -2)),
-             ('SPAN', (-2, -2), (-1, -2)),
-             ('SPAN', (2, -2), (3, -2)),
-             ('SPAN', (4, -2), (5, -2)),
-             ('SPAN', (0, -3), (3, -3)),
-             ('SPAN', (-2, -3), (-1, -3)),
+             ('SPAN', (0, -2), (2, -1)),
+             ('SPAN', (-3, -2), (-1, -1)),
+
+             ('SPAN', (0, -3), (2, -3)),
+             ('SPAN', (-3, -3), (-1, -3)),
+
+             ('SPAN', (2, -3), (2, -3)),
+             ('SPAN', (3, -3), (5, -3)),
+
+             ('SPAN', (0, -4), (2, -4)),
+             ('SPAN', (-3, -4), (-1, -4)),
+
+             ('SPAN', (2, -4), (2, -4)),
+             ('SPAN', (4, -4), (5, -4)),
+
+             ('SPAN', (0, -5), (2, -5)),
+             ('SPAN', (-3, -5), (-1, -5)),
 
              # ('SPAN', (0, -4), (3, -4)),
              # ('SPAN', (-2, -4), (-1, -4)),
              # ('SPAN', (2, -3), (3, -3)),
              #  ('SPAN', (4, -3), (5, -3)),
 
-             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -3), (2, -1), HexColor(0xebebeb)),
              # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
              # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
              # ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
@@ -3534,7 +3550,7 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (50 - moove -((r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (42 - moove -((r-30)*4)) * mm)
 
 
 """====== K0 ======"""
@@ -3781,6 +3797,9 @@ def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_param
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
 
+    res["description"] = Data_phiz.description
+
+
     name = "ДС"
 
     canvas = Canvas(Name, pagesize=A4)
@@ -3810,6 +3829,9 @@ def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    res["description"] = Data_phiz.description
+
     name = "Сп"
     canvas = Canvas(Name, pagesize=A4)
 
