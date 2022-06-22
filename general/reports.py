@@ -1116,7 +1116,7 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8, moove =0):
          "", ""])
     tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle),
                       "", ""])
-    tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(["", "", "", "", "", ""])
 
 
@@ -1285,7 +1285,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
             [Paragraph('''<p>Модуль повторного нагружения E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "",
              "", zap(Res["Eur"], 1), "", ""])
 
-        tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+        tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
         tableData.append(["", "", "", "", "", ""])
 
     else:
@@ -1308,7 +1308,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
         tableData.append(
             [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", zap(Res["poissons_ratio"], 2), "", ""])
 
-        tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+        tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
         tableData.append(["", "", "", "", "", ""])
 
         try:
@@ -1575,7 +1575,7 @@ def result_table_deviator_vc(canvas, Res, pick, scale = 0.8, moove=0):
          Res["qf"], "", ""])
 
     tableData.append(
-        ["Примечание:", "", "", Res["description"], "", ""])
+        ["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(
         ["", "", "", "", "", ""])
 
@@ -2004,7 +2004,7 @@ def result_table_CF(canvas, Res, pick, scale = 0.8, moove=0):
         [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "",
          zap(Res["fi"], 1), "", ""])
 
-    tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(["", "", "", "", "", ""])
     #tableData.append(
         #[Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
@@ -2103,7 +2103,7 @@ def result_table_CF_res(canvas, Res, pick, scale = 0.8):
         [Paragraph('''<p>Угол внутреннего трения при постоянном объёме φ<sub rise="0.5" size="5">cv</sub>, град:</p>''', LeftStyle), "", "", "",
          zap(Res["fi_res"], 1), ""])
 
-    tableData.append(["Примечание:", "", "", "", Res["description"], ""])
+    tableData.append(["Примечание:", "", "", "", Paragraph(Res["description"], LeftStyle), ""])
     tableData.append(["", "", "", "", "", ""])
 
     #tableData.append(
@@ -2205,7 +2205,7 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
         [Paragraph('''<p>Недренированная прочность с<sub rise="0.5" size="5">u</sub>, МПа:</p>''', LeftStyle), "", "",
          zap(Res["c"], 3), "", ""])
 
-    tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(["", "", "", "", "", ""])
 
     #tableData.append(
@@ -2368,7 +2368,7 @@ def result_table_CF_KN(canvas, Res, pick, scale = 0.8, moove=0):
         [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "", "",
          zap(Res["fi"], 1), "", "", ""])
 
-    tableData.append(["Примечание:", "", "", "", Res["description"], "", "", ""])
+    tableData.append(["Примечание:", "", "", "", Paragraph(Res["description"], LeftStyle), "", "", ""])
     tableData.append(["", "", "", "", "", "", "", ""])
 
     t = Table(tableData, colWidths=175/8 * mm, rowHeights = 4 * mm)
@@ -3420,7 +3420,7 @@ def result_table_shear(canvas, Res, pick, scale = 0.8, moove=0):
         [Paragraph('''<p>Угол внутреннего трения φ, град:</p>''', LeftStyle), "", "", zap(Res["fi"], 1),
          "", ""])
 
-    tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(["", "", "", "", "", ""])
 
     #tableData.append(
@@ -3473,7 +3473,7 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
         [Paragraph('''<p>Угол дилатансии ψ, град:</p>''', LeftStyle), "", "", zap(Res["dilatancy_angle"][0], 1),
          "", ""])
 
-    tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(["", "", "", "", "", ""])
 
     # tableData.append(
