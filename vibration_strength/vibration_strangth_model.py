@@ -55,12 +55,8 @@ class CyclicVibrationStrangth(ModelTriaxialDeviatorLoadingSoilTest):
 
         self._test_data.deviator /= k
 
-        if self._test_params.u:
-            self._test_data.pore_pressure = ModelTriaxialDeviatorLoadingSoilTest.define_pore_pressure_array(
-                self._test_data.strain, begin, self._test_params.u,
-                self._test_data.deviator[begin] * np.random.uniform(1, 2))
-        else:
-            self._test_data.pore_pressure = np.random.uniform(-1, 1, len(self._test_data.strain))
+
+        self._test_data.pore_pressure = np.full(len(self._test_data.strain), 0)
 
         # plt.plot(self._test_data.strain, self._test_data.pore_pressure)
         # plt.plot(self._test_data.strain, self._test_data.deviator)
@@ -101,7 +97,7 @@ class CyclicVibrationStrangth(ModelTriaxialDeviatorLoadingSoilTest):
 
         strain, deviator, pore_volume_strain, \
         cell_volume_strain, reload_points, begin = curve(
-            self._test_params.qf * 0.9, self._test_params.E50 * np.random.uniform(0.7, 0.8),
+            self._test_params.qf * 0.9, self._test_params.E50 * statment[statment.current_test].mechanical_properties.Kcu,
             xc=self._draw_params.fail_strain,
             x2=self._draw_params.residual_strength_param,
             qf2=self._draw_params.residual_strength,
@@ -160,13 +156,11 @@ class CyclicVibrationStrangth(ModelTriaxialDeviatorLoadingSoilTest):
         self._test_data.strain_cut = strain
         self._test_data.deviator_cut = deviator
         self._test_data.time = time
-        print("u задано = ", self._test_params.u, " s_3 = ", self._test_params.sigma_3)
         self._test_data.pore_pressure = pore_pressure * (self._test_params.u / np.max(pore_pressure))
 
         self._test_data.pore_pressure = np.zeros_like(self._test_data.pore_pressure)
 
         self._test_result.max_pore_pressure = np.max(self._test_data.pore_pressure)
-        print("u = ", self._test_result.max_pore_pressure)
         self._test_result.qf = np.round(np.max(self._test_data.deviator_cut) / 1000, 3)
 
         # print(statment[statment.current_test].physical_properties.laboratory_number, self._test_result["E50"])
@@ -303,7 +297,6 @@ class ModelCyclicVibrationStrangthSoilTest(ModelTriaxialStaticLoadSoilTest):
         reconsolidation_time = (((0.848 * 3.8 * 3.8) /
                                  (4 * statment[statment.current_test].mechanical_properties.Cv))) * \
                                np.random.uniform(5, 7) * 60 + np.random.uniform(3000, 5000)
-        print("oieg00000000000")
         ModelTriaxialCyclicLoadingSoilTest.generate_willie_log_file(
             file_path,
             deviator=self.deviator_loading._test_data.deviator_cut,
@@ -325,7 +318,7 @@ class CyclicVibrationStrangthMohr(ModelMohrCirclesSoilTest):
     def add_test_st_NN(self):
         """Добавление опытов"""
         test = ModelCyclicVibrationStrangthSoilTest()
-        test.set_test_params(statment.general_parameters.reconsolidation)
+        test.set_test_params(statment.general_parameters.reconsolidation, pre_defined_kr_fgs=None)
         if self._check_clone(test):
             self._tests.append(test)
             self.sort_tests()

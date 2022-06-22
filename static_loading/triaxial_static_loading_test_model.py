@@ -442,14 +442,20 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         iteration = 0
 
         while (poisons_ratio > poisons_ratio_global + 0.03 or poisons_ratio < poisons_ratio_global - 0.03):
-            self.deviator_loading.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
+            try:
+                self.deviator_loading.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
+            except TypeError:
+                self.deviator_loading.set_test_params()
             iteration += 1
             poisons_ratio = self.deviator_loading.get_test_results()["poissons_ratio"]
             if iteration == 5:
                 break
 
         if iteration == 0:
-            self.deviator_loading.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
+            try:
+                self.deviator_loading.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
+            except TypeError:
+                self.deviator_loading.set_test_params()
 
     def get_test_params(self):
         return self.test_params

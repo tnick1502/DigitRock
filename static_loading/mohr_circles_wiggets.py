@@ -330,6 +330,39 @@ class MohrWidget(QWidget):
                 self.mohr_ax.set_ylim(*plots["y_lims"])
 
                 self.mohr_ax.legend()
+
+        elif statment.general_parameters.test_mode == "Вибропрочность":
+            self.deviator_ax.clear()
+            self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+            self.deviator_ax.set_ylabel("Девиатор q, МПа")
+
+            self.mohr_ax.clear()
+            self.mohr_ax.set_xlabel("σ, МПа")
+            self.mohr_ax.set_ylabel("τ, МПа")
+
+            if self._model == "FC_models":
+                plots = FC_models[statment.current_test].get_plot_data()
+                res = FC_models[statment.current_test].get_test_results()
+            else:
+                plots = VibrationFC_models[statment.current_test].get_plot_data()
+                res = VibrationFC_models[statment.current_test].get_test_results()
+
+            if plots is not None:
+                for i in range(len(plots["strain"])):
+                    self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
+                    self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
+
+                self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
+                self.mohr_ax.plot([], [], label="$c_u$" + ", МПа = " + str(res["c"]), color="#eeeeee")
+
+                if self._model == "VibrationFC_models":
+                    res2 = FC_models[statment.current_test].get_test_results()
+                    self.mohr_ax.plot([], [], label="$K_cu$" + ", МПа = " + str(round(res["c"]/res2["c"], 2)), color="#eeeeee")
+
+                self.mohr_ax.set_xlim(*plots["x_lims"])
+                self.mohr_ax.set_ylim(*plots["y_lims"])
+
+                self.mohr_ax.legend()
         else:
             self.deviator_ax.clear()
             self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
@@ -372,6 +405,7 @@ class MohrWidget(QWidget):
                 self.mohr_ax.set_ylim(*plots["y_lims"])
 
                 if self._model == "VibrationFC_models":
+
                     res2 = FC_models[statment.current_test].get_test_results()
                     self.mohr_ax.plot([], [], label="Kfi = " + str(round(res["fi"] / res2["fi"], 2)), color="#eeeeee")
                     self.mohr_ax.plot([], [], label="Kc = " + str(round(res["c"] / res2["c"], 2)), color="#eeeeee")
@@ -435,7 +469,7 @@ class MohrWidgetSoilTest(TabMixin, MohrWidget):
         self.add_parameters_layout.addWidget(self.m_sliders)
 
         if self._model == "VibrationFC_models":
-            self.k_sliders = TriaxialStaticLoading_Sliders({"Kfi": "Kfi", "Kc": "Kc"})
+            self.k_sliders = TriaxialStaticLoading_Sliders({"Kcu": "Kcu"})
             self.add_parameters_layout.addWidget(self.k_sliders)
             self.k_sliders.signal[object].connect(self._k_sliders_moove)
 
@@ -495,21 +529,23 @@ class MohrWidgetSoilTest(TabMixin, MohrWidget):
         self.reference_pressure_array_box_line.setText('; '.join([str(i) for i in reference_pressure_array]))
 
     def set_params(self):
-        self.reference_pressure_array_box.set_data()
-        self.reconsolidation.set_data()
-        self._create_test_tables()
+        try:
+            self.reference_pressure_array_box.set_data()
+            self.reconsolidation.set_data()
+            self._create_test_tables()
 
-        self.m_sliders.set_sliders_params(
-            {"m": {
-                "value": statment[statment.current_test].mechanical_properties.m, "borders": [0.3, 1]
-                }
-            })
-        if self._model == "VibrationFC_models":
-            self.k_sliders.set_sliders_params(
-                {"Kfi": {"value": statment[statment.current_test].mechanical_properties.Kfi, "borders": [0.5, 1.1]},
-                 "Kc": {"value": statment[statment.current_test].mechanical_properties.Kc, "borders": [0.5, 1.1]}
+            self.m_sliders.set_sliders_params(
+                {"m": {
+                    "value": statment[statment.current_test].mechanical_properties.m, "borders": [0.3, 1]
+                    }
                 })
-        self._plot()
+            if self._model == "VibrationFC_models":
+                self.k_sliders.set_sliders_params(
+                    {"Kcu": {"value": statment[statment.current_test].mechanical_properties.Kcu, "borders": [0.5, 1.1]}})
+
+            self._plot()
+        except Exception as r:
+            print(r)
 
     def _m_sliders_moove(self, param):
         try:
@@ -521,8 +557,7 @@ class MohrWidgetSoilTest(TabMixin, MohrWidget):
 
     def _k_sliders_moove(self, param):
         try:
-            statment[statment.current_test].mechanical_properties.Kfi = param["Kfi"]
-            statment[statment.current_test].mechanical_properties.Kc = param["Kc"]
+            statment[statment.current_test].mechanical_properties.Kcu = param["Kcu"]
             VibrationFC_models[statment.current_test].set_test_params()
             self._plot()
         except KeyError:
@@ -551,8 +586,6 @@ class MohrWidgetSoilTest(TabMixin, MohrWidget):
             VibrationFC_models[statment.current_test]._test_data = AttrDict({"fi": None, "c": None})
             VibrationFC_models[statment.current_test]._test_result = AttrDict({"fi": None, "c": None, "m": None})
             VibrationFC_models[statment.current_test]._test_reference_params = AttrDict({"p_ref": None, "Eref": None})
-
-
 
     def _processing_test(self):
         """Вызов окна обработки опыта"""

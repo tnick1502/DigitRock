@@ -320,7 +320,7 @@ class MechanicalProperties:
                 self.sigma_3 = 1600
                 self.sigma_1 = self.sigma_3 / self.K0
 
-            if test_mode == "Трёхосное сжатие НН":
+            if test_mode == "Трёхосное сжатие НН" or test_mode == "Вибропрочность":
                 if self.sigma_3 < 25:
                     self.sigma_3 = 25
             else:
@@ -406,6 +406,9 @@ class MechanicalProperties:
 
                     if (self.u[1] <= 1.5) or (self.u[1] <= self.u[0]):
                         self.u[1] = np.random.uniform(3.6, 5)
+
+            if test_mode == "Вибропрочность":
+                self.Kcu = np.random.uniform(0.6, 0.95)
 
 
 

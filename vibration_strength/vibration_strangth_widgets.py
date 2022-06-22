@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import shutil
 import threading
 from general.reports import report_vibration_strangth
+from excel_statment.initial_tables import LinePhysicalProperties
 
 from general.general_functions import create_path
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
@@ -51,10 +52,8 @@ class VibrationStrangthSoilTestApp(QWidget):
         self.tab_3 = MohrWidgetSoilTest(model="VibrationFC_models")
         self.tab_4 = Save_Dir(
             {
-                "standart_E": "Стандардный E",
-                "standart_E50": "Стандардный E50",
-                "plaxis": "Plaxis/Midas",
-                "user_define_1": "Пользовательский с ε50"
+                "standart": "Вибропрочность",
+                "cryo": "Криовибропрочность",
             })
         # self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
@@ -81,6 +80,21 @@ class VibrationStrangthSoilTestApp(QWidget):
         self.save_massage = True
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
+        #self.tab_2.line_for_phiz.addStretch(-1)
+        #self.physical_line_1.refresh_button.clicked.connect(self.tab_2.refresh)
+        #self.physical_line_1.save_button.clicked.connect(self.save_report_and_continue)
+
+        self.physical_line_1 = LinePhysicalProperties()
+        self.tab_2.line_1_1_layout.insertWidget(0, self.physical_line_1)
+        self.physical_line_1.refresh_button.clicked.connect(self.tab_2.refresh)
+        self.physical_line_1.save_button.clicked.connect(self.save_report_and_continue)
+
+        self.physical_line_2 = LinePhysicalProperties()
+        self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
+        self.physical_line_2.refresh_button.clicked.connect(self.tab_3.refresh)
+        self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
+
+
     def keyPressEvent(self, event):
         if statment.current_test:
             list = [x for x in statment]
@@ -99,6 +113,8 @@ class VibrationStrangthSoilTestApp(QWidget):
         self.tab_3.item_identification.set_data()
         self.tab_2.set_params()
         self.tab_3.set_params()
+        self.physical_line_1.set_data()
+        self.physical_line_2.set_data()
 
     def save_report(self):
         try:
@@ -119,10 +135,7 @@ class VibrationStrangthSoilTestApp(QWidget):
                     s = ""
             except:
                 s = ""
-            print('K0 = ', [statment[statment.current_test].mechanical_properties.K0,
-                            "-" if self.tab_3.reference_pressure_array_box.get_checked() == "set_by_user" or
-                                   self.tab_3.reference_pressure_array_box.get_checked() == "state_standard"
-                            else statment[statment.current_test].mechanical_properties.K0])
+
             test_parameter = {"equipment": statment.general_parameters.equipment,
                               "mode": "НН, девиаторное нагружение в кинематическом режиме " + s,
                               "sigma_3": statment[statment.current_test].mechanical_properties.sigma_3,
@@ -197,7 +210,7 @@ class VibrationStrangthSoilTestApp(QWidget):
                                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                                           test_parameter, test_result,
                                           (*self.tab_2.save_canvas(),
-                                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+                                           *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -218,10 +231,10 @@ class VibrationStrangthSoilTestApp(QWidget):
                                (number, 79)),
                               np.round(test_result["c_vs"] / test_result["c"], 2), sheet="Лист1", color="FF6961")
 
-                set_cell_data(self.tab_1.path,
-                              ("FV" + str(number),
-                               (number, 177)),
-                              test_result["sigma_3_mohr_vs"], sheet="Лист1", color="FF6961")
+                #set_cell_data(self.tab_1.path,
+                              #("FV" + str(number),
+                               #(number, 177)),
+                              #test_result["sigma_3_mohr_vs"], sheet="Лист1", color="FF6961")
 
             # statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
             # name=statment.general_parameters.test_mode + ".pickle")
@@ -244,6 +257,20 @@ class VibrationStrangthSoilTestApp(QWidget):
 
         except:
             app_logger.exception(f"Не выгнан {statment.current_test}")
+
+    def save_report_and_continue(self):
+        try:
+            self.save_report()
+        except:
+            pass
+        keys = [key for key in statment]
+        for i, val in enumerate(keys):
+            if (val == statment.current_test) and (i < len(keys) - 1):
+                statment.current_test = keys[i+1]
+                self.set_test_parameters(True)
+                break
+            else:
+                pass
 
     def save_all_reports(self):
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
