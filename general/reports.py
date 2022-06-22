@@ -3131,35 +3131,33 @@ def report_vibration_strangth(Name, Data_customer, Data_phiz, Lab, path, test_pa
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
     test_parameter = dict(test_parameter)
-    test_parameter["K0"] = test_parameter["K0"][1]
     name = "ТД"
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
-
+    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"], 3)
     main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
 
     parameter_table(canvas, Data_phiz, Lab)
-    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
+    #test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
 
-    result_table_CF(canvas, res, [picks[0],picks[1]])
+    result_table_CF_KN(canvas, res, [picks[0],picks[1]])
 
     canvas.showPage()
 
+    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"], 3)
     main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
 
     parameter_table(canvas, Data_phiz, Lab)
-    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(
-        res["sigma_3_mohr"][2], 3)
+    # test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
-
     result_table_CF_KN_vs(canvas, res, [picks[3], picks[4]])
 
     canvas.save()
