@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFrame, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, \
-    QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout,\
+    QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout, \
     QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog
 from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject
 from PyQt5.QtGui import QPalette, QBrush
@@ -15,7 +15,8 @@ from general.save_widget import Save_Dir
 from excel_statment.functions import set_cell_data
 from excel_statment.position_configs import c_fi_E_PropertyPosition
 from general.reports import report_consolidation, report_FCE, report_FC, report_FC_KN, report_E
-from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI, ModelTriaxialFileOpenUI, ModelTriaxialReconsolidationUI, \
+from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI, ModelTriaxialFileOpenUI, \
+    ModelTriaxialReconsolidationUI, \
     ModelTriaxialConsolidationUI, ModelTriaxialDeviatorLoadingUI
 from general.general_widgets import Float_Slider
 from configs.styles import style
@@ -26,7 +27,11 @@ from tests_log.equipment import static
 from tests_log.test_classes import TestsLogTriaxialStatic
 import os
 from version_control.configs import actual_version
+
 __version__ = actual_version
+import numpy as np
+from general.general_statement import StatementGenerator
+
 
 class VibrationStrangthSoilTestApp(QWidget):
 
@@ -71,6 +76,8 @@ class VibrationStrangthSoilTestApp(QWidget):
         self.tab_4.save_all_button.clicked.connect(self.save_all_reports)
         self.tab_4.jornal_button.clicked.connect(self.jornal)
 
+        self.tab_4.general_statment_button.clicked.connect(self.general_statment)
+
         self.save_massage = True
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
@@ -80,10 +87,10 @@ class VibrationStrangthSoilTestApp(QWidget):
             index = list.index(statment.current_test)
             if str(event.key()) == "90":
                 if index >= 1:
-                    statment.current_test = list[index-1]
+                    statment.current_test = list[index - 1]
                     self.set_test_parameters(True)
             elif str(event.key()) == "88":
-                if index < len(list) -1:
+                if index < len(list) - 1:
                     statment.current_test = list[index + 1]
                     self.set_test_parameters(True)
 
@@ -112,9 +119,12 @@ class VibrationStrangthSoilTestApp(QWidget):
                     s = ""
             except:
                 s = ""
-
+            print('K0 = ', [statment[statment.current_test].mechanical_properties.K0,
+                            "-" if self.tab_3.reference_pressure_array_box.get_checked() == "set_by_user" or
+                                   self.tab_3.reference_pressure_array_box.get_checked() == "state_standard"
+                            else statment[statment.current_test].mechanical_properties.K0])
             test_parameter = {"equipment": statment.general_parameters.equipment,
-                              "mode": "КД, девиаторное нагружение в кинематическом режиме " + s,
+                              "mode": "НН, девиаторное нагружение в кинематическом режиме " + s,
                               "sigma_3": statment[statment.current_test].mechanical_properties.sigma_3,
                               "K0": [statment[statment.current_test].mechanical_properties.K0,
                                      "-" if self.tab_3.reference_pressure_array_box.get_checked() == "set_by_user" or
@@ -138,7 +148,6 @@ class VibrationStrangthSoilTestApp(QWidget):
             statment.save_dir.check_dirs()
 
             if statment.general_parameters.test_mode:
-
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
 
                 FC_models[statment.current_test].save_log_files(save, file_path_name)
@@ -149,53 +158,73 @@ class VibrationStrangthSoilTestApp(QWidget):
 
                 FC_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
+
+                VibrationFC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                                     f"VibrationFC_models{statment.general_data.get_shipment_number()}.pickle"))
+
                 test_result = {}
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[
                     statment.current_test].get_sigma_3_1()
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
-                test_result["c"], test_result["fi"], test_result["m"] = FC_models[statment.current_test].get_test_results()["c"], \
-                                                      FC_models[statment.current_test].get_test_results()["fi"], \
-                                                      FC_models[statment.current_test].get_test_results()["m"]
+                test_result["c"], test_result["fi"], test_result["m"] = \
+                FC_models[statment.current_test].get_test_results()["c"], \
+                FC_models[statment.current_test].get_test_results()["fi"], \
+                FC_models[statment.current_test].get_test_results()["m"]
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
+                test_result["sigma_3_mohr"] += test_result["u_mohr"]
+                test_result["sigma_1_mohr"] += test_result["u_mohr"]
 
                 test_result["sigma_3_mohr_vs"], test_result["sigma_1_mohr_vs"] = VibrationFC_models[
                     statment.current_test].get_sigma_3_1()
 
-                test_result["u_mohr_vs"] = FC_models[statment.current_test].get_sigma_u()
+                test_result["u_mohr_vs"] = VibrationFC_models[statment.current_test].get_sigma_u()
+
+                test_result["sigma_3_mohr_vs"] += test_result["u_mohr_vs"]
+                test_result["sigma_1_mohr_vs"] += test_result["u_mohr_vs"]
+
                 test_result["c_vs"], test_result["fi_vs"], test_result["m"] = \
-                VibrationFC_models[statment.current_test].get_test_results()["c"], \
-                VibrationFC_models[statment.current_test].get_test_results()["fi"], \
-                VibrationFC_models[statment.current_test].get_test_results()["m"]
+                    VibrationFC_models[statment.current_test].get_test_results()["c"], \
+                    VibrationFC_models[statment.current_test].get_test_results()["fi"], \
+                    VibrationFC_models[statment.current_test].get_test_results()["m"]
 
                 test_result["u_mohr_vs"] = VibrationFC_models[statment.current_test].get_sigma_u()
 
-
-                report_vibration_strangth(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
-                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
-                           test_parameter, test_result,
-                          (*self.tab_2.save_canvas(),
-                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+                report_vibration_strangth(save + "/" + name, data_customer,
+                                          statment[statment.current_test].physical_properties,
+                                          statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
+                                          test_parameter, test_result,
+                                          (*self.tab_2.save_canvas(),
+                                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
                 set_cell_data(self.tab_1.path,
-                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][0][0] + str(number),
-                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][1][0])),
+                              (c_fi_E_PropertyPosition["Трёхосное сжатие НН"][0][0] + str(number),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие НН"][1][0])),
                               test_result["c"], sheet="Лист1", color="FF6961")
 
                 set_cell_data(self.tab_1.path,
-                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][0][1] + str(number),
-                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][1][1])),
-                              test_result["fi"], sheet="Лист1", color="FF6961")
+                              ("CJ" + str(number),
+                               (number, 87)),
+                              test_result["c_vs"], sheet="Лист1", color="FF6961")
 
+                set_cell_data(self.tab_1.path,
+                              ("CB" + str(number),
+                               (number, 79)),
+                              np.round(test_result["c_vs"] / test_result["c"], 2), sheet="Лист1", color="FF6961")
 
-            #statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
-                          #name=statment.general_parameters.test_mode + ".pickle")
+                set_cell_data(self.tab_1.path,
+                              ("FV" + str(number),
+                               (number, 177)),
+                              test_result["sigma_3_mohr_vs"], sheet="Лист1", color="FF6961")
+
+            # statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
+            # name=statment.general_parameters.test_mode + ".pickle")
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
@@ -246,3 +275,12 @@ class VibrationStrangthSoilTestApp(QWidget):
         else:
             self.dialog = TestsLogWidget(static, TestsLogTriaxialStatic, self.tab_1.path)
             self.dialog.show()
+
+    def general_statment(self):
+        try:
+            s = statment.general_data.path
+        except:
+            s = None
+
+        _statment = StatementGenerator(self, path=s, statement_structure_key="Kcu")
+        _statment.show()

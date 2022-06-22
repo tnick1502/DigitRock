@@ -65,12 +65,10 @@ def find_first_step(strain, deviator):
     else:
         return 0
 
-
 def find_first_step_for_soil_test(strain):
     # Начальная ступень графика
     i, = np.where((strain - (strain[-1] - 0.15)) > 0)
     return i[0] - 1
-
 
 def find_E50_qf(strain, deviator):
     """Определение параметров qf и E50"""
@@ -86,7 +84,6 @@ def find_E50_qf(strain, deviator):
         np.interp(qf / 2, np.array([deviator[imin], deviator[imax]]), np.array([strain[imin], strain[imax]])))
 
     return round(E50 / 1000, 2), round(qf / 1000, 2)
-
 
 def find_Eur(strain, deviator, reload):
     """Поиск Eur"""
@@ -107,7 +104,6 @@ def find_Eur(strain, deviator, reload):
         Eur = "-"
 
     return Eur
-
 
 def find_puasson_dilatancy(strain, deviator, volume_strain):
     # Коэффициент Пуассона и дилатансия
@@ -155,7 +151,6 @@ def find_puasson_dilatancy(strain, deviator, volume_strain):
             dilatancy = "-"
 
     return round(puasson, 2), dilatancy
-
 
 def deviator_loading_deviation(strain, deviator, xc):
     # Добавим девиации после 0.6qf для кривой без пика
@@ -426,7 +421,6 @@ def hevisaid(x, sdvig, delta_x):
     ''' возвращет функцию Хевисайда, которая задает коэффициент влияния kp'''
     return 1. / (1. + np.exp(-2 * 10 / delta_x * (x - sdvig)))
 
-
 def gip_and_exp_or_tg(x, e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, qocr,
                       xocr):
     '''сумма функций гиперболы и экспоненты с учетом коэффициентов влияния'''
@@ -457,7 +451,6 @@ def gip_and_exp_or_tg(x, e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k
                     (kp * (1 - k)) * (-a1_e * (np.exp(-k1_e * x) - 1))))  # сумма гиперболы и экспоненты
 
     return ret
-
 
 def cos_par(x, e50, qf, x50, xc, hlow):
     '''возвращает функцию косинуса
@@ -492,7 +485,6 @@ def cos_par(x, e50, qf, x50, xc, hlow):
 
     return cos_par
 
-
 def gaus(x, qf, xc, x2, qf2):
     '''функция Гаусса для участка x>xc'''
     a_gaus = qf - qf2  # высота функции Гаусса
@@ -500,12 +492,10 @@ def gaus(x, qf, xc, x2, qf2):
     # (считается из условия равенства заданной точности в точке х50
     return a_gaus * (np.exp(-k_gaus * ((x - xc) ** 2))) + qf2
 
-
 def parab(x, qf, xc, x2, qf2):
     '''функция Гаусса для участка x>xc'''
     k_par = -((qf2 - qf) / (x2 - xc) ** 2)
     return -k_par * ((x - xc) ** 2) + qf
-
 
 def smoothness_condition(qf, x50):
     '''возвращает предельное значение xc при котором возможно
@@ -516,7 +506,6 @@ def smoothness_condition(qf, x50):
     x_lim += 0.6 / 100
 
     return x_lim
-
 
 def form_kp(x: float, qf, k, xocr, xc, qocr, x50):
     '''вовзращает коэффициент влияния kp'''
@@ -556,7 +545,6 @@ def form_kp(x: float, qf, k, xocr, xc, qocr, x50):
 
     return kp
 
-
 def sensor_accuracy(x, y, qf, x50, xc):
     '''возвразщает зашумеленную функцию без шума в характерных точках'''
 
@@ -573,7 +561,6 @@ def sensor_accuracy(x, y, qf, x50, xc):
             else:
                 y[i] = y[i] - np.random.uniform(0.1, 0.5)  # в районе максимума шум меньше первоначального
     return y
-
 
 def loop(x, y, Eur, y_rel_p, point2_y):
 
@@ -756,7 +743,6 @@ def cos_ocr(x, y,  qf, qocr, xc):
 
     return cos_par
 
-
 def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
     qocr = 0  # !!!
     '''кусочная функция: на участкe [0,xc]-сумма функций гиперболы и
@@ -862,7 +848,6 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
     xold = xnew  # масиив х без учета петли (для обьемной деформации)
 
     return xold, xnew, y_smooth, qf, xc, x2, qf2, e50
-
 
 # Обьемная деформация
 def spline(x_for_part, y_for_part, x_for_inter, a, b, k=3):
