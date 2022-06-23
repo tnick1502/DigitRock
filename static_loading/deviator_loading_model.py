@@ -27,7 +27,7 @@ from scipy.interpolate import make_interp_spline
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, mirrow_element, \
     define_dilatancy, define_type_ground, AttrDict, find_line_area, interpolated_intercept, Point, point_to_xy, \
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, exponent
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from static_loading.deviator_loading_functions import curve
 from configs.plot_params import plotter_params
 from intersect import intersection
@@ -848,13 +848,14 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._test_params.velocity = velocity
         self._test_params.delta_h_consolidation = delta_h_consolidation
 
-    def get_dict(self):
+    def get_dict(self, sample_size: Tuple[int, int] = (76, 38)):
         return ModelTriaxialDeviatorLoadingSoilTest.dictionary_deviator_loading(self._test_data.strain,
                                                                                 self._test_data.deviator,
                                     self._test_data.pore_volume_strain, self._test_data.cell_volume_strain,
-                                    self._test_data.reload_points, pore_pressure=self._test_data.pore_pressure, time=self._test_data.time,
-                                                                                velocity=self._test_params.velocity,
-                                    delta_h_consolidation = self._test_params.delta_h_consolidation)
+                                    self._test_data.reload_points, pore_pressure=self._test_data.pore_pressure,
+                                    time=self._test_data.time, velocity=self._test_params.velocity,
+                                    delta_h_consolidation = self._test_params.delta_h_consolidation,
+                                    sample_size=sample_size)
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -1349,7 +1350,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     @staticmethod
     def dictionary_deviator_loading(strain, deviator, pore_volume_strain, cell_volume_strain, indexs_loop,
-                                    pore_pressure, time, velocity=1, delta_h_consolidation=0,):
+                                    pore_pressure, time, velocity=1, delta_h_consolidation=0,
+                                    sample_size: Tuple[int, int] = (76, 38)):
         """Формирует словарь девиаторного нагружения"""
         index_unload, = np.where(strain >= strain[-1] * 0.92)  # индекс абциссы конца разгрузки
         x_unload_p = strain[index_unload[0]]  # деформация на конце разгрузки
@@ -1419,14 +1421,14 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             "Time": time,
             "Action": action,
             "Action_Changed": action_changed,
-            "SampleHeight_mm": np.round(np.full(len(time), 76)),
-            "SampleDiameter_mm": np.round(np.full(len(time), 38)),
+            "SampleHeight_mm": np.round(np.full(len(time), sample_size[0])),
+            "SampleDiameter_mm": np.round(np.full(len(time), sample_size[1])),
             "Deviator_kPa": np.round(deviator, 4),
-            "VerticalDeformation_mm": strain * (76 - delta_h_consolidation),
+            "VerticalDeformation_mm": strain * (sample_size[0] - delta_h_consolidation),
             "CellPress_kPa": np.full(len(time), 0) + np.random.uniform(-0.1, 0.1, len(time)),
-            "CellVolume_mm3": (cell_volume_strain * np.pi * 19 ** 2 * (76 - delta_h_consolidation)),
+            "CellVolume_mm3": (cell_volume_strain * np.pi * 19 ** 2 * (sample_size[0] - delta_h_consolidation)),
             "PorePress_kPa": pore_pressure,
-            "PoreVolume_mm3": pore_volume_strain * np.pi * 19 ** 2 * (76 - delta_h_consolidation),
+            "PoreVolume_mm3": pore_volume_strain * np.pi * 19 ** 2 * (sample_size[0] - delta_h_consolidation),
             "VerticalPress_kPa": deviator + np.random.uniform(-0.1, 0.1, len(time)),
             "Trajectory": np.full(len(time), 'CTC')}
 
