@@ -793,7 +793,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
                                            f"E_models{statment.general_data.get_shipment_number()}.pickle"))
-                E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log")
+                E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log", sample_size=(h, d))
                 E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"), statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
 
@@ -823,7 +823,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
                 name = file_path_name + " " + statment.general_data.object_number + " ТС Р" + ".pdf"
-                E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log")
+                E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log", sample_size=(h, d))
                 E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
@@ -858,10 +858,10 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 FC_models.dump(os.path.join(statment.save_dir.save_directory,
                                            f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
 
-                FC_models[statment.current_test].save_log_files(save, file_path_name)
+                FC_models[statment.current_test].save_log_files(save, file_path_name, sample_size=(h, d))
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
-                E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log")
+                E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log", sample_size=(h, d))
                 E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
@@ -944,10 +944,10 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 FC_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
 
-                FC_models[statment.current_test].save_log_files(save, file_path_name)
+                FC_models[statment.current_test].save_log_files(save, file_path_name, sample_size=(h, d))
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
-                E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log")
+                E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log", sample_size=(h, d))
                 E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
@@ -1007,7 +1007,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
             elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)':
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
-                FC_models[statment.current_test].save_log_files(save, file_path_name)
+                FC_models[statment.current_test].save_log_files(save, file_path_name, sample_size=(h, d))
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
 
@@ -1049,7 +1049,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 test_parameter["mode"] = "KH, девиаторное нагружение в кинематическом режиме " + s
 
                 name = file_path_name + " " + statment.general_data.object_number + " КН" + ".pdf"
-                FC_models[statment.current_test].save_log_files(save, file_path_name)
+                FC_models[statment.current_test].save_log_files(save, file_path_name, sample_size=(h, d))
                 FC_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
@@ -1091,7 +1091,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 name = file_path_name + " " + statment.general_data.object_number + " НН" + ".pdf"
 
-                FC_models[statment.current_test].save_log_files(save, file_path_name)
+                FC_models[statment.current_test].save_log_files(save, file_path_name, sample_size=(h, d))
 
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
@@ -1124,7 +1124,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
-                FC_models[statment.current_test].save_log_files(save, file_path_name)
+                FC_models[statment.current_test].save_log_files(save, file_path_name, sample_size=(h, d))
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")
 

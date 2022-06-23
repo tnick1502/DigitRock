@@ -535,7 +535,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
     def set_test_params(self):
         self._test_modeling()
 
-    def save_log_files(self, directory, name):
+    def save_log_files(self, directory, name, sample_size=(76, 38)):
         """Метод генерирует файлы испытания для всех кругов"""
 
         data = {
@@ -563,7 +563,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 if not os.path.isdir(path):
                     os.mkdir(path)
                 file_name = os.path.join(path, f"{name}.log")
-                test.save_log_file(file_name)
+                test.save_log_file(file_name, sample_size=sample_size)
 
 
                 strain, main_stress, volume_strain = test.deviator_loading.get_cvi_data()
