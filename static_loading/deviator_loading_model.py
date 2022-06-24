@@ -815,6 +815,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
 
         self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.qf*residual_strength
+        if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+            self._draw_params.residual_strength =  statment[statment.current_test].mechanical_properties.q_res
         self._draw_params.qocr = 0
 
         if self._test_params.Eur:

@@ -245,6 +245,8 @@ class MechanicalProperties:
         "state_standard": None,
         "current": None
     }
+    c_res = DataTypeValidation(float, int)
+    fi_res = DataTypeValidation(float, int)
 
     def __init__(self):
 
@@ -410,6 +412,10 @@ class MechanicalProperties:
             if test_mode == "Вибропрочность":
                 self.Kcu = np.random.uniform(0.6, 0.95)
 
+            if test_mode == "Трёхосное сжатие (F, C) res":
+                self.c_res = float_df(data_frame.iat[string, MechanicalPropertyPosition["с_res"][1]])
+                self.fi_res = float_df(data_frame.iat[string, MechanicalPropertyPosition["fi_res"][1]])
+                self.q_res = np.round(float(MechanicalProperties.define_qf(self.sigma_3, self.c_res, self.fi_res)), 1)
 
 
     @staticmethod

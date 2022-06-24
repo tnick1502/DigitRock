@@ -514,6 +514,12 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 statment[statment.current_test].mechanical_properties.qf = qf_array[i]
                 statment[statment.current_test].mechanical_properties.sigma_1 = sigma_1_array[i] + u_array[i]
                 statment[statment.current_test].mechanical_properties.E50 = E50_array[i]
+
+                if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                    statment[statment.current_test].mechanical_properties.q_res = np.round(float(define_qf(sigma_3_array[i],
+                                                                                                           statment[statment.current_test].mechanical_properties.c_res,
+                                                                                                           statment[statment.current_test].mechanical_properties.fi_res)), 1)
+
                 if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == 'Вибропрочность':
                     statment[statment.current_test].mechanical_properties.u = u_array[i]
                 if statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == "Вибропрочность":
