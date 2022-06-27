@@ -557,7 +557,7 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True, moove=0):
                     Paragraph('''<p>σ'<sub rise="2.5" size="6">1</sub>, кПа:</p>''', LeftStyle), "",
                     zap(test_parameter["sigma1"], 0),
                     Paragraph(tau_text, LeftStyle), "",
-                    zap(test_parameter["tau"]*2, 0)],
+                    zap(test_parameter["tau"], 0)],
                    [Paragraph('''<p>K<sub rise="0.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "",
                     zap(test_parameter["K0"], 2),
                     "Частота, Гц:", "", str(test_parameter["frequency"]).replace(".", ","),
