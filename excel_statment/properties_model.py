@@ -245,6 +245,8 @@ class MechanicalProperties:
         "state_standard": None,
         "current": None
     }
+    c_res = DataTypeValidation(float, int)
+    fi_res = DataTypeValidation(float, int)
 
     def __init__(self):
 
@@ -277,14 +279,19 @@ class MechanicalProperties:
     def defineProperties(self, physical_properties, data_frame: pd.DataFrame, string: int,
                          test_mode=None, K0_mode=None) -> None:
         """Считывание строки свойств"""
+        custom_check = True
         if test_mode == "Трёхосное сжатие КН" or test_mode == "Вибропрочность":
             self.c, self.fi, self.E50, self.u = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
             if self.u != None:
                 self.u *= 1000
         else:
             self.c, self.fi, self.E50 = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
+            if test_mode == "Трёхосное сжатие (F, C) res":
+                self.c_res = float_df(data_frame.iat[string, MechanicalPropertyPosition["c_res"][1]])
+                self.fi_res = float_df(data_frame.iat[string, MechanicalPropertyPosition["fi_res"][1]])
+                custom_check = self.c_res is not None and self.fi_res is not None
 
-        if self.c is not None and self.fi is not None and self.E50 is not None:
+        if self.c is not None and self.fi is not None and self.E50 is not None and custom_check:
 
             self.E50 *= 1000
 
@@ -410,6 +417,8 @@ class MechanicalProperties:
             if test_mode == "Вибропрочность":
                 self.Kcu = np.random.uniform(0.6, 0.95)
 
+            if test_mode == "Трёхосное сжатие (F, C) res":
+                self.q_res = np.round(float(MechanicalProperties.define_qf(self.sigma_3, self.c_res, self.fi_res)), 1)
 
 
     @staticmethod

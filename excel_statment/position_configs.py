@@ -47,7 +47,9 @@ MechanicalPropertyPosition = {
     "Eoed": ["CE", 82],
     "Pref": ["FV", 177],
     "p_max": ["CV", 99],
-    "Eur": ["GI", 190]
+    "Eur": ["GI", 190],
+    "c_res": ["CV", 99],
+    "fi_res": ["CW", 100]
 }
 
 c_fi_E_PropertyPosition = {

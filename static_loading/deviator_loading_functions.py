@@ -1702,6 +1702,10 @@ def curve(qf, e50, **kwargs):
     y2 = y2 + random_param
     y2 = discrete_array(y2, 0.00125 / 8.)  # дискретизация по уровню функции обьемной деформации
 
+    # if xc < 0.15:
+    #     y[-1] = qf2 + abs(y_start[0])
+
+
     if Eur:
         # для записи в файл
         point1_x_index = point1_x_index + len(x_start)
@@ -1721,6 +1725,8 @@ def curve(qf, e50, **kwargs):
     else:
         time = [i*3 for i in range(len(x))]
 
+
+
     if U:
         # print('u', U)
         old_U = U
@@ -1731,6 +1737,7 @@ def curve(qf, e50, **kwargs):
         e50_U = U / x50
         x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50, kwargs.get('xc'), 1.2 * kwargs.get('xc'),
                                            np.random.uniform(0.3, 0.7)*U, 0, amount_points)
+
 
         if old_U < 150:
             y_U = y_U * k_low_u
@@ -2016,7 +2023,7 @@ if __name__ == '__main__':
     #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
     # (596.48, 382.8)
 
-    x, y, y1, y2, indexs_loop, time, lenlen = curve(300, 20000, Eur=50000)
+    x, y, y1, y2, indexs_loop, time, lenlen = curve(300, 20000, xc=0.05, qf2=200)
     # print(len(x))
     # print(time)
     #

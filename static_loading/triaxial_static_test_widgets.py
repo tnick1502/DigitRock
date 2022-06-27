@@ -14,7 +14,7 @@ from excel_statment.initial_statment_widgets import TriaxialStaticStatment
 from excel_statment.initial_tables import LinePhysicalProperties
 from general.save_widget import Save_Dir
 from excel_statment.functions import set_cell_data
-from excel_statment.position_configs import c_fi_E_PropertyPosition
+from excel_statment.position_configs import c_fi_E_PropertyPosition, MechanicalPropertyPosition
 from general.reports import report_consolidation, report_FCE, report_FC, report_FC_KN, report_E, report_FC_NN, report_FC_res
 from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI, ModelTriaxialFileOpenUI, ModelTriaxialReconsolidationUI, \
     ModelTriaxialConsolidationUI, ModelTriaxialDeviatorLoadingUI
@@ -1158,14 +1158,24 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
                 set_cell_data(self.tab_1.path,
-                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][0][0] + str(number),
-                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][1][0])),
+                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C) res"][0][0] + str(number),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C) res"][1][0])),
                               test_result["c"], sheet="Лист1", color="FF6961")
 
                 set_cell_data(self.tab_1.path,
-                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][0][1] + str(number),
-                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C)"][1][1])),
+                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C) res"][0][1] + str(number),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C) res"][1][1])),
                               test_result["fi"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              (MechanicalPropertyPosition["c_res"][0] + str(number),
+                               (number, MechanicalPropertyPosition["c_res"][1])),
+                              test_result["c_res"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              (MechanicalPropertyPosition["fi_res"][0] + str(number),
+                               (number, MechanicalPropertyPosition["fi_res"][1])),
+                              test_result["fi_res"], sheet="Лист1", color="FF6961")
 
 
 
