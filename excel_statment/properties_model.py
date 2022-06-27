@@ -1122,12 +1122,7 @@ class CyclicProperties(MechanicalProperties):
         super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
         if self.c and self.fi and self.E50:
 
-            if physical_properties.depth <= 9.15:
-                self.rd = round((1 - (0.00765 * physical_properties.depth)), 3)
-            elif (physical_properties.depth > 9.15) and (physical_properties.depth < 23):
-                self.rd = round((1.174 - (0.0267 * physical_properties.depth)), 3)
-            else:
-                self.rd = round((1.174 - (0.0267 * 23)), 3)
+            self.rd = CyclicProperties.define_rd(physical_properties.depth)
 
             if test_mode == "Сейсморазжижение":
                 if physical_properties.depth <= physical_properties.ground_water_depth:
@@ -1227,7 +1222,6 @@ class CyclicProperties(MechanicalProperties):
 
                 self.t = np.round(self.t, 1)
 
-
             elif test_mode == "Динамическая прочность на сдвиг":
 
                 sigma_1 = float_df(data_frame.iat[string,
@@ -1310,8 +1304,6 @@ class CyclicProperties(MechanicalProperties):
                 self.t = np.round(self.t, 1)
 
 
-
-
             self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
                                                        physical_properties.Ip,
                                                        physical_properties.Il, physical_properties.e)
@@ -1369,6 +1361,27 @@ class CyclicProperties(MechanicalProperties):
             Ms = np.random.uniform(0.6, 0.8)
 
         return np.round(Ms, 2)
+
+    @staticmethod
+    def define_rd(z):
+        if z <= 9.15:
+            return np.round((1 - (0.00765 * z)), 3)
+        elif (z > 9.15) and (z < 23):
+            return np.round((1.174 - (0.0267 * z)), 3)
+        else:
+            a_11 = 0.4113
+            a_12 = 0.04052
+            a_13 = 0.001753
+
+            a_21 = 0.4177
+            a_22 = 0.05729
+            a_23 = 0.006205
+            a_24 = 0.00121
+
+            return np.round(
+                (1 - a_11 * (z ** 0.5) + a_12 * z + a_13 * (z ** 1.5)) /
+                (1 - a_21 * (z ** 0.5) + a_22 * z - a_23 * (z ** 1.5) + a_24 * (z ** 2))
+                , 3)
 
     @staticmethod
     def define_acceleration(intensity: float) -> float:
