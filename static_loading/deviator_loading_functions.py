@@ -156,11 +156,13 @@ def find_puasson_dilatancy(strain, deviator, volume_strain):
     return round(puasson, 2), dilatancy
 
 
-def deviator_loading_deviation(strain, deviator, xc):
+def deviator_loading_deviation(strain, deviator, xc, amplitude):
     # Добавим девиации после 0.6qf для кривой без пика
     qf = max(deviator)
-    devition_1 = qf / 100
-    devition_2 = qf / 60
+
+    devition_1 = amplitude[0]
+    devition_2 = amplitude[1]
+    print(devition_1, devition_2)
 
     i_60, = np.where(deviator >= 0.51 * qf)
     i_90, = np.where(deviator >= 0.98 * qf)
@@ -1205,6 +1207,8 @@ def curve(qf, e50, **kwargs):
     except KeyError:
         kwargs["U"] = None
 
+
+
     xc = kwargs.get('xc')
     x2 = kwargs.get('x2')
     qf2 = kwargs.get('qf2')
@@ -1215,6 +1219,16 @@ def curve(qf, e50, **kwargs):
     y_rel_p = kwargs.get('y_rel_p')
     point2_y = kwargs.get('point2_y')
     U = kwargs.get('U')
+
+
+    try:
+        kwargs["amplitude"]
+    except KeyError:
+        kwargs["amplitude"] = [qf / 100, qf / 60]
+
+    amplitude = kwargs.get('amplitude')
+
+
 
     if max_time < 50:
         max_time = 50
@@ -1332,7 +1346,7 @@ def curve(qf, e50, **kwargs):
 
     # print(f"ПОДАННЫЙ Еур : {Eur}")
     # построение петли разгрузки
-    y_for_loop = y + deviator_loading_deviation(x, y, xc)
+    y_for_loop = y + deviator_loading_deviation(x, y, xc, amplitude=amplitude)
 
     x_loop, y_loop,\
         point1_x, point1_y, point2_x, point2_y, point3_x, point3_y,\
@@ -1390,7 +1404,7 @@ def curve(qf, e50, **kwargs):
     if Eur:
         y = y_for_loop
     else:
-        y += deviator_loading_deviation(x, y, xc)
+        y += deviator_loading_deviation(x, y, xc, amplitude=amplitude)
 
     import time
     start_time = time.time()
