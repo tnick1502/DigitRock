@@ -517,6 +517,17 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
 
                 count += 1
 
+            if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                q_res_normal = np.asarray([np.round(float(define_qf(sigma_3_array[i],
+                                                             statment[statment.current_test].mechanical_properties.c_res,
+                                                             statment[statment.current_test].mechanical_properties.fi_res)), 1) for i in range(len(sigma_1_array))])
+                sigma_1_res = q_res_normal + sigma_3_array
+                q_res_noised = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(np.asarray(sigma_3_array), np.asarray(sigma_1_res),
+                                                                                  statment[statment.current_test].mechanical_properties.fi_res,
+                                                                                  statment[statment.current_test].mechanical_properties.c_res*1000)
+
+
+
             for i in range(len(sigma_1_array)):
                 statment[statment.current_test].mechanical_properties.sigma_3 = sigma_3_array[i] + u_array[i]
                 statment[statment.current_test].mechanical_properties.qf = qf_array[i]
@@ -524,9 +535,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 statment[statment.current_test].mechanical_properties.E50 = E50_array[i]
 
                 if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
-                    statment[statment.current_test].mechanical_properties.q_res = np.round(float(define_qf(sigma_3_array[i],
-                                                                                                           statment[statment.current_test].mechanical_properties.c_res,
-                                                                                                           statment[statment.current_test].mechanical_properties.fi_res)), 1)
+                    statment[statment.current_test].mechanical_properties.q_res = q_res_noised[i]
 
                 if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == 'Вибропрочность':
                     statment[statment.current_test].mechanical_properties.u = u_array[i]
