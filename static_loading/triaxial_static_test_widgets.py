@@ -661,7 +661,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 "standart_E50": "Стандардный E50",
                 "E_E50": "Совместный E/E50",
                 "plaxis": "Plaxis/Midas",
-                "user_define_1": "Пользовательский с ε50"
+                "user_define_1": "Пользовательский с ε50",
+                "vibro": "Вибропрочность"
             })
 
         self.tab_4.popIn.connect(self.addTab)
@@ -1121,7 +1122,6 @@ class StatickSoilTestApp(AppMixin, QWidget):
                                (number, c_fi_E_PropertyPosition["Трёхосное сжатие НН"][1][0])),
                               test_result["c"], sheet="Лист1", color="FF6961")
 
-
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
                 FC_models[statment.current_test].save_log_files(save, file_path_name, sample_size=(h, d))
@@ -1151,7 +1151,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                            statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                           (*self.tab_3.save_canvas(),
-                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+                           *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 

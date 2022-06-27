@@ -3085,7 +3085,7 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
 
     canvas.save()
 
-def report_FC_res(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_FC_res(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -3097,10 +3097,16 @@ def report_FC_res(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res
 
     code = SaveCode(version)
 
+    if report_type == "vibro":
+        r_name = "ПОЛУЧЕНИЕ ПАРАМЕТРОВ ОСТАТОЧНОЙ ПРОЧНОСТИ ГРУНТОВ"
+    else:
+        r_name = "ПОЛУЧЕНИЕ ПАРАМЕТРОВ ОСТАТОЧНОЙ ВИБРОПРОЧНОСТИ ГРУНТОВ"
+
+
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
+                            [r_name,
+                             "МЕТОДОМ ТРЕХОСНОГО СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
 
     parameter_table(canvas, Data_phiz, Lab)
     test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
