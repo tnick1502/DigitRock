@@ -222,7 +222,7 @@ class ModelTriaxialDeviatorLoading:
         """Получение результатов обработки опыта"""
         dict = copy.deepcopy(self._test_result.get_dict())
         dict["sigma_3"] = np.round((self._test_params.sigma_3 - float(dict["max_pore_pressure"])) / 1000, 3)
-        dict["q_res"] = np.round((self._test_data.deviator[-1]) / 1000, 3)
+        dict["q_res"] = np.round((self._test_data.deviator_cut[-1]) / 1000, 3)
 
         dict["K_E50"] = np.round(self._test_result.E[0]/self._test_result.E50, 2)
         dict["K_Eur"] = np.round(self._test_result.Eur/self._test_result.E[0], 2) if self._test_result.Eur else None
@@ -816,7 +816,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.qf*residual_strength
         if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
-            self._draw_params.residual_strength =  statment[statment.current_test].mechanical_properties.q_res
+            self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.q_res
         self._draw_params.qocr = 0
 
         if self._test_params.Eur:
@@ -1199,8 +1199,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         e0 = e if e else 0.65
         Ir = Ir if Ir else 0
 
+        _is_random = False
+
         if Il > 0.35 and Ir >= 50:
-            return 0
+            return 0, False
 
         if e0 == 0:
             dens_sand = 2  # средней плотности
@@ -1237,6 +1239,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             elif type_ground == 2:  # крупный песок
                 if sigma3mor <= 0.1:
                     kr_fgs = round(np.random.uniform(0, 1))
+                    _is_random = True
                 else:
                     kr_fgs = 1
             elif type_ground == 3:  # песок средней групности
@@ -1244,6 +1247,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                     kr_fgs = 0
                 elif sigma3mor <= 0.15 and dens_sand == 2:  # песок средней крупности средней плотности
                     kr_fgs = round(np.random.uniform(0, 1))
+                    _is_random = True
                 else:  # песок средней групности и sigma3>0.15
                     kr_fgs = 1
             elif type_ground == 4:  # мелкий песок
@@ -1251,6 +1255,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                     kr_fgs = 0
                 elif (0.1 <= sigma3mor <= 0.2 and dens_sand == 3) or (sigma3mor <= 0.15 and dens_sand == 2):
                     kr_fgs = round(np.random.uniform(0, 1))  # мелкий песок рыхлый s3<=0.2 и средней плотности s3<=0.15
+                    _is_random = True
                 else:  # мелкий песок рыхлый s3>=0.2 и средней плотности s3>=0.15 (плотный закрыт раньше)
                     kr_fgs = 1
             elif type_ground == 5:  # песок пылеватый
@@ -1260,6 +1265,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                         sigma3mor <= 0.1 and dens_sand == 2):  # песок пылева-
                     kr_fgs = round(
                         np.random.uniform(0, 1))  # тый рыхлый 0.1<=s3<=0.2 и пылеватый средней плотности s3<=0.1
+                    _is_random = True
                 else:  # песок пылеватый рыхлый s3>0.2 и пылеватый средней плотности s3>0.1 (плотный закрыт раньше)
                     kr_fgs = 1
             elif type_ground == 9:  # Торф
@@ -1273,6 +1279,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 kr_fgs = 0
             elif 0 < Il <= 1:  # показатель текучести. от 0 до 1 - пластичный (для супеси)
                 kr_fgs = round(np.random.uniform(0, 1))
+                _is_random = True
             else:  # <=0 твердый
                 kr_fgs = 1
 
@@ -1281,11 +1288,12 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 kr_fgs = 0
             elif 0.25 < Il <= 0.5:  # от 0.25 до 0.5 тугопластичный (для суглинков и глины)
                 kr_fgs = round(np.random.choice([0, 1], p=[0.7, 0.3]))
+                _is_random = True
             else:  # меньше 0.25 твердый и полутвердый (для суглинков и глины)
                 kr_fgs = 1
         else:
             kr_fgs = 0
-        return kr_fgs
+        return kr_fgs, _is_random
 
     @staticmethod
     def define_xc_qf_E(qf, E50):
@@ -1317,11 +1325,22 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         xc = 1
 
+        _defined_kr_fgs, is_random = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(sigma_3,
+                                                                                             data_phiz.type_ground,
+                                                                                             data_phiz.e,
+                                                                                             data_phiz.Ip,
+                                                                                             data_phiz.Il)
+
         if not pre_defined_kr_fgs:
-            xc = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
-                                                                         data_phiz.Ip, data_phiz.Il)
+            xc = _defined_kr_fgs
         elif pre_defined_kr_fgs == 1:
-            xc = 1
+            # для опыта Трёхосное сжатие (F, C) res если отсутствие пика выпадает не из генерации случайного числа,
+            # то пика не должно быть, для всех остальных опытов при наличии предопределенного kr выбираем его
+            if (statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res"
+                    and not is_random and _defined_kr_fgs == 0):
+                xc = _defined_kr_fgs
+            else:
+                xc = pre_defined_kr_fgs
 
         if xc:
             xc = ModelTriaxialDeviatorLoadingSoilTest.define_xc_qf_E(qf, E)

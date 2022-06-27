@@ -48,7 +48,7 @@ MechanicalPropertyPosition = {
     "Pref": ["FV", 177],
     "p_max": ["CV", 99],
     "Eur": ["GI", 190],
-    "с_res": ["CV", 99],
+    "c_res": ["CV", 99],
     "fi_res": ["CW", 100]
 }
 

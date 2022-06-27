@@ -412,10 +412,18 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         self._test_params = None
         self._reference_pressure_array = None
         self.pre_defined_kr_fgs = None
+        self.test_mode = statment.general_parameters.test_mode
+
+
 
     def add_test_st(self, pre_defined_kr_fgs=None):
         """Добавление опытов"""
         test = ModelTriaxialStaticLoadSoilTest()
+
+        if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+            pre_defined_kr_fgs = 1
+            self.pre_defined_kr_fgs = pre_defined_kr_fgs
+
         test.set_test_params(statment.general_parameters.reconsolidation, pre_defined_kr_fgs=pre_defined_kr_fgs)
         if self._check_clone(test):
             self._tests.append(test)
