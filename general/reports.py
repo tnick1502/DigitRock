@@ -3102,7 +3102,7 @@ def report_FC_res(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res
     test_parameter = dict(test_parameter)
     test_parameter["K0"] = test_parameter["K0"][1]
     if report_type == "vibro":
-        name = "ТДБ"
+        name = "ТДВ"
     else:
         name = "ТДО"
 

@@ -90,6 +90,8 @@ class PhysicalProperties:
         except:
             pass
 
+        self.depth = np.round(self.depth, 2)
+
         if not self.description:
             self.description = "-"
 
