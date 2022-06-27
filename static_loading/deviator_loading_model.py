@@ -870,7 +870,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         params = {"fail_strain": {"value": self._draw_params.fail_strain, "borders": [0.03, 0.15]},
                   "residual_strength_param": {"value": self._draw_params.residual_strength_param, "borders": [0.05, 0.6]},
                   "residual_strength": {"value": self._draw_params.residual_strength,
-                                        "borders": [self._test_params.qf*0.5, self._test_params.qf]},
+                                        "borders": [self._test_params.qf*0.3, self._test_params.qf]},
                   "qocr": {"value": self._draw_params.qocr+1, "borders": [0.0, self._test_params.qf]},
                   "poisson": {"value": self._draw_params.poisson, "borders": [0.25, 0.45]},
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
