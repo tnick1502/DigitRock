@@ -316,7 +316,7 @@ class MechanicalProperties:
 
             if sigma_ref:
                 self.sigma_3 = np.round(sigma_ref * 1000)
-                self.sigma_1 = np.round(self.sigma_3/self.K0)
+                self.sigma_1 = self.sigma_3
             else:
                 if physical_properties.ground_water_depth is not None:
                     if physical_properties.depth <= physical_properties.ground_water_depth:
