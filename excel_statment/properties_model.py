@@ -382,6 +382,8 @@ class MechanicalProperties:
 
             if test_mode == "Трёхосное сжатие с разгрузкой":
                 self.Eur = Eur * 1000 if Eur else True
+            elif test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
+                self.Eur = Eur * 1000 if Eur else True
             elif test_mode == "Трёхосное сжатие (F, C, Eur)":
                 self.Eur = Eur * 1000 if Eur else True
             else:

@@ -828,6 +828,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 statment[statment.current_test].physical_properties.type_ground,
                 self._test_params.sigma_3, statment[statment.current_test].mechanical_properties.K0)
 
+            if statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
+                self.unloading_borders = (self._test_params.qf/2, 10)
+
             if type(self._test_params.Eur) is bool:
                 self._draw_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
                     E50=self._test_params.E50, Il=statment[statment.current_test].physical_properties.Il,
@@ -1461,7 +1464,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         return data
 
     @staticmethod
-    def define_unloading_points(Il, type_ground, sigma_3: float, K0: float) -> float:
+    def define_unloading_points(Il, type_ground, sigma_3: float, K0: float) -> Tuple[float, float]:
         """ Рассчет начала разгрузки в зависимости от грансостава и среднеобжимающего давления
             :param physical_data: словарь с физическими параметрами
             :param sigma_1: эффективное значение sigma_3c
