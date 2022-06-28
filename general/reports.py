@@ -673,7 +673,12 @@ def test_mode_vibration_creep(canvas, test_parameter, moove = 0):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
-def test_mode_consolidation(canvas, Data, moove=0):
+def test_mode_consolidation(canvas, Data, moove=0, report_type="standart"):
+
+    if report_type == "plaxis":
+        sigma_str = '''<p>Референтное давление p<sub rise="2.5" size="6">ref</sub>, МПа:</p>'''
+    else:
+        sigma_str = '''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, МПа:</p>'''
 
     if "/" in str(Data["sigma_3"]):
         sigma_3 = str(Data["sigma_3"])
@@ -691,7 +696,7 @@ def test_mode_consolidation(canvas, Data, moove=0):
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
-               [Paragraph('''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, МПа:</p>''', LeftStyle), "", "", sigma_3, "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
+               [Paragraph(sigma_str, LeftStyle), "", "", sigma_3, "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
                ["Оборудование:", "", "", "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
@@ -1191,6 +1196,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
     if result_E == "E":
         E = zap(Res["E"][0], 1)
         Ew = '''<p>Модуль деформации E, МПа:</p>'''
+
     elif result_E == "E50":
         E = zap(Res["E50"], 1)
         Ew = '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>'''
@@ -2982,10 +2988,12 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
 
     test_parameter["K0"] = K0[0]
 
-    test_mode_consolidation(canvas, test_parameter, moove=moove)
+    test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
     if report_type == "standart_E":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E", moove=moove)
     elif report_type == "standart_E50":
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
+    elif report_type == "plaxis":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
     elif report_type == "E_E50":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all", moove=moove)
