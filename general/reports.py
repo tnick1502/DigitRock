@@ -501,8 +501,8 @@ def test_mode_rc(canvas, ro, Data, moove=0):
 
 def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True, moove=0):
 
-    tau_text = '''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''' if tau else '''<p>σ<sub rise="2.5" size="6">d</sub>, кПа:</p>'''
-    tau = zap(test_parameter["tau"], 0) if tau else zap(test_parameter["tau"] * 2, 0)
+    tau_text = '''<p>σ<sub rise="2.5" size="6">d</sub>, кПа:</p>''' if tau else '''<p>σ<sub rise="2.5" size="6">d</sub>, кПа:</p>'''
+    tau = zap(test_parameter["tau"], 0)
 
     d = test_parameter["d"]
     h = test_parameter["h"]
@@ -518,7 +518,7 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True, moove=0):
                     #Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(str(ro).replace(".", ","), 2)],
                    [Paragraph('''<p>σ'<sub rise="2.5" size="6">3</sub>, кПа:</p>''', LeftStyle), "", zap(test_parameter["sigma3"], 0),
                     Paragraph('''<p>σ'<sub rise="2.5" size="6">1</sub>, кПа:</p>''', LeftStyle), "", zap(test_parameter["sigma1"], 0),
-                    Paragraph('''<p>τ<sub rise="2.5" size="6">α</sub>, кПа:</p>''', LeftStyle), "", zap(test_parameter["tau"], 0)],
+                    Paragraph(tau_text, LeftStyle), "", zap(test_parameter["tau"], 0)],
                     [Paragraph('''<p>K<sub rise="0.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", zap(test_parameter["K0"], 2),
                     "Частота, Гц:", "", str(test_parameter["frequency"]).replace(".", ","), "I, балл:",  "", str(test_parameter["I"]).replace(".", ",") if test_parameter["I"] else "-"],
                    ["M, ед.:", "", str(test_parameter["M"]).replace(".", ",") if test_parameter["M"] else "-", "MSF, ед.:", "",str(test_parameter["MSF"]).replace(".", ",") if test_parameter["MSF"] else "-", Paragraph('''<p>r<sub rise="2.5" size="6">d</sub>, ед.:</p>''', LeftStyle), "",str(test_parameter["rd"]).replace(".", ","),]], colWidths=19.444444* mm, rowHeights=4 * mm)
@@ -556,8 +556,8 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True, moove=0):
                     zap(test_parameter["sigma3"], 0),
                     Paragraph('''<p>σ'<sub rise="2.5" size="6">1</sub>, кПа:</p>''', LeftStyle), "",
                     zap(test_parameter["sigma1"], 0),
-                    Paragraph('''<p>σ<sub rise="2.5" size="6">d</sub>, кПа:</p>''', LeftStyle), "",
-                    zap(test_parameter["tau"]*2, 0)],
+                    Paragraph(tau_text, LeftStyle), "",
+                    zap(test_parameter["tau"], 0)],
                    [Paragraph('''<p>K<sub rise="0.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "",
                     zap(test_parameter["K0"], 2),
                     "Частота, Гц:", "", str(test_parameter["frequency"]).replace(".", ","),
@@ -673,7 +673,12 @@ def test_mode_vibration_creep(canvas, test_parameter, moove = 0):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
-def test_mode_consolidation(canvas, Data, moove=0):
+def test_mode_consolidation(canvas, Data, moove=0, report_type="standart"):
+
+    if report_type == "plaxis":
+        sigma_str = '''<p>Референтное давление p<sub rise="2.5" size="6">ref</sub>, МПа:</p>'''
+    else:
+        sigma_str = '''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, МПа:</p>'''
 
     if "/" in str(Data["sigma_3"]):
         sigma_3 = str(Data["sigma_3"])
@@ -683,9 +688,15 @@ def test_mode_consolidation(canvas, Data, moove=0):
         except:
             sigma_3 = "-"
 
+    if isinstance(sigma_3, list):
+        sigma_3 = zap(Data["sigma_3"][0], 3)
+
+    if isinstance(Data["K0"], list):
+        Data["K0"] = zap(Data["K0"][0], 3)
+
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
-               [Paragraph('''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, МПа:</p>''', LeftStyle), "", "", sigma_3, "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
+               [Paragraph(sigma_str, LeftStyle), "", "", sigma_3, "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
                ["Оборудование:", "", "", "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
@@ -981,7 +992,7 @@ def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8, moove=0, tttyy
              Paragraph('''<p>ε<sub rise="0.5" size="6">max</sub>, д.е.:</p>''', CentralStyle), "", zap(Res["EPSmax"], 3)])
 
         tableData.append(
-            ["Динамическая прочность грунта на сдвиг, ед.:", "", "", zap(Res["nc"], 0) if Res["nc"] != "-" else "1500", "", ""])
+            [Paragraph('''<p>Предельное число циклов при разрушении N<sub rise="0.5" size="6">fail</sub>, ед.:</p>''', CentralStyle), "", "", zap(Res["nc"], 0) if Res["nc"] != "-" else "1500", "", ""])
         tableData.append(
             ["Критическое значение сдвиговых деформаций, д.е.:", "", "", zap(Res["gamma_critical"], 6), "", ""])
         trt = 4
@@ -1109,13 +1120,15 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8, moove =0):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Коэффициент фильтрационной консолидации C<sub rise="0.5" size="6">v</sub>, см<sup rise="2" size="6">2</sup>/мин:</p>''', LeftStyle), "", "", "",
-         zap(Res["Cv_log"], 4), ""])
+        [Paragraph('''<p>Коэффициент фильтрационной консолидации C<sub rise="0.5" size="6">v</sub>, см<sup rise="2" size="6">2</sup>/мин:</p>''', LeftStyle), "", "", zap(Res["Cv_log"], 4),
+         "", ""])
     tableData.append(
-        [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", "",
-         zap(Res["Ca_log"], 4), ""])
-    tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", "",
-                      Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle), ""])
+        [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", zap(Res["Ca_log"], 4),
+         "", ""])
+    tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle),
+                      "", ""])
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+    tableData.append(["", "", "", "", "", ""])
 
 
     try:
@@ -1133,24 +1146,29 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8, moove =0):
         canvas.drawImage(b, 32 * mm, 114 * mm,
                          width=160 * mm, height=54 * mm)
 
-    style = [('SPAN', (0, 0), (-1, 0)),
+    style = [('SPAN', (0, -2), (2, -1)),
+             ('SPAN', (-3, -2), (-1, -1)),
+             ('SPAN', (0, 0), (-1, 0)),
+
              ('SPAN', (0, 1), (-1, r)),
 
-             ('SPAN', (0, -1), (3, -1)),
-             ('SPAN', (-2, -1), (-1, -1)),
+             ('SPAN', (0, -3), (2, -3)),
+             ('SPAN', (-3, -3), (-1, -3)),
              # ('SPAN', (2, -1), (3, -1)),
              # ('SPAN', (4, -1), (5, -1)),
-             ('SPAN', (0, -2), (3, -2)),
-             ('SPAN', (-2, -2), (-1, -2)),
+             ('SPAN', (0, -4), (2, -4)),
+             ('SPAN', (-3, -4), (-1, -4)),
              # ('SPAN', (2, -2), (3, -2)),
              # ('SPAN', (4, -2), (5, -2)),
-             ('SPAN', (0, -3), (3, -3)),
-             ('SPAN', (-2, -3), (-1, -3)),
+             ('SPAN', (0, -5), (2, -5)),
+             ('SPAN', (-3, -5), (-1, -5)),
 
 
-             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-             ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-             ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+             # ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+             # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+             # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+
+             ("BACKGROUND", (0, -5), (2, -1), HexColor(0xebebeb)),
 
              ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
              ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -1166,7 +1184,7 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8, moove =0):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (48 - moove-((r-30)*4) - 4) * mm)
+    t.drawOn(canvas, 25 * mm, (48 - 8 - moove-((r-30)*4) - 4) * mm)
 
 def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E", moove=0):
 
@@ -1176,17 +1194,18 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
         tableData.append([""])
 
     if result_E == "E":
-        E = Res["E"][0]
+        E = zap(Res["E"][0], 1)
         Ew = '''<p>Модуль деформации E, МПа:</p>'''
+
     elif result_E == "E50":
-        E = Res["E50"]
+        E = zap(Res["E50"], 1)
         Ew = '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>'''
 
     elif result_E == "all":
-        E = Res["E"][0]
+        E = zap(Res["E"][0], 1)
         Ew = '''<p>Модуль деформации E, МПа:</p>'''
 
-        E50 = Res["E50"]
+        E50 = zap(Res["E50"], 1)
         E50w = '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>'''
 
     if Res["Eur"]:
@@ -1195,35 +1214,36 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
         renderPDF.draw(a, canvas, 36 * mm, (66-moove) * mm)
         if result_E == "all":
             tableData.append(
-                [Paragraph(Ew, LeftStyle), "", "", "",
-                 E, ""])
+                [Paragraph(Ew, LeftStyle), "", "",
+                 E, "", ""])
             tableData.append(
-                [Paragraph(E50w, LeftStyle), "", "", "",
-                 E50, ""])
+                [Paragraph(E50w, LeftStyle), "", "",
+                 E50, "", ""])
+
             sss = 4
             style = [('SPAN', (0, 0), (-1, 0)),
                      ('SPAN', (0, 1), (-1, r)),
 
-                     ('SPAN', (0, -1), (3, -1)),
-                     ('SPAN', (-2, -1), (-1, -1)),
+                     ('SPAN', (0, -2), (2, -1)),
+                     ('SPAN', (-3, -2), (-1, -1)),
+
+                     ('SPAN', (0, -3), (2, -3)),
+                     ('SPAN', (-3, -3), (-1, -3)),
                      # ('SPAN', (2, -1), (3, -1)),
                      # ('SPAN', (4, -1), (5, -1)),
-                     ('SPAN', (0, -2), (3, -2)),
-                     ('SPAN', (-2, -2), (-1, -2)),
+                     ('SPAN', (0, -4), (2, -4)),
+                     ('SPAN', (-3, -4), (-1, -4)),
                      # ('SPAN', (2, -2), (3, -2)),
                      # ('SPAN', (4, -2), (5, -2)),
-                     ('SPAN', (0, -3), (3, -3)),
-                     ('SPAN', (-2, -3), (-1, -3)),
+                     ('SPAN', (0, -5), (2, -5)),
+                     ('SPAN', (-3, -5), (-1, -5)),
 
-                     ('SPAN', (0, -4), (3, -4)),
-                     ('SPAN', (-2, -4), (-1, -4)),
+                     ('SPAN', (0, -6), (2, -6)),
+                     ('SPAN', (-3, -6), (-1, -6)),
                      # ('SPAN', (2, -3), (3, -3)),
                      #  ('SPAN', (4, -3), (5, -3)),
 
-                     ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                     ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                     ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
-                     ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -6), (2, -1), HexColor(0xebebeb)),
 
                      ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                      ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -1236,29 +1256,30 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
                      ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
         else:
             tableData.append(
-                [Paragraph(Ew, LeftStyle), "", "", "",
-                 E, ""])
+                [Paragraph(Ew, LeftStyle), "", "",
+                 E, "", ""])
             sss = 0
-            style = [('SPAN', (0, 0), (-1, 0)),
+            style = [('SPAN', (0, -2), (2, -1)),
+                     ('SPAN', (-3, -2), (-1, -1)),
+
+                     ('SPAN', (0, 0), (-1, 0)),
                      ('SPAN', (0, 1), (-1, r)),
 
-                     ('SPAN', (0, -1), (3, -1)),
-                     ('SPAN', (-2, -1), (-1, -1)),
+                     ('SPAN', (0, -3), (2, -3)),
+                     ('SPAN', (-3, -3), (-1, -3)),
                      # ('SPAN', (2, -1), (3, -1)),
                      # ('SPAN', (4, -1), (5, -1)),
-                     ('SPAN', (0, -2), (3, -2)),
-                     ('SPAN', (-2, -2), (-1, -2)),
+                     ('SPAN', (0, -4), (2, -4)),
+                     ('SPAN', (-3, -4), (-1, -4)),
                      # ('SPAN', (2, -2), (3, -2)),
                      # ('SPAN', (4, -2), (5, -2)),
-                     ('SPAN', (0, -3), (3, -3)),
-                     ('SPAN', (-2, -3), (-1, -3)),
+                     ('SPAN', (0, -5), (2, -5)),
+                     ('SPAN', (-3, -5), (-1, -5)),
 
                      # ('SPAN', (2, -3), (3, -3)),
                      #  ('SPAN', (4, -3), (5, -3)),
 
-                     ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                     ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                     ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -5), (2, -1), HexColor(0xebebeb)),
 
                      ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                      ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -1269,11 +1290,15 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
                      ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
                      ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
                      ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
         tableData.append(
-            [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+            [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", zap(Res["poissons_ratio"], 2), "", ""])
         tableData.append(
-            [Paragraph('''<p>Модуль повторного нагружения E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "", "",
-             "", Res["Eur"], ""])
+            [Paragraph('''<p>Модуль повторного нагружения E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "",
+             "", zap(Res["Eur"], 1), "", ""])
+
+        tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+        tableData.append(["", "", "", "", "", ""])
 
     else:
         #tableData.append(
@@ -1282,18 +1307,21 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
 
         if result_E == "all":
             tableData.append(
-                [Paragraph(Ew, LeftStyle), "", "", "",
-                 E, ""])
+                [Paragraph(Ew, LeftStyle), "", "",
+                 E, "", ""])
             tableData.append(
-                [Paragraph(E50w, LeftStyle), "", "", "",
-                 E50, ""])
+                [Paragraph(E50w, LeftStyle), "", "",
+                 E50, "", ""])
         else:
             tableData.append(
-                [Paragraph(Ew, LeftStyle), "", "", "",
-                 E, ""])
+                [Paragraph(Ew, LeftStyle), "", "",
+                 E, "", ""])
         #tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", E, ""])
         tableData.append(
-            [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", "", Res["poissons_ratio"], ""])
+            [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", zap(Res["poissons_ratio"], 2), "", ""])
+
+        tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+        tableData.append(["", "", "", "", "", ""])
 
         try:
             a = svg2rlg(pick[0])
@@ -1315,14 +1343,17 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
             style = [('SPAN', (0, 0), (-1, 0)),
                  ('SPAN', (0, 1), (-1, r)),
 
-                 ('SPAN', (0, -1), (3, -1)),
-                 ('SPAN', (-2, -1), (-1, -1)),
+                 ('SPAN', (0, -2), (2, -1)),
+                 ('SPAN', (-3, -2), (-1, -1)),
+
+                 ('SPAN', (0, -3), (2, -3)),
+                 ('SPAN', (-3, -3), (-1, -3)),
                  # ('SPAN', (2, -1), (3, -1)),
                  # ('SPAN', (4, -1), (5, -1)),
-                 ('SPAN', (0, -2), (3, -2)),
-                 ('SPAN', (-2, -2), (-1, -2)),
-                     ('SPAN', (0, -3), (3, -3)),
-                     ('SPAN', (-2, -3), (-1, -3)),
+                 ('SPAN', (0, -4), (2, -4)),
+                 ('SPAN', (-3, -4), (-1, -4)),
+                     ('SPAN', (0, -5), (2, -5)),
+                     ('SPAN', (-3, -5), (-1, -5)),
                  # ('SPAN', (2, -2), (3, -2)),
                  # ('SPAN', (4, -2), (5, -2)),
                  #('SPAN', (0, -3), (3, -3)),
@@ -1333,9 +1364,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
                  # ('SPAN', (2, -3), (3, -3)),
                  #  ('SPAN', (4, -3), (5, -3)),
 
-                 ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                 ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                 ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, -5), (2, -1), HexColor(0xebebeb)),
                  #("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
                  #("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
 
@@ -1355,12 +1384,15 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
             style = [('SPAN', (0, 0), (-1, 0)),
                      ('SPAN', (0, 1), (-1, r)),
 
-                     ('SPAN', (0, -1), (3, -1)),
-                     ('SPAN', (-2, -1), (-1, -1)),
+                     ('SPAN', (0, -2), (2, -1)),
+                     ('SPAN', (-3, -2), (-1, -1)),
+
+                     ('SPAN', (0, -3), (2, -3)),
+                     ('SPAN', (-3, -3), (-1, -3)),
                      # ('SPAN', (2, -1), (3, -1)),
                      # ('SPAN', (4, -1), (5, -1)),
-                     ('SPAN', (0, -2), (3, -2)),
-                     ('SPAN', (-2, -2), (-1, -2)),
+                     ('SPAN', (0, -4), (2, -4)),
+                     ('SPAN', (-3, -4), (-1, -4)),
                      # ('SPAN', (2, -2), (3, -2)),
                      # ('SPAN', (4, -2), (5, -2)),
                      # ('SPAN', (0, -3), (3, -3)),
@@ -1371,8 +1403,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
                      # ('SPAN', (2, -3), (3, -3)),
                      #  ('SPAN', (4, -3), (5, -3)),
 
-                     ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                     ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                     ("BACKGROUND", (0, -4), (2, -1), HexColor(0xebebeb)),
                      # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
                      # ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
 
@@ -1390,6 +1421,8 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
     t.setStyle(style)
+
+    sss += 8
 
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (46 - sss -moove-((r-30)*4)) * mm)
@@ -1550,24 +1583,32 @@ def result_table_deviator_vc(canvas, Res, pick, scale = 0.8, moove=0):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
-         Res["qf"], ""])
+        [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "",
+         Res["qf"], "", ""])
+
+    tableData.append(
+        ["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+    tableData.append(
+        ["", "", "", "", "", ""])
 
     a = ImageReader(pick[1])
-    canvas.drawImage(a, 32 * mm, (60-moove) * mm,
+    canvas.drawImage(a, 32 * mm, (65-moove) * mm,
                      width=160 * mm, height=54 * mm)
     b = ImageReader(pick[0])
-    canvas.drawImage(b, 32 * mm, (114-moove) * mm,
+    canvas.drawImage(b, 32 * mm, (119-moove) * mm,
                      width=160 * mm, height=54 * mm)
 
 
     style = [('SPAN', (0, 0), (-1, 0)),
              ('SPAN', (0, 1), (-1, r)),
 
-             ('SPAN', (0, -1), (3, -1)),
-             ('SPAN', (-2, -1), (-1, -1)),
+             ('SPAN', (0, -2), (2, -1)),
+             ('SPAN', (-3, -2), (-1, -1)),
 
-             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+             ('SPAN', (0, -3), (2, -3)),
+             ('SPAN', (-3, -3), (-1, -3)),
+
+             ("BACKGROUND", (0, -3), (2, -1), HexColor(0xebebeb)),
              ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
              ("FONTNAME", (0, 1), (-1, -1), 'Times'),
              ("FONTSIZE", (0, 0), (-1, -1), 8),
@@ -1731,14 +1772,14 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False, moov
 
 
 
-def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0):
+def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, description="-"):
 
     try:
         a = ImageReader(pick[1])
-        canvas.drawImage(a, 32 * mm, (63-moove) * mm,
+        canvas.drawImage(a, 32 * mm, (66-moove) * mm,
                          width=160 * mm, height=54 * mm)
         b = ImageReader(pick[0])
-        canvas.drawImage(b, 32 * mm, (117-moove) * mm,
+        canvas.drawImage(b, 32 * mm, (120-moove) * mm,
                          width=160 * mm, height=54 * mm)
 
     except AttributeError:
@@ -1770,16 +1811,19 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0):
     tableData.append(
         [Paragraph(
             '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''',
-            LeftStyle), "",
-         "", "", E50, ""])
+            LeftStyle),
+         "", "", E50, "", ""])
 
     tableData.append(
         [Paragraph('''<p>Модуль деформации после динамического нагружения E<sub rise="0.5" size="6">50d</sub>, МПа:</p>''', LeftStyle), "",
-         "", "", Ed, ""])
+         "", Ed, "", ""])
 
     tableData.append(
         [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub>, д.е.:</p>''', LeftStyle), "",
-         "", "", Kd, ""])
+         "", Kd, "", ""])
+
+    tableData.append(["Примечание:", "", "", description, "", ""])
+    tableData.append(["", "", "", "", "", ""])
     #tableData.append(
         #[Paragraph('''<p>Дополнительная деформация виброползучести на период 50 лет, %''', LeftStyle), "",
          #"", "", prediction, ""])
@@ -1787,14 +1831,17 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0):
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (-1, r)),
 
-                ('SPAN', (0, -1), (3, -1)),
-                ('SPAN', (-2, -1), (-1, -1)),
+                ('SPAN', (0, -2), (2, -1)),
+                ('SPAN', (-3, -2), (-1, -1)),
 
-                ('SPAN', (0, -3), (3, -3)),
-                ('SPAN', (-2, -3), (-1, -3)),
+                ('SPAN', (0, -3), (2, -3)),
+                ('SPAN', (-3, -3), (-1, -3)),
 
-                ('SPAN', (0, -2), (3, -2)),
-                ('SPAN', (-2, -2), (-1, -2)),
+                ('SPAN', (0, -4), (2, -4)),
+                ('SPAN', (-3, -4), (-1, -4)),
+
+                ('SPAN', (0, -5), (2, -5)),
+                ('SPAN', (-3, -5), (-1, -5)),
 
                 #('SPAN', (0, -4), (3, -4)),
                 #('SPAN', (-2, -4), (-1, -4)),
@@ -1805,9 +1852,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0):
                 #('SPAN', (2, -3), (3, -3)),
               #  ('SPAN', (4, -3), (5, -3)),
 
-                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -5), (2, -1), HexColor(0xebebeb)),
                 #("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
@@ -1821,9 +1866,9 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (42-moove-((r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (38-moove-((r-30)*4)) * mm)
 
-def result_vibration_creep3(canvas, Res, pick, test_parameter):
+def result_vibration_creep3(canvas, Res, pick, test_parameter, description="-"):
 
     try:
         a = ImageReader(pick[1])
@@ -1965,12 +2010,14 @@ def result_table_CF(canvas, Res, pick, scale = 0.8, moove=0):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Эффективное сцепление с', МПа:</p>''', LeftStyle), "", "", "",
-         zap(Res["c"], 3), ""])
+        [Paragraph('''<p>Эффективное сцепление с', МПа:</p>''', LeftStyle), "", "",
+         zap(Res["c"], 3), "", ""])
     tableData.append(
-        [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "", "",
-         zap(Res["fi"], 1), ""])
+        [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "",
+         zap(Res["fi"], 1), "", ""])
 
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+    tableData.append(["", "", "", "", "", ""])
     #tableData.append(
         #[Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
          #zap(Res["m"], 2), ""])
@@ -1981,16 +2028,17 @@ def result_table_CF(canvas, Res, pick, scale = 0.8, moove=0):
                 ('SPAN', (0, 1), (-1, table_move)),
 
                 ('SPAN', (0, table_move+1), (2, table_move+1)),
-                ('SPAN', (3, 1), (-1, -4)),
+                ('SPAN', (3, 1), (-1, -5)),
 
                 ('SPAN', (0, 6+table_move), (-1, r+table_move+5)),
 
-                ('SPAN', (0, -1), (3, -1)),
-                ('SPAN', (-2, -1), (-1, -1)),
-                #('SPAN', (2, -1), (3, -1)),
-                #('SPAN', (4, -1), (5, -1)),
-                ('SPAN', (0, -2), (3, -2)),
-                ('SPAN', (-2, -2), (-1, -2)),
+                ('SPAN', (0, -3), (2, -3)),
+                ('SPAN', (-3, -3), (-1, -3)),
+                ('SPAN', (0, -4), (2, -4)),
+                ('SPAN', (-3, -4), (-1, -4)),
+
+                ('SPAN', (0, -2), (2, -1)),
+                ('SPAN', (-3, -2), (-1, -1)),
 
                 #('SPAN', (0, -3), (3, -3)),
                 #('SPAN', (-2, -3), (-1, -3)),
@@ -1999,8 +2047,10 @@ def result_table_CF(canvas, Res, pick, scale = 0.8, moove=0):
                 #('SPAN', (2, -3), (3, -3)),
               #  ('SPAN', (4, -3), (5, -3)),
 
-                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -4), (2, -1), HexColor(0xebebeb)),
+               # ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
+                #("BACKGROUND", (0, -1), (2, -1), HexColor(0xebebeb)),
+                #("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
                # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
@@ -2014,7 +2064,7 @@ def result_table_CF(canvas, Res, pick, scale = 0.8, moove=0):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6 - moove) * mm)
+    t.drawOn(canvas, 25 * mm, ((26-((r - 30)*4)) - table_move*6 - moove) * mm)
 
 def result_table_CF_res(canvas, Res, pick, scale = 0.8):
 
@@ -2062,8 +2112,16 @@ def result_table_CF_res(canvas, Res, pick, scale = 0.8):
          zap(Res["fi"], 1), ""])
 
     tableData.append(
-        [Paragraph('''<p>Угол внутреннего трения при постоянном объёме φ<sub rise="0.5" size="5">cv</sub>, град:</p>''', LeftStyle), "", "", "",
+        [Paragraph('''<p>Остаточное сцепление <p>с'<sub rise="0.5" size="5">res</sub></p>, МПа:</p>''', LeftStyle), "",
+         "", "",
+         zap(Res["c_res"], 3), ""])
+    tableData.append(
+        [Paragraph('''<p>Остаточный угол внутреннего трения <p>φ'<sub rise="0.5" size="5">res</sub></p>, град:</p>''',
+                   LeftStyle), "", "", "",
          zap(Res["fi_res"], 1), ""])
+
+    tableData.append(["Примечание:", "", "", "", Paragraph(Res["description"], LeftStyle), ""])
+    tableData.append(["", "", "", "", "", ""])
 
     #tableData.append(
         #[Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
@@ -2075,21 +2133,28 @@ def result_table_CF_res(canvas, Res, pick, scale = 0.8):
                 ('SPAN', (0, 1), (-1, table_move)),
 
                 ('SPAN', (0, table_move+1), (3, table_move+1)),
-                ('SPAN', (4, 1), (-1, -4)),
+                ('SPAN', (4, 1), (-1, -7)),
 
                 ('SPAN', (0, 6+table_move), (-1, r+table_move+5)),
 
 
 
-                ('SPAN', (0, -1), (3, -1)),
-                ('SPAN', (-4, -1), (-1, -1)),
-                #('SPAN', (2, -1), (3, -1)),
-                #('SPAN', (4, -1), (5, -1)),
-                ('SPAN', (0, -2), (3, -2)),
-                ('SPAN', (-4, -2), (-1, -2)),
-
                 ('SPAN', (0, -3), (3, -3)),
                 ('SPAN', (-4, -3), (-1, -3)),
+                #('SPAN', (2, -1), (3, -1)),
+                #('SPAN', (4, -1), (5, -1)),
+                ('SPAN', (0, -4), (3, -4)),
+                ('SPAN', (-4, -4), (-1, -4)),
+
+                ('SPAN', (0, -5), (3, -5)),
+                ('SPAN', (-4, -5), (-1, -5)),
+
+                ('SPAN', (0, -6), (3, -6)),
+                ('SPAN', (-4, -6), (-1, -6)),
+
+                ('SPAN', (0, -2), (3, -1)),
+                ('SPAN', (-4, -2), (-1, -1)),
+
 
                 #('SPAN', (0, -3), (3, -3)),
                 #('SPAN', (-2, -3), (-1, -3)),
@@ -2098,10 +2163,7 @@ def result_table_CF_res(canvas, Res, pick, scale = 0.8):
                 #('SPAN', (2, -3), (3, -3)),
               #  ('SPAN', (4, -3), (5, -3)),
 
-                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
-               # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -6), (3, -1), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -2114,7 +2176,7 @@ def result_table_CF_res(canvas, Res, pick, scale = 0.8):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34 - 4-((r - 30)*4)) - table_move*6) * mm)
+    t.drawOn(canvas, 25 * mm, ((26 - 8-((r - 30)*4)) - table_move*6) * mm)
 
 
 def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
@@ -2146,8 +2208,7 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
     tableData.append([Paragraph('''<p>Напряжение σ<sub rise="0.5" size="5">3</sub>, МПа</p>''', CentralStyle),
                       Paragraph('''<p>Девиатор q, МПа</p>''', CentralStyle)])
     tableData.append(["", "", ""])
-
-    if len(Res["sigma_3_mohr"]) == 1:
+    if len(Res["sigma_3_mohr"]) < 3:
         tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", "", ""])
         tableData.append(["", "", "", "", "", ""])
         tableData.append(["", "", "", "", "", ""])
@@ -2161,8 +2222,11 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Недренированная прочность с<sub rise="0.5" size="5">u</sub>, МПа:</p>''', LeftStyle), "", "", "",
-         zap(Res["c"], 3), ""])
+        [Paragraph('''<p>Недренированная прочность с<sub rise="0.5" size="5">u</sub>, МПа:</p>''', LeftStyle), "", "",
+         zap(Res["c"], 3), "", ""])
+
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+    tableData.append(["", "", "", "", "", ""])
 
     #tableData.append(
         #[Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
@@ -2170,7 +2234,7 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
 
-    if len(Res["sigma_3_mohr"]) == 1:
+    if len(Res["sigma_3_mohr"]) < 3:
         t.setStyle([('SPAN', (0, 0), (-1, 0)),
 
                     ('SPAN', (0, 1), (-1, table_move)),
@@ -2179,17 +2243,20 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
 
                     # ('SPAN', (0, table_move + 1), (2, table_move + 1)),
 
-                    ('SPAN', (2, 1), (-1, -4)),
+                    ('SPAN', (2, 1), (-1, -6)),
 
                     ('SPAN', (0, 6 + table_move), (-1, r + table_move + 5)),
 
                     ('SPAN', (0, table_move + 1), (0, table_move + 2)),
                     ('SPAN', (1, table_move + 1), (1, table_move + 2)),
 
-                    ('SPAN', (0, -1), (3, -1)),
-                    ('SPAN', (-2, -1), (-1, -1)),
+                    ('SPAN', (0, -3), (2, -3)),
+                    ('SPAN', (-3, -3), (-1, -3)),
 
-                    ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                    ('SPAN', (0, -2), (2, -1)),
+                    ('SPAN', (-3, -2), (-1, -1)),
+
+                    ("BACKGROUND", (0, -3), (2, -1), HexColor(0xebebeb)),
 
                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -2230,7 +2297,7 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((40-((r - 30)*4)) - table_move*6-moove) * mm)
+    t.drawOn(canvas, 25 * mm, ((32-((r - 30)*4)) - table_move*6-moove) * mm)
 
 
 def result_table_m(canvas, Res, pick, scale = 0.8):
@@ -2321,29 +2388,34 @@ def result_table_CF_KN(canvas, Res, pick, scale = 0.8, moove=0):
         [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle), "", "", "",
          zap(Res["fi"], 1), "", "", ""])
 
+    tableData.append(["Примечание:", "", "", "", Paragraph(Res["description"], LeftStyle), "", "", ""])
+    tableData.append(["", "", "", "", "", "", "", ""])
+
     t = Table(tableData, colWidths=175/8 * mm, rowHeights = 4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
 
                 ('SPAN', (0, 1), (-1, table_move)),
 
                 ('SPAN', (0, table_move+1), (3, table_move+1)),
-                ('SPAN', (4, 1), (-1, -3)),
+                ('SPAN', (4, 1), (-1, -5)),
 
                 ('SPAN', (0, 6+table_move), (-1, r+table_move+5)),
 
-                ('SPAN', (0, -1), (3, -1)),
-                ('SPAN', (-4, -1), (-1, -1)),
+                ('SPAN', (0, -3), (3, -3)),
+                ('SPAN', (-4, -3), (-1, -3)),
                 #('SPAN', (2, -1), (3, -1)),
                 #('SPAN', (4, -1), (5, -1)),
-                ('SPAN', (0, -2), (3, -2)),
-                ('SPAN', (-4, -2), (-1, -2)),
+                ('SPAN', (0, -4), (3, -4)),
+                ('SPAN', (-4, -4), (-1, -4)),
+
+                ('SPAN', (0, -2), (3, -1)),
+                ('SPAN', (-4, -2), (-1, -1)),
                 #('SPAN', (2, -2), (3, -2)),
                 #('SPAN', (4, -2), (5, -2)),
                 #('SPAN', (2, -3), (3, -3)),
               #  ('SPAN', (4, -3), (5, -3)),
 
-                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -4), (3, -1), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -2356,9 +2428,10 @@ def result_table_CF_KN(canvas, Res, pick, scale = 0.8, moove=0):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34-((r - 30)*4)) - table_move*6-moove) * mm)
+    t.drawOn(canvas, 25 * mm, ((26-((r - 30)*4)) - table_move*6-moove) * mm)
 
 def result_table_CF_KN_vs(canvas, Res, pick, scale = 0.8, moove=0):
+
 
 
     try:
@@ -2377,84 +2450,85 @@ def result_table_CF_KN_vs(canvas, Res, pick, scale = 0.8, moove=0):
                              width=80 * mm, height=40 * mm)
 
 
-    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", "", "", ""]]
-    r = 21
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    r = 22
     table_move = 3
     for i in range(table_move):
         tableData.append([""])
 
 
-    tableData.append(["Напряжение, МПа", "", "", "", "", "", "", ""])
-    tableData.append([Paragraph('''<p>σ<sub rise="0.5" size="5">3c</sub></p>''', CentralStyle),
-                      Paragraph('''<p>σ<sub rise="0.5" size="5">1c</sub></p>''', CentralStyle),
-                      Paragraph('''<p>σ<sub rise="0.5" size="5">1f</sub></p>''', CentralStyle),
-                      Paragraph('''<p>u<sub rise="0.5" size="5">f</sub></p>''', CentralStyle), "", "", "", ""])
+    tableData.append([Paragraph('''<p>Напряжение σ<sub rise="0.5" size="5">3</sub>, МПа</p>''', CentralStyle),
+                      Paragraph('''<p>Девиатор q, МПа</p>''', CentralStyle)])
+    tableData.append(["", "", ""])
+    if len(Res["sigma_3_mohr"]) < 3:
+        tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", "", ""])
+        tableData.append(["", "", "", "", "", ""])
+        tableData.append(["", "", "", "", "", ""])
+    else:
+        tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", "", ""])
+        tableData.append([zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), "", "", "", ""])
+        tableData.append([zap(Res["sigma_3_mohr"][2], 3), zap(Res["sigma_1_mohr"][2], 3), "", "", "", ""])
 
-    tableData.append([zap(Res["sigma_3_mohr_vs"][0], 3), zap(Res["sigma_3_mohr_vs"][0], 3), zap(Res["sigma_1_mohr_vs"][0], 3), zap(Res["u_mohr_vs"][0], 3) if Res["u_mohr_vs"][0] != 0 else "-", "", "", "", ""])
-    tableData.append([zap(Res["sigma_3_mohr_vs"][1], 3), zap(Res["sigma_3_mohr_vs"][1], 3), zap(Res["sigma_1_mohr_vs"][1], 3), zap(Res["u_mohr_vs"][1], 3) if Res["u_mohr_vs"][1] != 0 else "-", "", "", "", ""])
-    tableData.append([zap(Res["sigma_3_mohr_vs"][2], 3), zap(Res["sigma_3_mohr_vs"][2], 3), zap(Res["sigma_1_mohr_vs"][2], 3), zap(Res["u_mohr_vs"][2], 3) if Res["u_mohr_vs"][2] != 0 else "-", "", "", "", ""])
 
     for i in range(r):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Эффективное сцепление с'<sub rise="0.5" size="5">дин</sub>, МПа:</p>''', LeftStyle), "", "", "",
-         zap(Res["c_vs"], 3), "", "", ""])
-    tableData.append(
-        [Paragraph('''<p>Эффективный угол внутреннего трения φ'<sub rise="0.5" size="5">дин</sub>, град:</p>''', LeftStyle), "", "", "",
-         zap(Res["fi_vs"], 1), "", "", ""])
+        [Paragraph('''<p>Недренированная прочность с<sub rise="0.5" size="5">ud</sub>, МПа:</p>''', LeftStyle), "", "",
+         zap(Res["c_vs"], 3), "", ""])
 
     tableData.append(
-        [Paragraph('''<p>Параметр прочности K<sub rise="0.5" size="5">φ</sub>, д.е.:</p>''',
-                   LeftStyle), "", "", "",
-         zap(np.round(Res["fi_vs"]/Res["fi"], 2), 2), "", "", ""])
-    tableData.append(
-        [Paragraph('''<p>Параметр прочности K<sub rise="0.5" size="5">c</sub>, д.е.:</p>''',
-                   LeftStyle), "", "", "",
-         zap(np.round(Res["c_vs"]/Res["c"], 2), 2), "", "", ""])
+        [Paragraph('''<p>Коэффициент снижения недренированной прочности K<sub rise="0.5" size="5">cu</sub>, д.е.:</p>''',
+                   LeftStyle), "", "",
+         zap(np.round(Res["c_vs"] / Res["c"], 2), 2), "", ""])
 
-    t = Table(tableData, colWidths=175/8 * mm, rowHeights = 4 * mm)
+    tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+    tableData.append(["", "", "", "", "", ""])
+
+    #tableData.append(
+        #[Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
+         #zap(Res["m"], 2), ""])
+
+    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
 
                 ('SPAN', (0, 1), (-1, table_move)),
 
-                ('SPAN', (0, table_move+1), (3, table_move+1)),
-                ('SPAN', (4, 1), (-1, -5)),
+                ('SPAN', (0, table_move + 4), (-1, table_move + 6)),
 
-                ('SPAN', (0, 6+table_move), (-1, r+table_move+5)),
+                # ('SPAN', (0, table_move + 1), (2, table_move + 1)),
 
-                ('SPAN', (0, -1), (3, -1)),
-                ('SPAN', (-4, -1), (-1, -1)),
-                #('SPAN', (2, -1), (3, -1)),
-                #('SPAN', (4, -1), (5, -1)),
-                ('SPAN', (0, -2), (3, -2)),
-                ('SPAN', (-4, -2), (-1, -2)),
-                ('SPAN', (0, -3), (3, -3)),
-                ('SPAN', (-4, -3), (-1, -3)),
-                ('SPAN', (0, -4), (3, -4)),
-                ('SPAN', (-4, -4), (-1, -4)),
-                #('SPAN', (2, -2), (3, -2)),
-                #('SPAN', (4, -2), (5, -2)),
-                #('SPAN', (2, -3), (3, -3)),
-              #  ('SPAN', (4, -3), (5, -3)),
+                ('SPAN', (2, 1), (-1, -6)),
 
-                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+                ('SPAN', (0, 6 + table_move), (-1, r + table_move + 5)),
+
+                ('SPAN', (0, table_move + 1), (0, table_move + 2)),
+                ('SPAN', (1, table_move + 1), (1, table_move + 2)),
+
+                ('SPAN', (0, -3), (2, -3)),
+                ('SPAN', (-3, -3), (-1, -3)),
+
+                ('SPAN', (0, -4), (2, -4)),
+                ('SPAN', (-3, -4), (-1, -4)),
+
+                ('SPAN', (0, -2), (2, -1)),
+                ('SPAN', (-3, -2), (-1, -1)),
+
+                ("BACKGROUND", (0, -4), (2, -1), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
                 ("FONTSIZE", (0, 0), (-1, -1), 8),
-                #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("ALIGN", (0, 0), (-1, r), "CENTER"),
-                ("ALIGN", (0, r+1), (0, -1), "LEFT"),
+                ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (45-moove) * mm)
+    t.drawOn(canvas, 25 * mm, ((24-((r - 30)*4)) - table_move*6-moove) * mm)
 
 
 def result_table_statment_cyclic(canvas, Data):
@@ -2850,6 +2924,8 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
 
+    res["description"] = Data_phiz.description
+
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
@@ -2889,6 +2965,8 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
 
+    res["description"] = Data_phiz.description
+
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
@@ -2910,10 +2988,12 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
 
     test_parameter["K0"] = K0[0]
 
-    test_mode_consolidation(canvas, test_parameter, moove=moove)
+    test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
     if report_type == "standart_E":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E", moove=moove)
     elif report_type == "standart_E50":
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
+    elif report_type == "plaxis":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
     elif report_type == "E_E50":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all", moove=moove)
@@ -2932,6 +3012,8 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
 
+    res["description"] = Data_phiz.description
+
     K0 = test_parameter["K0"]
 
     canvas = Canvas(Name, pagesize=A4)
@@ -2948,7 +3030,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["K0"] = K0[0]
-    test_mode_consolidation(canvas, test_parameter, moove=moove)
+    test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
 
     if report_type == "standart_E":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E", moove=moove)
@@ -2973,7 +3055,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["K0"] = K0[1]
     test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
-    test_mode_consolidation(canvas, test_parameter, moove=moove)
+    test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
 
     result_table_CF(canvas, res, [picks[2], picks[3]], moove=moove)
 
@@ -2989,7 +3071,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
         test_parameter["K0"] = K0[1]
         test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(
             res["sigma_3_mohr"][2], 3)
-        test_mode_consolidation(canvas, test_parameter, moove=moove)
+        test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
 
         result_table_m(canvas, res, picks[4])
 
@@ -3015,32 +3097,42 @@ def report_FC(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter, moove=moove)
-
+    res["description"] = Data_phiz.description
     result_table_CF(canvas, res, [picks[0],picks[1]], moove=moove)
 
     canvas.save()
 
-def report_FC_res(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_FC_res(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
     test_parameter = dict(test_parameter)
     test_parameter["K0"] = test_parameter["K0"][1]
-    name = "ТД"
+    if report_type == "vibro":
+        name = "ТДВ"
+    else:
+        name = "ТДО"
+
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
 
+    if report_type == "vibro":
+        r_name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ОСТАТОЧНОЙ ВИБРОПРОЧНОСТИ ГРУНТОВ"
+    else:
+        r_name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ОСТАТОЧНОЙ ПРОЧНОСТИ ГРУНТОВ"
+
+
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                            [r_name,
+                             "МЕТОДОМ ТРЕХОСНОГО СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
-    test_mode_consolidation(canvas, test_parameter)
-
+    test_mode_consolidation(canvas, test_parameter, moove=moove)
+    res["description"] = Data_phiz.description
     result_table_CF_res(canvas, res, [picks[0], picks[1]])
 
     canvas.save()
@@ -3069,48 +3161,51 @@ def report_FC_NN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     else:
         test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
-
+    res["description"] = Data_phiz.description
     result_table_CF_NN(canvas, res, [picks[0],picks[1]])
 
     canvas.save()
 
 
 
-def report_vibration_strangth(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_vibration_strangth(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
     test_parameter = dict(test_parameter)
-    test_parameter["K0"] = test_parameter["K0"][1]
-    name = "ТД"
+    name = "ВП"
     canvas = Canvas(Name, pagesize=A4)
-
+    res["description"] = Data_phiz.description
     code = SaveCode(version)
+
+    if report_type == "standart":
+        name_r = "ОПРЕДЕЛЕНИЕ КОЭФФИЦИЕНТА СНИЖЕНИЯ НЕДРЕННИРОВАННОЙ ПРОЧНОСТИ ГРУНТОВ"
+    else:
+        name_r = "ОПРЕДЕЛЕНИЕ КОЭФФИЦИЕНТА СНИЖЕНИЯ НЕДРЕННИРОВАННОЙ ПРОЧНОСТИ ГРУНТОВ ПРИ ОТТАИВАНИИ"
 
     main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
+                            [name_r,
+                             "МЕТОДОМ ТРЕХОСНОГО СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
 
     parameter_table(canvas, Data_phiz, Lab)
-    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
+    #test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
 
-    result_table_CF(canvas, res, [picks[0],picks[1]])
+    result_table_CF_NN(canvas, res, [picks[0],picks[1]])
 
     canvas.showPage()
 
+    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3)
     main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
+                            [name_r,
+                             "МЕТОДОМ ТРЕХОСНОГО СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
 
     parameter_table(canvas, Data_phiz, Lab)
-    test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(
-        res["sigma_3_mohr"][2], 3)
+    # test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
-
     result_table_CF_KN_vs(canvas, res, [picks[3], picks[4]])
 
     canvas.save()
@@ -3138,16 +3233,22 @@ def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     parameter_table(canvas, Data_phiz, Lab)
     test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0] + res["u_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1]+ res["u_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2] + res["u_mohr"][2], 3)
     test_mode_consolidation(canvas, test_parameter)
-
+    res["description"] = Data_phiz.description
     result_table_CF_KN(canvas, res, [picks[0],picks[1]])
 
     canvas.save()
 
-def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, report_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+    if report_type == "standart":
+        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+    else:
+        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КРИОВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+
+    res_static["description"] = Data_phiz.description
 
     canvas = Canvas(Name, pagesize=A4)
 
@@ -3155,7 +3256,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                            [name,
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
@@ -3176,12 +3277,19 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_vibration_creep(canvas, test_parameter, moove=moove)
 
-    result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]], moove=moove)
+    result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]], moove=moove, description=Data_phiz.description)
 
     canvas.save()
 
-def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, report_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
+
+    res_static["description"] = Data_phiz.description
+
+    if report_type == "standart":
+        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+    else:
+        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КРИОВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
 
     pick_vc_array = picks[0]
     pick_c_array = picks[1]
@@ -3196,7 +3304,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"
     main_frame(canvas, path, Data_customer, code, f"1/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                            [name,
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
@@ -3211,7 +3319,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     for i in range(len(test_parameter["frequency"])):
         main_frame(canvas, path, Data_customer, code, f"{i+2}/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
+                                [name,
                                  "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
         parameter_table(canvas, Data_phiz, Lab, moove=moove)
@@ -3219,7 +3327,8 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
         t["frequency"] = [test_parameter["frequency"][i]]
         test_mode_vibration_creep(canvas, t, moove=moove)
 
-        result_vibration_creep(canvas, [res_dynamic[i]], [pick_vc_array[i], pick_c_array[i]], test_parameter, moove=moove)
+        result_vibration_creep(canvas, [res_dynamic[i]], [pick_vc_array[i], pick_c_array[i]], test_parameter,
+                               moove=moove, description=Data_phiz.description)
         canvas.showPage()
 
     #main_frame(canvas, path, Data_customer, code, f"{2+len(test_parameter['frequency'])}/{2+len(test_parameter['frequency'])}", qr_code=qr_code)
@@ -3342,11 +3451,14 @@ def result_table_shear(canvas, Res, pick, scale = 0.8, moove=0):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Сцепление с, МПа:</p>''', LeftStyle), "", "", "",
-         zap(Res["c"], 3), ""])
+        [Paragraph('''<p>Сцепление с, МПа:</p>''', LeftStyle), "", "", zap(Res["c"], 3),
+         "", ""])
     tableData.append(
-        [Paragraph('''<p>Угол внутреннего трения φ, град:</p>''', LeftStyle), "", "", "",
-         zap(Res["fi"], 1), ""])
+        [Paragraph('''<p>Угол внутреннего трения φ, град:</p>''', LeftStyle), "", "", zap(Res["fi"], 1),
+         "", ""])
+
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+    tableData.append(["", "", "", "", "", ""])
 
     #tableData.append(
         #[Paragraph('''<p>Показатель степени зависимости модуля деформации от напряжений m, д.е.:</p>''', LeftStyle), "", "", "",
@@ -3358,27 +3470,20 @@ def result_table_shear(canvas, Res, pick, scale = 0.8, moove=0):
                 ('SPAN', (0, 1), (-1, table_move)),
 
                 ('SPAN', (0, table_move+1), (1, table_move+1)),
-                ('SPAN', (2, 1), (-1, -4)),
+                ('SPAN', (2, 1), (-1, -5)),
 
                 ('SPAN', (0, 6+table_move), (-1, r+table_move+5)),
 
-                ('SPAN', (0, -1), (3, -1)),
-                ('SPAN', (-2, -1), (-1, -1)),
-                #('SPAN', (2, -1), (3, -1)),
-                #('SPAN', (4, -1), (5, -1)),
-                ('SPAN', (0, -2), (3, -2)),
-                ('SPAN', (-2, -2), (-1, -2)),
+                ('SPAN', (0, -3), (2, -3)),
+                ('SPAN', (-3, -3), (-1, -3)),
 
-                #('SPAN', (0, -3), (3, -3)),
-                #('SPAN', (-2, -3), (-1, -3)),
-                #('SPAN', (2, -2), (3, -2)),
-                #('SPAN', (4, -2), (5, -2)),
-                #('SPAN', (2, -3), (3, -3)),
-              #  ('SPAN', (4, -3), (5, -3)),
+                ('SPAN', (0, -4), (2, -4)),
+                ('SPAN', (-3, -4), (-1, -4)),
 
-                ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-               # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                ('SPAN', (0, -2), (2, -1)),
+                ('SPAN', (-3, -2), (-1, -1)),
+
+                ("BACKGROUND", (0, -4), (2, -1), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -3391,7 +3496,7 @@ def result_table_shear(canvas, Res, pick, scale = 0.8, moove=0):
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, ((34 - moove -((r - 30)*4)) - table_move*6) * mm)
+    t.drawOn(canvas, 25 * mm, ((26 - moove -((r - 30)*4)) - table_move*6) * mm)
 
 def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
 
@@ -3402,8 +3507,12 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Угол дилатансии ψ, град:</p>''', LeftStyle), "", "", "",
-         zap(Res["dilatancy_angle"][0], 1), ""])
+        [Paragraph('''<p>Угол дилатансии ψ, град:</p>''', LeftStyle), "", "", zap(Res["dilatancy_angle"][0], 1),
+         "", ""])
+
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+    tableData.append(["", "", "", "", "", ""])
+
     # tableData.append(
     #     [Paragraph('''<p>Вертикальное давление p, МПа:</p>''', LeftStyle), "", "", "",
     #      zap(Res["sigma"], 3), ""])
@@ -3426,23 +3535,30 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
     style = [('SPAN', (0, 0), (-1, 0)),
              ('SPAN', (0, 1), (-1, r)),
 
-             ('SPAN', (0, -1), (3, -1)),
-             ('SPAN', (-2, -1), (-1, -1)),
-             ('SPAN', (2, -1), (3, -1)),
-             ('SPAN', (4, -1), (5, -1)),
-             ('SPAN', (0, -2), (3, -2)),
-             ('SPAN', (-2, -2), (-1, -2)),
-             ('SPAN', (2, -2), (3, -2)),
-             ('SPAN', (4, -2), (5, -2)),
-             ('SPAN', (0, -3), (3, -3)),
-             ('SPAN', (-2, -3), (-1, -3)),
+             ('SPAN', (0, -2), (2, -1)),
+             ('SPAN', (-3, -2), (-1, -1)),
+
+             ('SPAN', (0, -3), (2, -3)),
+             ('SPAN', (-3, -3), (-1, -3)),
+
+             ('SPAN', (2, -3), (2, -3)),
+             ('SPAN', (3, -3), (5, -3)),
+
+             ('SPAN', (0, -4), (2, -4)),
+             ('SPAN', (-3, -4), (-1, -4)),
+
+             ('SPAN', (2, -4), (2, -4)),
+             ('SPAN', (4, -4), (5, -4)),
+
+             ('SPAN', (0, -5), (2, -5)),
+             ('SPAN', (-3, -5), (-1, -5)),
 
              # ('SPAN', (0, -4), (3, -4)),
              # ('SPAN', (-2, -4), (-1, -4)),
              # ('SPAN', (2, -3), (3, -3)),
              #  ('SPAN', (4, -3), (5, -3)),
 
-             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -3), (2, -1), HexColor(0xebebeb)),
              # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
              # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
              # ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
@@ -3461,7 +3577,7 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (50 - moove -((r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (42 - moove -((r-30)*4)) * mm)
 
 
 """====== K0 ======"""
@@ -3708,6 +3824,9 @@ def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_param
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
 
+    res["description"] = Data_phiz.description
+
+
     name = "ДС"
 
     canvas = Canvas(Name, pagesize=A4)
@@ -3737,6 +3856,9 @@ def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    res["description"] = Data_phiz.description
+
     name = "Сп"
     canvas = Canvas(Name, pagesize=A4)
 

@@ -21,6 +21,8 @@
 
 __version__ = 1
 
+from typing import Tuple
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import pchip_interpolate
@@ -1007,14 +1009,15 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
     def get_delta_h_consolidation(self):
         return self._test_data.delta_h_consolidation
 
-    def get_dict(self, effective_stress_after_reconsolidation):
+    def get_dict(self, effective_stress_after_reconsolidation, sample_size: Tuple[int, int] = (76, 38)):
        return ModelTriaxialConsolidationSoilTest.dictionary_consalidation(self._test_data.time,
                                                                           self._test_data.pore_volume_strain,
                                                                           self._test_data.cell_volume_strain,
                                                                           velocity=100, sigma_3=self._test_params.sigma_3,
                                                                           delta_h_consolidation=self._test_data.delta_h_consolidation,
                                                                           delta_h_reconsolidation=self._test_data.delta_h_reconsolidation,
-                                                                          effective_stress_after_reconsolidation=effective_stress_after_reconsolidation)
+                                                                          effective_stress_after_reconsolidation=effective_stress_after_reconsolidation,
+                                                                          sample_size=sample_size)
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -1080,7 +1083,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
     @staticmethod
     def dictionary_consalidation(time, pore_volume_strain, cell_volume_strain, velocity=1, sigma_3=150,
                                  delta_h_consolidation=0, delta_h_reconsolidation=0,
-                                 effective_stress_after_reconsolidation=0):
+                                 effective_stress_after_reconsolidation=0, sample_size: Tuple[int, int] = (76, 38)):
         """Формирует словарь консолидации"""
         # Создаем массив набора нагрузки до обжимающего давления консолидации
         sigma_3 -= effective_stress_after_reconsolidation
@@ -1123,14 +1126,14 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             "Time": time,
             "Action": action,
             "Action_Changed": action_changed,
-            "SampleHeight_mm": np.round(np.full(len(time), 76)),
-            "SampleDiameter_mm": np.round(np.full(len(time), 38)),
+            "SampleHeight_mm": np.round(np.full(len(time), sample_size[0])),
+            "SampleDiameter_mm": np.round(np.full(len(time), sample_size[1])),
             "Deviator_kPa": np.random.uniform(-1, 1, len(time)),
             "VerticalDeformation_mm": vertical_deformation,
             "CellPress_kPa": cell_press + np.random.uniform(-0.1, 0.1, len(time)),
-            "CellVolume_mm3": -cell_volume_strain * np.pi * (19 ** 2) * (76-delta_h_reconsolidation),
+            "CellVolume_mm3": -cell_volume_strain * np.pi * (19 ** 2) * (sample_size[0]-delta_h_reconsolidation),
             "PorePress_kPa": np.random.uniform(-1, 1, len(time)),
-            "PoreVolume_mm3": pore_volume_strain * np.pi * (19 ** 2) * (76-delta_h_reconsolidation),
+            "PoreVolume_mm3": pore_volume_strain * np.pi * (19 ** 2) * (sample_size[0]-delta_h_reconsolidation),
             "VerticalPress_kPa": cell_press + np.random.uniform(-0.1, 0.1, len(time)),
             "Trajectory": np.full(len(time), 'Consolidation')
         }

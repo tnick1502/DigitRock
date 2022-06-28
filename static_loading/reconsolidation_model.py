@@ -21,6 +21,9 @@
 
 __version__ = 1
 
+import copy
+from typing import Tuple
+
 import numpy as np
 import os
 import sys
@@ -387,10 +390,13 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
 
         self._test_result.delta_h_reconsolidation = self._test_data_all["VerticalDeformation_mm"][-1]
 
-    def get_dict(self):
+    def get_dict(self, sample_size: Tuple[int, int] = (76, 38)):
         """Выводит словарь (эксземпляр класса AttrDict) смоделированного этапа реконсолидации (вфс и впд) с заданным
         бытовым давлением"""
-        return self._test_data_all
+        result_dict = copy.deepcopy(self._test_data_all)
+        result_dict['SampleHeight_mm'] = np.full(len(result_dict['Time']), sample_size[0])
+        result_dict['SampleDiameter_mm'] = np.full(len(result_dict['Time']), sample_size[1])
+        return result_dict
 
     def get_effective_stress_after_reconsolidation(self):
         return self._test_data_all['CellPress_kPa'][-1] - self._test_data_all['PorePress_kPa'][-1]

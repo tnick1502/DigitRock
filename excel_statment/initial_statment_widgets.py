@@ -28,7 +28,7 @@ from shear_test.shear_dilatancy_test_model import ModelShearDilatancySoilTest
 from k0_test.triaxial_k0_model import ModelK0SoilTest
 
 from excel_statment.params import accreditation
-from excel_statment.position_configs import c_fi_E_PropertyPosition, GeneralDataColumns
+from excel_statment.position_configs import c_fi_E_PropertyPosition, GeneralDataColumns, MechanicalPropertyPosition
 from excel_statment.functions import set_cell_data
 
 from vibration_strength.vibration_strangth_model import CyclicVibrationStrangthMohr
@@ -253,7 +253,8 @@ class RezonantColumnStatment(InitialStatment):
                                         "Не выбрано",
                                         "K0: По ГОСТ-56353", "K0: K0nc из ведомости",
                                         "K0: K0 из ведомости", "K0: Формула Джекки",
-                                        "K0: K0 = 1", "K0: Формула Джекки c учетом переупл."]
+                                        "K0: K0 = 1", "K0: Формула Джекки c учетом переупл.",
+                                        "K0: Из ведомости (столбец FW)"]
                                 }
         }
 
@@ -352,7 +353,9 @@ class TriaxialStaticStatment(InitialStatment):
                     "K0: K0 из ведомости",
                     "K0: Формула Джекки",
                     "K0: K0 = 1",
-                    "K0: Формула Джекки c учетом переупл."]
+                    "K0: Формула Джекки c учетом переупл.",
+                    "K0: Из ведомости (столбец FW)"
+                ]
             },
 
             "pressure_mode": {
@@ -406,6 +409,9 @@ class TriaxialStaticStatment(InitialStatment):
             columns_marker = list(zip(*c_fi_E_PropertyPosition[combo_params["test_mode"]]))
             marker, error = read_general_prameters(self.path)
 
+            if combo_params["test_mode"] == "Трёхосное сжатие (F, C) res":
+                columns_marker.extend([MechanicalPropertyPosition["c_res"], MechanicalPropertyPosition["fi_res"]])
+
             try:
                 assert column_fullness_test(
                     self.path, columns=k0_test_type_column(combo_params["K0_mode"]),
@@ -425,6 +431,12 @@ class TriaxialStaticStatment(InitialStatment):
                 for test in keys:
                     if not statment[test].mechanical_properties.E50:
                         del statment.tests[test]
+                        continue
+
+                    if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                        if not statment[test].mechanical_properties.c_res:
+                            del statment.tests[test]
+                            continue
 
                 if len(statment) < 1:
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
@@ -512,7 +524,8 @@ class CyclicStatment(InitialStatment):
                     "K0: K0 из ведомости",
                     "K0: Формула Джекки",
                     "K0: K0 = 1",
-                    "K0: Формула Джекки c учетом переупл."]
+                    "K0: Формула Джекки c учетом переупл.",
+                    "K0: Из ведомости (столбец FW)"]
             }
         }
 
@@ -608,7 +621,8 @@ class VibrationCreepStatment(InitialStatment):
                     "K0: K0 из ведомости",
                     "K0: Формула Джекки",
                     "K0: K0 = 1",
-                    "K0: Формула Джекки c учетом переупл."]
+                    "K0: Формула Джекки c учетом переупл.",
+                    "K0: Из ведомости (столбец FW)"]
             }
         }
 
@@ -952,7 +966,8 @@ class VibrationStrangthStatment(InitialStatment):
                     "K0: K0 из ведомости",
                     "K0: Формула Джекки",
                     "K0: K0 = 1",
-                    "K0: Формула Джекки c учетом переупл."]
+                    "K0: Формула Джекки c учетом переупл.",
+                    "K0: Из ведомости (столбец FW)"]
             },
 
             "waterfill": {
@@ -1024,14 +1039,13 @@ class VibrationStrangthStatment(InitialStatment):
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
                     self.table_physical_properties.set_data()
+                    self.statment_directory.emit(self.path)
+                    self.open_line.text_file_path.setText(self.path)
 
                     self.load_models(models_name="FC_models.pickle",
                                      models=FC_models, models_type=ModelMohrCirclesSoilTest)
                     self.load_models(models_name="VibrationFC_models.pickle",
                                      models=VibrationFC_models, models_type=CyclicVibrationStrangthMohr)
-
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
 
 class RayleighDampingStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -1084,7 +1098,6 @@ class RayleighDampingStatment(InitialStatment):
 
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
-
 
 
 class K0Statment(InitialStatment):

@@ -216,7 +216,7 @@ class ModelTriaxialCyclicLoading:
         if statment.general_parameters.test_mode == "Динамическая прочность на сдвиг":
             self._test_result.fail_cycle_criterion_strain = ModelTriaxialCyclicLoading.define_fail_cycle(
                 self._test_data.cycles,
-                (self._test_data.strain >= 0.20))
+                (self._test_data.strain >= 0.10))
             self._test_result.fail_cycle_criterion_stress = ModelTriaxialCyclicLoading.define_fail_cycle(
                 self._test_data.cycles,
                 (self._test_data.mean_effective_stress <= 0))
@@ -847,7 +847,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
     def get_draw_params(self):
         """Считывание параметров отрисовки(для передачи на слайдеры)"""
         strain_params = {
-            "strain_max": {"value": self._draw_params.strain_max, "borders": [0, 0.08]},
+            "strain_max": {"value": self._draw_params.strain_max, "borders": [0, 0.12]},
             "strain_slant": {"value": self._draw_params.strain_slant,
                               "borders": [self._draw_params.strain_slant/5, int(self._test_params.cycles_count*0.9)]},
             "strain_E0": {"value": self._draw_params.strain_E0,

@@ -70,7 +70,7 @@ class ModelMohrCircles:
 
     def get_sigma_3_1(self):
         """Получение массивов давлений грунтов"""
-        if len(self._tests) >= 2:
+        if len(self._tests) >= 1:
             sigma_1 = []
             sigma_3 = []
 
@@ -107,7 +107,7 @@ class ModelMohrCircles:
 
     def get_sigma_u(self):
         """Получение массивов давлений грунтов"""
-        if len(self._tests) >= 2:
+        if len(self._tests) >= 1:
             u = []
             for test in self._tests:
                 results = test.deviator_loading.get_test_results()
@@ -141,7 +141,7 @@ class ModelMohrCircles:
 
     def _test_processing(self):
         """Обработка опытов"""
-        if statment.general_parameters.test_mode == "Трёхосное сжатие НН":
+        if statment.general_parameters.test_mode == "Трёхосное сжатие НН" or statment.general_parameters.test_mode == "Вибропрочность":
             self._test_result.fi = 0
             t = [test.deviator_loading.get_test_results()["qf"]/2 for test in self._tests]
             self._test_result.c = sum(t)/len(t)
@@ -188,7 +188,7 @@ class ModelMohrCircles:
 
     def get_plot_data(self):
         """Подготовка данных для построения"""
-        if statment.general_parameters.test_mode == "Трёхосное сжатие НН":
+        if statment.general_parameters.test_mode == "Трёхосное сжатие НН" or statment.general_parameters.test_mode == "Вибропрочность":
             strain = []
             deviator = []
             s3 = []
@@ -412,10 +412,18 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         self._test_params = None
         self._reference_pressure_array = None
         self.pre_defined_kr_fgs = None
+        self.test_mode = statment.general_parameters.test_mode
+
+
 
     def add_test_st(self, pre_defined_kr_fgs=None):
         """Добавление опытов"""
         test = ModelTriaxialStaticLoadSoilTest()
+
+        if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+            pre_defined_kr_fgs = 1
+            self.pre_defined_kr_fgs = pre_defined_kr_fgs
+
         test.set_test_params(statment.general_parameters.reconsolidation, pre_defined_kr_fgs=pre_defined_kr_fgs)
         if self._check_clone(test):
             self._tests.append(test)
@@ -436,7 +444,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
     def _test_modeling(self):
         self._tests = []
 
-        if statment.general_parameters.test_mode == "Трёхосное сжатие НН":
+        if statment.general_parameters.test_mode == "Трёхосное сжатие НН" or statment.general_parameters.test_mode == "Вибропрочность":
             self.add_test_st_NN()
         else:
             self.set_reference_params(statment[statment.current_test].mechanical_properties.sigma_3, statment[statment.current_test].mechanical_properties.E50)
@@ -509,14 +517,29 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
 
                 count += 1
 
+            if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                q_res_normal = np.asarray([np.round(float(define_qf(sigma_3_array[i],
+                                                             statment[statment.current_test].mechanical_properties.c_res,
+                                                             statment[statment.current_test].mechanical_properties.fi_res)), 1) for i in range(len(sigma_1_array))])
+                sigma_1_res = q_res_normal + sigma_3_array
+                q_res_noised = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(np.asarray(sigma_3_array), np.asarray(sigma_1_res),
+                                                                                  statment[statment.current_test].mechanical_properties.fi_res,
+                                                                                  statment[statment.current_test].mechanical_properties.c_res*1000)
+
+
+
             for i in range(len(sigma_1_array)):
                 statment[statment.current_test].mechanical_properties.sigma_3 = sigma_3_array[i] + u_array[i]
                 statment[statment.current_test].mechanical_properties.qf = qf_array[i]
                 statment[statment.current_test].mechanical_properties.sigma_1 = sigma_1_array[i] + u_array[i]
                 statment[statment.current_test].mechanical_properties.E50 = E50_array[i]
+
+                if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                    statment[statment.current_test].mechanical_properties.q_res = q_res_noised[i]
+
                 if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == 'Вибропрочность':
                     statment[statment.current_test].mechanical_properties.u = u_array[i]
-                if statment.general_parameters.test_mode == 'Трёхосное сжатие НН':
+                if statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == "Вибропрочность":
                     self.add_test_st_NN()
                 else:
                     self.add_test_st(pre_defined_kr_fgs=self.pre_defined_kr_fgs)
@@ -535,7 +558,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
     def set_test_params(self):
         self._test_modeling()
 
-    def save_log_files(self, directory, name):
+    def save_log_files(self, directory, name, sample_size=(76, 38)):
         """Метод генерирует файлы испытания для всех кругов"""
 
         data = {
@@ -563,7 +586,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 if not os.path.isdir(path):
                     os.mkdir(path)
                 file_name = os.path.join(path, f"{name}.log")
-                test.save_log_file(file_name)
+                test.save_log_file(file_name, sample_size=sample_size)
 
 
                 strain, main_stress, volume_strain = test.deviator_loading.get_cvi_data()
@@ -627,13 +650,14 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         return np.round(qf_with_noise, 1)
 
     @staticmethod
-    def new_noise_for_mohrs_circles(sigma3: list, sigma1: list, fi: float, c: float) -> list:
+    def new_noise_for_mohrs_circles(sigma3: list, sigma1: list, fi: float, c: float, loops: int = 0) -> list:
         """ Генерация шума для кругов мора
         Аргументы:
             :param sigma3: массив sigma3 для количества кругов > 2
             :param sigma1: массив sigma1 для количества кругов > 2
             :param fi: угол внутреннего трения
-            :param с: сцепление
+            :param c: сцепление
+            :param loops: число самозацикливаний
             :return: значение девиатора с шумом"""
 
         '''fi - в градусах, так что
@@ -662,7 +686,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
             # определяем новые фи и с для измененной окружности
             c_new, fi_new = ModelMohrCirclesSoilTest.mohr_cf_stab(sigma3, x)
             # критерий минимизации - ошибка между fi и c для несмещенных кругов
-            return abs(abs((c_new - c)) + abs(100 * (fi_new - fi)))
+            return abs(abs(c_new - c) + abs(100 * (fi_new - fi)))
 
         initial = np.delete(sigma1_with_noise, fixed_circle_index)
         from scipy.optimize import Bounds, minimize
@@ -671,7 +695,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         def constrains(x):
             """
             Функция ограничений на икс, должна подаваться в cons.
-            Должна представлять собой массивы ограничений вида x1 - x2 < 0
+            Должна представлять собой массивы ограничений вида x1 - x2 >= 0
             """
 
             # икс для фукнции оптимизации это два круга, поэтому возвращаем в икс убранный круг
@@ -696,6 +720,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, options={'ftol': 1e-9})
         # res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds,
         #                options={'ftol': 1e-9, 'maxiter': 50}) # отбойник на 50
+        error = res.fun
         res = res.x
         sigma1_with_noise = np.insert(res, fixed_circle_index, sigma1_with_noise[fixed_circle_index])
 
@@ -706,6 +731,11 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
 
         assert sum([abs(sigma1[i] - sigma1_with_noise[i]) < 10 ** (-1) for i in range(len(sigma1))]) < 2, \
             "Два круга не зашумлены!"
+
+        if error > 5 and loops < 100:
+            print(f'looping with error = {error}')
+            loops = loops + 1
+            qf_with_noise = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(sigma3, sigma1, np.rad2deg(np.arctan(fi)), c, loops)
 
         return np.round(qf_with_noise, 1)
 

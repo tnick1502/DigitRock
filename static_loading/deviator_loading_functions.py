@@ -156,11 +156,13 @@ def find_puasson_dilatancy(strain, deviator, volume_strain):
     return round(puasson, 2), dilatancy
 
 
-def deviator_loading_deviation(strain, deviator, xc):
+def deviator_loading_deviation(strain, deviator, xc, amplitude):
     # Добавим девиации после 0.6qf для кривой без пика
     qf = max(deviator)
-    devition_1 = qf / 100
-    devition_2 = qf / 60
+
+    devition_1 = amplitude[0]
+    devition_2 = amplitude[1]
+    print(devition_1, devition_2)
 
     i_60, = np.where(deviator >= 0.51 * qf)
     i_90, = np.where(deviator >= 0.98 * qf)
@@ -358,17 +360,29 @@ def params_gip_exp_tg(x, e50, qf, x50, xc, qocr):
 
     else:
         nach_pr_a1_e, nach_pr_k1_e = 600, 1
-        a1_e, k1_e = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e))
+        result = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e), full_output=1)
+        a1_e, k1_e = result[0]
+
+        bad_progress_count = 0 # если в result[2] находится 4 или 5, то вылезает предупреждение с прохой сходимостью
+        # мы будем делать 50 итераций чтобы попытаться избавиться от этого предупреждения
+
         nach_pr_a1_e = 1
         error = equations_e([a1_e, k1_e])
         count = 0
         while (a1_e <= 0) or (k1_e <= 0) or (a1_e == nach_pr_a1_e or k1_e == nach_pr_k1_e) or (
                 a1_e * k1_e < 1000) or (
-                (abs(error[0]) >= 550 or abs(error[1]) >= 550) and count < 50):  # если начальное приближение a1_e
+                (abs(error[0]) >= 550 or abs(error[1]) >= 550) and
+                count < 50) or (
+                result[2] in (4, 5) and bad_progress_count < 50 and qf < 251):  # если начальное приближение a1_e
             # или k1_e равно 1 или произведение коээфициентов (приблизительно равно e50)
             #  меньше 1000, то ищутся другие начальные приближения
             nach_pr_a1_e += 1
-            a1_e, k1_e = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e))
+            result = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e), full_output=1)
+            a1_e, k1_e = result[0]
+
+            if result[2] in (4, 5):
+                bad_progress_count += 1
+
             error = equations_e([a1_e, k1_e])
             if (abs(error[0]) >= 550 or abs(error[1]) >= 550):
                 count += 1
@@ -837,7 +851,7 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
         for i in range(len(x)):
             y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp[i], k, qocr,
                                      xocr) + cos_par(x[i], e50, qf, x50,
-                                                     xc)  # формирование функции девиаторного нагружения
+                                                     xc, 0)  # формирование функции девиаторного нагружения
         x2 = xc  # x2,qf2 не выводится
         qf2 = qf  # x2,qf2 не выводится
 
@@ -1193,6 +1207,8 @@ def curve(qf, e50, **kwargs):
     except KeyError:
         kwargs["U"] = None
 
+
+
     xc = kwargs.get('xc')
     x2 = kwargs.get('x2')
     qf2 = kwargs.get('qf2')
@@ -1203,6 +1219,16 @@ def curve(qf, e50, **kwargs):
     y_rel_p = kwargs.get('y_rel_p')
     point2_y = kwargs.get('point2_y')
     U = kwargs.get('U')
+
+
+    try:
+        kwargs["amplitude"]
+    except KeyError:
+        kwargs["amplitude"] = [qf / 100, qf / 60]
+
+    amplitude = kwargs.get('amplitude')
+
+
 
     if max_time < 50:
         max_time = 50
@@ -1320,7 +1346,7 @@ def curve(qf, e50, **kwargs):
 
     # print(f"ПОДАННЫЙ Еур : {Eur}")
     # построение петли разгрузки
-    y_for_loop = y + deviator_loading_deviation(x, y, xc)
+    y_for_loop = y + deviator_loading_deviation(x, y, xc, amplitude=amplitude)
 
     x_loop, y_loop,\
         point1_x, point1_y, point2_x, point2_y, point3_x, point3_y,\
@@ -1378,7 +1404,7 @@ def curve(qf, e50, **kwargs):
     if Eur:
         y = y_for_loop
     else:
-        y += deviator_loading_deviation(x, y, xc)
+        y += deviator_loading_deviation(x, y, xc, amplitude=amplitude)
 
     import time
     start_time = time.time()
@@ -1690,6 +1716,10 @@ def curve(qf, e50, **kwargs):
     y2 = y2 + random_param
     y2 = discrete_array(y2, 0.00125 / 8.)  # дискретизация по уровню функции обьемной деформации
 
+    # if xc < 0.15:
+    #     y[-1] = qf2 + abs(y_start[0])
+
+
     if Eur:
         # для записи в файл
         point1_x_index = point1_x_index + len(x_start)
@@ -1709,6 +1739,8 @@ def curve(qf, e50, **kwargs):
     else:
         time = [i*3 for i in range(len(x))]
 
+
+
     if U:
         # print('u', U)
         old_U = U
@@ -1719,6 +1751,7 @@ def curve(qf, e50, **kwargs):
         e50_U = U / x50
         x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50, kwargs.get('xc'), 1.2 * kwargs.get('xc'),
                                            np.random.uniform(0.3, 0.7)*U, 0, amount_points)
+
 
         if old_U < 150:
             y_U = y_U * k_low_u
@@ -2004,7 +2037,7 @@ if __name__ == '__main__':
     #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
     # (596.48, 382.8)
 
-    x, y, y1, y2, indexs_loop, time, lenlen = curve(300, 20000, Eur=50000)
+    x, y, y1, y2, indexs_loop, time, lenlen = curve(300, 20000, xc=0.05, qf2=200)
     # print(len(x))
     # print(time)
     #

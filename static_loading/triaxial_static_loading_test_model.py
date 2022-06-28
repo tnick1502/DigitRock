@@ -15,6 +15,8 @@
         Методы set_consolidation_draw_params() и set_deviator_loading_draw_params() служат установки данных отрисовки
         и перезапуска моделирования опыта
         Метод save_log_file(file_name) принимает имя файла для сохранения и записывает туда словари всех этапов опыта"""
+from typing import Tuple
+
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.linalg import lstsq
@@ -26,7 +28,7 @@ def lse(__y):
     k, b = lstsq(A, __y, rcond=None)[0]
     return b
 
-def dictionary_without_VFS(sigma_3=100, velocity=49):
+def dictionary_without_VFS(sigma_3=100, velocity=49, sample_size: Tuple[int, int] = (76, 38)):
     # Создаем массив набора нагрузки до обжимающего давления консолидации
     # sigma_3 -= effective_stress_after_reconsolidation
     k = sigma_3 / velocity
@@ -48,7 +50,7 @@ def dictionary_without_VFS(sigma_3=100, velocity=49):
                                              np.random.uniform(1, 1))
     # load_stage_cell_volume_strain[0] = 0
     cell_volume_strain = np.hstack((load_stage_cell_volume_strain,
-                                    np.full(len(time_array) + 1, final_volume_strain))) * np.pi * (19 ** 2) * 76 + \
+                                    np.full(len(time_array) + 1, final_volume_strain))) * np.pi * (19 ** 2) * sample_size[0] + \
                          np.random.uniform(-0.1, 0.1, len(time))
     cell_volume_strain[0] = 0
     vertical_press = cell_press + np.random.uniform(-0.1, 0.1, len(time))
@@ -96,8 +98,8 @@ def dictionary_without_VFS(sigma_3=100, velocity=49):
         "Time": time,
         "Action": action,
         "Action_Changed": action_changed,
-        "SampleHeight_mm": np.round(np.full(len(time), 76)),
-        "SampleDiameter_mm": np.round(np.full(len(time), 38)),
+        "SampleHeight_mm": np.round(np.full(len(time), sample_size[0])),
+        "SampleDiameter_mm": np.round(np.full(len(time), sample_size[1])),
         "Deviator_kPa": np.full(len(time), 0),
         "VerticalDeformation_mm": np.full(len(time), 0),
         "CellPress_kPa": cell_press,
@@ -442,14 +444,20 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         iteration = 0
 
         while (poisons_ratio > poisons_ratio_global + 0.03 or poisons_ratio < poisons_ratio_global - 0.03):
-            self.deviator_loading.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
+            try:
+                self.deviator_loading.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
+            except TypeError:
+                self.deviator_loading.set_test_params()
             iteration += 1
             poisons_ratio = self.deviator_loading.get_test_results()["poissons_ratio"]
             if iteration == 5:
                 break
 
         if iteration == 0:
-            self.deviator_loading.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
+            try:
+                self.deviator_loading.set_test_params(pre_defined_kr_fgs=pre_defined_kr_fgs)
+            except TypeError:
+                self.deviator_loading.set_test_params()
 
     def get_test_params(self):
         return self.test_params
@@ -470,25 +478,26 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         """Передача параметров для перерисовки графиков"""
         self.deviator_loading.set_draw_params(params)
 
-    def save_log_file(self, file_path):
+    def save_log_file(self, file_path, sample_size: Tuple[int, int] = (76, 38)):
         """Метод генерирует логфайл прибора"""
 
         if self.reconsolidation is not None:
-            reconsolidation_dict = self.reconsolidation.get_dict()
+            reconsolidation_dict = self.reconsolidation.get_dict(sample_size=sample_size)
             effective_stress_after_reconsolidation = self.reconsolidation.get_effective_stress_after_reconsolidation()
         else:
             reconsolidation_dict = None
             effective_stress_after_reconsolidation = 0
 
         if self.consolidation is not None:
-            consolidation_dict = self.consolidation.get_dict(effective_stress_after_reconsolidation)
+            consolidation_dict = self.consolidation.get_dict(effective_stress_after_reconsolidation, sample_size=sample_size)
         else:
-            consolidation_dict = dictionary_without_VFS(sigma_3=self.deviator_loading._test_params.sigma_3, velocity=49)
+            consolidation_dict = dictionary_without_VFS(sigma_3=self.deviator_loading._test_params.sigma_3, velocity=49, sample_size=sample_size)
 
-        deviator_loading_dict = self.deviator_loading.get_dict()
+        deviator_loading_dict = self.deviator_loading.get_dict(sample_size=sample_size)
         main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
                                                                                          consolidation_dict,
-                                                                                         deviator_loading_dict)
+                                                                                         deviator_loading_dict,
+                                                                                         sample_size=sample_size)
 
         ModelTriaxialStaticLoadSoilTest.text_file(file_path, main_dict)
         create_json_file('/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json",
@@ -755,15 +764,16 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         return s
 
     @staticmethod
-    def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading):
+    def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading,
+                                             sample_size: Tuple[int, int] = (76, 38)):
 
         start = np.random.uniform(0.5, 0.8)
         dict = {
             'Time': [0, 0, np.round(start, 3), np.round(start + 0.1, 3), np.round(start + 2, 3)],
             'Action': ["", "", "Start", "Start", "Start"],
             'Action_Changed': ["", "True", "", "", "True"],
-            'SampleHeight_mm': np.full(5, 76),
-            'SampleDiameter_mm': np.full(5, 38),
+            'SampleHeight_mm': np.full(5, sample_size[0]),
+            'SampleDiameter_mm': np.full(5, sample_size[1]),
             'Deviator_kPa': np.full(5, 0),
             'VerticalDeformation_mm': np.full(5, 0),
             'CellPress_kPa': np.full(5, 0),

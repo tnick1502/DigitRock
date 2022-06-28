@@ -27,7 +27,7 @@ from scipy.interpolate import make_interp_spline
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, mirrow_element, \
     define_dilatancy, define_type_ground, AttrDict, find_line_area, interpolated_intercept, Point, point_to_xy, \
     array_discreate_noise, create_stabil_exponent, discrete_array, create_deviation_curve, exponent
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from static_loading.deviator_loading_functions import curve
 from configs.plot_params import plotter_params
 from intersect import intersection
@@ -210,7 +210,7 @@ class ModelTriaxialDeviatorLoading:
             i_end_E = i_end_E[0]
             self._test_params.E_processing_points_index = [i_start_E, i_end_E]
         else:
-            print(self._test_params.data_physical.laboratory_number, self._test_params.sigma_3, q_c, q_c2)
+            pass#print(self._test_params.data_physical.laboratory_number, self._test_params.sigma_3, q_c, q_c2)
 
         self._test_processing()
 
@@ -222,7 +222,7 @@ class ModelTriaxialDeviatorLoading:
         """Получение результатов обработки опыта"""
         dict = copy.deepcopy(self._test_result.get_dict())
         dict["sigma_3"] = np.round((self._test_params.sigma_3 - float(dict["max_pore_pressure"])) / 1000, 3)
-        dict["q_res"] = np.round((self._test_data.deviator[-1]) / 1000, 3)
+        dict["q_res"] = np.round((self._test_data.deviator_cut[-1]) / 1000, 3)
 
         dict["K_E50"] = np.round(self._test_result.E[0]/self._test_result.E50, 2)
         dict["K_Eur"] = np.round(self._test_result.Eur/self._test_result.E[0], 2) if self._test_result.Eur else None
@@ -770,7 +770,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                       "poisson": None,
                                       "dilatancy": None,
                                       "volumetric_strain_xc": None,
-                                      "Eur": None})
+                                      "Eur": None,
+                                      "amplitude": None})
 
         self.pre_defined_kr_fgs = None
 
@@ -815,6 +816,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
 
         self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.qf*residual_strength
+        self._draw_params.amplitude = [self._test_params.qf/100, self._test_params.qf/60]
+        if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+            self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.q_res
+            self._draw_params.amplitude = [self._test_params.qf/100000, self._test_params.qf/60000]#[self._test_params.qf / 200, self._test_params.qf / 120]
         self._draw_params.qocr = 0
 
         if self._test_params.Eur:
@@ -848,13 +853,14 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._test_params.velocity = velocity
         self._test_params.delta_h_consolidation = delta_h_consolidation
 
-    def get_dict(self):
+    def get_dict(self, sample_size: Tuple[int, int] = (76, 38)):
         return ModelTriaxialDeviatorLoadingSoilTest.dictionary_deviator_loading(self._test_data.strain,
                                                                                 self._test_data.deviator,
                                     self._test_data.pore_volume_strain, self._test_data.cell_volume_strain,
-                                    self._test_data.reload_points, pore_pressure=self._test_data.pore_pressure, time=self._test_data.time,
-                                                                                velocity=self._test_params.velocity,
-                                    delta_h_consolidation = self._test_params.delta_h_consolidation)
+                                    self._test_data.reload_points, pore_pressure=self._test_data.pore_pressure,
+                                    time=self._test_data.time, velocity=self._test_params.velocity,
+                                    delta_h_consolidation = self._test_params.delta_h_consolidation,
+                                    sample_size=sample_size)
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -864,7 +870,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         params = {"fail_strain": {"value": self._draw_params.fail_strain, "borders": [0.03, 0.15]},
                   "residual_strength_param": {"value": self._draw_params.residual_strength_param, "borders": [0.05, 0.6]},
                   "residual_strength": {"value": self._draw_params.residual_strength,
-                                        "borders": [self._test_params.qf*0.5, self._test_params.qf]},
+                                        "borders": [self._test_params.qf*0.3, self._test_params.qf]},
                   "qocr": {"value": self._draw_params.qocr+1, "borders": [0.0, self._test_params.qf]},
                   "poisson": {"value": self._draw_params.poisson, "borders": [0.25, 0.45]},
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
@@ -909,6 +915,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                 x2=self._draw_params.residual_strength_param,
                                                                 qf2=self._draw_params.residual_strength,
                                                                 qocr=self._draw_params.qocr,
+                                                                amplitude=self._draw_params.amplitude,
                                                                 m_given=self._draw_params.poisson,
                                                                 max_time=max_time,
                                                                 angle_of_dilatacy=dilatancy,
@@ -924,6 +931,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 x2=self._draw_params.residual_strength_param,
                 qf2=self._draw_params.residual_strength,
                 qocr=self._draw_params.qocr,
+                amplitude=self._draw_params.amplitude,
                 m_given=self._draw_params.poisson,
                  max_time=max_time,
                 angle_of_dilatacy=dilatancy,
@@ -1196,8 +1204,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         e0 = e if e else 0.65
         Ir = Ir if Ir else 0
 
+        _is_random = False
+
         if Il > 0.35 and Ir >= 50:
-            return 0
+            return 0, False
 
         if e0 == 0:
             dens_sand = 2  # средней плотности
@@ -1234,6 +1244,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             elif type_ground == 2:  # крупный песок
                 if sigma3mor <= 0.1:
                     kr_fgs = round(np.random.uniform(0, 1))
+                    _is_random = True
                 else:
                     kr_fgs = 1
             elif type_ground == 3:  # песок средней групности
@@ -1241,6 +1252,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                     kr_fgs = 0
                 elif sigma3mor <= 0.15 and dens_sand == 2:  # песок средней крупности средней плотности
                     kr_fgs = round(np.random.uniform(0, 1))
+                    _is_random = True
                 else:  # песок средней групности и sigma3>0.15
                     kr_fgs = 1
             elif type_ground == 4:  # мелкий песок
@@ -1248,6 +1260,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                     kr_fgs = 0
                 elif (0.1 <= sigma3mor <= 0.2 and dens_sand == 3) or (sigma3mor <= 0.15 and dens_sand == 2):
                     kr_fgs = round(np.random.uniform(0, 1))  # мелкий песок рыхлый s3<=0.2 и средней плотности s3<=0.15
+                    _is_random = True
                 else:  # мелкий песок рыхлый s3>=0.2 и средней плотности s3>=0.15 (плотный закрыт раньше)
                     kr_fgs = 1
             elif type_ground == 5:  # песок пылеватый
@@ -1257,6 +1270,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                         sigma3mor <= 0.1 and dens_sand == 2):  # песок пылева-
                     kr_fgs = round(
                         np.random.uniform(0, 1))  # тый рыхлый 0.1<=s3<=0.2 и пылеватый средней плотности s3<=0.1
+                    _is_random = True
                 else:  # песок пылеватый рыхлый s3>0.2 и пылеватый средней плотности s3>0.1 (плотный закрыт раньше)
                     kr_fgs = 1
             elif type_ground == 9:  # Торф
@@ -1270,6 +1284,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 kr_fgs = 0
             elif 0 < Il <= 1:  # показатель текучести. от 0 до 1 - пластичный (для супеси)
                 kr_fgs = round(np.random.uniform(0, 1))
+                _is_random = True
             else:  # <=0 твердый
                 kr_fgs = 1
 
@@ -1278,11 +1293,12 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 kr_fgs = 0
             elif 0.25 < Il <= 0.5:  # от 0.25 до 0.5 тугопластичный (для суглинков и глины)
                 kr_fgs = round(np.random.choice([0, 1], p=[0.7, 0.3]))
+                _is_random = True
             else:  # меньше 0.25 твердый и полутвердый (для суглинков и глины)
                 kr_fgs = 1
         else:
             kr_fgs = 0
-        return kr_fgs
+        return kr_fgs, _is_random
 
     @staticmethod
     def define_xc_qf_E(qf, E50):
@@ -1314,11 +1330,22 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         xc = 1
 
+        _defined_kr_fgs, is_random = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(sigma_3,
+                                                                                             data_phiz.type_ground,
+                                                                                             data_phiz.e,
+                                                                                             data_phiz.Ip,
+                                                                                             data_phiz.Il)
+
         if not pre_defined_kr_fgs:
-            xc = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(sigma_3, data_phiz.type_ground, data_phiz.e,
-                                                                         data_phiz.Ip, data_phiz.Il)
+            xc = _defined_kr_fgs
         elif pre_defined_kr_fgs == 1:
-            xc = 1
+            # для опыта Трёхосное сжатие (F, C) res если отсутствие пика выпадает не из генерации случайного числа,
+            # то пика не должно быть, для всех остальных опытов при наличии предопределенного kr выбираем его
+            if (statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res"
+                    and not is_random and _defined_kr_fgs == 0):
+                xc = _defined_kr_fgs
+            else:
+                xc = pre_defined_kr_fgs
 
         if xc:
             xc = ModelTriaxialDeviatorLoadingSoilTest.define_xc_qf_E(qf, E)
@@ -1349,7 +1376,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     @staticmethod
     def dictionary_deviator_loading(strain, deviator, pore_volume_strain, cell_volume_strain, indexs_loop,
-                                    pore_pressure, time, velocity=1, delta_h_consolidation=0,):
+                                    pore_pressure, time, velocity=1, delta_h_consolidation=0,
+                                    sample_size: Tuple[int, int] = (76, 38)):
         """Формирует словарь девиаторного нагружения"""
         index_unload, = np.where(strain >= strain[-1] * 0.92)  # индекс абциссы конца разгрузки
         x_unload_p = strain[index_unload[0]]  # деформация на конце разгрузки
@@ -1419,14 +1447,14 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             "Time": time,
             "Action": action,
             "Action_Changed": action_changed,
-            "SampleHeight_mm": np.round(np.full(len(time), 76)),
-            "SampleDiameter_mm": np.round(np.full(len(time), 38)),
+            "SampleHeight_mm": np.round(np.full(len(time), sample_size[0])),
+            "SampleDiameter_mm": np.round(np.full(len(time), sample_size[1])),
             "Deviator_kPa": np.round(deviator, 4),
-            "VerticalDeformation_mm": strain * (76 - delta_h_consolidation),
+            "VerticalDeformation_mm": strain * (sample_size[0] - delta_h_consolidation),
             "CellPress_kPa": np.full(len(time), 0) + np.random.uniform(-0.1, 0.1, len(time)),
-            "CellVolume_mm3": (cell_volume_strain * np.pi * 19 ** 2 * (76 - delta_h_consolidation)),
+            "CellVolume_mm3": (cell_volume_strain * np.pi * 19 ** 2 * (sample_size[0] - delta_h_consolidation)),
             "PorePress_kPa": pore_pressure,
-            "PoreVolume_mm3": pore_volume_strain * np.pi * 19 ** 2 * (76 - delta_h_consolidation),
+            "PoreVolume_mm3": pore_volume_strain * np.pi * 19 ** 2 * (sample_size[0] - delta_h_consolidation),
             "VerticalPress_kPa": deviator + np.random.uniform(-0.1, 0.1, len(time)),
             "Trajectory": np.full(len(time), 'CTC')}
 

@@ -284,7 +284,13 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
         self.tab_3.popIn.connect(self.addTab)
         self.tab_3.popOut.connect(self.removeTab)
 
-        self.tab_4 = Save_Dir(result_table_params={
+        self.tab_4 = Save_Dir(
+            {
+                "standart": "Стандардный отчет",
+                "cryo": "Крио",
+            },
+
+            result_table_params={
             "Kd": lambda lab: "; ".join([str(i["Kd"]) for i in VC_models[lab].get_test_results()]),
             "E50d": lambda lab: "; ".join([str(i["E50d"]) for i in VC_models[lab].get_test_results()]),
             "E50": lambda lab: "; ".join([str(i["E50"]) for i in VC_models[lab].get_test_results()]),
@@ -405,7 +411,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                                       test_parameter, E_models[statment.current_test].get_test_results(),
                                       VC_models[statment.current_test].get_test_results(),
                                       [pick_vc_array, pick_c_array,
-                                       *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])],
+                                       *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])], self.tab_4.report_type,
                                       "{:.2f}".format(__version__))
 
                 Kd = ""
@@ -433,7 +439,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                                       os.getcwd() + "/project_data/",
                                       test_parameter, E_models[statment.current_test].get_test_results(),
                                       VC_models[statment.current_test].get_test_results(),
-                                      [pick_vc, pick_c, *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])], "{:.2f}".format(__version__))
+                                      [pick_vc, pick_c, *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])], self.tab_4.report_type, "{:.2f}".format(__version__))
                 res = res[0]
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7

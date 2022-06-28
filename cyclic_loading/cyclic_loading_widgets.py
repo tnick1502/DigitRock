@@ -693,7 +693,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
 
             test_parameter = {'sigma3': statment[statment.current_test].mechanical_properties.sigma_3,
                               'sigma1': statment[statment.current_test].mechanical_properties.sigma_1,
-                              'tau': statment[statment.current_test].mechanical_properties.t,
+                              'tau': int(statment[statment.current_test].mechanical_properties.t*2),
                               'K0': statment[statment.current_test].mechanical_properties.K0,
                               'frequency': statment[statment.current_test].mechanical_properties.frequency,
                               "Hw": statment[statment.current_test].mechanical_properties.Hw,

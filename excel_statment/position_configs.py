@@ -32,6 +32,7 @@ PhysicalPropertyPosition = {
     "Rc": ['ER', 147],
     "date": ['IF', 239],
     "new_laboratory_number": ["IG", 240],
+    "description": ["AR", 43]
 }
 
 MechanicalPropertyPosition = {
@@ -42,11 +43,14 @@ MechanicalPropertyPosition = {
     "Ca": ["CF", 83],
     "K0nc": ["GZ", 207],
     "K0oc": ["GY", 206],
+    "K0ige": ["FW", 178],
     "pressure_array": ["BO", 66],
     "Eoed": ["CE", 82],
     "Pref": ["FV", 177],
     "p_max": ["CV", 99],
-    "Eur": ["GI", 190]
+    "Eur": ["GI", 190],
+    "c_res": ["CV", 99],
+    "fi_res": ["CW", 100]
 }
 
 c_fi_E_PropertyPosition = {
@@ -86,6 +90,7 @@ DynamicsPropertyPosition = {
     "frequency_vibration_creep": ["AN", 39],
     "Kd_vibration_creep": ["CB", 79],
     "sigma_d_vibration_creep": ["AO", 40],
+    "sigma_1": ["FU", 176],
 }
 
 IdentificationColumns = {
