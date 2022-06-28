@@ -312,18 +312,24 @@ class MechanicalProperties:
             if not self.K0:
                 raise ValueError(f"Ошибка определения K0 в пробе {physical_properties.laboratory_number}")
 
-            if physical_properties.ground_water_depth is not None:
-                if physical_properties.depth <= physical_properties.ground_water_depth:
-                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
-                elif physical_properties.depth > physical_properties.ground_water_depth:
-                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
-                            9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+            sigma_ref = float_df(data_frame.iat[string, DynamicsPropertyPosition["reference_pressure"][1]])
 
-                self.sigma_3 = MechanicalProperties.round_sigma_3(self.sigma_1 * self.K0)
-
+            if sigma_ref:
+                self.sigma_3 = np.round(sigma_ref * 1000)
+                self.sigma_1 = np.round(self.sigma_3/self.K0)
             else:
-                self.sigma_3 = MechanicalProperties.round_sigma_3(
-                    MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
+                if physical_properties.ground_water_depth is not None:
+                    if physical_properties.depth <= physical_properties.ground_water_depth:
+                        self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
+                    elif physical_properties.depth > physical_properties.ground_water_depth:
+                        self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                                9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+
+                    self.sigma_3 = MechanicalProperties.round_sigma_3(self.sigma_1 * self.K0)
+
+                else:
+                    self.sigma_3 = MechanicalProperties.round_sigma_3(
+                        MechanicalProperties.define_sigma_3(self.K0, physical_properties.depth))
 
             if self.sigma_3 >= 1600:
                 self.sigma_3 = 1600
@@ -421,7 +427,6 @@ class MechanicalProperties:
 
             if test_mode == "Трёхосное сжатие (F, C) res":
                 self.q_res = np.round(float(MechanicalProperties.define_qf(self.sigma_3, self.c_res, self.fi_res)), 1)
-
 
     @staticmethod
     def round_sigma_3(sigma_3, param=5):
@@ -566,7 +571,8 @@ class MechanicalProperties:
             "K0: K0 из ведомости": readDataFrame(string, MechanicalPropertyPosition["K0oc"][1]),
             "K0: Формула Джекки": np.round((1 - np.sin(np.pi * fi / 180)), 2),
             "K0: K0 = 1": 1,
-            "K0: Формула Джекки c учетом переупл.": osr(stratigraphic_index, fi)
+            "K0: Формула Джекки c учетом переупл.": osr(stratigraphic_index, fi),
+            "K0: Из ведомости (столбец FW)": readDataFrame(string, MechanicalPropertyPosition["K0ige"][1]),
         }
 
         return dict_K0[K0_mode]
@@ -2065,7 +2071,6 @@ class ShearProperties(MechanicalProperties):
               type_ground == 8 or type_ground == 9) and (Il > 1.0):
             return [25, 75, 125]
 
-
 class K0Properties(MechanicalProperties):
     sigma_1_step = DataTypeValidation(float, int)
     sigma_1_max = DataTypeValidation(float, int)
@@ -2112,7 +2117,6 @@ class K0Properties(MechanicalProperties):
         if _test_mode == 'Кинематический':
             return True
         return False
-
 
 class RayleighDampingProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""

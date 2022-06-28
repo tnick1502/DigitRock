@@ -43,6 +43,7 @@ MechanicalPropertyPosition = {
     "Ca": ["CF", 83],
     "K0nc": ["GZ", 207],
     "K0oc": ["GY", 206],
+    "K0ige": ["FW", 178],
     "pressure_array": ["BO", 66],
     "Eoed": ["CE", 82],
     "Pref": ["FV", 177],
