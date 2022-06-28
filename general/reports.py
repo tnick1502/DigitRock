@@ -3030,7 +3030,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["K0"] = K0[0]
-    test_mode_consolidation(canvas, test_parameter, moove=moove)
+    test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
 
     if report_type == "standart_E":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E", moove=moove)
@@ -3055,7 +3055,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["K0"] = K0[1]
     test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
-    test_mode_consolidation(canvas, test_parameter, moove=moove)
+    test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
 
     result_table_CF(canvas, res, [picks[2], picks[3]], moove=moove)
 
@@ -3071,7 +3071,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
         test_parameter["K0"] = K0[1]
         test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(
             res["sigma_3_mohr"][2], 3)
-        test_mode_consolidation(canvas, test_parameter, moove=moove)
+        test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
 
         result_table_m(canvas, res, picks[4])
 
