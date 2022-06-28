@@ -90,6 +90,8 @@ class PhysicalProperties:
         except:
             pass
 
+        self.depth = np.round(self.depth, 2)
+
         if not self.description:
             self.description = "-"
 
@@ -373,6 +375,8 @@ class MechanicalProperties:
             Eur = float_df(data_frame.iat[string, MechanicalPropertyPosition["Eur"][1]])
 
             if test_mode == "Трёхосное сжатие с разгрузкой":
+                self.Eur = Eur * 1000 if Eur else True
+            elif test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
                 self.Eur = Eur * 1000 if Eur else True
             elif test_mode == "Трёхосное сжатие (F, C, Eur)":
                 self.Eur = Eur * 1000 if Eur else True

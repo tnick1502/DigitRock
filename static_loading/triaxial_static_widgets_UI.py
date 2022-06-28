@@ -153,7 +153,9 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
             self.combo_box.setCurrentText("E50")
             self.combo_box.setDisabled(True)
 
-        if statment.general_parameters.test_mode in ["Трёхосное сжатие с разгрузкой", "Трёхосное сжатие (F, C, Eur)"]:
+        if statment.general_parameters.test_mode in ["Трёхосное сжатие с разгрузкой",
+                                                     "Трёхосное сжатие (F, C, Eur)",
+                                                     "Трёхосное сжатие с разгрузкой (plaxis)"]:
             self.combo_box.addItems(["Eur"])
             self.combo_box.setCurrentText("Eur")
             self.combo_box.setDisabled(True)

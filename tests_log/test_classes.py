@@ -320,7 +320,9 @@ class TestsLogTriaxialStatic(TestsLog):
     def processing_models(self):
         self.tests = {}
 
-        if statment.general_parameters.test_mode == "Трёхосное сжатие (E)" or statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
+        if statment.general_parameters.test_mode == "Трёхосное сжатие (E)" or\
+                statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой" or\
+                statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
             for key in E_models:
                 self.tests[key] = TriaxialStaticTest(E_models[key].test_duration)
 

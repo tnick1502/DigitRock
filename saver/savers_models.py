@@ -340,6 +340,10 @@ class SaverModel:
                 s = TriaxialSaver(E_models[lab], self.path, size=[h, d])
                 s.save_log_file(lab)
 
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
+                s = TriaxialSaver(E_models[lab], self.path, size=[h, d])
+                s.save_log_file(lab)
+
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
                 s = TriaxialSaver(E_models[lab], self.path, size=[h, d])
                 s.save_log_file(lab)
