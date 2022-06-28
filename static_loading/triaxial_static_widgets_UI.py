@@ -160,8 +160,9 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
             if "Eur_E" not in [self.combo_box.itemText(i) for i in range(self.combo_box.count())]:
                 self.combo_box.addItems(["Eur_E"])
                 self.combo_box.addItems(["Eur_E50"])
+                self.combo_box.addItems(["Eur"])
                 if statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
-                    self.combo_box.setCurrentText("Eur_E50")
+                    self.combo_box.setCurrentText("Eur")
                 else:
                     self.combo_box.setCurrentText("Eur_E")
 
@@ -176,6 +177,8 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                 self._plot_Eur_E(plots, res)
             elif self.combo_box.currentText() == "Eur_E50":
                 self._plot_Eur_E50(plots, res)
+            elif self.combo_box.currentText() == "Eur":
+                self._plot_Eur(plots, res)
             self._plot_volume_strain(plots, res)
         except:
             pass
@@ -402,6 +405,43 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
         self.deviator_canvas.draw()
 
+    def _plot_Eur(self, plots, res):
+
+        self.deviator_ax.clear()
+        self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.deviator_ax.set_ylabel("Девиатор q, МПа")
+
+        self.deviator_ax2.clear()
+        self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
+        self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
+
+        if plots["strain"] is not None:
+
+            if res["E"] is not None:
+                _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
+                    res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0])
+            else:
+                _label = "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + str(res["E"][0]) + "; $E_{ur}$ = " + str(
+                    res["Eur"]) if res["Eur"] else "$E_{50} = $" + str(res["E50"]) + "; $E$ = " + "-"
+
+            self.deviator_ax.plot(plots["strain"], plots["deviator"],
+                                  **plotter_params["static_loading_main_line"])
+            self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"],
+                                  **plotter_params["static_loading_gray_line"])
+
+            self.deviator_ax2.plot(plots["strain_Eur"], plots["deviator_Eur"],
+                                   **plotter_params["static_loading_main_line"])
+            if statment.general_parameters.test_mode != "Виброползучесть":
+                self.deviator_ax2.plot(*plots["Eur"], **plotter_params["static_loading_black_dotted_line"])
+
+
+
+        label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
+            "K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
+        self.deviator_ax.plot([], [], label=label, color="#eeeeee")
+
+        self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
+        self.deviator_canvas.draw()
 
     def _plot_volume_strain(self, plots, res):
         self.volume_strain_ax.clear()
