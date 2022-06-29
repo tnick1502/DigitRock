@@ -3187,18 +3187,18 @@ def report_FC_NN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     code = SaveCode(version)
 
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
-    sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+    moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
 
-    parameter_table(canvas, Data_phiz, Lab)
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
     if len(res["sigma_3_mohr"]) == 1:
         test_parameter["sigma_3"] = res["sigma_3_mohr"][0]*1000
     else:
         test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
-    test_mode_consolidation(canvas, test_parameter)
+    test_mode_consolidation(canvas, test_parameter, moove=moove)
     res["description"] = Data_phiz.description
-    result_table_CF_NN(canvas, res, [picks[0],picks[1]])
+    result_table_CF_NN(canvas, res, [picks[0],picks[1]], moove=moove)
 
     canvas.save()
 
