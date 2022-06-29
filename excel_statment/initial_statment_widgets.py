@@ -338,6 +338,7 @@ class TriaxialStaticStatment(InitialStatment):
                     "Трёхосное сжатие (F, C)",
                     "Трёхосное сжатие (F, C, E)",
                     "Трёхосное сжатие с разгрузкой",
+                    "Трёхосное сжатие с разгрузкой (plaxis)",
                     "Трёхосное сжатие (F, C, Eur)",
                     "Трёхосное сжатие КН",
                     "Трёхосное сжатие НН",
@@ -483,6 +484,10 @@ class TriaxialStaticStatment(InitialStatment):
                                          models=E_models, models_type=ModelTriaxialStaticLoadSoilTest)
 
                     elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой":
+                        self.load_models(models_name="Eur_models.pickle",
+                                         models=E_models, models_type=ModelTriaxialStaticLoadSoilTest)
+
+                    elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
                         self.load_models(models_name="Eur_models.pickle",
                                          models=E_models, models_type=ModelTriaxialStaticLoadSoilTest)
 

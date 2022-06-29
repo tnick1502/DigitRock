@@ -745,6 +745,11 @@ class StatickSoilTestApp(AppMixin, QWidget):
             self.tab_2.set_params()
             self.physical_line_1.set_data()
 
+        elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
+            self.tab_2.item_identification.set_data()
+            self.tab_2.set_params()
+            self.physical_line_1.set_data()
+
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
@@ -849,6 +854,34 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 set_cell_data(self.tab_1.path,
                               (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
                                (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
+                              test_result["E"][0], sheet="Лист1", color="FF6961")
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
+                name = file_path_name + " " + statment.general_data.object_number + " ТС Р (plaxis)" + ".pdf"
+                E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log", sample_size=(h, d))
+                E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
+                shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
+                            statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                                f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
+                test_result = E_models[statment.current_test].get_test_results()
+                report_E(save + "/" + name, data_customer,
+                                     statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
+                                     os.getcwd() + "/project_data/",
+                                     test_parameter, test_result,
+                                     (*self.tab_2.consolidation.save_canvas(),
+                                      *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), self.tab_4.report_type, "{:.2f}".format(__version__))
+
+                shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
+
+                number = statment[statment.current_test].physical_properties.sample_number + 7
+
+                set_cell_data(self.tab_1.path,
+                              ("GI" + str(number), (number, 190)),
+                              test_result["Eur"], sheet="Лист1", color="FF6961")
+
+                set_cell_data(self.tab_1.path,
+                              (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой (plaxis)"][0][2] + str(number),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой (plaxis)"][1][2])),
                               test_result["E"][0], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":

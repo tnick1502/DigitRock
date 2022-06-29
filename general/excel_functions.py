@@ -133,6 +133,9 @@ def cfe_test_type_columns(test_type):
     elif test_type == "Трёхосное сжатие с разгрузкой":
         return ["BL", "BM", "BN"]
 
+    elif test_type == "Трёхосное сжатие с разгрузкой (plaxis)":
+        return ["BL", "BM", "BN"]
+
     elif test_type == "Трёхосное сжатие КН":
         return ["CO", "CP", "CQ"]
 
@@ -360,7 +363,8 @@ def read_mech(wb, K0_mode, test_mode = "Трёхосное сжатие (F, C, E
                 if build_press != "-":
                     build_press *= 1000
 
-                if test_mode == "Трёхосное сжатие с разгрузкой":
+                if test_mode == "Трёхосное сжатие с разгрузкой" or\
+                        test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
                     Eur = round(define_Eur(data_physical["Il"])*E)
                     #try:
                         #Eur = round(float_from_excel(wb["Лист1"]['GI' + str(i)].value)*1000, 3)

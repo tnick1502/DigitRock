@@ -1254,6 +1254,41 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
                      ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
                      ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
                      ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+        elif result_E == "Eur":
+            tableData.append(
+                [Paragraph('''<p>Модуль повторного нагружения E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''',
+                           LeftStyle), "",
+                 "", zap(Res["Eur"], 1), "", ""])
+            sss = -4
+            style = [('SPAN', (0, -2), (2, -1)),
+                     ('SPAN', (-3, -2), (-1, -1)),
+
+                     ('SPAN', (0, 0), (-1, 0)),
+                     ('SPAN', (0, 1), (-1, r)),
+
+                     ('SPAN', (0, -3), (2, -3)),
+                     ('SPAN', (-3, -3), (-1, -3)),
+                     # ('SPAN', (2, -1), (3, -1)),
+                     # ('SPAN', (4, -1), (5, -1)),
+                     ('SPAN', (0, -4), (2, -4)),
+                     ('SPAN', (-3, -4), (-1, -4)),
+                     # ('SPAN', (2, -2), (3, -2)),
+                     # ('SPAN', (4, -2), (5, -2)),
+
+                     # ('SPAN', (2, -3), (3, -3)),
+                     #  ('SPAN', (4, -3), (5, -3)),
+
+                     ("BACKGROUND", (0, -4), (2, -1), HexColor(0xebebeb)),
+
+                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                     ("FONTSIZE", (0, 0), (-1, -1), 8),
+                     # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                     ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                     ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                     ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
         else:
             tableData.append(
                 [Paragraph(Ew, LeftStyle), "", "",
@@ -1293,9 +1328,10 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
 
         tableData.append(
             [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", zap(Res["poissons_ratio"], 2), "", ""])
-        tableData.append(
-            [Paragraph('''<p>Модуль повторного нагружения E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "",
-             "", zap(Res["Eur"], 1), "", ""])
+        if result_E != "Eur":
+            tableData.append(
+                [Paragraph('''<p>Модуль повторного нагружения E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''', LeftStyle), "",
+                 "", zap(Res["Eur"], 1), "", ""])
 
         tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
         tableData.append(["", "", "", "", "", ""])
@@ -2994,7 +3030,7 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
     elif report_type == "standart_E50":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
     elif report_type == "plaxis":
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="Eur", moove=moove)
     elif report_type == "E_E50":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all", moove=moove)
     elif report_type == "user_define_1":
