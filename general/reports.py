@@ -3707,7 +3707,7 @@ def test_mode_k0(canvas, ro, Data):
 
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", Data.Rezhim, "", "", "", "", "", ""],
-               [Paragraph('''<p>Давление консолидации K'<sub rise="0.5" size="5">3c</sub>, МПа:</p>''', LeftStyle), "", "", "-"],
+               [Paragraph('''<p>Давление консолидации σ'<sub rise="0.5" size="5">3c</sub>, МПа:</p>''', LeftStyle), "", "", "-"],
                ["Оборудование:", "", Data.Oborudovanie],
                ["Параметры образца:", "", "Высота, мм:", zap(Data.h, 2), "Диаметр, мм:", zap(Data.d, 2), Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(ro, 2)]], colWidths=19.444444* mm, rowHeights=4 * mm)
 

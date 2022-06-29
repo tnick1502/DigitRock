@@ -2092,10 +2092,18 @@ class K0Properties(MechanicalProperties):
         if self.K0:
             self.OCR = float_df(data_frame.iat[string, MechanicalPropertyPosition["OCR"][1]])
 
+            if self.OCR is None:
+                self.OCR = 0
+            if physical_properties.type_ground in {1, 2, 3, 4}:
+                self.OCR = 0
+
             self.sigma_p, self.sigma_3_p = K0Properties.define_sigma_p(self.OCR, physical_properties.depth, self.K0)
 
             self.sigma_1_step = 0.150
             self.sigma_1_max = 1.200
+            if physical_properties.type_ground in {1, 2, 3, 4}:
+                self.sigma_1_step = 0.200
+                self.sigma_1_max = 2.000
 
     @staticmethod
     def define_sigma_p(OCR, depth, K0):

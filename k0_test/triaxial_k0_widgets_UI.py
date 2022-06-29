@@ -10,6 +10,7 @@ import os
 import sys
 from io import BytesIO
 # global
+from excel_statment.initial_tables import LinePhysicalProperties
 from general.initial_tables import TableVertical
 from general.general_widgets import RangeSlider
 from general.general_functions import read_json_file
@@ -176,7 +177,7 @@ class K0SoilTestUI(K0UI):
             {
                 "OCR": {"value": 1.3, "borders": [0, 3]},
                 "sigma_1_step": {"value": 3, "borders": [0, 100]},
-                "sigma_1_max": {"value": 1200, "borders": [600, 3000]}
+                "sigma_1_max": {"value": 1200, "borders": [0, 10000]}
             })
         self.layout.addWidget(self.sliders)
 

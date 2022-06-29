@@ -1,3 +1,5 @@
+from excel_statment.initial_tables import LinePhysicalProperties
+from excel_statment.position_configs import MechanicalPropertyPosition
 from version_control.configs import actual_version
 __version__ = actual_version
 # system
@@ -86,9 +88,9 @@ class K0SoilTestWidget(QWidget):
         self.refresh_button = QPushButton("Обновить")
         self.refresh_button.setFixedHeight(120)
         self.line_1.addWidget(self.identification_widget)
-        self.line_1.addWidget(self.refresh_button)
+        self.line_for_phiz = QVBoxLayout()
+        self.line_1.addLayout(self.line_for_phiz)
 
-        self.refresh_button.clicked.connect(self._refresh)
         self.layout.addLayout(self.line_1)
         self.layout.addWidget(self.test_widget)
         self.save_widget = Save_Dir()
@@ -234,8 +236,16 @@ class K0SoilTestApp(QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_widget.update())
-        self.tab_1.signal[bool].connect(self.tab_2.set_test_params)
-        self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_data)
+
+        self.physical_line_1 = LinePhysicalProperties()
+        self.tab_2.line_for_phiz.addWidget(self.physical_line_1)
+        self.tab_2.line_for_phiz.addStretch(-1)
+
+        self.tab_1.signal[bool].connect(self.set_test_parameters)
+
+        self.physical_line_1.refresh_button.clicked.connect(self.tab_2._refresh)
+        self.physical_line_1.save_button.clicked.connect(self.save_report_and_continue)
+
         self.tab_2.save_widget.save_button.clicked.connect(self.save_report)
         self.tab_2.save_widget.save_all_button.clicked.connect(self.save_all_reports)
 
@@ -278,13 +288,18 @@ class K0SoilTestApp(QWidget):
 
             number = statment[statment.current_test].physical_properties.sample_number + 7
 
-            # set_cell_data(self.tab_1.path, ("HL" + str(number), (number, 219)), test_result["G0"], sheet="Лист1")
-            # set_cell_data(self.tab_1.path, ("HK" + str(number), (number, 218)), test_result["threshold_shear_strain"], sheet="Лист1")
-
             shutil.copy(file_name, statment.save_dir.report_directory + "/" + file_name[len(file_name) -
                                                                                       file_name[::-1].index("/"):])
 
             K0_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log")
+            K0_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
+            shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
+                        statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
+
+            set_cell_data(self.tab_1.path,
+                          (MechanicalPropertyPosition["K0nc"][0] + str(number),
+                           (number, MechanicalPropertyPosition["K0nc"][1])),
+                          test_result["K0"], sheet="Лист1", color="FF6961")
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
@@ -333,6 +348,25 @@ class K0SoilTestApp(QWidget):
 
         _statment = StatementGenerator(self, path=s, statement_structure_key="Resonance column")
         _statment.show()
+
+    def set_test_parameters(self, params):
+        self.tab_2.set_test_params(params)
+        self.tab_2.identification_widget.set_data()
+        self.physical_line_1.set_data()
+
+    def save_report_and_continue(self):
+        try:
+            self.save_report()
+        except:
+            pass
+        keys = [key for key in statment]
+        for i, val in enumerate(keys):
+            if (val == statment.current_test) and (i < len(keys) - 1):
+                statment.current_test = keys[i+1]
+                self.set_test_parameters(True)
+                break
+            else:
+                pass
 
 
 if __name__ == '__main__':
