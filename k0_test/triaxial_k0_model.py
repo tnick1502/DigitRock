@@ -431,8 +431,8 @@ class ModelK0SoilTest(ModelK0):
 
         self._test_params.sigma_1_step = round(round(params["sigma_1_step"], 0)*0.050, 2)
 
-        num_steps = (round(params["sigma_1_max"], 2) // (self._test_params.sigma_1_step*1000))
-        self._test_params.sigma_1_max = num_steps * self._test_params.sigma_1_step
+        self._test_params.sigma_1_max = ModelK0SoilTest.sigma_1_max_mpa(params["sigma_1_max"],
+                                                                        self._test_params.sigma_1_step)
 
         self._test_modeling()
 
@@ -495,7 +495,7 @@ class ModelK0SoilTest(ModelK0):
         ВНИМАНИЕ! Верфикация параметров как Физических характеристик должна проводится в `properties_model`
         """
         # Округления
-        SGMA1MAX_PREC = 2
+        SGMA1MAX_PREC = ModelK0.SIGMA_PREC
 
         self._test_params.sigma_1_max = round(self._test_params.sigma_1_max, SGMA1MAX_PREC)
         self._test_params.sigma_1_step = round(self._test_params.sigma_1_step, SGMA1MAX_PREC)
@@ -503,7 +503,10 @@ class ModelK0SoilTest(ModelK0):
         # Геометрические условие:
         if self._test_params.sigma_1_max - self._test_params.sigma_1_step < self._test_params.sigma_p:
             _min_sigma_1 = self._test_params.sigma_p // self._test_params.sigma_1_step
-            self._test_params.sigma_1_max = (_min_sigma_1 + ModelK0.MIN_LSE_PNTS) * self._test_params.sigma_1_step
+            sigma_1_max = (_min_sigma_1 + ModelK0.MIN_LSE_PNTS + 1) * self._test_params.sigma_1_step
+            self._test_params.sigma_1_max = round(sigma_1_max, SGMA1MAX_PREC)
+            self._test_params.sigma_1_max = ModelK0SoilTest.sigma_1_max_mpa(self._test_params.sigma_1_max * 1000,
+                                                                            self._test_params.sigma_1_step)
 
     def save_log_file(self, file_path):
         """Метод генерирует логфайл прибора"""
@@ -615,8 +618,9 @@ class ModelK0SoilTest(ModelK0):
                                  np.hstack((sigma_3_spl[:-1], sgima_3_synth)), k=1)
 
         #   Считаем число точек и задаем сетку на Сигма1
-        num: int = int((params.sigma_1_max * 1000) / (params.sigma_1_step * 1000)) + 1
-        sgima_1_mesh = np.linspace(0, params.sigma_1_max, num)
+        num: int = int((params.sigma_1_max * 1000) / (params.sigma_1_step * 1000))
+
+        sgima_1_mesh = np.linspace(0, params.sigma_1_max, num + 1)
         index_sigma_p, = np.where(sgima_1_mesh >= params.sigma_p)
         #   Формируем участки
         sgima_1_synth = sgima_1_mesh[index_sigma_p[0]:]
@@ -756,7 +760,7 @@ class ModelK0SoilTest(ModelK0):
             # замыкаем последний на первый на всякий случай
             second = np.array([x[-1] - x[0]])
 
-            third = np.array([0.055-abs(x[j]-sigma_3_line[j]) for j in range(len(x))])
+            third = np.array([0.035-abs(x[j]-sigma_3_line[j]) for j in range(len(x))])
 
             res = np.hstack((first, second, third))
             return res
@@ -783,7 +787,7 @@ class ModelK0SoilTest(ModelK0):
             # print(loops, error)
             loops = loops + 1
             if loops % 10 == 0:
-                noise = noise * 0.998
+                noise = noise * 0.995
             _sigma_1, _sigma_3 = ModelK0SoilTest.lse_faker(sigma_1_line, sigma_3_line, sigma_1_spl, sigma_3_spl,
                                                            K0, noise=noise, loops=loops)
 
@@ -1334,3 +1338,9 @@ class ModelK0SoilTest(ModelK0):
         time = np.hstack((time, np.asarray(time[-1])))
 
         return sigma_1, action, time, sigma_3
+
+    @staticmethod
+    def sigma_1_max_mpa(sigma_1_max_kpa, sigma_1_step_mpa):
+        num_steps = int(int(sigma_1_max_kpa) / int(sigma_1_step_mpa*1000))
+
+        return round(num_steps * (sigma_1_step_mpa*1000))/1000
