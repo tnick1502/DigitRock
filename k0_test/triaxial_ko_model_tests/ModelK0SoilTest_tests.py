@@ -116,7 +116,8 @@ def test_model_k0_3():
 
     check_test(model._test_result, model._test_params)
 
-    assert model.get_test_results()["K0"] == 0.63
+    # Этот тест иногда не выполняется в угоду больших шумов
+    assert model.get_test_results()["K0"] == 0.63, "Этот тест иногда не выполняется в угоду больших шумов"
 
 
 def check_test(__test_data, __test_params):

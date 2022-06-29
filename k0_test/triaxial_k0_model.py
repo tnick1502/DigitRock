@@ -8,10 +8,11 @@ import matplotlib.pyplot as plt
 from scipy.optimize import Bounds, minimize
 from scipy.interpolate import make_interp_spline
 
+from cvi.cvi_writer import save_cvi_K0
 from excel_statment.properties_model import K0Properties
 from general.general_functions import AttrDict, discrete_array, exponent, create_json_file, mirrow_element, \
     array_discreate_noise
-from singletons import statment
+from singletons import statment, K0_models
 
 
 class ModelK0:
@@ -24,7 +25,7 @@ class ModelK0:
         - Метод get_plot_data подготавливает данные для построения. Метод plotter позволяет построить графики с помощью
         matplotlib"""
 
-    MIN_LSE_PNTS = 4
+    MIN_LSE_PNTS = 3
     '''Минимальное число точек, необходимых для расчета'''
 
     SIGMA_PREC = 3
@@ -43,7 +44,8 @@ class ModelK0:
 
         # Результаты опыта
         self._test_result = AttrDict({'K0': None, 'sigma_p': None,
-                                      'sigma_1': np.asarray([]), 'sigma_3': np.asarray([])})
+                                      'sigma_1': np.asarray([]), 'sigma_3': np.asarray([]),
+                                      'b': None})
 
         #
         self.__debug_data = AttrDict({'sigma_1': np.asarray([]), 'sigma_3': np.asarray([]), 'is_ok': False})
@@ -101,7 +103,7 @@ class ModelK0:
                 if self.__debug_data:
                     self.check_debug()
 
-        self._test_result.K0, self._test_result.sigma_p = ModelK0.define_ko(self._test_result.sigma_1,
+        self._test_result.K0, self._test_result.sigma_p, self._test_result.b = ModelK0.define_ko(self._test_result.sigma_1,
                                                                             self._test_result.sigma_3)
         # except:
         #     #app_logger.exception("Ошибка обработки данных РК")
@@ -122,7 +124,7 @@ class ModelK0:
 
             first_point = sigma_1_cut[0] + line_shift
             k0_line_sigma_1 = np.linspace(first_point, sigma_1_cut[-1] + line_shift)
-            b = sigma_3_cut[0] - sigma_1_cut[0] * self._test_result.K0
+            b = self._test_result.b
 
             k0_line_sigma_3 = self._test_result.K0 * k0_line_sigma_1 + b
 
@@ -273,19 +275,9 @@ class ModelK0:
         :param no_round: bool, True - если необходимо не округлять результат
         :return: defined_k0 и defined_m
         """
-        sigma_1 = np.round(np.asarray(sigma_1), ModelK0.SIGMA_PREC)
-        sigma_3 = np.round(np.asarray(sigma_3), ModelK0.SIGMA_PREC)
-
-        print('sigmas 1,3 from processing')
-        print(sigma_1)
-        print(sigma_3)
-
-        lse_pnts = ModelK0.MIN_LSE_PNTS
-
-        if len(sigma_1) <= lse_pnts:
-            defined_k0, *__ = ModelK0.lse_linear_estimation(sigma_1, sigma_3)
-            defined_sigma_p = sigma_1[0]
-            return (defined_k0, defined_sigma_p) if no_round else (round(defined_k0, 2), defined_sigma_p)
+        if not no_round:
+            sigma_1 = np.round(np.asarray(sigma_1), ModelK0.SIGMA_PREC)
+            sigma_3 = np.round(np.asarray(sigma_3), ModelK0.SIGMA_PREC)
 
         # Итеративнй поиск прямолинейного участка с конца:
         #   1. Считаем к0 по последним lse_pnts точкам
@@ -295,27 +287,27 @@ class ModelK0:
         #   Логика в следующем: если нашли точку перегиба, то, не учитывая ее, стороим К0
         #   определенное давление в перегибе определяется в точке перегиба
 
-        current_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
-        prev_residuals = residuals
-        lse_pnts = lse_pnts + 1
+        test_all_residuals = []
+        test_all_k0 = []
+        test_all_b = []
+        for i, val in enumerate(sigma_1):
+            test_k0, test_b, test_residuals = ModelK0.lse_linear_estimation(sigma_1[i:], sigma_3[i:])
+            test_all_b.append(test_b)
+            test_all_residuals.append(test_residuals)
+            test_all_k0.append(test_k0)
 
-        while lse_pnts <= len(sigma_1) - 1:
-            current_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
-            if (residuals > 1e-8 and (residuals > prev_residuals)) \
-                    and abs(residuals - prev_residuals)/prev_residuals*100 > 100:
-                lse_pnts = lse_pnts - 1
-                break
-            prev_residuals = residuals
-            lse_pnts = lse_pnts + 1
+        test_all_k0 = np.asarray(test_all_k0)
+        test_all_residuals = np.asarray(test_all_residuals)
+        index, = np.where(test_all_residuals < 5)
+        if index[0] == 0:
+            index[0] = 1
+        index = index[0] + np.argmax(test_all_residuals[index[0]:])
 
-        lse_pnts = lse_pnts - 1
-        # Считаем полученный к0 по отобранным точкам
-        defined_k0, b, residuals = ModelK0.lse_linear_estimation(sigma_1[-lse_pnts:], sigma_3[-lse_pnts:])
+        defined_k0 = test_all_k0[index]
+        defined_b = test_all_b[index]
+        defined_sigma_p = sigma_1[index]
 
-        # Сигма точки перегиба можем взять прям из данных
-        defined_sigma_p = sigma_1[-lse_pnts-1]
-
-        return (defined_k0, defined_sigma_p) if no_round else (round(defined_k0, 2), defined_sigma_p)
+        return (defined_k0, defined_sigma_p, defined_b) if no_round else (round(defined_k0, 2), defined_sigma_p, defined_b)
 
     @staticmethod
     def lse_linear_estimation(__x, __y):
@@ -334,9 +326,11 @@ class ModelK0:
 
         res = lstsq(A, __y, rcond=None)
         k, b = res[0]
-        residuals = res[1]
+        residuals = res[1] if len(res[1] > 0) else [0]
 
-        return k, b, residuals
+        error = np.sum([abs(__y[i]-(k*__x[i]+b))/(__y[i] if __y[i] != 0 else 1) * 100 for i in range(len(__x))])/len(__x)
+
+        return k, b, error
 
 
 class ModelK0SoilTest(ModelK0):
@@ -369,6 +363,8 @@ class ModelK0SoilTest(ModelK0):
                                       "sigma_1_max": None,
                                       "mode_kinematic": False,  # True в кинематическом режме
                                       'speed': None})  # входной параметр для кинематики
+        self._test_data = AttrDict({"sigma_3": np.asarray([]),
+                                    "sigma_1": np.asarray([])})
 
     def set_test_params(self, test_params=None):
         if test_params:
@@ -422,6 +418,12 @@ class ModelK0SoilTest(ModelK0):
         if params["OCR"] is None:
             params["OCR"] = 0
         self._test_params.OCR = round(params["OCR"], 2)
+
+        if params["sigma_1_max"] < 600:
+            params["sigma_1_max"] = 600
+
+        if params["sigma_1_step"] < 1:
+            params["sigma_1_step"] = 1
 
         self._test_params.sigma_p, self._test_params.sigma_3_p = K0Properties.define_sigma_p(self._test_params.OCR,
                                                                                              self._test_params.depth,
@@ -481,6 +483,8 @@ class ModelK0SoilTest(ModelK0):
             sigma_1, sigma_3, action, time, debug_data = ModelK0SoilTest._step_mode_modeling(sigma_1_spl, sgima_1_synth,
                                                                                              sigma_3_spl, sgima_3_synth,
                                                                                              self._test_params)
+            self._test_data.sigma_1 = debug_data[0]
+            self._test_data.sigma_3 = debug_data[1]
 
         self.set_debug_data(debug_data)
         self.set_test_data({'sigma_1': sigma_1, 'sigma_3': sigma_3, 'action': action, 'time': time})
@@ -571,16 +575,25 @@ class ModelK0SoilTest(ModelK0):
 
         ModelK0SoilTest.text_file(file_path, main_dict)
 
-        # create_json_file('/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json",
-        #                  self.get_processing_parameters())
+    def save_cvi_file(self, file_path, file_name):
+        data = {
+            "laboratory_number": statment[statment.current_test].physical_properties.laboratory_number,
+            "borehole": statment[statment.current_test].physical_properties.borehole,
+            "ige": statment[statment.current_test].physical_properties.ige,
+            "depth": statment[statment.current_test].physical_properties.depth,
+            "sample_composition": "Н" if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4, 5] else "С",
+            "b": np.round(np.random.uniform(0.95, 0.98), 2),
 
-        # try:
-        #     plaxis = self.deviator_loading.get_plaxis_dictionary()
-        #     with open('/'.join(os.path.split(file_path)[:-1]) + "/plaxis_log.txt", "w") as file:
-        #         for i in range(len(plaxis["strain"])):
-        #             file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
-        # except Exception as err:
-        #     app_logger.exception(f"Проблема сохранения массива для plaxis {statment.current_test}")
+            "test_data": {
+            }
+        }
+
+        data["test_data"]["1"] = {
+            "main_stress": np.round(K0_models[statment.current_test]._test_data.sigma_1, 3),
+            "sigma_3": np.round(K0_models[statment.current_test]._test_data.sigma_3, 3)
+        }
+
+        save_cvi_K0(file_path=os.path.join(file_path, file_name), data=data)
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -588,7 +601,8 @@ class ModelK0SoilTest(ModelK0):
         params = {"OCR": {"value": self._test_params.OCR, "borders": [0, 3]},
                   "sigma_1_step": {"value": round((self._test_params.sigma_1_step*1000)/(0.050*1000), 0),
                                    "borders": [0, 100]},
-                  "sigma_1_max": {"value": self._test_params.sigma_1_max*1000, "borders": [600, 3000]}}
+                  "sigma_1_max": {"value": round(self._test_params.sigma_1_max, 3)*1000,
+                                  "borders": [0, 10000]}}
 
         return params
 
@@ -612,6 +626,8 @@ class ModelK0SoilTest(ModelK0):
         sigma_3_spl = spl(sigma_1_spl)
 
         # 6 - накладываем шум на прямолинейный участок и объединяем
+        # sigma_1 = np.hstack((sigma_1_spl[:-1], sgima_1_synth))
+        # sigma_3 = np.hstack((sigma_3_spl[:-1], sgima_3_synth))
         sigma_1, sigma_3 = ModelK0SoilTest.lse_faker(sgima_1_synth, sgima_3_synth,
                                                      sigma_1_spl, sigma_3_spl,
                                                      params.K0)
@@ -663,7 +679,7 @@ class ModelK0SoilTest(ModelK0):
 
     @staticmethod
     def lse_faker(sigma_1_line: np.array, sigma_3_line: np.array,
-                  sigma_1_spl: np.array, sigma_3_spl: np.array, K0: float, noise: float=None):
+                  sigma_1_spl: np.array, sigma_3_spl: np.array, K0: float, noise: float = None, loops: int = 0):
         """
             Принцип работы следующий:
                 шумы накладываются на линейный участок графика, по которому определяется К0.
@@ -681,18 +697,20 @@ class ModelK0SoilTest(ModelK0):
         :param sigma_3_spl: Сигма 3 нелинейного участка (включая первую точку линейного участка)
         :param K0: заданный К0
         :param noise: уровень шума, при None определяется автоматически
+        :param loops: число циклов (дополнительный параметр, подавать не надо)
         :return: Два массива Сигма 1 и Сигма 3 единой кривой (криволинейный и линейный участки)
         """
 
         # Точка начала прямолинейного участка должна быть зафиксирована,
         #   так как происходят некорретные сдвиги по шумам
-        sigma_3_line_fixed = round(sigma_3_line[0],ModelK0.SIGMA_PREC)
+        sigma_3_line_fixed = round(sigma_3_line[0], ModelK0.SIGMA_PREC)
         '''точка начала прямолинейного участка'''
-        sigma_1_line_fixed = round(sigma_1_line[0],ModelK0.SIGMA_PREC)
+        sigma_1_line_fixed = round(sigma_1_line[0], ModelK0.SIGMA_PREC)
         '''точка начала прямолинейного участка'''
 
         # Проверка числа узов
         if len(sigma_3_line) < 2:
+            print('NO NOISE')
             _sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1_line))
             _sigma_3 = np.hstack((sigma_3_spl[:-1], sigma_3_line))
             return _sigma_1, _sigma_3
@@ -702,24 +720,15 @@ class ModelK0SoilTest(ModelK0):
         #   после добавления шума
         fixed_point_index = 1
 
-        if not noise:
-            noise = abs(sigma_3_line[fixed_point_index] - sigma_3_line[0]) * 0.05
+        if noise is None:
+            noise = max([abs(sigma_3_line[i+1]-sigma_3_line[i]) for i in range(len(sigma_3_line)-1)])*0.12
 
         sigma_3_noise = copy.deepcopy(sigma_3_line)
 
-        # добавляем шум к зафиксированной точке
-        rnd = np.random.randint(0, 2)
-        if rnd == 0:
-            sigma_3_noise[fixed_point_index] -= noise
-        else:
-            sigma_3_noise[fixed_point_index] += noise
-
         # накладываем шумы на всю сигму
         for i in range(fixed_point_index, len(sigma_3_noise)):
-            if i == fixed_point_index:
-                continue
-
-            sigma_3_noise[i] += np.random.uniform(-noise, noise)
+            sigma_3_noise[i] += np.random.choice([-noise*(1-i/100), noise*(1-i/100)])
+            sigma_3_noise[i] += np.random.uniform(-0.05*noise, 0.05*noise)
 
         def func(x):
             """x - массив sigma_3 без зафиксированной точки"""
@@ -730,7 +739,7 @@ class ModelK0SoilTest(ModelK0):
             x = np.hstack((sigma_3_spl[:-1], x))
             __sigma_1 = np.hstack((sigma_1_spl[:-1], sigma_1_line))
 
-            _K0_new, _sigma_p_new = ModelK0.define_ko(__sigma_1, x, no_round=True)
+            _K0_new, _sigma_p_new, _ = ModelK0.define_ko(__sigma_1, x, no_round=True)
 
             return abs(_K0_new - K0) + abs(_sigma_p_new - sigma_1_line_fixed)
 
@@ -747,7 +756,7 @@ class ModelK0SoilTest(ModelK0):
             # замыкаем последний на первый на всякий случай
             second = np.array([x[-1] - x[0]])
 
-            third = np.array([0.025-abs(x[j]-sigma_3_line[j]) for j in range(len(x))])
+            third = np.array([0.055-abs(x[j]-sigma_3_line[j]) for j in range(len(x))])
 
             res = np.hstack((first, second, third))
             return res
@@ -756,7 +765,7 @@ class ModelK0SoilTest(ModelK0):
                 'fun': constrains}
         '''Нелинейные ограничения типа cj(x)>=0'''
 
-        res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, tol=1e-6)
+        res = minimize(func, initial, method='SLSQP', constraints=cons, bounds=bnds, options={'ftol': 1e-8})
         res = res.x
 
         # Результат:
@@ -768,23 +777,16 @@ class ModelK0SoilTest(ModelK0):
         _sigma_3 = np.hstack((sigma_3_spl[:-1], sigma_3_noise))
 
         # Проверка:
-        K0_new, sigma_p_new = ModelK0.define_ko(_sigma_1, _sigma_3)
+        K0_new, sigma_p_new, _ = ModelK0.define_ko(_sigma_1, _sigma_3)
 
-        print(f"Было:\n{K0} {sigma_1_line_fixed}\n"
-              f"Стало:\n{K0_new} {sigma_p_new}")
+        if ((K0 != K0_new) or (abs(sigma_p_new - sigma_1_line_fixed) > (_sigma_1[1] - _sigma_1[0]))) and loops < 100:
+            # print(loops, error)
+            loops = loops + 1
+            if loops % 10 == 0:
+                noise = noise * 0.998
+            _sigma_1, _sigma_3 = ModelK0SoilTest.lse_faker(sigma_1_line, sigma_3_line, sigma_1_spl, sigma_3_spl,
+                                                           K0, noise=noise, loops=loops)
 
-        if K0 != K0_new or (sigma_p_new > sigma_1_line_fixed):
-            print("Слишком большая ошибка в К0, Пробую уменьшить шум")
-            if noise < 1:
-                print("Слишком большая ошибка в К0")
-                _sigma_1, _sigma_3 = ModelK0SoilTest.lse_faker(sigma_1_line, sigma_3_line, sigma_1_spl, sigma_3_spl,
-                                                               K0, noise=0)
-            else:
-                _sigma_1, _sigma_3 = ModelK0SoilTest.lse_faker(sigma_1_line, sigma_3_line, sigma_1_spl, sigma_3_spl,
-                                                               K0, noise=noise*0.95)
-        print('sigmas 1,3 from modeling')
-        print(_sigma_1)
-        print(_sigma_3)
         return _sigma_1, _sigma_3
 
     @staticmethod
