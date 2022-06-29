@@ -855,6 +855,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                               (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
                                (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
                               test_result["E"][0], sheet="Лист1", color="FF6961")
+
             elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
                 name = file_path_name + " " + statment.general_data.object_number + " ТС Р (plaxis)" + ".pdf"
                 E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log", sample_size=(h, d))
@@ -1156,7 +1157,11 @@ class StatickSoilTestApp(AppMixin, QWidget):
                               test_result["c"], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
-                name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
+                if self.tab_4.report_type == "vibro":
+                    name = file_path_name + " " + statment.general_data.object_number + " ТДВ" + ".pdf"
+                else:
+                    name = file_path_name + " " + statment.general_data.object_number + " ТДО" + ".pdf"
+
                 FC_models[statment.current_test].save_log_files(save, file_path_name, sample_size=(h, d))
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} FC ЦВИ.xls")

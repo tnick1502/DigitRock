@@ -373,7 +373,10 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
             else:
                 os.mkdir(save)
 
-            file_name = "/" + "Отчет " + file_path_name + "-ВП" + ".pdf"
+            if self.tab_4.report_type == "cryo":
+                file_name = "/" + "Отчет " + file_path_name + "-ВПК" + ".pdf"
+            else:
+                file_name = "/" + "Отчет " + file_path_name + "-ВП" + ".pdf"
 
             E_models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
             VC_models[statment.current_test].save_log(save)

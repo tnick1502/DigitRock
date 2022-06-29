@@ -3281,8 +3281,12 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
     if report_type == "standart":
         name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+        sig = "/ВП"
     else:
         name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КРИОВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+        sig = "/ВПК"
+
+
 
     res_static["description"] = Data_phiz.description
 
@@ -3293,7 +3297,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             [name,
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], sig)
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"
@@ -3308,7 +3312,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], sig)
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_vibration_creep(canvas, test_parameter, moove=moove)
