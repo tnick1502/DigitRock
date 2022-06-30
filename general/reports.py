@@ -3749,7 +3749,7 @@ def test_mode_k0(canvas, ro, Data):
                ["Режим испытания:", "", Data.Rezhim, "", "", "", "", "", ""],
                [Paragraph('''<p>Давление консолидации σ'<sub rise="0.5" size="5">3c</sub>, МПа:</p>''', LeftStyle), "", "", "-"],
                ["Оборудование:", "", Data.Oborudovanie],
-               ["Параметры образца:", "", "Высота, мм:", zap(Data.h, 2), "Диаметр, мм:", zap(Data.d, 2), Paragraph('''<p>ρ, г/см<sup rise="2.5" size="5">3</sup>:</p>''', LeftStyle), zap(ro, 2)]], colWidths=19.444444* mm, rowHeights=4 * mm)
+               ["Параметры образца:", "", "Высота, мм:", zap(Data.h, 2), "Диаметр, мм:", zap(Data.d, 2), "", ""]], colWidths=19.444444* mm, rowHeights=4 * mm)
 
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (1, 1)),
@@ -3769,7 +3769,7 @@ def test_mode_k0(canvas, ro, Data):
                 ("BACKGROUND", (0, 4), (1, 4), HexColor(0xebebeb)),
                 ("BACKGROUND", (2, 4), (2, 4), HexColor(0xebebeb)),
                 ("BACKGROUND", (4, 4), (4, 4), HexColor(0xebebeb)),
-                ("BACKGROUND", (6, 4), (6, 4), HexColor(0xebebeb)),
+                # ("BACKGROUND", (6, 4), (6, 4), HexColor(0xebebeb)),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("ALIGN", (0, 0), (-1, 0), "CENTER"),
                 ("ALIGN", (0, 1), (-1, -1), "LEFT"),

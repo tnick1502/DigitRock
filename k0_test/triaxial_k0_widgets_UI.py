@@ -173,12 +173,12 @@ class K0SoilTestUI(K0UI):
                                                       "sigma_1_step": "Шаг нагружения, 0.050 МПа",
                                                       "sigma_1_max": "Максимальное давление, кПа"
                                                       })
-        self.sliders.set_sliders_params(
-            {
-                "OCR": {"value": 1.3, "borders": [0, 3]},
-                "sigma_1_step": {"value": 3, "borders": [0, 100]},
-                "sigma_1_max": {"value": 1200, "borders": [0, 10000]}
-            })
+        # self.sliders.set_sliders_params(
+        #     {
+        #         "OCR": {"value": 1.3, "borders": [0, 3]},
+        #         "sigma_1_step": {"value": 3, "borders": [0, 100]},
+        #         "sigma_1_max": {"value": 1200, "borders": [0, 10000]}
+        #     })
         self.layout.addWidget(self.sliders)
 
 
