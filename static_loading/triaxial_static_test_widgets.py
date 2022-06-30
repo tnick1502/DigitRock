@@ -466,7 +466,8 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
                   "poisson": "Коэффициент Пуассона",
                   "dilatancy": "Угол дилатансии",
                   "volumetric_strain_xc": "Объемн. деформ. в пике",
-                  "Eur": "Модуль разгрузки"})
+                  "Eur": "Модуль разгрузки",
+                  "amplitude": "Амплитуда девиаций"})
         self.deviator_loading_sliders.setFixedHeight(210)
 
         self.consolidation_sliders = TriaxialStaticLoading_Sliders({"max_time": "Время испытания",

@@ -27,6 +27,8 @@ from scipy.signal import argrelextrema
 
 from general.general_functions import *
 
+
+
 def compute_l2_norm(x: numpyArray['N2', float]) -> numpyArray['N1', float]:
     return x**2
 
@@ -156,7 +158,7 @@ def find_puasson_dilatancy(strain, deviator, volume_strain):
     return round(puasson, 2), dilatancy
 
 
-def deviator_loading_deviation(strain, deviator, xc, amplitude):
+def deviator_loading_deviation1(strain, deviator, xc, amplitude):
     # Добавим девиации после 0.6qf для кривой без пика
     qf = max(deviator)
 
@@ -228,6 +230,39 @@ def deviator_loading_deviation(strain, deviator, xc, amplitude):
                                                                  low_first_district=3,
                                                                  one_side=True),
                                           np.zeros(len(strain) - i_end[0])))
+
+    return deviation_array
+
+def deviator_loading_deviation(strain, deviator, xc, amplitude):
+    # Добавим девиации после 0.6qf для кривой без пика
+    qf = max(deviator)
+
+    devition_1 = amplitude*qf
+    devition_2 = (amplitude/2)*qf
+    devition_3 = (amplitude / 3)*qf
+    points_1 = np.random.uniform(10, 15)
+    points_2 = np.random.uniform(20, 30)
+    points_3 = np.random.uniform(50, 80)
+
+
+    try:
+        curve_1 = create_deviation_curve(strain, devition_1,
+                                       points=points_1, borders="zero_diff",
+                                       low_first_district=1, one_side=True)
+        curve_2 = create_deviation_curve(strain, devition_2,
+                                         points=points_2, borders="zero_diff",
+                                         low_first_district=1, one_side=True)
+        curve_3 = create_deviation_curve(strain, devition_3,
+                                         points=points_3, borders="zero_diff",
+                                         low_first_district=1, one_side=True)
+        deviation_array = -(curve_1 + curve_2 + curve_3)
+    except IndexError:
+        deviation_array = np.zeros(len(strain))
+
+
+    except (ValueError, IndexError):
+        print("Ошибка девиаций девиатора")
+        pass
 
     return deviation_array
 
@@ -1224,7 +1259,7 @@ def curve(qf, e50, **kwargs):
     try:
         kwargs["amplitude"]
     except KeyError:
-        kwargs["amplitude"] = [qf / 100, qf / 60]
+        kwargs["amplitude"] = 0.1
 
     amplitude = kwargs.get('amplitude')
 
@@ -1406,10 +1441,7 @@ def curve(qf, e50, **kwargs):
     else:
         y += deviator_loading_deviation(x, y, xc, amplitude=amplitude)
 
-    import time
-    start_time = time.time()
     y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
-    # print("--- %s seconds ---" % (time.time() - start_time))
     y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
 
     #
@@ -1426,6 +1458,31 @@ def curve(qf, e50, **kwargs):
         k = y_qf2ocr / (qf / 2)
         y_ocr = y_ocr / k
         y = copy.deepcopy(y_ocr)
+
+
+    index_x2, = np.where(np.round(x, 6) >= 0.15)
+
+    qf2_max = np.max(np.round(y[:index_x2[0]], 3))
+
+    delta = qf / qf2_max
+    y = y * delta
+
+    qf_max = np.max(np.round(y[:index_x2[0]], 3))
+    i_07qf, = np.where(np.round(y, 3) > qf_max * 0.7)
+    imax, = np.where(np.round(y[:i_07qf[0]],3) > qf / 2)
+    imin, = np.where(np.round(y[:i_07qf[0]],3) < qf / 2)
+    imax = imax[0]
+    imin = imin[-1]
+    # index_qf2, = np.where(np.round(y[:i_07qf[0]], 3) >= qf / 2)
+
+    x_qf2 = np.interp(qf / 2, [np.round(y[imin],3), np.round(y[imax],3)],
+                      [np.round(x[imin],6), np.round(x[imax],6)])
+
+    delta = x50 / x_qf2
+    x = x * delta
+
+    test_index, = np.where(y >= np.max(y[:index_x2[0]])/2)
+    test = y[test_index[0]]/x[test_index[0]]
 
     y1_l = y1_l + np.random.uniform(-0.4, 0.4, len(y1_l))  # шум на петле
     y2_l = y2_l + np.random.uniform(-0.4, 0.4, len(y2_l))  # шум на петле
