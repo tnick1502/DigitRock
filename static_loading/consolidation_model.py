@@ -1087,7 +1087,13 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         """Формирует словарь консолидации"""
         # Создаем массив набора нагрузки до обжимающего давления консолидации
         sigma_3 -= effective_stress_after_reconsolidation
+        k = sigma_3 / velocity
+        if k <= 2:
+            velocity = velocity / (2 / k)
+
         load_stage_time = round(sigma_3 / velocity, 2)
+        print()
+
         load_stage_time_array = np.arange(0, load_stage_time, 0.25)
 
         length = len(pore_volume_strain)
