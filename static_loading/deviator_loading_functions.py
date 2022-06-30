@@ -28,7 +28,6 @@ from scipy.signal import argrelextrema
 from general.general_functions import *
 
 
-
 def compute_l2_norm(x: numpyArray['N2', float]) -> numpyArray['N1', float]:
     return x**2
 
@@ -1379,10 +1378,90 @@ def curve(qf, e50, **kwargs):
                 return None
         return None
 
-    # print(f"ПОДАННЫЙ Еур : {Eur}")
-    # построение петли разгрузки
-    y_for_loop = y + deviator_loading_deviation(x, y, xc, amplitude=amplitude)
+    # МАСШТАБ
+    if qf_old < 150:
+        y = y / k_low_qf
 
+        if Eur:
+            qf = qf / k_low_qf
+            Eur = Eur / k_low_qf
+            y_rel_p = y_rel_p / k_low_qf
+            point2_y = point2_y / k_low_qf
+            e50 = e50 / k_low_qf
+        else:
+            qf = qf / k_low_qf
+            e50 = e50 / k_low_qf
+
+
+    # МАСШТАБ ИЗ-ЗА ДЕВИАЦИЙ - ВОЗВРАЩАЕТ Е50 И QF В НУЖНОЕ МЕСТО
+    count = 0
+    y_no_noise = copy.deepcopy(y)
+    x_no_noise = copy.deepcopy(x)
+    count_limit = 10
+    while count < count_limit:
+        y += deviator_loading_deviation(x, y, xc, amplitude=amplitude)
+        if not Eur:
+            y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
+            y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
+
+        #
+        if not Eur and is_OCR:
+            y_ocr = copy.deepcopy(y)
+            index_qf2ocr, = np.where(y_ocr >= qf / 2)
+            x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
+                                 [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
+            delta = x50 / x_qf2ocr
+
+            x = x * delta
+            index_x50, = np.where(x >= x50)
+            y_qf2ocr = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
+            k = y_qf2ocr / (qf / 2)
+            y_ocr = y_ocr / k
+            y = copy.deepcopy(y_ocr)
+
+        y_round = np.round(y, 3)
+        index_x2, = np.where(np.round(x, 6) >= 0.15)
+
+        qf2_max = np.max(y_round[:index_x2[0]])
+
+        print(f"AMP_TEST MAX FIRST : {qf2_max}")
+
+        delta = (qf) / qf2_max
+        y = y * delta
+        y_round = np.round(y, 3)
+        x_round = np.round(x, 6)
+        qf_max = np.max(np.round(y_round[:index_x2[0]], 3))
+
+        print(f"AMP_TEST MAX FIRST : {qf_max}, QF : {qf}")
+
+        i_07qf, = np.where(y_round[:index_x2[0]] > qf_max * 0.7)
+        imax, = np.where(y_round[:i_07qf[0]] > qf_max / 2)
+        imin, = np.where(y_round[:i_07qf[0]] < qf_max / 2)
+        imax = imax[0]
+        imin = imin[-1]
+        x_qf2 = np.interp(qf_max / 2, [y_round[imin], y_round[imax]], [x_round[imin], x_round[imax]])
+        delta = x50 / x_qf2
+        x = x * delta
+
+        index_x2, = np.where(np.round(x, 6) >= 0.15)
+        test_index, = np.where(y >= np.max(y[:index_x2[0]])/2)
+        test = y[test_index[0]]/x[test_index[0]]
+        from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading
+        RES_E50 = ModelTriaxialDeviatorLoading.define_E50_qf(x[:index_x2[0]], y[:index_x2[0]])
+
+        print(f"AMP_TEST CURVE 1487 : {test}, {RES_E50}")
+
+        print(f"AMP_TEST CURVE ERROR : {round(abs(RES_E50[0] - e50)/1000, 1)}")
+        if round(abs(RES_E50[0] - e50)/1000, 1) < 0.4:
+            break
+
+        count = count + 1
+        if count < count_limit:
+            y = copy.deepcopy(y_no_noise)
+            x = copy.deepcopy(x_no_noise)
+
+    # ОПТИМИЗАЦИЯ ПЕТЛИ
+    y_for_loop = copy.deepcopy(y)
     x_loop, y_loop,\
         point1_x, point1_y, point2_x, point2_y, point3_x, point3_y,\
         x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, Eur, y_rel_p, point2_y)
@@ -1424,65 +1503,9 @@ def curve(qf, e50, **kwargs):
     index_point1_x, = np.where(x >= point1_x)
     index_point3_x, = np.where(x >= point3_x)
 
-    if qf_old < 150:
-        y = y / k_low_qf
-
-        if Eur:
-            y_for_loop = y_for_loop / k_low_qf
-            qf = qf / k_low_qf
-            Eur = Eur / k_low_qf
-            y1_l = y1_l / k_low_qf
-            y2_l = y2_l / k_low_qf
-        else:
-            qf = qf / k_low_qf
-
     if Eur:
-        y = y_for_loop
-    else:
-        y += deviator_loading_deviation(x, y, xc, amplitude=amplitude)
-
-    y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
-    y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
-
-    #
-    if not Eur and is_OCR:
-        y_ocr = copy.deepcopy(y)
-        index_qf2ocr, = np.where(y_ocr >= qf / 2)
-        x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
-                             [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
-        delta = x50 / x_qf2ocr
-
-        x = x * delta
-        index_x50, = np.where(x >= x50)
-        y_qf2ocr = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
-        k = y_qf2ocr / (qf / 2)
-        y_ocr = y_ocr / k
-        y = copy.deepcopy(y_ocr)
-
-
-    index_x2, = np.where(np.round(x, 6) >= 0.15)
-
-    qf2_max = np.max(np.round(y[:index_x2[0]], 3))
-
-    delta = qf / qf2_max
-    y = y * delta
-
-    qf_max = np.max(np.round(y[:index_x2[0]], 3))
-    i_07qf, = np.where(np.round(y, 3) > qf_max * 0.7)
-    imax, = np.where(np.round(y[:i_07qf[0]],3) > qf / 2)
-    imin, = np.where(np.round(y[:i_07qf[0]],3) < qf / 2)
-    imax = imax[0]
-    imin = imin[-1]
-    # index_qf2, = np.where(np.round(y[:i_07qf[0]], 3) >= qf / 2)
-
-    x_qf2 = np.interp(qf / 2, [np.round(y[imin],3), np.round(y[imax],3)],
-                      [np.round(x[imin],6), np.round(x[imax],6)])
-
-    delta = x50 / x_qf2
-    x = x * delta
-
-    test_index, = np.where(y >= np.max(y[:index_x2[0]])/2)
-    test = y[test_index[0]]/x[test_index[0]]
+        y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
+        y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
 
     y1_l = y1_l + np.random.uniform(-0.4, 0.4, len(y1_l))  # шум на петле
     y2_l = y2_l + np.random.uniform(-0.4, 0.4, len(y2_l))  # шум на петле
@@ -1499,37 +1522,6 @@ def curve(qf, e50, **kwargs):
     point2_x_index = index_point1_x[0] + len(y1_l)  # -1 + 1 = 0 т.к. самая нижняя точка петли принадлежит разгрузке
     point3_x_index = index_point1_x[0] + len(x_loop) - 2  # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
     y[0] = 0.
-
-    # current_Eur = define_eur(x, y, [point1_x_index - 1, point2_x_index - 1, point3_x_index + 1])
-    # print(f"Еур ПОСЛЕ ПРИСОЕДИНЕНИЯ: {current_Eur} : ОШИБКА : {abs(Eur - current_Eur)/Eur*100}")
-    # with open('x_old.txt', 'w') as file:
-    #     for item in x_old:
-    #         file.write(str(item) + '\n')
-    #
-    # with open('x.txt', 'w') as file:
-    #     for item in x:
-    #         file.write(str(item) + '\n')
-    #
-    # with open('y.txt', 'w') as file:
-    #     for item in y:
-    #         file.write(str(item) + '\n')
-    # print(point1_x, point2_x,point3_x,point1_x_index, point2_x_index, point3_x_index)
-    # with open('x_old.txt', 'r') as file:
-    #     input = file.readlines()
-    #     x_old = np.asarray([float(item) for item in input])
-    # with open('x.txt', 'r') as file:
-    #     input = file.readlines()
-    #     x = np.asarray([float(item) for item in input])
-    # with open('y.txt', 'r') as file:
-    #     input = file.readlines()
-    #     y = np.asarray([float(item) for item in input])
-    #
-    # point1_x = 0.004394139186956799
-    # point2_x = 0.004094137716361355
-    # point3_x = 0.005332379080289609
-    # point1_x_index = 1495
-    # point2_x_index = 1596
-    # point3_x_index = 2014
 
     # ограничение на хс (не меньше чем x_given)
     if xc <= 0.025:
@@ -1715,6 +1707,14 @@ def curve(qf, e50, **kwargs):
     y1 = y1[:index_x2[0]]
     x = x[:index_x2[0]]
     y = y[:index_x2[0]]
+
+
+    test_index, = np.where(y >= np.max(y)/2)
+    test = y[test_index[0]]/x[test_index[0]]
+    from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading
+    RES_E50 = ModelTriaxialDeviatorLoading.define_E50_qf(x, y)
+
+    print(f"AMP_TEST CURVE 1730 : {test}, {RES_E50}")
 
     # формирование начального участка функции девиаторного нагружения
     y_bias = np.random.uniform(0.005, 0.015)  # смещение y

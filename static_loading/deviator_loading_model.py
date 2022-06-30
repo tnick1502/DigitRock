@@ -204,8 +204,11 @@ class ModelTriaxialDeviatorLoading:
                                                                     self._test_data.deviator_cut,
                                                                     self._test_params.E_processing_points_index)
 
+        print(f"AMP_TEST REZ 207 : {self._test_result.E50}")
         if self._test_result.E50 > 39600:
             print('test')
+
+        print("-------------------------------------------")
 
         if self._test_result.E[0] <= self._test_result.E50/1000:
             i_start_E = 0
@@ -946,10 +949,19 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 v_d_xc=-self._draw_params.volumetric_strain_xc,
                 U=None)
 
+        test_y = self._test_data.deviator[begin:] - self._test_data.deviator[begin]
+        test_x = self._test_data.strain[begin:] - self._test_data.strain[begin]
+
+        test_index, = np.where(test_y >= np.max(test_y) / 2)
+        test_0 = test_y[test_index[0]] / test_x[test_index[0]]
+
+        res_0_E50, res_0_qf = ModelTriaxialDeviatorLoading.define_E50_qf(test_x, test_y)
+        print(f"AMP_TEST 957 : {test_0}, {res_0_E50}")
+
         self._test_data.deviator = np.round(self._test_data.deviator, 3)
-        # self._test_data.strain = np.round(
-        #     self._test_data.strain * (76 - self._test_params.delta_h_consolidation)/ (
-        #                                      76 - self._test_params.delta_h_consolidation), 6)
+        self._test_data.strain = np.round(
+            self._test_data.strain * (76 - self._test_params.delta_h_consolidation)/ (
+                                             76 - self._test_params.delta_h_consolidation), 6)
 
         # Объем штока
         V = np.pi * 10 * 10 * self._test_data.cell_volume_strain * 76
@@ -992,7 +1004,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         test_1 = test_y[test_index[0]] / test_x[test_index[0]]
 
         res_1_E50, res_1_qf = ModelTriaxialDeviatorLoading.define_E50_qf(test_x, test_y)
-
+        print(f"AMP_TEST 995 : {test_1}, {res_1_E50}")
         # k = np.max(np.round(self._test_data.deviator[begin:] - self._test_data.deviator[begin], 3)) / self._test_params.qf
         # self._test_data.deviator = np.round(self._test_data.deviator/k, 3)
 
@@ -1003,10 +1015,11 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         test_2 = test_y[test_index[0]] / test_x[test_index[0]]
 
         res_2_E50, res_2_qf = ModelTriaxialDeviatorLoading.define_E50_qf(test_x, test_y)
+        print(f"AMP_TEST 1006 : {test_2}, {res_2_E50}")
 
-        # self._test_data.strain = np.round(
-        #     self._test_data.strain * (76 - self._test_params.delta_h_consolidation) / (
-        #             76 - self._test_params.delta_h_consolidation), 6)
+        self._test_data.strain = np.round(
+            self._test_data.strain * (76 - self._test_params.delta_h_consolidation) / (
+                    76 - self._test_params.delta_h_consolidation), 6)
 
         self._test_data.pore_volume_strain = np.round((self._test_data.pore_volume_strain * np.pi * 19 ** 2 * (
                 76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
