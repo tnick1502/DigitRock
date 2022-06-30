@@ -138,6 +138,7 @@ def save_cvi_E(file_path: str, data: dict):
         'sigma_3': 10,
         'sample_aria': 11,
         'stock_aria': 12,
+        'volume_strain': 15
     }
 
     FIRST_ROW = 8
@@ -166,6 +167,7 @@ def save_cvi_E(file_path: str, data: dict):
             if row == FIRST_ROW:
                 set_cell(COL['strain'], row, float(data['test_data'][test]['strain'][i]))
                 set_cell(COL['main_stress'], row, float(data['test_data'][test]['main_stress'][i]))
+                set_cell(COL['volume_strain'], row, float(data['test_data'][test]['volume_strain'][i]))
             else:
                 set_cell_f(COL['strain'], row, float(data['test_data'][test]['strain'][i]))
                 set_cell_f(COL['main_stress'], row, float(data['test_data'][test]['main_stress'][i]))
