@@ -240,8 +240,8 @@ def deviator_loading_deviation(strain, deviator, xc, amplitude):
     devition_2 = (amplitude/2)*qf
     devition_3 = (amplitude / 3)*qf
     points_1 = np.random.uniform(10, 15)
-    points_2 = np.random.uniform(20, 30)
-    points_3 = np.random.uniform(50, 80)
+    points_2 = np.random.uniform(30, 40)
+    points_3 = np.random.uniform(70, 80)
 
 
     try:
@@ -1424,15 +1424,11 @@ def curve(qf, e50, **kwargs):
 
         qf2_max = np.max(y_round[:index_x2[0]])
 
-        print(f"AMP_TEST MAX FIRST : {qf2_max}")
-
         delta = (qf) / qf2_max
         y = y * delta
         y_round = np.round(y, 3)
         x_round = np.round(x, 6)
         qf_max = np.max(np.round(y_round[:index_x2[0]], 3))
-
-        print(f"AMP_TEST MAX FIRST : {qf_max}, QF : {qf}")
 
         i_07qf, = np.where(y_round[:index_x2[0]] > qf_max * 0.7)
         imax, = np.where(y_round[:i_07qf[0]] > qf_max / 2)
@@ -1444,14 +1440,9 @@ def curve(qf, e50, **kwargs):
         x = x * delta
 
         index_x2, = np.where(np.round(x, 6) >= 0.15)
-        test_index, = np.where(y >= np.max(y[:index_x2[0]])/2)
-        test = y[test_index[0]]/x[test_index[0]]
         from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading
         RES_E50 = ModelTriaxialDeviatorLoading.define_E50_qf(x[:index_x2[0]], y[:index_x2[0]])
 
-        print(f"AMP_TEST CURVE 1487 : {test}, {RES_E50}")
-
-        print(f"AMP_TEST CURVE ERROR : {round(abs(RES_E50[0] - e50)/1000, 1)}")
         if round(abs(RES_E50[0] - e50)/1000, 1) < 0.4:
             break
 
@@ -1707,14 +1698,6 @@ def curve(qf, e50, **kwargs):
     y1 = y1[:index_x2[0]]
     x = x[:index_x2[0]]
     y = y[:index_x2[0]]
-
-
-    test_index, = np.where(y >= np.max(y)/2)
-    test = y[test_index[0]]/x[test_index[0]]
-    from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading
-    RES_E50 = ModelTriaxialDeviatorLoading.define_E50_qf(x, y)
-
-    print(f"AMP_TEST CURVE 1730 : {test}, {RES_E50}")
 
     # формирование начального участка функции девиаторного нагружения
     y_bias = np.random.uniform(0.005, 0.015)  # смещение y
