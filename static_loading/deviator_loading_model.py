@@ -771,7 +771,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                       "dilatancy": None,
                                       "volumetric_strain_xc": None,
                                       "Eur": None,
-                                      "amplitude": None})
+                                      "amplitude": None,
+                                      "free_deviations": None})
 
         self.pre_defined_kr_fgs = None
 
@@ -816,10 +817,12 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
 
         self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.qf*residual_strength
-        self._draw_params.amplitude = 0.1
+        self._draw_params.amplitude = 0.05
+        self._draw_params.free_deviations = True
         if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
             self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.q_res
-            self._draw_params.amplitude = 0.05#[self._test_params.qf / 200, self._test_params.qf / 120]
+            self._draw_params.amplitude = 0.00001#[self._test_params.qf / 200, self._test_params.qf / 120]
+            self._draw_params.free_deviations = False
         self._draw_params.qocr = 0
 
         if self._test_params.Eur:
@@ -879,7 +882,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
                   "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]},
                   "Eur": Eur,
-                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.001, 0.2]}}
+                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]}}
         return params
 
     def set_draw_params(self, params):
@@ -920,7 +923,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                 x2=self._draw_params.residual_strength_param,
                                                                 qf2=self._draw_params.residual_strength,
                                                                 qocr=self._draw_params.qocr,
-                                                                amplitude=self._draw_params.amplitude,
+                                                                amplitude=(self._draw_params.amplitude,
+                                                                           self._draw_params.free_deviations),
                                                                 m_given=self._draw_params.poisson,
                                                                 max_time=max_time,
                                                                 angle_of_dilatacy=dilatancy,
@@ -936,7 +940,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 x2=self._draw_params.residual_strength_param,
                 qf2=self._draw_params.residual_strength,
                 qocr=self._draw_params.qocr,
-                amplitude=self._draw_params.amplitude,
+                amplitude=(self._draw_params.amplitude, self._draw_params.free_deviations),
                 m_given=self._draw_params.poisson,
                  max_time=max_time,
                 angle_of_dilatacy=dilatancy,

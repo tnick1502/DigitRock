@@ -161,9 +161,8 @@ def deviator_loading_deviation1(strain, deviator, xc, amplitude):
     # Добавим девиации после 0.6qf для кривой без пика
     qf = max(deviator)
 
-    devition_1 = amplitude[0]
-    devition_2 = amplitude[1]
-    print(devition_1, devition_2)
+    devition_1 = amplitude*qf
+    devition_2 = amplitude*qf*0.6
 
     i_60, = np.where(deviator >= 0.51 * qf)
     i_90, = np.where(deviator >= 0.98 * qf)
@@ -239,17 +238,15 @@ def deviator_loading_deviation(strain, deviator, xc, amplitude):
     devition_1 = amplitude*qf
     devition_2 = (amplitude/2)*qf
     devition_3 = (amplitude / 3)*qf
-    points_1 = np.random.uniform(10, 15)
-    points_2 = np.random.uniform(20, 30)
-    points_3 = np.random.uniform(50, 80)
+    points_1 = np.random.uniform(5, 10)
+    points_2 = np.random.uniform(10, 20)
+    points_3 = np.random.uniform(20, 30)
 
     try:
-        index_015, = np.where(strain >= 0.15)
+        index_015, = np.where(strain >= 0.17)
         index_015 = index_015[0]
 
-        points_1 = int((points_1 / len(strain)) * len(strain[:index_015]))
-        points_2 = int((points_2 / len(strain)) * len(strain[:index_015]))
-        points_3 = int((points_3 / len(strain)) * len(strain[:index_015]))
+
     except TypeError:
         index_015 = -1
 
@@ -1252,7 +1249,10 @@ def curve(qf, e50, **kwargs):
     except KeyError:
         kwargs["U"] = None
 
-
+    try:
+        kwargs["amplitude"]
+    except KeyError:
+        kwargs["amplitude"] = (0.1, True)
 
     xc = kwargs.get('xc')
     x2 = kwargs.get('x2')
@@ -1264,15 +1264,9 @@ def curve(qf, e50, **kwargs):
     y_rel_p = kwargs.get('y_rel_p')
     point2_y = kwargs.get('point2_y')
     U = kwargs.get('U')
-
-
-    try:
-        kwargs["amplitude"]
-    except KeyError:
-        kwargs["amplitude"] = 0.1
-
-    amplitude = kwargs.get('amplitude')
-
+    amplitude = kwargs.get('amplitude')[0]
+    free_deviations = kwargs.get('amplitude')[1]
+    '''флаг, отвечает за наложение девиаций на контрольные точки'''
 
 
     if max_time < 50:
@@ -1395,87 +1389,79 @@ def curve(qf, e50, **kwargs):
 
         if Eur:
             qf = qf / k_low_qf
-            qf2 = qf2 / k_low_qf
             Eur = Eur / k_low_qf
             y_rel_p = y_rel_p / k_low_qf
             point2_y = point2_y / k_low_qf
             e50 = e50 / k_low_qf
         else:
             qf = qf / k_low_qf
-            qf2 = qf2 / k_low_qf
             e50 = e50 / k_low_qf
 
 
     # МАСШТАБ ИЗ-ЗА ДЕВИАЦИЙ - ВОЗВРАЩАЕТ Е50 И QF В НУЖНОЕ МЕСТО
-    count_for_res_qf = 0
-    while count_for_res_qf < 20:
-        count = 0
-        y_no_noise = copy.deepcopy(y)
-        x_no_noise = copy.deepcopy(x)
-        count_limit = 10
-        while count < count_limit:
-            y += deviator_loading_deviation(x, y, xc, amplitude=amplitude)
-            if not Eur:
-                y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
-                y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
+    count = 0
+    y_no_noise = copy.deepcopy(y)
+    x_no_noise = copy.deepcopy(x)
+    count_limit = 10
+    while count < count_limit:
 
-            #
-            if not Eur and is_OCR:
-                y_ocr = copy.deepcopy(y)
-                index_qf2ocr, = np.where(y_ocr >= qf / 2)
-                x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
-                                     [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
-                delta = x50 / x_qf2ocr
-
-                x = x * delta
-                index_x50, = np.where(x >= x50)
-                y_qf2ocr = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
-                k = y_qf2ocr / (qf / 2)
-                y_ocr = y_ocr / k
-                y = copy.deepcopy(y_ocr)
-
-            y_round = np.round(y, 3)
-            index_x2, = np.where(np.round(x, 6) >= 0.15)
-
-            qf2_max = np.max(y_round[:index_x2[0]])
-
-            delta = (qf) / qf2_max
-            y = y * delta
-            y_round = np.round(y, 3)
-            x_round = np.round(x, 6)
-            qf_max = np.max(np.round(y_round[:index_x2[0]], 3))
-
-            i_07qf, = np.where(y_round[:index_x2[0]] > qf_max * 0.7)
-            imax, = np.where(y_round[:i_07qf[0]] > qf_max / 2)
-            imin, = np.where(y_round[:i_07qf[0]] < qf_max / 2)
-            imax = imax[0]
-            imin = imin[-1]
-            x_qf2 = np.interp(qf_max / 2, [y_round[imin], y_round[imax]], [x_round[imin], x_round[imax]])
-            delta = x50 / x_qf2
-            x = x * delta
-
-            index_x2, = np.where(np.round(x, 6) >= 0.15)
-            from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading
-            RES_E50 = ModelTriaxialDeviatorLoading.define_E50_qf(x[:index_x2[0]], y[:index_x2[0]])
-
-            if round(abs(RES_E50[0] - e50)/1000, 1) < 0.4:
-                break
-
-            count = count + 1
-            if count < count_limit:
-                y = copy.deepcopy(y_no_noise)
-                x = copy.deepcopy(x_no_noise)
-
-        index_015, = np.where(x >= x2)
-        index_015 = index_015[0]
-
-        if abs(y[index_015] - qf2) < 20:
+        if not free_deviations:
+            y += deviator_loading_deviation1(x, y, xc, amplitude=amplitude)
             break
 
-        count_for_res_qf = count_for_res_qf + 1
-        if count_for_res_qf < 20:
+        y += deviator_loading_deviation(x, y, xc, amplitude=amplitude)
+
+        if not Eur:
+            y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
+            y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
+
+        #
+        if not Eur and is_OCR:
+            y_ocr = copy.deepcopy(y)
+            index_qf2ocr, = np.where(y_ocr >= qf / 2)
+            x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
+                                 [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
+            delta = x50 / x_qf2ocr
+
+            x = x * delta
+            index_x50, = np.where(x >= x50)
+            y_qf2ocr = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
+            k = y_qf2ocr / (qf / 2)
+            y_ocr = y_ocr / k
+            y = copy.deepcopy(y_ocr)
+
+        y_round = np.round(y, 3)
+        index_x2, = np.where(np.round(x, 6) >= 0.15)
+
+        qf2_max = np.max(y_round[:index_x2[0]])
+
+        delta = (qf) / qf2_max
+        y = y * delta
+        y_round = np.round(y, 3)
+        x_round = np.round(x, 6)
+        qf_max = np.max(np.round(y_round[:index_x2[0]], 3))
+
+        i_07qf, = np.where(y_round[:index_x2[0]] > qf_max * 0.7)
+        imax, = np.where(y_round[:i_07qf[0]] > qf_max / 2)
+        imin, = np.where(y_round[:i_07qf[0]] < qf_max / 2)
+        imax = imax[0]
+        imin = imin[-1]
+        x_qf2 = np.interp(qf_max / 2, [y_round[imin], y_round[imax]], [x_round[imin], x_round[imax]])
+        delta = x50 / x_qf2
+        x = x * delta
+
+        index_x2, = np.where(np.round(x, 6) >= 0.15)
+        from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading
+        RES_E50 = ModelTriaxialDeviatorLoading.define_E50_qf(x[:index_x2[0]], y[:index_x2[0]])
+
+        if round(abs(RES_E50[0] - e50)/1000, 1) < 0.4:
+            break
+
+        count = count + 1
+        if count < count_limit:
             y = copy.deepcopy(y_no_noise)
             x = copy.deepcopy(x_no_noise)
+
     # ОПТИМИЗАЦИЯ ПЕТЛИ
     y_for_loop = copy.deepcopy(y)
     x_loop, y_loop,\

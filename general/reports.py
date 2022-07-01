@@ -1858,7 +1858,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, description=
         [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub>, д.е.:</p>''', LeftStyle), "",
          "", Kd, "", ""])
 
-    tableData.append(["Примечание:", "", "", description, "", ""])
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(["", "", "", "", "", ""])
     #tableData.append(
         #[Paragraph('''<p>Дополнительная деформация виброползучести на период 50 лет, %''', LeftStyle), "",
@@ -2518,7 +2518,7 @@ def result_table_CF_KN_vs(canvas, Res, pick, scale = 0.8, moove=0):
                    LeftStyle), "", "",
          zap(np.round(Res["c_vs"] / Res["c"], 2), 2), "", ""])
 
-    tableData.append(["Примечание:", "", "", Res["description"], "", ""])
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(["", "", "", "", "", ""])
 
     #tableData.append(
