@@ -16,6 +16,7 @@ from excel_statment.position_configs import PhysicalPropertyPosition, Mechanical
     DynamicsPropertyPosition, IdentificationColumns
 from excel_statment.functions import str_df, float_df, date_df
 from descriptors import DataTypeValidation
+import math
 
 class PhysicalProperties:
     """Класс, хранящий свойсва грунтов, которые считываются без обработки"""
@@ -1490,6 +1491,7 @@ class VibrationCreepProperties(MechanicalProperties):
 
     def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode) -> None:
         super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
+
         if self.c and self.fi and self.E50:
             frequency = data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]]
             #Kd = data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]]
@@ -1509,7 +1511,8 @@ class VibrationCreepProperties(MechanicalProperties):
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
             Kd = data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]]
 
-            if Kd is not None:
+
+            if Kd is not None and not math.isnan(Kd):
                 self.Kd = VibrationCreepProperties.val_to_list(Kd)
             else:
                 if physical_properties.type_ground in [1, 2, 3, 4, 5]:
