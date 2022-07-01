@@ -1197,7 +1197,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
         E = zap(Res["E"][0], 1)
         Ew = '''<p>Модуль деформации E, МПа:</p>'''
 
-    elif result_E == "E50":
+    elif result_E == "E50" or result_E == "Eur":
         E = zap(Res["E50"], 1)
         Ew = '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>'''
 
