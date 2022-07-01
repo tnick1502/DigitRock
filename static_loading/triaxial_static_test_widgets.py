@@ -468,7 +468,7 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
                   "volumetric_strain_xc": "Объемн. деформ. в пике",
                   "Eur": "Модуль разгрузки",
                   "amplitude": "Амплитуда девиаций"})
-        self.deviator_loading_sliders.setFixedHeight(210)
+        self.deviator_loading_sliders.setFixedHeight(240)
 
         self.consolidation_sliders = TriaxialStaticLoading_Sliders({"max_time": "Время испытания",
                                                                          "volume_strain_90": "Объемная деформация в Cv"})

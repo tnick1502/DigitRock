@@ -238,23 +238,31 @@ def deviator_loading_deviation(strain, deviator, xc, amplitude):
 
     devition_1 = amplitude*qf
     devition_2 = (amplitude/2)*qf
-    devition_3 = (amplitude / 3)*qf
+    devition_3 = (amplitude / 5)*qf
     points_1 = np.random.uniform(10, 15)
-    points_2 = np.random.uniform(30, 40)
-    points_3 = np.random.uniform(70, 80)
+    points_2 = np.random.uniform(20, 30)
+    points_3 = np.random.uniform(50, 60)
+
+    # try:
+    index_015, = np.where(strain >= 0.15)
+    index_015 = index_015[0]-1
+    # except:
+    # index_015 = -1
 
 
     try:
-        curve_1 = create_deviation_curve(strain, devition_1,
-                                       points=points_1, borders="zero_diff",
-                                       low_first_district=1, one_side=True)
-        curve_2 = create_deviation_curve(strain, devition_2,
+        strain_for_deviations = strain[:index_015]
+        curve_1 = create_deviation_curve(strain_for_deviations, devition_1,
+                                         points=points_1, borders="zero_diff",
+                                         low_first_district=1, one_side=True)
+        curve_2 = create_deviation_curve(strain_for_deviations, devition_2,
                                          points=points_2, borders="zero_diff",
                                          low_first_district=1, one_side=True)
-        curve_3 = create_deviation_curve(strain, devition_3,
+        curve_3 = create_deviation_curve(strain_for_deviations, devition_3,
                                          points=points_3, borders="zero_diff",
                                          low_first_district=1, one_side=True)
         deviation_array = -(curve_1 + curve_2 + curve_3)
+        deviation_array = np.hstack((deviation_array, np.zeros(len(strain[index_015:]))))
     except IndexError:
         deviation_array = np.zeros(len(strain))
 
