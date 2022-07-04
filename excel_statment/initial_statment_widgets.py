@@ -1,3 +1,5 @@
+from typing import List
+
 from PyQt5.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QGroupBox, QTableWidget, QDialog, \
     QComboBox, QWidget, QHeaderView, QTableWidgetItem, QFileSystemModel, QTreeView, QLineEdit, QSplitter, QPushButton, \
     QVBoxLayout, QLabel, QMessageBox, QProgressBar, QSlider, QStyle, QStyleOptionSlider, QRadioButton
@@ -1108,23 +1110,35 @@ class RayleighDampingStatment(InitialStatment):
 class K0Statment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
 
+    test_modes: List = []
+
     def __init__(self):
         data_test_parameters = {
             "test_mode": {
                 "label": "Режим испытания",
                 "vars": [
-                    "Ступенчатый",
-                    "Кинематический"]
+                    "Трехосное сжатие K0",
+                    # "Трехосное сжатие K0 с разгрузкой"
+                    ]
+            },
+            "K0_mode": {
+                "label": "Модель расчета",
+                "vars": [
+                    "Мора-Кулона",
+                    "Hardening Soil"
+                ]
             }
         }
 
+        K0Statment.test_modes = data_test_parameters['test_mode']['vars']
+
         fill_keys = {
-            "laboratory_number": "Лаб. ном.",
-            "depth": "Глубина, м",
-            "OCR": "OCR",
-            "K0": "K0",
-            "sigma_1_step": "Шаг нагружения, МПа",
-            "sigma_1_max": "Максимальное давление, МПа"}
+            'laboratory_number': 'Лаб. ном.',
+            'depth': 'Глубина, м',
+            'OCR': 'OCR',
+            'K0nc': 'K0nc',
+            'sigma_1_step': 'Шаг нагружения, МПа',
+            'sigma_1_max': 'Максимальное давление, МПа'}
 
         super().__init__(data_test_parameters, fill_keys)
 
@@ -1133,6 +1147,7 @@ class K0Statment(InitialStatment):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
             combo_params = self.open_line.get_data()
+            combo_params['K0_mode'] = K0Statment.is_hs_model(self.open_line.get_data()["K0_mode"])
 
             columns_marker = [("FV", 177)]
 
@@ -1149,15 +1164,17 @@ class K0Statment(InitialStatment):
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
             else:
-                # combo_params["test_mode"] = "Трехосное сжатие K0"
-
-                self.load_statment(statment_name="Трехосное сжатие K0.pickle",
+                self.load_statment(statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
                                    properties_type=K0Properties, general_params=combo_params)
 
                 keys = list(statment.tests.keys())
                 for test in keys:
-                    if not statment[test].mechanical_properties.K0:
-                        del statment.tests[test]
+                    if statment.general_parameters.test_mode == K0Statment.test_modes[0]:
+                        if not statment[test].mechanical_properties.K0nc:
+                            del statment.tests[test]
+                    elif statment.general_parameters.test_mode == K0Statment.test_modes[1]:
+                        if not statment[test].mechanical_properties.K0nc or not statment[test].mechanical_properties.K0oc:
+                            del statment.tests[test]
 
                 if len(statment) < 1:
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
@@ -1168,6 +1185,12 @@ class K0Statment(InitialStatment):
                     self.open_line.text_file_path.setText(self.path)
 
                     self.load_models(models_name="k0_models.pickle", models=K0_models, models_type=ModelK0SoilTest)
+
+    @staticmethod
+    def is_hs_model(_mode):
+        if _mode == 'Hardening Soil':
+            return True
+        return False
 
 
 if __name__ == "__main__":
