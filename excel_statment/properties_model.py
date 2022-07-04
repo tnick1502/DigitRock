@@ -2077,11 +2077,14 @@ class ShearProperties(MechanicalProperties):
               type_ground == 8 or type_ground == 9) and (Il > 1.0):
             return [25, 75, 125]
 
+
 class K0Properties(MechanicalProperties):
-    sigma_1_step = DataTypeValidation(float, int)
-    sigma_1_max = DataTypeValidation(float, int)
-    sigma_p = DataTypeValidation(float, int)
-    sigma_3_p = DataTypeValidation(float, int)
+    K0nc = DataTypeValidation(float, int)  # K0 нормальной консолидации (входной параметр)
+
+    sigma_1_step = DataTypeValidation(float, int)  # Шаг нагружения (входной параметр)
+    sigma_1_max = DataTypeValidation(float, int)  # Максимальное давление до которого нагружаем (входной параметр)
+    sigma_p = DataTypeValidation(float, int)  # Давление при OCR
+    sigma_3_p = DataTypeValidation(float, int)  # Давление при OCR
 
     def __init__(self):
         for key in K0Properties.__dict__:
@@ -2093,9 +2096,9 @@ class K0Properties(MechanicalProperties):
                          test_mode=None, K0_mode=None) -> None:
         """Считывание строки свойств"""
 
-        self.K0 = float_df(data_frame.iat[string, MechanicalPropertyPosition["K0nc"][1]])
+        self.K0nc = float_df(data_frame.iat[string, MechanicalPropertyPosition["K0nc"][1]])
 
-        if self.K0:
+        if self.K0nc:
             self.OCR = float_df(data_frame.iat[string, MechanicalPropertyPosition["OCR"][1]])
 
             if self.OCR is None:
@@ -2103,16 +2106,22 @@ class K0Properties(MechanicalProperties):
             if physical_properties.type_ground in {1, 2, 3, 4}:
                 self.OCR = 0
 
-            self.sigma_p, self.sigma_3_p = K0Properties.define_sigma_p(self.OCR, physical_properties.depth, self.K0)
+            self.sigma_p, self.sigma_3_p = K0Properties.define_sigma_p(self.OCR, physical_properties.depth, self.K0nc)
 
-            self.sigma_1_step = 0.150
+            self.sigma_1_step = 0.300
             self.sigma_1_max = 1.200
             if physical_properties.type_ground in {1, 2, 3, 4}:
-                self.sigma_1_step = 0.200
+                self.sigma_1_step = 0.400
                 self.sigma_1_max = 2.000
 
+            if K0_mode:
+                self.sigma_1_step = 0.150
+                if physical_properties.type_ground in {1, 2, 3, 4}:
+                    self.sigma_1_step = 0.200
+
+
     @staticmethod
-    def define_sigma_p(OCR, depth, K0):
+    def define_sigma_p(OCR, depth, K0nc):
         # бытовое давление (точка перегиба) определяется из OCR через ro*g*h, где h - глубина залгания грунта
         _sigma_p = OCR * 2 * 10 * depth
 
@@ -2121,16 +2130,11 @@ class K0Properties(MechanicalProperties):
             _sigma_p = 2000*1000
 
         # сигма 3 при этом давлении неизвестно, но мы знаем, что наклон точно больше, чем наклон прямолинейного участка
-        _sigma_3_p = K0 * (1/np.random.uniform(2.5, 3.0)) * _sigma_p
+        _sigma_3_p = K0nc * (1/np.random.uniform(2.5, 3.0)) * _sigma_p
 
         # значения получаем в кпа, поэтому делим на 1000
         return _sigma_p/1000, _sigma_3_p/1000
 
-    @staticmethod
-    def is_kinematic_mode(_test_mode):
-        if _test_mode == 'Кинематический':
-            return True
-        return False
 
 class RayleighDampingProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""

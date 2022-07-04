@@ -78,7 +78,7 @@ class K0UI(QWidget):
             self.ax_K0.scatter(plot_data["sigma_3"], plot_data["sigma_1"], label="test data", color="tomato")
             self.ax_K0.plot(plot_data["k0_line_x"], plot_data["k0_line_y"], label="approximate data")
 
-            self.ax_K0.scatter([], [], label="$K0$" + " = " + str(results["K0"]), color="#eeeeee")
+            self.ax_K0.scatter([], [], label="$K0$" + " = " + str(results["K0nc"]), color="#eeeeee")
 
             self.ax_K0.legend()
 
@@ -113,7 +113,7 @@ class K0IdentificationUI(TableVertical):
         super().__init__({"laboratory_number": "Лаб. ном.",
                           "depth": "Глубина, м",
                           "OCR": "OCR",
-                          "K0": "K0",
+                          "K0nc": "K0nc",
                           "sigma_1_step": "Шаг нагружения, МПа",
                           "sigma_1_max": "Максимальное давление, МПа"})
 

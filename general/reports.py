@@ -3691,7 +3691,7 @@ def result_table_k0(canvas, Res, pick, scale = 0.8):
         tableData.append([""])
 
     tableData.append([Paragraph('''<p>Коэффициент бокового давления K<sub rise="0.5" size="5">0</sub><sup rise="2.5" size="5">nc</sup>, МПа:</p>''', LeftStyle),
-                      "", "", "", zap(Res["K0"], 2), "", "", "", ""])
+                      "", "", "", zap(Res["K0nc"], 2), "", "", "", ""])
 
     first_col = 10
     col_widths = [first_col * mm,
