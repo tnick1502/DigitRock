@@ -38,8 +38,8 @@ class Float_Slider(QSlider):
         else:
             self.slider_order = max(
                 [self.order(minimum), 100 / (maximum - minimum)])
-            self.setMinimum(int(minimum * self.slider_order))
-            self.setMaximum(int(maximum * self.slider_order))
+            self.setMinimum(int(round(minimum * self.slider_order)))
+            self.setMaximum(int(round(maximum * self.slider_order)))
 
     def current_value(self):
         if self.disabled:
