@@ -944,8 +944,9 @@ class StaticSoilTestDialog(QDialog):
                                                                        "poisson": "Коэффициент Пуассона",
                                                                        "dilatancy": "Угол дилатансии",
                                                                        "volumetric_strain_xc": "Объемн. деформ. в пике",
-                                                                       "Eur": "Модуль разгрузки"})
-        self.deviator_loading_sliders.setFixedHeight(200)
+                                                                       "Eur": "Модуль разгрузки",
+                                                                       "amplitude": "Амплитуда девиаций"})
+        self.deviator_loading_sliders.setFixedHeight(240)
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)
 
