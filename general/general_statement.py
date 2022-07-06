@@ -724,7 +724,13 @@ class StatementGenerator(QDialog):
     def sort_data_by_skv_depth(self, data):
         result = copy.deepcopy(data[:-1])
 
-        result = sorted(result, key=lambda x: [x[1], x[2]] if len(x) > 2 else x[0])
+        is_str_item_1 = False
+        for item in result:
+            if not is_str_item_1 and type(self.float_float(item[1])) == str:
+                is_str_item_1 = True
+
+        result = sorted(result, key=lambda x: [x[1] if is_str_item_1 else self.float_float(x[1]),
+                                               self.float_float(x[2])] if len(x) > 2 else x[0])
 
         return [*result, data[-1]]
 
