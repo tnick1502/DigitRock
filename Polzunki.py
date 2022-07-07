@@ -1149,20 +1149,30 @@ def loop(x, y, Eur, y_rel_p, point2_y):
             point2_x = x[ip2x[0]]
 
         # точка конца петли
-
         index_x2, = np.where(y >= np.max(y[:index_015[0]]))
-        k3 = 1.5
-        slant = Eur*(2 - k3)
+
+        k3 = 6  # в столько раз производная на выходе из точки 2 больше Eur
+        MIN_k3 = 4  # минимальный наклон, дальше идет шаг по точке начала рагрузки
+        lower_slant = 0.6 # конечную точку будем выбирть правее, так как необходимо обеспечить гладкость
+        # чем меньше lower_slant тем положе выход на кривую
+
+        def get_slant(__k3):
+            y_slant = point2_y + (y_inter - point2_y)/2
+            x_slant = (y_slant - (point2_y - ((__k3*Eur)*point2_x)))/(__k3*Eur)
+            return (y_inter - y_slant)/(x_inter - x_slant)
+
+        slant = get_slant(k3)  # наклон из самопересечения в конечную точку
+
 
         #  значение в максимуме должно быть меньше
         #  чем значение прямой из самопересечения петли для этого же икса
-        while is_bad_line(y[index_x2[0]], x[index_x2[0]], slant, y_inter, x_inter):
-            if k3 - 0.1 < 1.5:
+        while is_bad_line(y[index_x2[0]], x[index_x2[0]], lower_slant*slant, y_inter, x_inter):
+            if k3 < MIN_k3:
                 break
             k3 = k3 - 0.01
-            slant = Eur * (2 - k3)
+            slant = get_slant(k3)
 
-        if not is_bad_line(y[index_x2[0]], x[index_x2[0]], slant, y_inter, x_inter):
+        if not is_bad_line(y[index_x2[0]], x[index_x2[0]], lower_slant*slant, y_inter, x_inter):
             break
 
         y_rel_p = y_rel_p - 1
@@ -1176,10 +1186,10 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     # КОНЕЦ ЦИКЛА
 
     # если построение все же плохое, пытаемся построить с наклоном k3 = 1
-    if is_bad_line(y[index_x2[0]], x[index_x2[0]], slant, y_inter, x_inter):
+    if is_bad_line(y[index_x2[0]], x[index_x2[0]], lower_slant*slant, y_inter, x_inter):
         if k3 >= round(1.0):
-            k3 = 1
-            slant = Eur * (2 - k3)
+            k3 = 1.01
+            slant = get_slant(k3)
 
     print('k3: ', k3)
     print(f"y_rel_p AFTER CORRECTION : {y_rel_p}")
@@ -1187,7 +1197,7 @@ def loop(x, y, Eur, y_rel_p, point2_y):
 
     x_inter_array = x[ip1[0]:index_x2[0]]
     y_inter_array = y[ip1[0]:index_x2[0]]
-    y_loop_inter_array = slant * x_inter_array + (y_inter - slant * x_inter)
+    y_loop_inter_array = lower_slant*slant * x_inter_array + (y_inter - lower_slant*slant * x_inter)
 
     # plt.figure()
     # plt.plot(x_inter_array, y_inter_array, x_inter_array, y_loop_inter_array)
@@ -1223,7 +1233,9 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     # от точки пересечения в нижюю точку
     x2_l = np.linspace(x_inter, point2_x, int(abs(point2_x - x_inter) / (x[1] - x[0]) + 1))
     # от нижней точки до конца петли
-    x3_l = np.linspace(point2_x, point3_x, int(abs(point2_x - point3_x) / (x[1] - x[0]) + 1))
+    x3_l = np.linspace(point2_x, x_inter, int(abs(point2_x - x_inter) / (x[1] - x[0]) + 1))
+    # от нижней точки до конца петли
+    x4_l = np.linspace(x_inter, point3_x, int(abs(x_inter - point3_x) / (x[1] - x[0]) + 1))
 
     y1_l = k_inter * x1_l + b_inter
 
@@ -1242,12 +1254,37 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     y2_l = y2_l[1:]
 
     # третий участок
-    spl1 = interpolate.make_interp_spline([point2_x, x_inter, point3_x],
-                                          [point2_y, y_inter, point3_y], k=3,
-                                          bc_type=([(1, k3*Eur)], [(1, d1_p3)]))
-    y3_l = spl1(x3_l)
+    b_c = bezier_curve([point2_x, point2_y],
+                       [point2_x - 0.1 * point2_x, (k3*Eur) * (point2_x - 0.1 * point2_x) + (point2_y - (k3*Eur) * point2_x)],
+                       [x_inter, y_inter],
+                       [x_inter + 0.1 * x_inter, slant * (x_inter + 0.1 * x_inter) + (y_inter - slant * x_inter)],
+                       [point2_x, point2_y],  # Безье построиться только на возрастающем иксе
+                       [x_inter, y_inter],  # поэтому обращаем сетку и меняем местами узлы
+                       x3_l)
+    y3_l = b_c
     x3_l = x3_l[1:]
     y3_l = y3_l[1:]
+
+    b_c = bezier_curve([x_inter, y_inter],
+                       [x_inter + 0.1 * x_inter, slant * (x_inter + 0.1 * x_inter) + (y_inter - slant * x_inter)],
+                       [point3_x, point3_y],
+                       [point3_x - 0.1 * point3_x, d1_p3 * (point3_x - 0.1 * point3_x) + (point3_y - d1_p3 * point3_x)],
+                       [x_inter, y_inter],  # Безье построиться только на возрастающем иксе
+                       [point3_x, point3_y],  # поэтому обращаем сетку и меняем местами узлы
+                       x4_l)
+    y4_l = b_c
+    x4_l = x4_l[1:]
+    y4_l = y4_l[1:]
+
+    x3_l = np.hstack((x3_l, x4_l))
+    y3_l = np.hstack((y3_l, y4_l))
+
+    # spl1 = interpolate.make_interp_spline([point2_x, x_inter, point3_x],
+    #                                       [point2_y, y_inter, point3_y], k=3,
+    #                                       bc_type=([(1, k3*Eur)], [(1, d1_p3)]))
+    # y3_l = spl1(x3_l)
+    # x3_l = x3_l[1:]
+    # y3_l = y3_l[1:]
 
     # plt.figure()
     # plt.plot(x1_l, y1_l, c='r')
@@ -1974,10 +2011,10 @@ class Main(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.params = {"qf": 2500, "e50": 2000,
+        self.params = {"qf": 2500, "e50": 130725,
                        "qf2": 560, "xc": 0.07,
                        "xc2": 0.15, "qocr": 0,
-                       "Eur": 50000, "y_rel_p": 2900}
+                       "Eur": 50000, "y_rel_p": 2951}
 
         self.createIU()
 
