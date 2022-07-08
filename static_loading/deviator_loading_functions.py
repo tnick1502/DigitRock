@@ -233,11 +233,12 @@ def deviator_loading_deviation1(strain, deviator, xc, amplitude):
 
 def deviator_loading_deviation(strain, deviator, xc, amplitude):
     # Добавим девиации после 0.6qf для кривой без пика
-    qf = max(deviator)
+    index_015, = np.where(strain >= 0.15)
+    qf = np.max(deviator[:index_015[0]])
 
-    devition_1 = amplitude*qf
-    devition_2 = (amplitude/2)*qf
-    devition_3 = (amplitude / 3)*qf
+    devition_1 = amplitude * qf
+    devition_2 = (amplitude / 2) * qf
+    devition_3 = (amplitude / 3) * qf
     points_1 = np.random.uniform(5, 10)
     points_2 = np.random.uniform(10, 20)
     points_3 = np.random.uniform(20, 30)
@@ -245,8 +246,6 @@ def deviator_loading_deviation(strain, deviator, xc, amplitude):
     try:
         index_015, = np.where(strain >= 0.17)
         index_015 = index_015[0]
-
-
     except TypeError:
         index_015 = -1
 
@@ -675,61 +674,188 @@ def sensor_accuracy(x, y, qf, x50, xc):
 
     return y_res
 
+def interpolated_intercepts(x, y1, y2):
+    """Find the intercepts of two curves, given by the same x data"""
+
+    def intercept(point1, point2, point3, point4):
+        """find the intersection between two lines
+        the first line is defined by the line between point1 and point2
+        the first line is defined by the line between point3 and point4
+        each point is an (x,y) tuple.
+
+        So, for example, you can find the intersection between
+        intercept((0,0), (1,1), (0,1), (1,0)) = (0.5, 0.5)
+
+        Returns: the intercept, in (x,y) format
+        """
+
+        def line(p1, p2):
+            A = (p1[1] - p2[1])
+            B = (p2[0] - p1[0])
+            C = (p1[0]*p2[1] - p2[0]*p1[1])
+            return A, B, -C
+
+        def intersection(L1, L2):
+            D  = L1[0] * L2[1] - L1[1] * L2[0]
+            Dx = L1[2] * L2[1] - L1[1] * L2[2]
+            Dy = L1[0] * L2[2] - L1[2] * L2[0]
+
+            x = Dx / D
+            y = Dy / D
+            return x,y
+
+        L1 = line([point1[0],point1[1]], [point2[0],point2[1]])
+        L2 = line([point3[0],point3[1]], [point4[0],point4[1]])
+
+        R = intersection(L1, L2)
+
+        return R
+
+    idxs = np.argwhere(np.diff(np.sign(y1 - y2)) != 0)
+
+    xcs = []
+    ycs = []
+
+    for idx in idxs:
+        xc, yc = intercept((x[idx], y1[idx]),((x[idx+1], y1[idx+1])), ((x[idx], y2[idx])), ((x[idx+1], y2[idx+1])))
+        xcs.append(xc)
+        ycs.append(yc)
+    return np.array(xcs), np.array(ycs)
+
 def loop(x, y, Eur, y_rel_p, point2_y):
+    # print(Eur)
 
-    ip1, = np.where(y >= y_rel_p)
+    def is_bad_line(y_in_max, x_in_max, __slant, __y_inter, __x_inter):
+        return y_in_max >= __slant * x_in_max + (__y_inter - __slant * __x_inter)
 
-    index_015, = np.where(x >= 0.15)
-    if not np.size(ip1) > 0:
-        print("нет точки начала разгрузки")
-        y_rel_p = np.max(y[:index_015[0]])
-        ip1, = np.where(y >= y_rel_p)
+    # Заранее не известно, поместится ли петля на график,
+    # то если успеет ли петля вернуться до максимума девиатора,
+    # поэтому мы будет итеративно строить прямую и уменьшать девиатор появления петли,
+    # если петля не влезла
+    count = 0
+    num_steps = 3000 - 100
 
-    # точка появления петли
-    point1_x = x[ip1[0]]
-    point1_y = y[ip1[0]]
+    # print(f"y_rel_p BEFORE CORRECTION : {y_rel_p}")
+    while count < num_steps:
 
-    E0 = (y[1] - y[0]) / (x[1] - x[0])  # производная кривой девиаторного нагружения в 0
-    # ограничение на E0 (не больше чем модуль петли разгрузки)
-    if E0 < Eur:
-        E0 = 1.1 * Eur
+        index_015, = np.where(x >= 0.15)
+        ip1, = np.where(y[:index_015[0]] >= y_rel_p)
+        if not np.size(ip1) > 0:
+            # print("нет точки начала разгрузки")
+            y_rel_p = np.max(y[:index_015[0]])
+            ip1, = np.where(y[:index_015[0]] >= y_rel_p)
 
-    # ограничение на угол наклона участка повтороной нагрузки,
-    # чтобы исключить пересечение петли и девиаторной кривой
-    min_E0 = point1_y / point1_x  # максимальный угол наклона петли
+        # точка появления петли
+        point1_x = x[ip1[0]]
+        point1_y = y[ip1[0]]
 
-    if Eur < 1.1 * min_E0:
-        #print("\nВНИМАНИЕ: Eur изменен!\n")
-        Eur = 1.1 * min_E0
-        E0 = 1.1 * Eur
+        E0 = (y[1] - y[0]) / (x[1] - x[0])  # производная кривой девиаторного нагружения в 0
+        # ограничение на E0 (не больше чем модуль петли разгрузки)
+        if E0 < Eur:
+            E0 = 1.1 * Eur
 
-    # точка самопересечения петли
-    y_inter = np.random.uniform(0.8, 0.9) * (point1_y - point2_y) + point2_y
-    x_inter = point1_x*round(0.995, 2)
-    ipxinter, = np.where(x >= x_inter)
-    x_inter = x[ipxinter[0]]  # ???
+        # ограничение на угол наклона участка повтороной нагрузки,
+        # чтобы исключить пересечение петли и девиаторной кривой
+        min_E0 = point1_y / point1_x  # максимальный угол наклона петли
 
-    k_inter = (point1_y - y_inter) / (point1_x - x_inter)
-    b_inter = y_inter - k_inter*x_inter
+        if Eur < 1.1 * min_E0:
+            #print("\nВНИМАНИЕ: Eur изменен!\n")
+            Eur = 1.1 * min_E0
+            E0 = 1.1 * Eur
 
-    # нижняя точка петли
-    point2_x = (point2_y - (y_inter - Eur*x_inter))/Eur
-    ip2x, = np.where(x >= point2_x)
-    point2_x = x[ip2x[0]]  # ???
-    if ip2x[0] >= ipxinter[0]: # если точка 2 совпадает с точкой один или правее, то меняем точку 2 на предыдущую
-        #print("\nВНИМАНИЕ: Eur изменен!\n")
-        ip2x[0] = ipxinter[0] - 1
-        point2_x = x[ip2x[0]]
+        # точка самопересечения петли
+        # np.random.uniform(0.8, 0.9)
+        y_inter = np.random.uniform(0.8, 0.9) * (point1_y - point2_y) + point2_y
+        ipxinter, = np.where(x >= point1_x)
+        ipxinter[0] = ipxinter[0] - 1 # берем предыдущую точку, получив тем самым производную вертикально вверх
+        x_inter = x[ipxinter[0]]
 
-    # точка конца петли
-    index_x2, = np.where(y == np.max(y))
-    k = (0.3 / (-x[index_x2[-1]])) * point1_x + 0.4
-    din_koef = -3 * 10 ** (-9) * Eur + k * point1_x ## 0.00095
-    point3_x = point1_x + din_koef
+        k_inter = (point1_y - y_inter) / (point1_x - x_inter)
+        b_inter = y_inter - k_inter*x_inter
+
+        # нижняя точка петли
+        point2_x = (point2_y - (y_inter - Eur*x_inter))/Eur
+        ip2x, = np.where(x >= point2_x)
+        point2_x = x[ip2x[0]]  # ???
+        if ip2x[0] >= ipxinter[0]: # если точка 2 совпадает с точкой один или правее, то меняем точку 2 на предыдущую
+            #print("\nВНИМАНИЕ: Eur изменен!\n")
+            ip2x[0] = ipxinter[0] - 1
+            point2_x = x[ip2x[0]]
+
+        # точка конца петли
+        index_x2, = np.where(y >= np.max(y[:index_015[0]]))
+
+        k3 = 6  # в столько раз производная на выходе из точки 2 больше Eur
+        MIN_k3 = 4  # минимальный наклон, дальше идет шаг по точке начала рагрузки
+        lower_slant = 0.6 # конечную точку будем выбирть правее, так как необходимо обеспечить гладкость
+        # чем меньше lower_slant тем положе выход на кривую
+
+        def get_slant(__k3):
+            y_slant = point2_y + (y_inter - point2_y)/2
+            x_slant = (y_slant - (point2_y - ((__k3*Eur)*point2_x)))/(__k3*Eur)
+            return (y_inter - y_slant)/(x_inter - x_slant)
+
+        slant = get_slant(k3)  # наклон из самопересечения в конечную точку
+
+
+        #  значение в максимуме должно быть меньше
+        #  чем значение прямой из самопересечения петли для этого же икса
+        while is_bad_line(y[index_x2[0]], x[index_x2[0]], lower_slant*slant, y_inter, x_inter):
+            if k3 < MIN_k3:
+                break
+            k3 = k3 - 0.01
+            slant = get_slant(k3)
+
+        if not is_bad_line(y[index_x2[0]], x[index_x2[0]], lower_slant*slant, y_inter, x_inter):
+            break
+
+        y_rel_p = y_rel_p - 1
+
+        # точка разгрузки не может быть ниже точки до которой разгружаемся
+        if y_rel_p <= point2_y + 10:
+            y_rel_p = y_rel_p + 1
+            break
+
+        count = count + 1
+    # КОНЕЦ ЦИКЛА
+
+    # если построение все же плохое, пытаемся построить с наклоном k3 = 1
+    if is_bad_line(y[index_x2[0]], x[index_x2[0]], lower_slant*slant, y_inter, x_inter):
+        if k3 >= round(1.0):
+            k3 = 1.01
+            slant = get_slant(k3)
+
+    # print('k3: ', k3)
+    # print(f"y_rel_p AFTER CORRECTION : {y_rel_p}")
+    # print(count)
+
+    x_inter_array = x[ip1[0]:index_x2[0]]
+    y_inter_array = y[ip1[0]:index_x2[0]]
+    y_loop_inter_array = lower_slant*slant * x_inter_array + (y_inter - lower_slant*slant * x_inter)
+
+    # plt.figure()
+    # plt.plot(x_inter_array, y_inter_array, x_inter_array, y_loop_inter_array)
+    # plt.show()
+
+    rez_x, rez_y = interpolated_intercepts(x_inter_array, y_inter_array, y_loop_inter_array)
+
+    if len(rez_x) < 1:
+        rez_x = np.asarray([[x[index_x2[0]]]])
+
+    i_rez_x, = np.where(x >= rez_x[0][0])
+    rez_x = x[i_rez_x[0]]
+
+    # p3_x_min = (y[index_x2[0]] - (y_inter - slant*x_inter))/slant
+    p3_x_min = rez_x
+
+    # k = (0.3 / (-x[index_x2[0]])) * point1_x + 0.2
+    # din_koef = -3 * 10 ** (-9) * (slant/k3) + k * point1_x ## 0.00095
+    # point3_x = p3_x_min + din_koef
+    point3_x = p3_x_min
     ip3, = np.where(x >= point3_x)
     point3_x = x[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
     if point3_x <= point1_x:
-        ip3[0] = ip1[0]+1
+        ip3[0] = ip1[0] + 1
         point3_x = x[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
     point3_y = y[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
 
@@ -741,38 +867,67 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     # от точки пересечения в нижюю точку
     x2_l = np.linspace(x_inter, point2_x, int(abs(point2_x - x_inter) / (x[1] - x[0]) + 1))
     # от нижней точки до конца петли
-    x3_l = np.linspace(point2_x, point3_x, int(abs(point2_x - point3_x) / (x[1] - x[0]) + 1))
+    x3_l = np.linspace(point2_x, x_inter, int(abs(point2_x - x_inter) / (x[1] - x[0]) + 1))
+    # от нижней точки до конца петли
+    x4_l = np.linspace(x_inter, point3_x, int(abs(x_inter - point3_x) / (x[1] - x[0]) + 1))
 
     y1_l = k_inter * x1_l + b_inter
 
     # безье второго участка
     d1_p2 = 0.00000
-    b_c = bezier_curve([point1_x, point1_y],
-                       [x_inter, y_inter],
-                       [point2_x, point2_y],
+
+    b_c = bezier_curve([point2_x, point2_y],
                        [point2_x - 0.1 * point2_x, d1_p2 * (point2_x - 0.1 * point2_x) + (point2_y - d1_p2 * point2_x)],
-                       [point2_x, point2_y],
+                       [point1_x, point1_y],
                        [x_inter, y_inter],
+                       [point2_x, point2_y],  # Безье построиться только на возрастающем иксе
+                       [x_inter, y_inter],  # поэтому обращаем сетку и меняем местами узлы
                        np.flip(x2_l))
     y2_l = np.flip(b_c)
     x2_l = x2_l[1:]
     y2_l = y2_l[1:]
 
     # третий участок
-    spl1 = interpolate.make_interp_spline([point2_x, x_inter, point3_x],
-                                          [point2_y, y_inter, point3_y], k=3,
-                                          bc_type=([(2, 0)], [(1, d1_p3)]))
-    y3_l = spl1(x3_l)
+    b_c = bezier_curve([point2_x, point2_y],
+                       [point2_x - 0.1 * point2_x, (k3*Eur) * (point2_x - 0.1 * point2_x) + (point2_y - (k3*Eur) * point2_x)],
+                       [x_inter, y_inter],
+                       [x_inter + 0.1 * x_inter, slant * (x_inter + 0.1 * x_inter) + (y_inter - slant * x_inter)],
+                       [point2_x, point2_y],  # Безье построиться только на возрастающем иксе
+                       [x_inter, y_inter],  # поэтому обращаем сетку и меняем местами узлы
+                       x3_l)
+    y3_l = b_c
     x3_l = x3_l[1:]
     y3_l = y3_l[1:]
-    #
+
+    b_c = bezier_curve([x_inter, y_inter],
+                       [x_inter + 0.1 * x_inter, slant * (x_inter + 0.1 * x_inter) + (y_inter - slant * x_inter)],
+                       [point3_x, point3_y],
+                       [point3_x - 0.1 * point3_x, d1_p3 * (point3_x - 0.1 * point3_x) + (point3_y - d1_p3 * point3_x)],
+                       [x_inter, y_inter],  # Безье построиться только на возрастающем иксе
+                       [point3_x, point3_y],  # поэтому обращаем сетку и меняем местами узлы
+                       x4_l)
+    y4_l = b_c
+    x4_l = x4_l[1:]
+    y4_l = y4_l[1:]
+
+    x3_l = np.hstack((x3_l, x4_l))
+    y3_l = np.hstack((y3_l, y4_l))
+
+    # spl1 = interpolate.make_interp_spline([point2_x, x_inter, point3_x],
+    #                                       [point2_y, y_inter, point3_y], k=3,
+    #                                       bc_type=([(1, k3*Eur)], [(1, d1_p3)]))
+    # y3_l = spl1(x3_l)
+    # x3_l = x3_l[1:]
+    # y3_l = y3_l[1:]
+
     # plt.figure()
-    #
     # plt.plot(x1_l, y1_l, c='r')
     # plt.plot(x2_l, y2_l, c='g')
     # plt.plot(x3_l, y3_l, c='b')
+    # plt.plot(x_inter_array, y_inter_array, x_inter_array, y_loop_inter_array)
     # plt.plot(x, y, c='black')
-    # plt.scatter([point1_x,x_inter,point2_x],[point1_y,y_inter,point2_y])
+    # # plt.xlim(0, 0.03)
+    # plt.scatter([point1_x,x_inter,point2_x,point3_x, x[i_rez_x[0]]],[point1_y,y_inter,point2_y,point3_y,y[i_rez_x[0]]])
     # plt.show()
 
 
@@ -980,8 +1135,10 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
     на участке [xc...]-половина функции Гаусса или параболы'''
     if xc < x50:
         xc = x50 * 1.1  # хс не может быть меньше x50
-    x = np.linspace(0, 0.6, int((amount_points * 0.6 / 0.15) / 4))
-    y = np.linspace(0, 0.6, int((amount_points * 0.6 / 0.15) / 4))
+
+    max_x = xc + 0.6
+    x = np.linspace(0, max_x, int((amount_points * max_x / 0.15) / 4))
+    y = np.linspace(0, max_x, int((amount_points * max_x / 0.15) / 4))
     a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, xocr = params_gip_exp_tg(x, e50, qf, x50, xc,
                                                                         qocr)  # считаем  k1, k, xocr на участке до x50, начальное значение kp
     # считаем предельное значение xc
@@ -1033,7 +1190,7 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
                 qf2 = 0.98 * qf
 
             a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
-            gip_and_exp_or_tg_cos_par = np.linspace(0, 0.6, int((amount_points * 0.6 / 0.15) / 4))
+            gip_and_exp_or_tg_cos_par = np.linspace(0, max_x, int((amount_points * max_x / 0.15) / 4))
             for i in range(len(x)):
                 if x[i] < xc:
                     gip_and_exp_or_tg_cos_par[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t,
@@ -1071,7 +1228,7 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
     if qocr > (0.8 * qf):  # не выводить точку xocr, qocr
         xocr = xc
         qocr = qf
-    xnew = np.linspace(x.min(), x.max(), int(amount_points * 0.6 / 0.15))  # интерполяция  для сглаживания в пике
+    xnew = np.linspace(x.min(), x.max(), int(amount_points * max_x / 0.15))  # интерполяция  для сглаживания в пике
     spl = make_interp_spline(x, y, k=5)
     y_smooth = spl(xnew)
 
@@ -1580,7 +1737,7 @@ def curve(qf, e50, **kwargs):
         point1_x, point1_y, point2_x, point2_y, point3_x, point3_y,\
         x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, Eur, y_rel_p, point2_y)
 
-    print(define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1]))
+    # print(define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1]))
     # оптимизация петли разгрузки
     # if Eur:
     #     current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
