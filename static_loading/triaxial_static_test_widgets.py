@@ -663,7 +663,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 "E_E50": "Совместный E/E50",
                 "plaxis": "Plaxis/Midas",
                 "user_define_1": "Пользовательский с ε50",
-                "vibro": "Вибропрочность"
+                "vibro": "Вибропрочность",
+                "vibroNN": "КриовиброНН"
             })
 
         self.tab_4.popIn.connect(self.addTab)
@@ -862,7 +863,6 @@ class StatickSoilTestApp(AppMixin, QWidget):
                                   (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
                                    (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
                                   test_result["E"][0], sheet="Лист1", color="FF6961")
-
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
                 name = file_path_name + " " + statment.general_data.object_number + " ТС Р (plaxis)" + ".pdf"
@@ -1133,7 +1133,10 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 test_parameter["mode"] = "НН, девиаторное нагружение в кинематическом режиме " + s
 
-                name = file_path_name + " " + statment.general_data.object_number + " НН" + ".pdf"
+                if self.tab_4.report_type == "vibroNN":
+                    name = file_path_name + " " + statment.general_data.object_number + " КВ" + ".pdf"
+                else:
+                    name = file_path_name + " " + statment.general_data.object_number + " НН" + ".pdf"
 
                 FC_models[statment.current_test].save_log_files(save, file_path_name, sample_size=(h, d))
 
@@ -1154,7 +1157,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                            statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                           (*self.tab_3.save_canvas(),
-                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+                           *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 

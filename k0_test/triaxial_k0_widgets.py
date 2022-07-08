@@ -171,7 +171,7 @@ class K0ProcessingApp(QWidget):
             else:
                 os.mkdir(save)
 
-            file_name = save + "/" + "Отчет " + file_path_name + "-РК" + ".pdf"
+            file_name = save + "/" + "Отчет " + file_path_name + "-K0" + ".pdf"
 
             test_param = self.tab_1.get_data()
             test_parameter = {"reference_pressure": test_param.reference_pressure}
@@ -273,7 +273,7 @@ class K0SoilTestApp(QWidget):
 
             test_result = K0_models[statment.current_test].get_test_results()
 
-            results = {"K0": test_result["K0"], "sigma_1": test_result["sigma_1"], "sigma_3": test_result["sigma_3"]}
+            results = {"K0nc": test_result["K0nc"], "sigma_1": test_result["sigma_1"], "sigma_3": test_result["sigma_3"]}
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date
@@ -299,7 +299,7 @@ class K0SoilTestApp(QWidget):
             set_cell_data(self.tab_1.path,
                           (MechanicalPropertyPosition["K0nc"][0] + str(number),
                            (number, MechanicalPropertyPosition["K0nc"][1])),
-                          test_result["K0"], sheet="Лист1", color="FF6961")
+                          test_result["K0nc"], sheet="Лист1", color="FF6961")
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")

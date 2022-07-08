@@ -761,6 +761,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         except:
             s = None
 
+        test_mode_file_name = "резонанс"
 
         _statment = StatementGenerator(self, path=s, statement_structure_key="Resonance column",
                                        test_mode_and_shipment=(test_mode_file_name,

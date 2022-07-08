@@ -18,12 +18,14 @@ class CyclicVibrationStrangth(ModelTriaxialDeviatorLoadingSoilTest):
         self._test_params.u = statment[statment.current_test].mechanical_properties.u
         ModelTriaxialDeviatorLoadingSoilTest.set_test_params(self)
 
+
     def _test_modeling(self):
         """Функция моделирования опыта"""
         # Время проведения опыта
+
         self._test_params.velocity = 0.1
 
-        self._test_params.qf *= np.random.uniform(0.35, 0.95)
+        self._test_params.qf *= statment[statment.current_test].mechanical_properties.Kcu
 
         max_time = int((0.15 * (76)) / self._test_params.velocity)
         if max_time <= 5000:
@@ -31,6 +33,8 @@ class CyclicVibrationStrangth(ModelTriaxialDeviatorLoadingSoilTest):
 
         dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(self._draw_params.dilatancy)) /
                                          (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
+
+        self._draw_params.residual_strength = self._test_params.qf* np.random.uniform(0.7, 0.8)
 
         self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
         self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve(
@@ -97,7 +101,7 @@ class CyclicVibrationStrangth(ModelTriaxialDeviatorLoadingSoilTest):
 
         strain, deviator, pore_volume_strain, \
         cell_volume_strain, reload_points, begin = curve(
-            self._test_params.qf * 0.9, self._test_params.E50 * statment[statment.current_test].mechanical_properties.Kcu,
+            self._test_params.qf * 0.9, self._test_params.E50,
             xc=self._draw_params.fail_strain,
             x2=self._draw_params.residual_strength_param,
             qf2=self._draw_params.residual_strength,
@@ -135,7 +139,7 @@ class CyclicVibrationStrangth(ModelTriaxialDeviatorLoadingSoilTest):
                 (pore_pressure, split[key]["pore_pressure"] - split[key]["pore_pressure"][0] + pore_pressure[-1]))
             time = np.hstack((time, split[key]["time"] - split[key]["time"][0] + time[-1]))
 
-            if (key != list(split.keys())[-1]):
+            if (key != list(split.keys())[-1]) and offset[key].get("offset", None):
                 s, d, p, t, break_ = CyclicVibrationStrangth.cyclic_step(cycles, self._test_params.sigma_d,
                                                                          offset[key]["offset"],
                                                                          self._test_params.E50,
@@ -331,11 +335,10 @@ class CyclicVibrationStrangthMohr(ModelMohrCirclesSoilTest):
         statment[statment.current_test].mechanical_properties.frequency = 40
         statment[statment.current_test].mechanical_properties.sigma_d = np.round(
             statment[statment.current_test].mechanical_properties.qf / 50)
-        if statment[statment.current_test].mechanical_properties.sigma_d <= 5:
-            statment[statment.current_test].mechanical_properties.sigma_d = 5
+        if statment[statment.current_test].mechanical_properties.sigma_d <= 3:
+            statment[statment.current_test].mechanical_properties.sigma_d = 3
 
-        statment[statment.current_test].mechanical_properties.step = np.round(
-            statment[statment.current_test].mechanical_properties.qf / 8)
+        statment[statment.current_test].mechanical_properties.step = np.round( statment[statment.current_test].mechanical_properties.qf / 8)
 
         super()._test_modeling()
 
