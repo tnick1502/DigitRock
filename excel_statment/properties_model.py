@@ -1511,7 +1511,6 @@ class VibrationCreepProperties(MechanicalProperties):
             self.frequency = VibrationCreepProperties.val_to_list(frequency)
             Kd = data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]]
 
-
             if type(Kd) != str and Kd is not None and math.isnan(Kd):
                 Kd = 0
                 Kd = None
