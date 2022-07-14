@@ -904,10 +904,12 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.amplitude = params["amplitude"]
 
         unload_start_y = params["unload_start_y"]
-        if unload_start_y - self.loop_height > 10:
-            self.unloading_borders = (unload_start_y, unload_start_y - self.loop_height)
-        else:
-            self.unloading_borders = (10 + self.loop_height, 10)
+        self.unloading_borders = (unload_start_y, 10)
+
+        # if unload_start_y - self.loop_height > 10:
+        #     self.unloading_borders = (unload_start_y, unload_start_y - self.loop_height)
+        # else:
+        #     self.unloading_borders = (10 + self.loop_height, 10)
         """self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(params["dilatancy"])) /
                                                            (1 - np.sin(np.deg2rad(params["dilatancy"])))))"""
 
