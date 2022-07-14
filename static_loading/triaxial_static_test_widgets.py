@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFrame, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, \
-    QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout,\
+    QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout, \
     QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog
 from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject
 from PyQt5.QtGui import QPalette, QBrush
@@ -15,8 +15,10 @@ from excel_statment.initial_tables import LinePhysicalProperties
 from general.save_widget import Save_Dir
 from excel_statment.functions import set_cell_data
 from excel_statment.position_configs import c_fi_E_PropertyPosition, MechanicalPropertyPosition
-from general.reports import report_consolidation, report_FCE, report_FC, report_FC_KN, report_E, report_FC_NN, report_FC_res
-from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI, ModelTriaxialFileOpenUI, ModelTriaxialReconsolidationUI, \
+from general.reports import report_consolidation, report_FCE, report_FC, report_FC_KN, report_E, report_FC_NN, \
+    report_FC_res
+from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI, ModelTriaxialFileOpenUI, \
+    ModelTriaxialReconsolidationUI, \
     ModelTriaxialConsolidationUI, ModelTriaxialDeviatorLoadingUI
 from general.general_widgets import Float_Slider
 from configs.styles import style
@@ -28,14 +30,18 @@ from tests_log.test_classes import TestsLogTriaxialStatic
 import os
 from version_control.configs import actual_version
 from general.tab_view import AppMixin
+
 __version__ = actual_version
+
 from authentication.request_qr import request_qr
 from saver import XMLWidget
+
 
 class StaticProcessingWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
+
     def __init__(self, model=None):
         super().__init__()
 
@@ -51,7 +57,6 @@ class StaticProcessingWidget(QWidget):
         self.line_for_phiz = QVBoxLayout()
         self.line.addLayout(self.line_for_phiz)
 
-
         self.consolidation = ModelTriaxialConsolidationUI()
         self.point_identificator = None
         self.point_identificator_deviator = None
@@ -65,10 +70,10 @@ class StaticProcessingWidget(QWidget):
         self._create_UI()
         self._wigets_connect()
 
-        #if model:
-            #self.set_model(model)
-        #else:
-            #self._model = ModelTriaxialStaticLoad()
+        # if model:
+        # self.set_model(model)
+        # else:
+        # self._model = ModelTriaxialStaticLoad()
 
     def _create_UI(self):
         self.layout_wiget = QVBoxLayout()
@@ -77,7 +82,7 @@ class StaticProcessingWidget(QWidget):
         self.layout_wiget.addWidget(self.deviator_loading)
         self.layout_wiget.addWidget(self.consolidation)
         self.layout_wiget.addWidget(self.reconsolidation)
-        #self.layout_wiget.addWidget(self.deviator_loading)
+        # self.layout_wiget.addWidget(self.deviator_loading)
 
         self.wiget = QWidget()
         self.wiget.setLayout(self.layout_wiget)
@@ -93,12 +98,14 @@ class StaticProcessingWidget(QWidget):
 
         self.deviator_loading.chose_volumometer_button_group.buttonClicked.connect(self._deviator_volumeter)
         self.consolidation.chose_volumometer_button_group.buttonClicked.connect(self._consolidation_volumeter)
-        self.consolidation.function_replacement_button_group.buttonClicked.connect(self._consolidation_interpolation_type)
+        self.consolidation.function_replacement_button_group.buttonClicked.connect(
+            self._consolidation_interpolation_type)
 
         self.deviator_loading.slider_cut.sliderMoved.connect(self._cut_slider_deviator_moove)
         self.consolidation.slider_cut.sliderMoved.connect(self._cut_slider_consolidation_moove)
         self.consolidation.function_replacement_slider.sliderMoved.connect(self._interpolate_slider_consolidation_moove)
-        self.consolidation.function_replacement_slider.sliderReleased.connect(self._interpolate_slider_consolidation_release)
+        self.consolidation.function_replacement_slider.sliderReleased.connect(
+            self._interpolate_slider_consolidation_release)
 
         self.consolidation.sqrt_canvas.mpl_connect('button_press_event', self._canvas_click)
         self.consolidation.sqrt_canvas.mpl_connect("motion_notify_event", self._canvas_on_moove)
@@ -139,8 +146,10 @@ class StaticProcessingWidget(QWidget):
         self._cut_slider_deviator_set_val(E_models[statment.current_test].deviator_loading.get_borders())
         self._cut_slider_consolidation_set_len(len(E_models[statment.current_test].consolidation._test_data.time))
 
-        self._deviator_volumeter_current_vol(E_models[statment.current_test].deviator_loading.get_current_volume_strain())
-        self._consolidation_volumeter_current_vol(E_models[statment.current_test].consolidation.get_current_volume_strain())
+        self._deviator_volumeter_current_vol(
+            E_models[statment.current_test].deviator_loading.get_current_volume_strain())
+        self._consolidation_volumeter_current_vol(
+            E_models[statment.current_test].consolidation.get_current_volume_strain())
 
     def _plot_reconsolidation(self):
         try:
@@ -212,10 +221,10 @@ class StaticProcessingWidget(QWidget):
         """Обработчик перемещения слайдера обрезки"""
         if E_models[statment.current_test].deviator_loading.check_none():
             if (int(self.deviator_loading.slider_cut.high()) - int(self.deviator_loading.slider_cut.low())) >= 50:
-                E_models[statment.current_test].deviator_loading.change_borders(int(self.deviator_loading.slider_cut.low()),
-                                                        int(self.deviator_loading.slider_cut.high()))
+                E_models[statment.current_test].deviator_loading.change_borders(
+                    int(self.deviator_loading.slider_cut.low()),
+                    int(self.deviator_loading.slider_cut.high()))
             self._plot_deviator_loading()
-
 
     def _consolidation_volumeter_current_vol(self, current_volume_strain):
         """Чтение с модели, какие волюмометры рабочие и заполнение в интерфейсе"""
@@ -252,7 +261,7 @@ class StaticProcessingWidget(QWidget):
         if E_models[statment.current_test].consolidation.check_none():
             if (int(self.consolidation.slider_cut.high()) - int(self.consolidation.slider_cut.low())) >= 50:
                 E_models[statment.current_test].consolidation.change_borders(int(self.consolidation.slider_cut.low()),
-                                                            int(self.consolidation.slider_cut.high()))
+                                                                             int(self.consolidation.slider_cut.high()))
                 self._plot_consolidation_sqrt()
                 self._plot_consolidation_log()
 
@@ -286,10 +295,9 @@ class StaticProcessingWidget(QWidget):
         """Обработка консолидации при окончании движения слайдера"""
         if E_models[statment.current_test].consolidation.check_none():
             E_models[statment.current_test].consolidation.change_borders(int(self.consolidation.slider_cut.low()),
-                                                     int(self.consolidation.slider_cut.high()))
+                                                                         int(self.consolidation.slider_cut.high()))
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
-
 
     def _canvas_click(self, event):
         """Метод обрабатывает нажатие на канвас"""
@@ -298,8 +306,9 @@ class StaticProcessingWidget(QWidget):
         if event.canvas is self.consolidation.log_canvas:
             canvas = "log"
         if event.button == 1 and event.xdata and event.ydata:
-            self.point_identificator = E_models[statment.current_test].consolidation.define_click_point(float(event.xdata),
-                                                                                    float(event.ydata), canvas)
+            self.point_identificator = E_models[statment.current_test].consolidation.define_click_point(
+                float(event.xdata),
+                float(event.ydata), canvas)
 
     def _canvas_deviator_click(self, event):
         """Метод обрабатывает нажатие на канвас"""
@@ -311,7 +320,8 @@ class StaticProcessingWidget(QWidget):
     def _canvas_deviator_on_moove(self, event):
         """Метод обрабаотывает перемещение зажатой точки"""
         if self.point_identificator_deviator and event.xdata and event.ydata and event.button == 1:
-            E_models[statment.current_test].deviator_loading.moove_catch_point(float(event.xdata), float(event.ydata), self.point_identificator_deviator)
+            E_models[statment.current_test].deviator_loading.moove_catch_point(float(event.xdata), float(event.ydata),
+                                                                               self.point_identificator_deviator)
             self._plot_deviator_loading()
 
     def _canvas_deviator_on_release(self, event):
@@ -326,8 +336,9 @@ class StaticProcessingWidget(QWidget):
             canvas = "log"
 
         if self.point_identificator and event.xdata and event.ydata and event.button == 1:
-            E_models[statment.current_test].consolidation.moove_catch_point(float(event.xdata), float(event.ydata), self.point_identificator,
-                                                        canvas)
+            E_models[statment.current_test].consolidation.moove_catch_point(float(event.xdata), float(event.ydata),
+                                                                            self.point_identificator,
+                                                                            canvas)
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
 
@@ -341,10 +352,12 @@ class StaticProcessingWidget(QWidget):
     def get_test_results(self):
         return E_models[statment.current_test].get_test_results()
 
+
 class TriaxialStaticLoading_Sliders(QWidget):
     """Виджет с ползунками для регулирования значений переменных.
     При перемещении ползунков отправляет 2 сигнала."""
     signal = pyqtSignal(object)
+
     def __init__(self, params):
         """Определяем основную структуру данных"""
         super().__init__()
@@ -446,11 +459,13 @@ class TriaxialStaticLoading_Sliders(QWidget):
 
         self._sliders_moove()
 
+
 class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
     signal = pyqtSignal(bool)
+
     def __init__(self):
         super().__init__()
 
@@ -460,25 +475,26 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
         self.open_log_file = None
 
         self.deviator_loading_sliders = TriaxialStaticLoading_Sliders({"fail_strain": "Деформация разрушения",
-                  "residual_strength": "Остаточная прочность",
-                  "residual_strength_param": "Изгиб остаточной прочности",
-                  "qocr": "Значение дивиатора OCR",
-                  "poisson": "Коэффициент Пуассона",
-                  "dilatancy": "Угол дилатансии",
-                  "volumetric_strain_xc": "Объемн. деформ. в пике",
-                  "Eur": "Модуль разгрузки",
-                  "amplitude": "Амплитуда девиаций"})
+                                                                       "residual_strength": "Остаточная прочность",
+                                                                       "residual_strength_param": "Изгиб остаточной прочности",
+                                                                       "qocr": "Значение дивиатора OCR",
+                                                                       "poisson": "Коэффициент Пуассона",
+                                                                       "dilatancy": "Угол дилатансии",
+                                                                       "volumetric_strain_xc": "Объемн. деформ. в пике",
+                                                                       "Eur": "Модуль разгрузки",
+                                                                       "amplitude": "Амплитуда девиаций",
+                                                                       "unload_start_y": "Сдвиг разгрузки"})
         self.deviator_loading_sliders.setFixedHeight(240)
 
         self.consolidation_sliders = TriaxialStaticLoading_Sliders({"max_time": "Время испытания",
-                                                                         "volume_strain_90": "Объемная деформация в Cv"})
+                                                                    "volume_strain_90": "Объемная деформация в Cv"})
         self.consolidation_sliders.setFixedHeight(90)
 
         self.consolidation.graph_layout.addWidget(self.consolidation_sliders)
         self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)
 
-        self.consolidation.setFixedHeight(500+90)
-        self.deviator_loading.setFixedHeight(530+180)
+        self.consolidation.setFixedHeight(500 + 90)
+        self.deviator_loading.setFixedHeight(530 + 180)
 
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.consolidation_sliders.signal[object].connect(self._consolidation_sliders_moove)
@@ -486,8 +502,10 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
     def refresh(self):
         try:
             E_models[statment.current_test].set_test_params()
-            self.deviator_loading_sliders.set_sliders_params(E_models[statment.current_test].get_deviator_loading_draw_params())
-            self.consolidation_sliders.set_sliders_params(E_models[statment.current_test].get_consolidation_draw_params())
+            self.deviator_loading_sliders.set_sliders_params(
+                E_models[statment.current_test].get_deviator_loading_draw_params())
+            self.consolidation_sliders.set_sliders_params(
+                E_models[statment.current_test].get_consolidation_draw_params())
 
             self._plot_reconsolidation()
             self._plot_consolidation_sqrt()
@@ -501,8 +519,10 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
     @log_this(app_logger, "debug")
     def set_params(self, param=None):
         try:
-            self.deviator_loading_sliders.set_sliders_params(E_models[statment.current_test].get_deviator_loading_draw_params())
-            self.consolidation_sliders.set_sliders_params(E_models[statment.current_test].get_consolidation_draw_params())
+            self.deviator_loading_sliders.set_sliders_params(
+                E_models[statment.current_test].get_deviator_loading_draw_params())
+            self.consolidation_sliders.set_sliders_params(
+                E_models[statment.current_test].get_consolidation_draw_params())
 
             self._plot_reconsolidation()
             self._plot_consolidation_sqrt()
@@ -549,7 +569,7 @@ class StatickProcessingApp(QWidget):
         self.tab_2 = StaticProcessingWidget()
         self.tab_3 = MohrWidget()
         self.tab_4 = Save_Dir()
-        #self.Tab_3.Save.save_button.clicked.connect(self.save_report)
+        # self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
         self.tab_widget.addTab(self.tab_2, "Опыт Е")
@@ -561,12 +581,12 @@ class StatickProcessingApp(QWidget):
         self.tab_1.signal[object].connect(self.tab_3.item_identification.set_data)
         self.tab_1.statment_directory[str].connect(self.set_save_directory)
         self.tab_4.save_button.clicked.connect(self.save_report)
-        #self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
+        # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
     def save_report(self):
         try:
             assert self.tab_1.get_lab_number(), "Не выбран образец в ведомости"
-            #assert self.tab_2.test_processing_widget.model._test_data.cycles, "Не выбран файл прибора"
+            # assert self.tab_2.test_processing_widget.model._test_data.cycles, "Не выбран файл прибора"
             read_parameters = self.tab_1.open_line.get_data()
 
             test_parameter = {"equipment": read_parameters["equipment"],
@@ -591,23 +611,24 @@ class StatickProcessingApp(QWidget):
 
             if read_parameters["test_type"] == "Трёхосное сжатие (E)":
                 assert self.tab_2._model.deviator_loading._test_params.sigma_3, "Не загружен файл опыта"
-                #Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
-                Name = self.tab_1.get_lab_number().replace("*", "") + " " +\
+                # Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-ДН" + ".pdf"
+                Name = self.tab_1.get_lab_number().replace("*", "") + " " + \
                        data_customer["object_number"] + " ТС Р" + ".pdf"
 
                 report_consolidation(save + "/" + Name, data_customer,
-                                 self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
-                                 os.getcwd() + "/project_data/",
-                                 test_parameter, test_result,
-                                 (*self.tab_2.consolidation.save_canvas(),
-                                  *self.tab_2.deviator_loading.save_canvas()), "{:.2f}".format(__version__))
+                                     self.tab_1.get_physical_data(), self.tab_1.get_lab_number(),
+                                     os.getcwd() + "/project_data/",
+                                     test_parameter, test_result,
+                                     (*self.tab_2.consolidation.save_canvas(),
+                                      *self.tab_2.deviator_loading.save_canvas()), "{:.2f}".format(__version__))
 
             elif read_parameters["test_type"] == "Трёхосное сжатие (F, C, E)":
                 assert self.tab_3._model._test_result.fi, "Не загружен файл опыта"
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = self.tab_3._model.get_sigma_3_1()
-                test_result["c"], test_result["fi"] = self.tab_3._model.get_test_results()["c"], self.tab_3._model.get_test_results()["fi"]
+                test_result["c"], test_result["fi"] = self.tab_3._model.get_test_results()["c"], \
+                                                      self.tab_3._model.get_test_results()["fi"]
                 # Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
-                Name = self.tab_1.get_lab_number().replace("*", "") +\
+                Name = self.tab_1.get_lab_number().replace("*", "") + \
                        " " + data_customer["object_number"] + " ТД" + ".pdf"
 
                 report_FCE(save + "/" + Name, data_customer, self.tab_1.get_physical_data(),
@@ -631,6 +652,7 @@ class StatickProcessingApp(QWidget):
     def set_save_directory(self, signal):
         read_parameters = self.tab_1.open_line.get_data()
         self.tab_4.set_directory(signal, read_parameters["test_type"])
+
 
 class StatickSoilTestApp(AppMixin, QWidget):
 
@@ -705,8 +727,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
         self.xml_button = QPushButton("Выгнать xml")
         self.xml_button.clicked.connect(self.xml)
         self.tab_4.advanced_box_layout.insertWidget(3, self.xml_button)
-        #self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
-
+        # self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
 
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
 
@@ -716,10 +737,10 @@ class StatickSoilTestApp(AppMixin, QWidget):
             index = list.index(statment.current_test)
             if str(event.key()) == "90":
                 if index >= 1:
-                    statment.current_test = list[index-1]
+                    statment.current_test = list[index - 1]
                     self.set_test_parameters(True)
             elif str(event.key()) == "88":
-                if index < len(list) -1:
+                if index < len(list) - 1:
                     statment.current_test = list[index + 1]
                     self.set_test_parameters(True)
 
@@ -803,16 +824,18 @@ class StatickSoilTestApp(AppMixin, QWidget):
                                            f"E_models{statment.general_data.get_shipment_number()}.pickle"))
                 E_models[statment.current_test].save_log_file(save + "/" + f"{file_path_name}.log", sample_size=(h, d))
                 E_models[statment.current_test].save_cvi_file(save, f"{file_path_name} ЦВИ.xls")
-                shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"), statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
+                shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
+                            statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
 
                 test_result = E_models[statment.current_test].get_test_results()
 
                 report_E(save + "/" + name, data_customer,
-                                 statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
-                                 os.getcwd() + "/project_data/",
-                                 test_parameter, test_result,
-                                 (*self.tab_2.consolidation.save_canvas(),
-                                  *self.tab_2.deviator_loading.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
+                         statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
+                         os.getcwd() + "/project_data/",
+                         test_parameter, test_result,
+                         (*self.tab_2.consolidation.save_canvas(),
+                          *self.tab_2.deviator_loading.save_canvas()), self.tab_4.report_type,
+                         "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -836,14 +859,15 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
-                                                f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
+                                           f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
                 test_result = E_models[statment.current_test].get_test_results()
                 report_E(save + "/" + name, data_customer,
-                                     statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
-                                     os.getcwd() + "/project_data/",
-                                     test_parameter, test_result,
-                                     (*self.tab_2.consolidation.save_canvas(),
-                                      *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), self.tab_4.report_type, "{:.2f}".format(__version__))
+                         statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
+                         os.getcwd() + "/project_data/",
+                         test_parameter, test_result,
+                         (*self.tab_2.consolidation.save_canvas(),
+                          *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), self.tab_4.report_type,
+                         "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -852,7 +876,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 set_cell_data(self.tab_1.path,
                               ("GI" + str(number), (number, 190)),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
-                
+
                 if self.tab_4.report_type == "standart_E50" or self.tab_4.report_type == "plaxis":
                     set_cell_data(self.tab_1.path,
                                   (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number),
@@ -871,14 +895,15 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
-                                                f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
+                                           f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
                 test_result = E_models[statment.current_test].get_test_results()
                 report_E(save + "/" + name, data_customer,
-                                     statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
-                                     os.getcwd() + "/project_data/",
-                                     test_parameter, test_result,
-                                     (*self.tab_2.consolidation.save_canvas(),
-                                      *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), self.tab_4.report_type, "{:.2f}".format(__version__))
+                         statment[statment.current_test].physical_properties, statment.getLaboratoryNumber(),
+                         os.getcwd() + "/project_data/",
+                         test_parameter, test_result,
+                         (*self.tab_2.consolidation.save_canvas(),
+                          *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), self.tab_4.report_type,
+                         "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -887,7 +912,6 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 set_cell_data(self.tab_1.path,
                               ("GI" + str(number), (number, 190)),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
-                
 
                 set_cell_data(self.tab_1.path,
                               (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой (plaxis)"][0][2] + str(number),
@@ -900,7 +924,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
                                            f"E_models{statment.general_data.get_shipment_number()}.pickle"))
                 FC_models.dump(os.path.join(statment.save_dir.save_directory,
-                                           f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
+                                            f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
 
                 FC_models[statment.current_test].save_log_files(save, file_path_name, sample_size=(h, d))
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
@@ -911,11 +935,12 @@ class StatickSoilTestApp(AppMixin, QWidget):
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
 
                 test_result = E_models[statment.current_test].get_test_results()
-                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[statment.current_test].get_sigma_3_1()
+                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[
+                    statment.current_test].get_sigma_3_1()
                 test_result["c"], test_result["fi"], test_result["m"] = \
-                FC_models[statment.current_test].get_test_results()["c"], \
-                FC_models[statment.current_test].get_test_results()["fi"], \
-                FC_models[statment.current_test].get_test_results()["m"]
+                    FC_models[statment.current_test].get_test_results()["c"], \
+                    FC_models[statment.current_test].get_test_results()["fi"], \
+                    FC_models[statment.current_test].get_test_results()["m"]
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
@@ -937,15 +962,16 @@ class StatickSoilTestApp(AppMixin, QWidget):
                     }
                 }
 
-                #s = MohrSaver(FC_models[statment.current_test], statment.save_dir.save_directory + "/geologs", size=[h, d])
-                #s.save_log_file(file_path_name)
-                #qr = request_qr(data)
+                # s = MohrSaver(FC_models[statment.current_test], statment.save_dir.save_directory + "/geologs", size=[h, d])
+                # s.save_log_file(file_path_name)
+                # qr = request_qr(data)
 
                 report_FCE(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
-                          statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
+                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
-                            *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))#, qr_code=qr)
+                            *self.tab_3.save_canvas()), self.tab_4.report_type,
+                           "{:.2f}".format(__version__))  # , qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -965,11 +991,13 @@ class StatickSoilTestApp(AppMixin, QWidget):
                         test_result["E"][0], sheet="Лист1", color="FF6961")
 
                 set_cell_data(self.tab_1.path,
-                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][0] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][0])),
+                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][0] + str(number),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][0])),
                               test_result["c"], sheet="Лист1", color="FF6961")
 
                 set_cell_data(self.tab_1.path,
-                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][1] + str(number), (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][1])),
+                              (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][1] + str(number),
+                               (number, c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][1][1])),
                               test_result["fi"], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, Eur)":
@@ -979,7 +1007,6 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 create_path(report_directory_FC)
                 create_path(report_directory_Eur)
-
 
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
 
@@ -997,11 +1024,12 @@ class StatickSoilTestApp(AppMixin, QWidget):
                             statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
 
                 test_result = E_models[statment.current_test].get_test_results()
-                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[statment.current_test].get_sigma_3_1()
+                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[
+                    statment.current_test].get_sigma_3_1()
                 test_result["c"], test_result["fi"], test_result["m"] = \
-                FC_models[statment.current_test].get_test_results()["c"], \
-                FC_models[statment.current_test].get_test_results()["fi"], \
-                FC_models[statment.current_test].get_test_results()["m"]
+                    FC_models[statment.current_test].get_test_results()["c"], \
+                    FC_models[statment.current_test].get_test_results()["fi"], \
+                    FC_models[statment.current_test].get_test_results()["m"]
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
@@ -1062,15 +1090,16 @@ class StatickSoilTestApp(AppMixin, QWidget):
                     statment.current_test].get_sigma_3_1()
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
-                test_result["c"], test_result["fi"], test_result["m"] = FC_models[statment.current_test].get_test_results()["c"], \
-                                                      FC_models[statment.current_test].get_test_results()["fi"], \
-                                                      FC_models[statment.current_test].get_test_results()["m"]
+                test_result["c"], test_result["fi"], test_result["m"] = \
+                FC_models[statment.current_test].get_test_results()["c"], \
+                FC_models[statment.current_test].get_test_results()["fi"], \
+                FC_models[statment.current_test].get_test_results()["m"]
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 report_FC(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
-                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
-                           test_parameter, test_result,
+                          statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
+                          test_parameter, test_result,
                           (*self.tab_3.save_canvas(),
                            *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
 
@@ -1110,10 +1139,10 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 report_FC_KN(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
-                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
-                           test_parameter, test_result,
-                          (*self.tab_3.save_canvas(),
-                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+                             statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
+                             test_parameter, test_result,
+                             (*self.tab_3.save_canvas(),
+                              *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -1146,18 +1175,19 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 FC_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
                 test_result = {}
-                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[statment.current_test].get_sigma_3_deviator()
+                test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = FC_models[
+                    statment.current_test].get_sigma_3_deviator()
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
-                test_result["c"]= FC_models[statment.current_test].get_test_results()["c"]
+                test_result["c"] = FC_models[statment.current_test].get_test_results()["c"]
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 report_FC_NN(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
-                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
-                           test_parameter, test_result,
-                          (*self.tab_3.save_canvas(),
-                           *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
+                             statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
+                             test_parameter, test_result,
+                             (*self.tab_3.save_canvas(),
+                              *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -1189,19 +1219,18 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 test_result["c"], test_result["fi"], test_result["m"], test_result["c_res"], test_result["fi_res"] = \
                     FC_models[statment.current_test].get_test_results()["c"], \
-                    FC_models[statment.current_test].get_test_results()["fi"],\
-                    FC_models[statment.current_test].get_test_results()["m"],\
-                    FC_models[statment.current_test].get_test_results()["c_res"],\
+                    FC_models[statment.current_test].get_test_results()["fi"], \
+                    FC_models[statment.current_test].get_test_results()["m"], \
+                    FC_models[statment.current_test].get_test_results()["c_res"], \
                     FC_models[statment.current_test].get_test_results()["fi_res"],
-
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 report_FC_res(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
-                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
-                           test_parameter, test_result,
-                          (*self.tab_3.save_canvas(),
-                           *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
+                              statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
+                              test_parameter, test_result,
+                              (*self.tab_3.save_canvas(),
+                               *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -1227,11 +1256,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
                                (number, MechanicalPropertyPosition["fi_res"][1])),
                               test_result["fi_res"], sheet="Лист1", color="FF6961")
 
-
-
-
-            #statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
-                          #name=statment.general_parameters.test_mode + ".pickle")
+            # statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
+            # name=statment.general_parameters.test_mode + ".pickle")
 
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
@@ -1260,7 +1286,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
         keys = [key for key in statment]
         for i, val in enumerate(keys):
             if (val == statment.current_test) and (i < len(keys) - 1):
-                statment.current_test = keys[i+1]
+                statment.current_test = keys[i + 1]
                 self.set_test_parameters(True)
                 break
             else:
@@ -1306,9 +1332,9 @@ class StatickSoilTestApp(AppMixin, QWidget):
             print(str(err))
 
 
-
 if __name__ == '__main__':
     import sys
+
     app = QApplication(sys.argv)
 
     # Now use a palette to switch to dark colors:

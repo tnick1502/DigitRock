@@ -776,6 +776,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         self.pre_defined_kr_fgs = None
 
+        self.unloading_borders = None
+        self.loop_height = None
+
     def set_test_params(self, pre_defined_kr_fgs=None):
         """Установка основных параметров опыта"""
         self._test_params.qf = statment[statment.current_test].mechanical_properties.qf
@@ -834,6 +837,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             if statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
                 self.unloading_borders = (self._test_params.qf/2, 10)
 
+            self.loop_height = abs(self.unloading_borders[0] - self.unloading_borders[1])
+
             if type(self._test_params.Eur) is bool:
                 self._draw_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
                     E50=self._test_params.E50, Il=statment[statment.current_test].physical_properties.Il,
@@ -882,7 +887,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
                   "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]},
                   "Eur": Eur,
-                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]}}
+                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]},
+                  "unload_start_y": {"value": self.unloading_borders[0], "borders": [0.0, self._test_params.qf]}}
         return params
 
     def set_draw_params(self, params):
@@ -896,6 +902,14 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.volumetric_strain_xc = params["volumetric_strain_xc"]
         self._draw_params.Eur = params["Eur"]
         self._draw_params.amplitude = params["amplitude"]
+
+        unload_start_y = params["unload_start_y"]
+        self.unloading_borders = (unload_start_y, 10)
+
+        # if unload_start_y - self.loop_height > 10:
+        #     self.unloading_borders = (unload_start_y, unload_start_y - self.loop_height)
+        # else:
+        #     self.unloading_borders = (10 + self.loop_height, 10)
         """self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(params["dilatancy"])) /
                                                            (1 - np.sin(np.deg2rad(params["dilatancy"])))))"""
 
