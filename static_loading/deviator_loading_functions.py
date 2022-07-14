@@ -1574,6 +1574,7 @@ def curve(qf, e50, **kwargs):
     if y_rel_p < 20.0:
         y_rel_p = 20.0
 
+
     if xc>0.111:
         xc=0.15
 
@@ -1736,42 +1737,6 @@ def curve(qf, e50, **kwargs):
     x_loop, y_loop,\
         point1_x, point1_y, point2_x, point2_y, point3_x, point3_y,\
         x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, Eur, y_rel_p, point2_y)
-
-    # print(define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1]))
-    # оптимизация петли разгрузки
-    # if Eur:
-    #     current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
-    #     if not current_Eur:
-    #         current_Eur = Eur * 1.3
-    #     # print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur}")
-    #     delta_Eur = Eur
-    #     error = Eur - current_Eur
-    #     best_error = error
-    #     best_Eur = delta_Eur
-    #
-    #     while abs(error/Eur*100) > 4:
-    #         delta_Eur = delta_Eur + 100
-    #         x_loop, y_loop, \
-    #             point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
-    #             x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, delta_Eur, y_rel_p, point2_y)
-    #
-    #         current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
-    #
-    #         if not current_Eur:
-    #             break
-    #
-    #         error = Eur - current_Eur
-    #         if abs(error) <= best_error:
-    #             best_error = abs(error)
-    #             best_Eur = delta_Eur
-    #         # print(f"ПОЛУЧЕННЫЙ Еур : {current_Eur} : ОШИБКА : {abs(Eur - current_Eur) / Eur * 100}")
-    #
-    #     x_loop, y_loop, \
-    #         point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
-    #         x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, best_Eur, y_rel_p, point2_y)
-    #     #current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
-    #     # print(f"ЛУЧШИЙ ПОЛУЧЕННЫЙ Еур : {current_Eur} : ОШИБКА : {abs(Eur - current_Eur) / Eur * 100}")
-    #     # оптимизация петли разгрузки завершена
 
     index_point1_x, = np.where(x >= point1_x)
     index_point3_x, = np.where(x >= point3_x)
