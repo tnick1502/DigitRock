@@ -875,6 +875,11 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
+        if self._draw_params.Eur:
+            unload_start_y = {"value": self.unloading_borders[0], "borders": [0.0, self._test_params.qf]}
+        else:
+            unload_start_y = {"value": None}
+
         Eur = {"value": self._draw_params.Eur, "borders": [self._draw_params.Eur/2, self._draw_params.Eur*5]} if self._draw_params.Eur else {"value": None}
         #print(self._test_params.__dict__)
 
@@ -888,7 +893,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                   "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]},
                   "Eur": Eur,
                   "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]},
-                  "unload_start_y": {"value": self.unloading_borders[0], "borders": [0.0, self._test_params.qf]}}
+                  "unload_start_y": unload_start_y}
+
+
         return params
 
     def set_draw_params(self, params):
