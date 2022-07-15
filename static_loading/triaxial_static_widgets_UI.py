@@ -220,6 +220,10 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
             "K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
+
+        if res["q_rel"]:
+            label = label + "; " + "$q_{rel} = $" + str(res["q_rel"])
+
         self.deviator_ax.plot([], [], label=label, color="#eeeeee")
 
         self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
@@ -269,6 +273,10 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
             "K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
+
+        if res["q_rel"]:
+            label = label + "; " + "$q_{rel} = $" + str(res["q_rel"])
+
         self.deviator_ax.plot([], [], label=label, color="#eeeeee")
 
         self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
@@ -313,6 +321,10 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
             "K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
+
+        if res["q_rel"]:
+            label = label + "; " + "$q_{rel} = $" + str(res["q_rel"])
+
         self.deviator_ax.plot([], [], label=label, color="#eeeeee")
 
         self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
@@ -357,6 +369,9 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                 label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
                     "K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
 
+                if res["q_rel"]:
+                    label = label + "; " + "$q_{rel} = $" + str(res["q_rel"])
+
                 self.deviator_ax.plot([], [], label=label, color="#eeeeee")
 
         self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
@@ -400,6 +415,10 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
             "K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
+
+        if res["q_rel"]:
+            label = label + "; " + "$q_{rel} = $" + str(res["q_rel"])
+
         self.deviator_ax.plot([], [], label=label, color="#eeeeee")
 
         self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
@@ -438,6 +457,10 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
             "K_Eur"] else "$K_{E_{50}} = $" + str(res["K_E50"])
+
+        if res["q_rel"]:
+            label = label + "; " + "$q_{rel} = $" + str(res["q_rel"])
+
         self.deviator_ax.plot([], [], label=label, color="#eeeeee")
 
         self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)

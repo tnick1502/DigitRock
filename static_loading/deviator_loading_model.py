@@ -227,6 +227,11 @@ class ModelTriaxialDeviatorLoading:
         dict["K_E50"] = np.round(self._test_result.E[0]/self._test_result.E50, 2)
         dict["K_Eur"] = np.round(self._test_result.Eur/self._test_result.E[0], 2) if self._test_result.Eur else None
 
+        dict["q_rel"] = None
+        if self._test_data.reload_points_cut is not None:
+            if self._test_data.reload_points_cut[0] > 0:
+                dict["q_rel"] = np.round((self._test_data.deviator_cut[self._test_data.reload_points_cut[0]]) / 1000, 3)
+
         return dict
 
     def get_plot_data(self):
@@ -911,7 +916,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.amplitude = params["amplitude"]
 
         unload_start_y = params["unload_start_y"]
-        self.unloading_borders = (unload_start_y, 10)
+        if unload_start_y:
+            if abs(round(unload_start_y) - round(self.unloading_borders[0])) > 5:
+                self.unloading_borders = (unload_start_y, 10)
 
         # if unload_start_y - self.loop_height > 10:
         #     self.unloading_borders = (unload_start_y, unload_start_y - self.loop_height)
