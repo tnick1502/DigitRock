@@ -2081,6 +2081,10 @@ class ShearProperties(MechanicalProperties):
 class K0Properties(MechanicalProperties):
     K0nc = DataTypeValidation(float, int)  # K0 нормальной консолидации (входной параметр)
 
+    # Для разгрузки
+    delta_sigma_1 = DataTypeValidation(float, int)  #  (входной параметр)
+    Nuur = DataTypeValidation(float, int)  # Коэф.Пуассона unloading-reloading (входной параметр)
+
     sigma_1_step = DataTypeValidation(float, int)  # Шаг нагружения (входной параметр)
     sigma_1_max = DataTypeValidation(float, int)  # Максимальное давление до которого нагружаем (входной параметр)
     sigma_p = DataTypeValidation(float, int)  # Давление при OCR
@@ -2097,8 +2101,14 @@ class K0Properties(MechanicalProperties):
         """Считывание строки свойств"""
 
         self.K0nc = float_df(data_frame.iat[string, MechanicalPropertyPosition["K0nc"][1]])
+        if test_mode == "Трехосное сжатие K0 с разгрузкой":
+            self.Nuur = float_df(data_frame.iat[string, MechanicalPropertyPosition["Nuur"][1]])
+            if not self.Nuur:
+                self.Nuur = np.random.uniform(0.15, 0.24)
 
-        if self.K0nc:
+            self.delta_sigma_1 = 2 * 10 * physical_properties.depth * (1 - self.K0nc)
+
+        if self.is_props_defined(test_mode=test_mode):
             self.OCR = float_df(data_frame.iat[string, MechanicalPropertyPosition["OCR"][1]])
 
             if self.OCR is None:
@@ -2118,6 +2128,13 @@ class K0Properties(MechanicalProperties):
                 self.sigma_1_step = 0.150
                 if physical_properties.type_ground in {1, 2, 3, 4}:
                     self.sigma_1_step = 0.200
+
+    def is_props_defined(self, test_mode):
+        _is_normal_defined = (test_mode != "Трехосное сжатие K0 с разгрузкой") and self.K0nc
+
+        _is_ur_defined = (test_mode == "Трехосное сжатие K0 с разгрузкой") and (self.K0nc and self.delta_sigma_1 and self.Nuur)
+
+        return _is_normal_defined or _is_ur_defined
 
 
     @staticmethod

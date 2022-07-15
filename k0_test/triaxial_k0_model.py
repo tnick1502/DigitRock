@@ -34,6 +34,8 @@ class ModelK0:
 
     is_hs_model = False
     '''модель расчета K0nc'''
+    mode_ur =  False  # True в режиме разгрузки
+    '''режим с разгрузкой'''
 
     def __init__(self):
         """Определяем основную структуру данных"""
@@ -426,7 +428,11 @@ class ModelK0SoilTest(ModelK0):
                                       'sigma_1_step': None,  # входной параметр для ступенчатого режима
                                       'sigma_1_max': None,
                                       'mode_kinematic': False,  # True в кинематическом режме
-                                      'speed': None})  # входной параметр для кинематики
+                                      'speed': None,  # входной параметр для кинематики
+                                      'delta_sigma_1': None,  # входной параметр для разгрузки
+                                      'Nuur': None,  # входной параметр для разгрузки
+                                      'unload_start_point': None  # Точка начала разгрузки в режиме UR
+                                      })
         self._test_data = AttrDict({'sigma_3': np.asarray([]),
                                     'sigma_1': np.asarray([])})
 
@@ -460,6 +466,23 @@ class ModelK0SoilTest(ModelK0):
                 self._test_params.sigma_3_p = test_params["sigma_3_p"]
             except KeyError:
                 self._test_params.sigma_3_p = 0
+            try:
+                self.is_hs_model = test_params["is_hs_model"]
+            except KeyError:
+                self.is_hs_model = False
+            try:
+                self.mode_ur = test_params["mode_ur"]
+            except KeyError:
+                self.mode_ur = False
+            try:
+                self._test_params.delta_sigma_1 = test_params["delta_sigma_1"]
+            except KeyError:
+                self._test_params.delta_sigma_1 = 0
+            try:
+                self._test_params.Nuur = test_params["Nuur"]
+            except KeyError:
+                self._test_params.Nuur = 0
+
         else:
             self._test_params.K0nc = statment[statment.current_test].mechanical_properties.K0nc
             self._test_params.OCR = statment[statment.current_test].mechanical_properties.OCR
@@ -472,6 +495,11 @@ class ModelK0SoilTest(ModelK0):
             self._test_params.sigma_3_p = statment[statment.current_test].mechanical_properties.sigma_3_p
 
             self.is_hs_model = statment.general_parameters.K0_mode
+
+            if statment.general_parameters.test_mode == "Трехосное сжатие K0 с разгрузкой":
+                self.mode_ur = True
+                self._test_params.delta_sigma_1 = statment[statment.current_test].mechanical_properties.delta_sigma_1
+                self._test_params.Nuur = statment[statment.current_test].mechanical_properties.Nuur
 
         self._test_modeling()
 
@@ -550,8 +578,9 @@ class ModelK0SoilTest(ModelK0):
 
         # Кинематический режим:
         if self._test_params.mode_kinematic:
-            sigma_1, sigma_3 = ModelK0SoilTest._kinematic_mode_modeling(sigma_1_spl, sgima_1_synth,
-                                                                        sigma_3_spl, sgima_3_synth, self._test_params)
+            # sigma_1, sigma_3 = ModelK0SoilTest._kinematic_mode_modeling(sigma_1_spl, sgima_1_synth,
+            #                                                             sigma_3_spl, sgima_3_synth, self._test_params)
+            pass
         # Ступенчатый режим:
         else:
             sigma_1, sigma_3, action, time, debug_data = ModelK0SoilTest._step_mode_modeling(sigma_1_spl, sgima_1_synth,
@@ -560,6 +589,14 @@ class ModelK0SoilTest(ModelK0):
                                                                                              is_hs_model=self.is_hs_model)
             self._test_data.sigma_1 = debug_data[0]
             self._test_data.sigma_3 = debug_data[1]
+            if self.mode_ur:
+                sigma_1_ur, sigma_3_ur = ModelK0SoilTest._step_mode_ur_modeling(self._test_data.sigma_1,
+                                                                                self._test_data.sigma_3,
+                                                                                self._test_params)
+
+                plt.figure()
+                plt.plot(self._test_data.sigma_3, self._test_data.sigma_1, sigma_3_ur, sigma_1_ur)
+                plt.show()
 
         self.set_debug_data(debug_data)
         self.set_test_data({'sigma_1': sigma_1, 'sigma_3': sigma_3, 'action': action, 'time': time})
@@ -577,7 +614,7 @@ class ModelK0SoilTest(ModelK0):
         self._test_params.sigma_1_step = round(self._test_params.sigma_1_step, SGMA1MAX_PREC)
 
         if not self.is_hs_model:
-            num_steps = int(int(self._test_params.sigma_1_max) / int(self._test_params.sigma_1_step * 1000))
+            num_steps = int(int(self._test_params.sigma_1_max * 1000) / int(self._test_params.sigma_1_step * 1000))
             if num_steps > 5:
                 self._test_params.sigma_1_max = self._test_params.sigma_1_step * np.random.randint(4, 5)
 
@@ -745,6 +782,33 @@ class ModelK0SoilTest(ModelK0):
             sigma_1_as_v_p, action, time, sigma_3_as_p_p = res
 
         return sigma_1_as_v_p, sigma_3_as_p_p, action, time, (sigma_1, sigma_3)
+
+    @staticmethod
+    def _step_mode_ur_modeling(sigma_1, sigma_3, params: 'AttrDict'):
+        unload_start_point_s1 = sigma_1[-1]
+        unload_start_point_s3 = sigma_3[-1]
+        if params.unload_start_point:
+            unload_start_point_s1 = sigma_1[params.unload_start_point]
+            unload_start_point_s3 = sigma_3[params.unload_start_point]
+
+        #   Считаем число точек и задаем сетку на Сигма1
+        K0ur = params.Nuur/(1 - params.Nuur)
+
+        sigma_1_ur = np.asarray(sigma_1[1 : params.unload_start_point + 1])
+        sigma_3_ur = K0ur * sigma_1_ur + (unload_start_point_s3 - K0ur * unload_start_point_s1)
+
+        # Производим коррекцию:
+        #   от точки разгрузки нужно отсутпить delta_q = delta_sigma_1
+        if params.delta_sigma_1:
+            _unload_end = unload_start_point_s1 - params.delta_sigma_1
+            ind_delta_sigma_1, = np.where(sigma_1_ur >= _unload_end)
+            ind_delta_sigma_1 = ind_delta_sigma_1[0] if len(ind_delta_sigma_1) else 0
+            sigma_1_ur = np.asarray(sigma_1_ur[ind_delta_sigma_1:])
+
+
+        print(sigma_3_ur[0]/sigma_1_ur[0])
+
+        return sigma_1_ur, sigma_3_ur
 
     @staticmethod
     def _kinematic_mode_modeling(sigma_1_spl, sgima_1_synth, sigma_3_spl, sgima_3_synth, params: 'AttrDict'):

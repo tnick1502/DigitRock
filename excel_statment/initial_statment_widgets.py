@@ -1118,7 +1118,7 @@ class K0Statment(InitialStatment):
                 "label": "Режим испытания",
                 "vars": [
                     "Трехосное сжатие K0",
-                    # "Трехосное сжатие K0 с разгрузкой"
+                    "Трехосное сжатие K0 с разгрузкой"
                     ]
             },
             "K0_mode": {
@@ -1173,7 +1173,9 @@ class K0Statment(InitialStatment):
                         if not statment[test].mechanical_properties.K0nc:
                             del statment.tests[test]
                     elif statment.general_parameters.test_mode == K0Statment.test_modes[1]:
-                        if not statment[test].mechanical_properties.K0nc or not statment[test].mechanical_properties.K0oc:
+                        if not statment[test].mechanical_properties.K0nc\
+                                or not statment[test].mechanical_properties.K0oc\
+                                or not statment[test].mechanical_properties.Nuur:
                             del statment.tests[test]
 
                 if len(statment) < 1:
