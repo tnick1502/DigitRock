@@ -193,10 +193,10 @@ def function_consalidation(Cv=3, volume_strain_90=-np.random.uniform(0.14, 0.2),
 
 
     if Ca == -0.00001:
-        index_xca_log, = np.where(x_log >= xca_log * 1.2)
+        # index_xca_log, = np.where(x_log >= xca_log * 1.2)
         index_xca, = np.where(x_time >= ((np.exp(xca_log) - 1)) * 1.2)
-        x_log = x_log[:index_xca_log[0]]
-        y_0_xca = y_0_xca[:index_xca_log[0]]
+        # x_log = x_log[:index_xca_log[0]]
+        # y_0_xca = y_0_xca[:index_xca_log[0]]
         x_time = x_time[:index_xca[0]]
         y_time = y_time[:index_xca[0]]
 
@@ -376,10 +376,10 @@ def function_consalidation_without_Cv(Cv=3, volume_strain_90=-np.random.uniform(
     # y_time += deviation_array
 
     if Ca == -0.00001:
-        index_xca_log, = np.where(x_log >= xca_log * 1.2)
+        # index_xca_log, = np.where(x_log >= xca_log * 1.2)
         index_xca, = np.where(x_time >= ((np.exp(xca_log) - 1)) * 1.2)
-        x_log = x_log[:index_xca_log[0]]
-        y_0_xca = y_0_xca[:index_xca_log[0]]
+        # x_log = x_log[:index_xca_log[0]]
+        # y_0_xca = y_0_xca[:index_xca_log[0]]
         x_time = x_time[:index_xca[0]]
         y_time = y_time[:index_xca[0]]
 
