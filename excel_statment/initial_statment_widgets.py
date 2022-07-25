@@ -584,7 +584,9 @@ class CyclicStatment(InitialStatment):
                     assert column_fullness_test(self.path, columns=[('HR', 225), ('HS', 226), ('HT', 227), ('HU', 228)],
                                                 initial_columns=columns_marker), "Заполните данные по шторму в ведомости"
                 if combo_params["test_mode"] == "Сейсморазжижение":
-                    assert column_fullness_test(self.path, columns=[("AM", 38), ("AQ", 42)], initial_columns=columns_marker), \
+                    assert column_fullness_test(self.path, columns=[("AQ", 42)], initial_columns=columns_marker) and \
+                           (column_fullness_test(self.path, columns=[("AM", 42)], initial_columns=columns_marker) or
+                            column_fullness_test(self.path, columns=[("AP", 42)], initial_columns=columns_marker)), \
                         "Заполните магнитуду и бальность"
 
             except AssertionError as error:
