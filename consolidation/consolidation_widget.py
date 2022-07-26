@@ -52,6 +52,8 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
         self.item_identification.setFixedWidth(300)
 
         self.consolidation = ModelTriaxialConsolidationUI()
+        self.prec_btn = QRadioButton('Повысить точность датчика')
+        self.consolidation.function_replacement_line1.addWidget(self.prec_btn)
 
         self.consolidation_sliders = TriaxialStaticLoading_Sliders({
             "Cv": "Коэфициент Cv",
@@ -90,6 +92,7 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
 
     def _wigets_connect(self):
         self.consolidation.function_replacement_button_group.buttonClicked.connect(self._consolidation_interpolation_type)
+        self.prec_btn.clicked.connect(self._prec_type)
         self.consolidation.slider_cut.sliderMoved.connect(self._cut_slider_consolidation_moove)
         self.consolidation.function_replacement_slider.sliderMoved.connect(self._interpolate_slider_consolidation_moove)
         self.consolidation.function_replacement_slider.sliderReleased.connect(self._interpolate_slider_consolidation_release)
@@ -167,6 +170,14 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
 
+    def _prec_type(self, checked):
+        prec = None
+        if checked:
+            prec = 5
+        Consolidation_models[statment.current_test].set_prec_type(prec)
+        self._plot_consolidation_sqrt()
+        self._plot_consolidation_log()
+
     def _interpolate_slider_consolidation_moove(self):
         """Перемещение слайдера интерполяции. Не производит обработки, только отрисовка интерполированной кривой"""
         if Consolidation_models[statment.current_test].check_none():
@@ -225,6 +236,12 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
             elif interpolation_type == "ermit":
                 self.consolidation.function_replacement_radio_button_1.setChecked(False)
                 self.consolidation.function_replacement_radio_button_2.setChecked(True)
+
+            prec_type = Consolidation_models[statment.current_test].get_prec_type()
+            if prec_type:
+                self.prec_btn.setChecked(True)
+            else:
+                self.prec_btn.setChecked(False)
 
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
