@@ -2082,7 +2082,7 @@ class K0Properties(MechanicalProperties):
     K0nc = DataTypeValidation(float, int)  # K0 нормальной консолидации (входной параметр)
 
     # Для разгрузки
-    delta_sigma_1 = DataTypeValidation(float, int)  #  (входной параметр)
+    sigma_1_ur_delta = DataTypeValidation(float, int)  #  (входной параметр)
     Nuur = DataTypeValidation(float, int)  # Коэф.Пуассона unloading-reloading (входной параметр)
 
     sigma_1_step = DataTypeValidation(float, int)  # Шаг нагружения (входной параметр)
@@ -2106,7 +2106,7 @@ class K0Properties(MechanicalProperties):
             if not self.Nuur:
                 self.Nuur = np.random.uniform(0.15, 0.24)
 
-            self.delta_sigma_1 = 2 * 10 * physical_properties.depth * (1 - self.K0nc)
+            self.sigma_1_ur_delta = (2 * 10 * physical_properties.depth)/1000  #* (1 - self.K0nc)
 
         if self.is_props_defined(test_mode=test_mode):
             self.OCR = float_df(data_frame.iat[string, MechanicalPropertyPosition["OCR"][1]])
@@ -2132,7 +2132,7 @@ class K0Properties(MechanicalProperties):
     def is_props_defined(self, test_mode):
         _is_normal_defined = (test_mode != "Трехосное сжатие K0 с разгрузкой") and self.K0nc
 
-        _is_ur_defined = (test_mode == "Трехосное сжатие K0 с разгрузкой") and (self.K0nc and self.delta_sigma_1 and self.Nuur)
+        _is_ur_defined = (test_mode == "Трехосное сжатие K0 с разгрузкой") and (self.K0nc and self.sigma_1_ur_delta and self.Nuur)
 
         return _is_normal_defined or _is_ur_defined
 

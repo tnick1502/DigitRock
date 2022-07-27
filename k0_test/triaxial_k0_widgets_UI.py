@@ -80,8 +80,17 @@ class K0UI(QWidget):
 
             self.ax_K0.scatter([], [], label="$K0$" + " = " + str(results["K0nc"]), color="#eeeeee")
 
-            self.ax_K0.legend()
+            if 'Nuur_x' in plot_data:
+                self.ax_K0.plot([plot_data["Nuur_x"][0], plot_data["Nuur_x"][-1]],
+                                [plot_data["Nuur_y"][0], plot_data["Nuur_y"][-1]], label="Nuur")
+                self.ax_K0.plot([0, plot_data["Nuur_x"][-1]], [0, plot_data["Nuur_y"][-1]], label="K0oc")
 
+                self.ax_K0.scatter(plot_data["Nuur_x"][1:], plot_data["Nuur_y"][1:])
+
+                self.ax_K0.scatter([], [], label="$K0_{oc}$" + " = " + str(results["K0oc"]), color="#eeeeee")
+                self.ax_K0.scatter([], [], label="$\\nu_{ur}$" + " = " + str(results["Nuur"]), color="#eeeeee")
+
+            self.ax_K0.legend()
             self.canvas.draw()
 
         except:
@@ -114,8 +123,10 @@ class K0IdentificationUI(TableVertical):
                           "depth": "Глубина, м",
                           "OCR": "OCR",
                           "K0nc": "K0nc",
+                          "Nuur": "Nuur",
                           "sigma_1_step": "Шаг нагружения, МПа",
-                          "sigma_1_max": "Максимальное давление, МПа"})
+                          "sigma_1_max": "Максимальное давление, МПа",
+                          "sigma_1_ur_delta": "Дельта разгрузки, кПа"})
 
 
 class K0OpenTestUI(QWidget):
@@ -171,7 +182,8 @@ class K0SoilTestUI(K0UI):
         self.sliders = TriaxialStaticLoading_Sliders({
                                                       "OCR": "OCR",
                                                       "sigma_1_step": "Шаг нагружения, 0.050 МПа",
-                                                      "sigma_1_max": "Максимальное давление, кПа"
+                                                      "sigma_1_max": "Максимальное давление, кПа",
+                                                      "sigma_1_ur_delta": "Дельта разгрузки, кПа"
                                                       })
         # self.sliders.set_sliders_params(
         #     {

@@ -22,7 +22,7 @@ from excel_statment.functions import set_cell_data
 from general.report_general_statment import save_report
 from general.general_statement import StatementGenerator
 from general.save_widget import Save_Dir
-from general.reports import report_k0
+from general.reports import report_k0, report_k0ur
 # local
 from k0_test.triaxial_k0_widgets_UI import K0UI, K0OpenTestUI, \
     K0SoilTestUI, K0IdentificationUI
@@ -159,7 +159,6 @@ class K0ProcessingApp(QWidget):
     def save_report(self):
         try:
             assert self.tab_1.get_lab_number(), "Не выбран образец в ведомости"
-            len(self.tab_2.test.model.test_data.G_array)
             # assert self.tab_2.test_processing_widget.model._test_data.cycles, "Не выбран файл прибора"
             file_path_name = self.tab_1.get_lab_number().replace("/", "-").replace("*", "")
 
@@ -261,6 +260,8 @@ class K0SoilTestApp(QWidget):
             assert statment.current_test, "Не выбран образец в ведомости"
             file_path_name = statment.current_test.replace("/", "-").replace("*", "")
 
+            read_parameters = self.tab_1.open_line.get_data()
+
             save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
 
@@ -274,17 +275,29 @@ class K0SoilTestApp(QWidget):
             test_result = K0_models[statment.current_test].get_test_results()
 
             results = {"K0nc": test_result["K0nc"], "sigma_1": test_result["sigma_1"], "sigma_3": test_result["sigma_3"]}
+            if read_parameters["test_mode"] == K0Statment.test_modes[1]:
+                results["Nuur"] = test_result["Nuur"]
+                results["K0oc"] = test_result["K0oc"]
+                results["sigma_1_ur"] = test_result["sigma_1_ur"]
+                results["sigma_3_ur"] = test_result["sigma_3_ur"]
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date
             if date:
                 data_customer.end_date = date
 
-            report_k0(file_name, data_customer,
-                      statment[statment.current_test].physical_properties,
-                      statment.getLaboratoryNumber(),
-                      os.getcwd() + "/project_data/", statment[statment.current_test].mechanical_properties, results,
-                      self.tab_2.test_widget.save_canvas(), __version__)
+            if read_parameters["test_mode"] == K0Statment.test_modes[0]:
+                report_k0(file_name, data_customer,
+                          statment[statment.current_test].physical_properties,
+                          statment.getLaboratoryNumber(),
+                          os.getcwd() + "/project_data/", statment[statment.current_test].mechanical_properties, results,
+                          self.tab_2.test_widget.save_canvas(), __version__)
+            if read_parameters["test_mode"] == K0Statment.test_modes[1]:
+                report_k0ur(file_name, data_customer,
+                          statment[statment.current_test].physical_properties,
+                          statment.getLaboratoryNumber(),
+                          os.getcwd() + "/project_data/", statment[statment.current_test].mechanical_properties, results,
+                          self.tab_2.test_widget.save_canvas(), __version__)
 
             number = statment[statment.current_test].physical_properties.sample_number + 7
 
@@ -301,6 +314,16 @@ class K0SoilTestApp(QWidget):
                            (number, MechanicalPropertyPosition["K0nc"][1])),
                           test_result["K0nc"], sheet="Лист1", color="FF6961")
 
+            if read_parameters["test_mode"] == K0Statment.test_modes[1]:
+                set_cell_data(self.tab_1.path,
+                              (MechanicalPropertyPosition["Nuur"][0] + str(number),
+                               (number, MechanicalPropertyPosition["Nuur"][1])),
+                              test_result["Nuur"], sheet="Лист1", color="FF6961")
+                set_cell_data(self.tab_1.path,
+                              (MechanicalPropertyPosition["K0oc"][0] + str(number),
+                               (number, MechanicalPropertyPosition["K0oc"][1])),
+                              test_result["K0oc"], sheet="Лист1", color="FF6961")
+
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Отчет успешно сохранен")
                 app_logger.info(f"Проба {statment.current_test} успешно сохранена в папке {save}")
@@ -308,8 +331,12 @@ class K0SoilTestApp(QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
-            K0_models.dump(os.path.join(statment.save_dir.save_directory,
-                                        f"k0_models{statment.general_data.get_shipment_number()}.pickle"))
+            if read_parameters["test_mode"] == K0Statment.test_modes[0]:
+                K0_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"k0_models{statment.general_data.get_shipment_number()}.pickle"))
+            if read_parameters["test_mode"] == K0Statment.test_modes[1]:
+                K0_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"k0ur_models{statment.general_data.get_shipment_number()}.pickle"))
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
