@@ -673,7 +673,7 @@ def test_mode_vibration_creep(canvas, test_parameter, moove = 0):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
-def test_mode_consolidation(canvas, Data, moove=0, report_type="standart"):
+def test_mode_consolidation(canvas, Data, moove=0, report_type="standart", dyn=None):
 
     if report_type == "plaxis":
         sigma_str = '''<p>Референтное давление p<sub rise="2.5" size="6">ref</sub>, МПа:</p>'''
@@ -697,7 +697,7 @@ def test_mode_consolidation(canvas, Data, moove=0, report_type="standart"):
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
                [Paragraph(sigma_str, LeftStyle), "", "", sigma_3, "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
-               ["Оборудование:", "", "", "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"],
+               ["Оборудование:", "", "", "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a" if not dyn else "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a, Wille Geotechnik 13-HG/020:001"],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (2, 1)),
@@ -2215,7 +2215,7 @@ def result_table_CF_res(canvas, Res, pick, scale = 0.8):
     t.drawOn(canvas, 25 * mm, ((26 - 8-((r - 30)*4)) - table_move*6) * mm)
 
 
-def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
+def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0, dyn=False):
 
 
     try:
@@ -2256,10 +2256,15 @@ def result_table_CF_NN(canvas, Res, pick, scale = 0.8, moove=0):
 
     for i in range(r):
         tableData.append([""])
-
-    tableData.append(
-        [Paragraph('''<p>Недренированная прочность с<sub rise="0.5" size="5">u</sub>, МПа:</p>''', LeftStyle), "", "",
-         zap(Res["c"], 3), "", ""])
+    if dyn:
+        tableData.append(
+            [Paragraph('''<p>Недренированная прочность с<sub rise="0.5" size="5">uв</sub>, МПа:</p>''', LeftStyle), "", "",
+             zap(Res["c"], 3), "", ""])
+    else:
+        tableData.append(
+            [Paragraph('''<p>Недренированная прочность с<sub rise="0.5" size="5">u</sub>, МПа:</p>''', LeftStyle), "",
+             "",
+             zap(Res["c"], 3), "", ""])
 
     tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
     tableData.append(["", "", "", "", "", ""])
@@ -3173,7 +3178,7 @@ def report_FC_res(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res
 
     canvas.save()
 
-def report_FC_NN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_FC_NN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, test_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -3181,24 +3186,34 @@ def report_FC_NN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
     test_parameter = dict(test_parameter)
     test_parameter["K0"] = test_parameter["K0"][0]
     # test_parameter["mode"] = "НН, девиаторное нагружение в кинематическом режиме"
-    name = "НН"
+    if test_type == "vibroNN":
+        name = "КВ"
+        name_r = ["ОПРЕДЕЛЕНИЕ НЕДРЕНИРОВАННОЙ ДИНАМИЧЕСКОЙ ПРОЧНОСТИ ГРУНТОВ",
+                  "МЕТОДОМ ТРЕХОСНОГО СЖАТИЯ (ГОСТ 12248.3-2020)"]
+    else:
+        name = "НН"
+        name_r = ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
+                  "СЖАТИЯ (ГОСТ 12248.3-2020)"]
+
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
 
     main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ИСПЫТАНИЯ ГРУНТОВ МЕТОДОМ ТРЕХОСНОГО",
-                             "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/" + name)
+                            name_r, "/" + name)
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     if len(res["sigma_3_mohr"]) == 1:
         test_parameter["sigma_3"] = res["sigma_3_mohr"][0]*1000
     else:
         test_parameter["sigma_3"] = zap(res["sigma_3_mohr"][0], 3) + "/" + zap(res["sigma_3_mohr"][1], 3) + "/" + zap(res["sigma_3_mohr"][2], 3)
-    test_mode_consolidation(canvas, test_parameter, moove=moove)
+
+    dyn = True if test_type == "vibroNN" else False
+
+    test_mode_consolidation(canvas, test_parameter, moove=moove, dyn=dyn)
     res["description"] = Data_phiz.description
-    result_table_CF_NN(canvas, res, [picks[0],picks[1]], moove=moove)
+    result_table_CF_NN(canvas, res, [picks[0],picks[1]], moove=moove, dyn=dyn)
 
     canvas.save()
 

@@ -1055,6 +1055,8 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                       "sigma_3": None,
                                       "K0": None})
 
+        self._prec_type = None
+
         self._draw_params = AttrDict({"max_time": None})
 
     def set_test_params(self):
@@ -1113,40 +1115,62 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._test_modeling()
         self.change_borders(0, len(self._test_data.time))
 
+    def set_prec_type(self, prec_type):
+        self._prec_type = prec_type
+        self._test_modeling()
+        self.change_borders(0, len(self._test_data.time))
+
+    def get_prec_type(self):
+        return self._prec_type
+
     def _test_modeling(self):
         """Функция моделирования опыта"""
-        self._test_data.time, self._test_data.volume_strain, *__ = function_consalidation(
-            self._draw_params.strain,
-            Cv=0.8*self._draw_params.Cv,
-            reverse=True,
-            max_time=self._draw_params.max_time,
-            Ca=-self._draw_params.Ca)
-
-
-
-
         # self._test_data.time = np.round(self._test_data.time, 3)
 
         # self._test_data.volume_strain = np.round(
         # self._test_data.volume_strain * np.pi * (19 ** 2) / (76) /
         # (np.pi * (19 ** 2) / (76)), 6)
-        for i in range(len(self._test_data.volume_strain)):
-            self._test_data.volume_strain[i] = ModelTriaxialConsolidationSoilTest.round_srain(self._test_data.volume_strain[i])
+
+        if not self._prec_type:
+            self._test_data.time, self._test_data.volume_strain, *__ = function_consalidation(
+                self._draw_params.strain,
+                Cv=0.8 * self._draw_params.Cv,
+                reverse=True,
+                max_time=self._draw_params.max_time,
+                Ca=-self._draw_params.Ca)
+
+            for i in range(len(self._test_data.volume_strain)):
+                self._test_data.volume_strain[i] = ModelTriaxialConsolidationSoilTest.round_srain(self._test_data.volume_strain[i])
+
+        if self._prec_type:
+            self._test_data.time, self._test_data.volume_strain, *__ = function_consalidation(
+                self._draw_params.strain,
+                Cv=0.8 * self._draw_params.Cv,
+                reverse=True,
+                max_time=self._draw_params.max_time,
+                Ca=-self._draw_params.Ca, noise=0.00001)
+
+            for i in range(len(self._test_data.volume_strain)):
+                self._test_data.volume_strain[i] = ModelTriaxialConsolidationSoilTest.round_srain(self._test_data.volume_strain[i], precision=self._prec_type)
 
         _time, _volume_strain = ModelTriaxialConsolidationSoilTest.ordering(self._test_data.time, self._test_data.volume_strain)
         self._test_data.time, self._test_data.volume_strain = copy.deepcopy(_time), copy.deepcopy(_volume_strain)
 
     def save_log(self, path, name):
+        prec = None
+        if self._prec_type:
+            prec = 3
+
         if statment[statment.current_test].mechanical_properties.p_max >= 1:
             ModelTriaxialConsolidationSoilTest.save_device(path=path, time_model=self._test_data.time,
                                                        strain_model=self._test_data.volume_strain,
                                                        pressure=self._test_params.p_max,
-                                                       report_number=name, device=True)
+                                                       report_number=name, device=True, prec=prec)
         else:
             ModelTriaxialConsolidationSoilTest.save_device(path=path, time_model=self._test_data.time,
                                                            strain_model=self._test_data.volume_strain,
                                                            pressure=self._test_params.p_max,
-                                                           report_number=name, device=False)
+                                                           report_number=name, device=False, prec=prec)
 
     def get_cvi_data(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -1209,7 +1233,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 
     @staticmethod
     def save_device(path: str, time_model, strain_model, pressure,
-                    report_number="-".join(['ЛАБОРАТОРНЫЙ-НОМЕР', 'НОМЕР-ОБЪЕКТА', 'КК']), device=False):
+                    report_number="-".join(['ЛАБОРАТОРНЫЙ-НОМЕР', 'НОМЕР-ОБЪЕКТА', 'КК']), device = False, prec = None):
         """
                     Функция пересечения двух прямых, заданных точками
                     :param path: путь до файла
@@ -1218,6 +1242,8 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                     :param pressure: максимальное давление консолидации
                     :param report_number: имя файла
                     """
+        if prec is None:
+            prec = 2
 
         header1 = "SampleHeight;SampleDiameter;TaskID;TaskName;TaskTypeID;TaskTypeName;AlgorithmID;AlgorithmName;Sample"
         header2 = ';'.join(['20', '71.4', '0', '', '', '', '', 'Компрессионное сжатие', ''])
@@ -1246,7 +1272,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                   f'{np.round(time[i], 6):.6f}',
                                   f'{np.round(pressure_array[i], 2):.2f}' if device
                                   else f'{np.round(pressure_array[i], 4):.4f}',
-                                  f'{round(abs(strain[i]) * 20, 2):.2f}',
+                                  f'{round(abs(strain[i]) * 20, prec):.{prec}f}',
                                   f'{int(stab_end[i])}',
                                   f'{int(consolidation_array[i])}']) + '\n')
         print("{} saved".format(path))

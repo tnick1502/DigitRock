@@ -1,8 +1,7 @@
 # coding: utf-8
 
 # In[34]:
-
-
+import copy
 import os
 
 from intersect import intersection
@@ -27,6 +26,7 @@ from scipy.signal import argrelextrema
 
 
 from general.general_functions import *
+
 
 def compute_l2_norm(x: numpyArray['N2', float]) -> numpyArray['N1', float]:
     return x**2
@@ -65,10 +65,12 @@ def find_first_step(strain, deviator):
     else:
         return 0
 
+
 def find_first_step_for_soil_test(strain):
     # Начальная ступень графика
     i, = np.where((strain - (strain[-1] - 0.15)) > 0)
     return i[0] - 1
+
 
 def find_E50_qf(strain, deviator):
     """Определение параметров qf и E50"""
@@ -84,6 +86,7 @@ def find_E50_qf(strain, deviator):
         np.interp(qf / 2, np.array([deviator[imin], deviator[imax]]), np.array([strain[imin], strain[imax]])))
 
     return round(E50 / 1000, 2), round(qf / 1000, 2)
+
 
 def find_Eur(strain, deviator, reload):
     """Поиск Eur"""
@@ -104,6 +107,7 @@ def find_Eur(strain, deviator, reload):
         Eur = "-"
 
     return Eur
+
 
 def find_puasson_dilatancy(strain, deviator, volume_strain):
     # Коэффициент Пуассона и дилатансия
@@ -152,11 +156,13 @@ def find_puasson_dilatancy(strain, deviator, volume_strain):
 
     return round(puasson, 2), dilatancy
 
-def deviator_loading_deviation(strain, deviator, xc):
+
+def deviator_loading_deviation1(strain, deviator, xc, amplitude):
     # Добавим девиации после 0.6qf для кривой без пика
     qf = max(deviator)
-    devition_1 = qf / 100
-    devition_2 = qf / 60
+
+    devition_1 = amplitude*qf
+    devition_2 = amplitude*qf*0.6
 
     i_60, = np.where(deviator >= 0.51 * qf)
     i_90, = np.where(deviator >= 0.98 * qf)
@@ -222,6 +228,48 @@ def deviator_loading_deviation(strain, deviator, xc):
                                                                  low_first_district=3,
                                                                  one_side=True),
                                           np.zeros(len(strain) - i_end[0])))
+
+    return deviation_array
+
+def deviator_loading_deviation(strain, deviator, xc, amplitude):
+    # Добавим девиации после 0.6qf для кривой без пика
+    qf = max(deviator)
+
+    devition_1 = amplitude*qf
+    devition_2 = (amplitude/2)*qf
+    devition_3 = (amplitude / 3)*qf
+    points_1 = np.random.uniform(5, 10)
+    points_2 = np.random.uniform(10, 20)
+    points_3 = np.random.uniform(20, 30)
+
+    try:
+        index_015, = np.where(strain >= 0.17)
+        index_015 = index_015[0]
+
+
+    except TypeError:
+        index_015 = -1
+
+    try:
+        strain_for_deviations = strain[:index_015]
+        curve_1 = create_deviation_curve(strain_for_deviations, devition_1,
+                                       points=points_1, borders="zero_diff",
+                                       low_first_district=1, one_side=True)
+        curve_2 = create_deviation_curve(strain_for_deviations, devition_2,
+                                         points=points_2, borders="zero_diff",
+                                         low_first_district=1, one_side=True)
+        curve_3 = create_deviation_curve(strain_for_deviations, devition_3,
+                                         points=points_3, borders="zero_diff",
+                                         low_first_district=1, one_side=True)
+        deviation_array = -(curve_1 + curve_2 + curve_3)
+        deviation_array = np.hstack((deviation_array, np.zeros(len(strain[index_015:]))))
+    except IndexError:
+        deviation_array = np.zeros(len(strain))
+
+
+    except (ValueError, IndexError):
+        print("Ошибка девиаций девиатора")
+        pass
 
     return deviation_array
 
@@ -354,17 +402,29 @@ def params_gip_exp_tg(x, e50, qf, x50, xc, qocr):
 
     else:
         nach_pr_a1_e, nach_pr_k1_e = 600, 1
-        a1_e, k1_e = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e))
+        result = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e), full_output=1)
+        a1_e, k1_e = result[0]
+
+        bad_progress_count = 0 # если в result[2] находится 4 или 5, то вылезает предупреждение с прохой сходимостью
+        # мы будем делать 50 итераций чтобы попытаться избавиться от этого предупреждения
+
         nach_pr_a1_e = 1
         error = equations_e([a1_e, k1_e])
         count = 0
         while (a1_e <= 0) or (k1_e <= 0) or (a1_e == nach_pr_a1_e or k1_e == nach_pr_k1_e) or (
                 a1_e * k1_e < 1000) or (
-                (abs(error[0]) >= 550 or abs(error[1]) >= 550) and count < 50):  # если начальное приближение a1_e
+                (abs(error[0]) >= 550 or abs(error[1]) >= 550) and
+                count < 50) or (
+                result[2] in (4, 5) and bad_progress_count < 50 and qf < 251):  # если начальное приближение a1_e
             # или k1_e равно 1 или произведение коээфициентов (приблизительно равно e50)
             #  меньше 1000, то ищутся другие начальные приближения
             nach_pr_a1_e += 1
-            a1_e, k1_e = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e))
+            result = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e), full_output=1)
+            a1_e, k1_e = result[0]
+
+            if result[2] in (4, 5):
+                bad_progress_count += 1
+
             error = equations_e([a1_e, k1_e])
             if (abs(error[0]) >= 550 or abs(error[1]) >= 550):
                 count += 1
@@ -421,6 +481,7 @@ def hevisaid(x, sdvig, delta_x):
     ''' возвращет функцию Хевисайда, которая задает коэффициент влияния kp'''
     return 1. / (1. + np.exp(-2 * 10 / delta_x * (x - sdvig)))
 
+
 def gip_and_exp_or_tg(x, e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, qocr,
                       xocr):
     '''сумма функций гиперболы и экспоненты с учетом коэффициентов влияния'''
@@ -451,6 +512,7 @@ def gip_and_exp_or_tg(x, e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k
                     (kp * (1 - k)) * (-a1_e * (np.exp(-k1_e * x) - 1))))  # сумма гиперболы и экспоненты
 
     return ret
+
 
 def cos_par(x, e50, qf, x50, xc, hlow):
     '''возвращает функцию косинуса
@@ -485,6 +547,7 @@ def cos_par(x, e50, qf, x50, xc, hlow):
 
     return cos_par
 
+
 def gaus(x, qf, xc, x2, qf2):
     '''функция Гаусса для участка x>xc'''
     a_gaus = qf - qf2  # высота функции Гаусса
@@ -492,10 +555,12 @@ def gaus(x, qf, xc, x2, qf2):
     # (считается из условия равенства заданной точности в точке х50
     return a_gaus * (np.exp(-k_gaus * ((x - xc) ** 2))) + qf2
 
+
 def parab(x, qf, xc, x2, qf2):
     '''функция Гаусса для участка x>xc'''
     k_par = -((qf2 - qf) / (x2 - xc) ** 2)
     return -k_par * ((x - xc) ** 2) + qf
+
 
 def smoothness_condition(qf, x50):
     '''возвращает предельное значение xc при котором возможно
@@ -506,6 +571,7 @@ def smoothness_condition(qf, x50):
     x_lim += 0.6 / 100
 
     return x_lim
+
 
 def form_kp(x: float, qf, k, xocr, xc, qocr, x50):
     '''вовзращает коэффициент влияния kp'''
@@ -545,22 +611,71 @@ def form_kp(x: float, qf, k, xocr, xc, qocr, x50):
 
     return kp
 
+
 def sensor_accuracy(x, y, qf, x50, xc):
     '''возвразщает зашумеленную функцию без шума в характерных точках'''
 
-    sh = np.random.uniform(-1, 1, len(x))
-    index_qf_half, = np.where(y >= np.max(y) / 2)
-    index_qf, = np.where(y >= np.max(y))
-    if xc > max(x):  # если хс последня точка в массиве или дальше
-        index_qf, = np.where(x >= max(x))
-    for i in range(len(y)):  # наложение шума кроме промежутков для характерных точек
-        if (i < index_qf_half[0] - 2) or ((i > index_qf_half[0] + 2) and ([i] < index_qf[0] - 2)) or (
-                i > index_qf[0] + 2):
-            if (y[i] + sh[i] < np.max(y)):
-                y[i] = y[i] + sh[i]
-            else:
-                y[i] = y[i] - np.random.uniform(0.1, 0.5)  # в районе максимума шум меньше первоначального
-    return y
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    max_y = np.max(y)
+
+    sh = np.random.uniform(-0.4, 0.4, len(x))
+    index_qf_half, = np.where(y >= max_y / 2)
+    index_qf, = np.where(y >= max_y)
+
+    max_x = np.max(x)
+
+    if xc > max_x:  # если хс последня точка в массиве или дальше
+        index_qf, = np.where(x >= max_x)
+
+    y_res = y + sh
+
+    # пропускаем нужные точки
+    y_res[index_qf_half[0] - 2] = y[index_qf_half[0] - 2]
+    y_res[index_qf_half[0] - 1] = y[index_qf_half[0] - 1]
+    y_res[index_qf_half[0] - 0] = y[index_qf_half[0] - 0]
+    y_res[index_qf_half[0] + 1] = y[index_qf_half[0] + 1]
+    y_res[index_qf_half[0] + 2] = y[index_qf_half[0] + 2]
+
+    y_res[index_qf[0] - 2] = y[index_qf[0] - 2]
+    y_res[index_qf[0] - 1] = y[index_qf[0] - 1]
+    y_res[index_qf[0] - 0] = y[index_qf[0] - 0]
+
+    try:
+        y_res[index_qf[0] + 1] = y[index_qf[0] + 1]
+    except IndexError:
+        pass
+    try:
+        y_res[index_qf[0] + 2] = y[index_qf[0] + 2]
+    except IndexError:
+        pass
+
+
+    # в районе максимума шум меньше первоначального
+    indexes, = np.where(y_res > max_y)
+    if len(indexes) > 0:
+        for i in indexes:
+            y_res[i] = y[i] - np.random.uniform(0.05, 0.025)
+    # print(indexes, index_qf_half[0], index_qf[0])
+
+    # y_test = copy.deepcopy(y)
+    # for i in range(len(y_test)):  # наложение шума кроме промежутков для характерных точек
+    #     if (i < index_qf_half[0] - 2) or ((i > index_qf_half[0] + 2) and ([i] < index_qf[0] - 2)) or (
+    #             i > index_qf[0] + 2):
+    #         if (y_test[i] + sh[i] < np.max(y_test)):
+    #             y_test[i] = y_test[i] + sh[i]
+    #         else:
+    #             y_test[i] = y_test[i] - np.random.uniform(0.05, 0.025)  # в районе максимума шум меньше первоначального
+    #
+    # for i in range(len(y_test)):
+    #     errr = abs(y_test[i] - y_res[i])
+    #     if errr > 0.05:
+    #         print(i, errr)
+
+    return y_res
+
+
 
 def loop(x, y, Eur, y_rel_p, point2_y):
 
@@ -599,7 +714,7 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     min_E0 = point1_y / point1_x  # максимальный угол наклона петли
 
     if Eur < 1.1 * min_E0:
-        print("\nВНИМАНИЕ: Eur изменен!\n")
+        #print("\nВНИМАНИЕ: Eur изменен!\n")
         Eur = 1.1 * min_E0
         E0 = 1.1 * Eur
 
@@ -609,7 +724,7 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     point2_x = x[ip2x[0]]  # ???
 
     if ip2x[0] >= ip1[0]: # если точка 2 совпадает с точкой один или правее, то меняем точку 2 на предыдущую
-        print("\nВНИМАНИЕ: Eur изменен!\n")
+        #print("\nВНИМАНИЕ: Eur изменен!\n")
         ip2x[0] = ip1[0] - 1
         point2_x = x[ip2x[0]]
 
@@ -705,6 +820,9 @@ def cos_ocr(x, y,  qf, qocr, xc):
 
     extremums = argrelextrema(y+cos_par, np.greater)
 
+    if len(extremums) < 1 or len(extremums[0]) < 1:
+        extremums = [[0]]
+
     y_ocr = y + cos_par
 
     count = 0
@@ -743,6 +861,7 @@ def cos_ocr(x, y,  qf, qocr, xc):
 
     return cos_par
 
+
 def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
     qocr = 0  # !!!
     '''кусочная функция: на участкe [0,xc]-сумма функций гиперболы и
@@ -774,7 +893,7 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
         for i in range(len(x)):
             y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp[i], k, qocr,
                                      xocr) + cos_par(x[i], e50, qf, x50,
-                                                     xc)  # формирование функции девиаторного нагружения
+                                                     xc, 0)  # формирование функции девиаторного нагружения
         x2 = xc  # x2,qf2 не выводится
         qf2 = qf  # x2,qf2 не выводится
 
@@ -848,6 +967,7 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
     xold = xnew  # масиив х без учета петли (для обьемной деформации)
 
     return xold, xnew, y_smooth, qf, xc, x2, qf2, e50
+
 
 # Обьемная деформация
 def spline(x_for_part, y_for_part, x_for_inter, a, b, k=3):
@@ -1078,6 +1198,7 @@ def volumetric_deformation(x, x_given, m_given, xc, v_d2, x_end, angle_of_dilata
 
 
 def curve(qf, e50, **kwargs):
+
     try:
         kwargs["xc"]
     except KeyError:
@@ -1104,9 +1225,9 @@ def curve(qf, e50, **kwargs):
         kwargs["gaus_or_par"] = 0
 
     try:
-        kwargs["amount_points"]
+        kwargs["amount_pointsamount_points"]
     except KeyError:
-        kwargs["amount_points"] = 700
+        kwargs["amount_points"] = 500
 
     try:
         kwargs["Eur"]
@@ -1128,6 +1249,11 @@ def curve(qf, e50, **kwargs):
     except KeyError:
         kwargs["U"] = None
 
+    try:
+        kwargs["amplitude"]
+    except KeyError:
+        kwargs["amplitude"] = (0.1, True)
+
     xc = kwargs.get('xc')
     x2 = kwargs.get('x2')
     qf2 = kwargs.get('qf2')
@@ -1138,13 +1264,49 @@ def curve(qf, e50, **kwargs):
     y_rel_p = kwargs.get('y_rel_p')
     point2_y = kwargs.get('point2_y')
     U = kwargs.get('U')
+    amplitude = kwargs.get('amplitude')[0]
+    free_deviations = kwargs.get('amplitude')[1]
+    '''флаг, отвечает за наложение девиаций на контрольные точки'''
+
+
+    # if max_time < 50:
+    #     max_time = 50
+    # if max_time <= 499:
+    #     amount_points = max_time * 20
+    #     amount_points_for_stock = np.random.uniform(1, 3)*20
+    # elif max_time > 499 and max_time <= 2999:
+    #     amount_points = max_time * 2
+    #     amount_points_for_stock = np.random.uniform(5, 10)*2
+    # else:
+    #     amount_points = max_time/3
+    #     amount_points_for_stock = np.random.uniform(15, 20)/3
+    # if Eur:
+    #     amount_points = amount_points*10
+
+
+    qf_old = qf
+    if qf < 150:
+        k_low_qf = 250 / qf
+        if Eur:
+            qf = qf * k_low_qf
+            e50 = e50 * k_low_qf
+            qf2 = qf2 * k_low_qf
+            Eur = Eur * k_low_qf
+            # amount_points = amount_points * 6
+            y_rel_p = y_rel_p * k_low_qf
+            point2_y = point2_y * k_low_qf
+        else:
+            qf = qf * k_low_qf
+            e50 = e50 * k_low_qf
+            qf2 = qf2 * k_low_qf
+
 
     if y_rel_p > qf:
         y_rel_p = qf
     if y_rel_p < 20.0:
         y_rel_p = 20.0
 
-    if xc>0.11:
+    if xc>0.111:
         xc=0.15
 
     # ограничение на qf2
@@ -1221,11 +1383,90 @@ def curve(qf, e50, **kwargs):
                 return None
         return None
 
-    # print(f"ПОДАННЫЙ Еур : {Eur}")
-    # построение петли разгрузки
+    # МАСШТАБ
+    if qf_old < 150:
+        y = y / k_low_qf
+
+        if Eur:
+            qf = qf / k_low_qf
+            Eur = Eur / k_low_qf
+            y_rel_p = y_rel_p / k_low_qf
+            point2_y = point2_y / k_low_qf
+            e50 = e50 / k_low_qf
+        else:
+            qf = qf / k_low_qf
+            e50 = e50 / k_low_qf
+
+
+    # МАСШТАБ ИЗ-ЗА ДЕВИАЦИЙ - ВОЗВРАЩАЕТ Е50 И QF В НУЖНОЕ МЕСТО
+    count = 0
+    y_no_noise = copy.deepcopy(y)
+    x_no_noise = copy.deepcopy(x)
+    count_limit = 10
+    while count < count_limit:
+
+        if not free_deviations:
+            y += deviator_loading_deviation1(x, y, xc, amplitude=amplitude)
+            break
+
+        y += deviator_loading_deviation(x, y, xc, amplitude=amplitude)
+
+        if not Eur:
+            y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
+            y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
+
+        #
+        if not Eur and is_OCR:
+            y_ocr = copy.deepcopy(y)
+            index_qf2ocr, = np.where(y_ocr >= qf / 2)
+            x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
+                                 [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
+            delta = x50 / x_qf2ocr
+
+            x = x * delta
+            index_x50, = np.where(x >= x50)
+            y_qf2ocr = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
+            k = y_qf2ocr / (qf / 2)
+            y_ocr = y_ocr / k
+            y = copy.deepcopy(y_ocr)
+
+        y_round = np.round(y, 3)
+        index_x2, = np.where(np.round(x, 6) >= 0.15)
+
+        qf2_max = np.max(y_round[:index_x2[0]])
+
+        delta = (qf) / qf2_max
+        y = y * delta
+        y_round = np.round(y, 3)
+        x_round = np.round(x, 6)
+        qf_max = np.max(np.round(y_round[:index_x2[0]], 3))
+
+        i_07qf, = np.where(y_round[:index_x2[0]] > qf_max * 0.7)
+        imax, = np.where(y_round[:i_07qf[0]] > qf_max / 2)
+        imin, = np.where(y_round[:i_07qf[0]] < qf_max / 2)
+        imax = imax[0]
+        imin = imin[-1]
+        x_qf2 = np.interp(qf_max / 2, [y_round[imin], y_round[imax]], [x_round[imin], x_round[imax]])
+        delta = x50 / x_qf2
+        x = x * delta
+
+        index_x2, = np.where(np.round(x, 6) >= 0.15)
+        from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading
+        RES_E50 = ModelTriaxialDeviatorLoading.define_E50_qf(x[:index_x2[0]], y[:index_x2[0]])
+
+        if round(abs(RES_E50[0] - e50)/1000, 1) < 0.4:
+            break
+
+        count = count + 1
+        if count < count_limit:
+            y = copy.deepcopy(y_no_noise)
+            x = copy.deepcopy(x_no_noise)
+
+    # ОПТИМИЗАЦИЯ ПЕТЛИ
+    y_for_loop = copy.deepcopy(y)
     x_loop, y_loop,\
         point1_x, point1_y, point2_x, point2_y, point3_x, point3_y,\
-        x1_l, x2_l, y1_l, y2_l = loop(x, y, Eur, y_rel_p, point2_y)
+        x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, Eur, y_rel_p, point2_y)
     # оптимизация петли разгрузки
     if Eur:
         current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
@@ -1241,7 +1482,7 @@ def curve(qf, e50, **kwargs):
             delta_Eur = delta_Eur + 100
             x_loop, y_loop, \
                 point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
-                x1_l, x2_l, y1_l, y2_l = loop(x, y, delta_Eur, y_rel_p, point2_y)
+                x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, delta_Eur, y_rel_p, point2_y)
 
             current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
 
@@ -1256,7 +1497,7 @@ def curve(qf, e50, **kwargs):
 
         x_loop, y_loop, \
             point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
-            x1_l, x2_l, y1_l, y2_l = loop(x, y, best_Eur, y_rel_p, point2_y)
+            x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, best_Eur, y_rel_p, point2_y)
         #current_Eur = define_eur(x_loop, y_loop, [0, len(y1_l) - 1, len(x_loop) + 1])
         # print(f"ЛУЧШИЙ ПОЛУЧЕННЫЙ Еур : {current_Eur} : ОШИБКА : {abs(Eur - current_Eur) / Eur * 100}")
         # оптимизация петли разгрузки завершена
@@ -1264,29 +1505,12 @@ def curve(qf, e50, **kwargs):
     index_point1_x, = np.where(x >= point1_x)
     index_point3_x, = np.where(x >= point3_x)
 
-    y += deviator_loading_deviation(x, y, xc)
+    if Eur:
+        y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
+        y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
 
-    y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
-    y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
-
-    #
-    if not Eur and is_OCR:
-        y_ocr = copy.deepcopy(y)
-        index_qf2ocr, = np.where(y_ocr >= qf / 2)
-        x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
-                             [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
-        delta = x50 / x_qf2ocr
-
-        x = x * delta
-        index_x50, = np.where(x >= x50)
-        y_qf2ocr = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
-        k = y_qf2ocr / (qf / 2)
-        y_ocr = y_ocr / k
-        y = copy.deepcopy(y_ocr)
-    #
-
-    y1_l = y1_l + np.random.uniform(-1, 1, len(y1_l))  # шум на петле
-    y2_l = y2_l + np.random.uniform(-1, 1, len(y2_l))  # шум на петле
+    y1_l = y1_l + np.random.uniform(-0.4, 0.4, len(y1_l))  # шум на петле
+    y2_l = y2_l + np.random.uniform(-0.4, 0.4, len(y2_l))  # шум на петле
     y1_l = discrete_array(y1_l, 1)  # ступени на петле
     y2_l = discrete_array(y2_l, 1)  # ступени на петле
 
@@ -1300,9 +1524,6 @@ def curve(qf, e50, **kwargs):
     point2_x_index = index_point1_x[0] + len(y1_l)  # -1 + 1 = 0 т.к. самая нижняя точка петли принадлежит разгрузке
     point3_x_index = index_point1_x[0] + len(x_loop) - 2  # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
     y[0] = 0.
-
-    #current_Eur = define_eur(x, y, [point1_x_index - 1, point2_x_index - 1, point3_x_index + 1])
-    # print(f"Еур ПОСЛЕ ПРИСОЕДИНЕНИЯ: {current_Eur} : ОШИБКА : {abs(Eur - current_Eur)/Eur*100}")
 
     # ограничение на хс (не меньше чем x_given)
     if xc <= 0.025:
@@ -1513,7 +1734,7 @@ def curve(qf, e50, **kwargs):
     x_last_point = np.random.uniform(0.005, 0.01) - (
             x[-1] - x[-2])  # положительная последняя точка х для метрвого хода штока
     x_start = np.linspace(0, x_last_point,
-                          int(x_last_point / (x[-1] - x[-2])) + 1)  # положительный масив х для метрвого хода штока
+                          int(x_last_point / (x[-1] - x[-2])) + 1) # положительный масив х для метрвого хода штока
     slant = np.random.uniform(20, 30)  # наклон функции экспоненты
     amplitude = np.random.uniform(15, 25)  # высота функции экспоненты
     y_start = exponent(x_start, amplitude, slant)  # абциссы метрвого хода штока
@@ -1522,7 +1743,7 @@ def curve(qf, e50, **kwargs):
         -2])  # смещение массива x для метрвого хода штока кривой девиаторного нагружения в отрицальную область
     y_start -= y_start[
         -1]  # смещение массива y для метрвого хода штока кривой девиаторного нагружения в отрицальную область
-    y_start = y_start + np.random.uniform(-1, 1, len(y_start))
+    y_start = y_start + np.random.uniform(-0.4, 0.4, len(y_start))
     y_start = discrete_array(y_start, 0.5)  # наложение ступенчватого шума на мертвый ход штока
     x = np.hstack((x_start, x))  # добавление начального участка в функцию девиаторного нагружения
 
@@ -1546,6 +1767,10 @@ def curve(qf, e50, **kwargs):
     y2 = y2 + random_param
     y2 = discrete_array(y2, 0.00125 / 8.)  # дискретизация по уровню функции обьемной деформации
 
+    # if xc < 0.15:
+    #     y[-1] = qf2 + abs(y_start[0])
+
+
     if Eur:
         # для записи в файл
         point1_x_index = point1_x_index + len(x_start)
@@ -1557,10 +1782,32 @@ def curve(qf, e50, **kwargs):
     else:
         indexs_loop = [0, 0, 0]
 
+
+    # if max_time <= 499:
+    #     time = [i/20 for i in range(len(x))]
+    # elif max_time > 499 and max_time <= 2999:
+    #     time = [i/2 for i in range(len(x))]
+    # else:
+    #     time = [i*3 for i in range(len(x))]
+
+
+
     if U:
+        # print('u', U)
+        old_U = U
+        if U < 150:
+            k_low_u = 250/U
+            U = U * k_low_u
+
         e50_U = U / x50
-        x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50,  kwargs.get('xc'), 1.2* kwargs.get('xc'), np.random.uniform(0.3, 0.7)*U,
-                                        0, amount_points)
+        x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50, kwargs.get('xc'), 1.2 * kwargs.get('xc'),
+                                           np.random.uniform(0.3, 0.7)*U, 0, amount_points)
+
+
+        if old_U < 150:
+            y_U = y_U * k_low_u
+            U = U * k_low_u
+
         index_x2, = np.where(x_U >= 0.15)
         x_U = x_U[:index_x2[0]]
         y_U = y_U[:index_x2[0]]
@@ -1573,7 +1820,7 @@ def curve(qf, e50, **kwargs):
         y_start = exponent(x_start, amplitude, slant)
         x_start -= x_start[-1] + (x_U[-1] - x_U[-2])
         y_start -= y_start[-1]
-        y_start = y_start + np.random.uniform(-1, 1, len(y_start))
+        y_start = y_start + np.random.uniform(-0.4, 0.4, len(y_start))
         y_start = discrete_array(y_start, 0.5)
         x_U = np.hstack((x_start, x_U))
 
@@ -1582,6 +1829,19 @@ def curve(qf, e50, **kwargs):
         y_U = np.hstack((y_start, y_U))
         y_U += abs(y_U[0])
         y_U[0] = 0.
+
+        y1_U, v_d_given = volumetric_deformation(x_old, x_given, m_given, xc, v_d2, x_end, angle_of_dilatacy,
+                                               angle_of_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x,
+                                               point2_x,
+                                               point3_x)
+        y1_U = y1_U[:index_x2[0]]
+        y1_proiz_U = (y1_U[1] - y1_U[0]) / (x_U[1] - x_U[0])
+        y1_start = spline([x_start[0], 0], [0, y1_bias], x_start, 0, y1_proiz_U,
+                          k=3)  # метрвый ход штока кривой обьемной деформации
+        y1_U = np.hstack((y1_start, y1_U + y1_bias))  # добавление мертвого хода штока в функцию обьемной деформации
+        y1_U[0] = 0.  # искусственное зануление первой точки
+        y2_U = y1_U
+
 
         """u = exponent(x[len(x_start):np.argmax(y)] - x[len(x_start)], U, np.random.uniform(8, 10)) + amplitude
         y_start = np.linspace(0, amplitude, len(x_start))
@@ -1607,8 +1867,7 @@ def curve(qf, e50, **kwargs):
         y_U[len(x_start)] = amplitude
         y_U[len(x_start) + 1] = amplitude
         y_U[len(x_start) - 1] = amplitude"""
-
-        return x, y, y1, y2, indexs_loop, len(x_start)
+        return x_U, y_U, y1_U, y2_U, indexs_loop, len(x_start)
 
     return x, y, y1, y2, indexs_loop, len(x_start)
 
@@ -1828,9 +2087,9 @@ if __name__ == '__main__':
     #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
     # (596.48, 382.8)
 
-    x, y, y1, y2, indexs_loop, a = curve(800, 29710.0, xc=0.15, x2=0.16, qf2=500, qocr=0, m_given=0.35,
-                                 amount_points=500, angle_of_dilatacy=6, y_rel_p=596, point2_y=382, Eur=50000)
-
+    x, y, y1, y2, indexs_loop, time, lenlen = curve(300, 20000, xc=0.05, qf2=200)
+    # print(len(x))
+    # print(time)
     #
     # i, = np.where(x >= max(x) - 0.15)
     # x = x[i[0]:] - x[i[0]]

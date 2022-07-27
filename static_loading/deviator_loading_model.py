@@ -227,6 +227,11 @@ class ModelTriaxialDeviatorLoading:
         dict["K_E50"] = np.round(self._test_result.E[0]/self._test_result.E50, 2)
         dict["K_Eur"] = np.round(self._test_result.Eur/self._test_result.E[0], 2) if self._test_result.Eur else None
 
+        dict["q_rel"] = None
+        if self._test_data.reload_points_cut is not None:
+            if self._test_data.reload_points_cut[0] > 0:
+                dict["q_rel"] = np.round((self._test_data.deviator_cut[self._test_data.reload_points_cut[0]]) / 1000, 3)
+
         return dict
 
     def get_plot_data(self):
@@ -776,6 +781,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         self.pre_defined_kr_fgs = None
 
+        self.unloading_borders = None
+        self.loop_height = None
+
     def set_test_params(self, pre_defined_kr_fgs=None):
         """Установка основных параметров опыта"""
         self._test_params.qf = statment[statment.current_test].mechanical_properties.qf
@@ -792,7 +800,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._test_params.fi = statment[statment.current_test].mechanical_properties.fi
         self._test_params.Eur = statment[statment.current_test].mechanical_properties.Eur
         self._test_params.data_physical = statment[statment.current_test].physical_properties
-        xc, residual_strength, self.pre_defined_kr_fgs = ModelTriaxialDeviatorLoadingSoilTest.define_xc_value_residual_strength(
+        xc, residual_strength, self.pre_defined_kr_fgs, amplitude_flag = ModelTriaxialDeviatorLoadingSoilTest.define_xc_value_residual_strength(
             statment[statment.current_test].physical_properties, statment[statment.current_test].mechanical_properties.sigma_3,
             statment[statment.current_test].mechanical_properties.qf, statment[statment.current_test].mechanical_properties.E50,
             pre_defined_kr_fgs=pre_defined_kr_fgs)
@@ -819,6 +827,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.qf*residual_strength
         self._draw_params.amplitude = 0.05
         self._draw_params.free_deviations = True
+        if amplitude_flag:
+            self._draw_params.amplitude = 0.02
         if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
             self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.q_res
             self._draw_params.amplitude = 0.00001#[self._test_params.qf / 200, self._test_params.qf / 120]
@@ -833,6 +843,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
             if statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
                 self.unloading_borders = (self._test_params.qf/2, 10)
+
+            self.loop_height = abs(self.unloading_borders[0] - self.unloading_borders[1])
 
             if type(self._test_params.Eur) is bool:
                 self._draw_params.Eur = ModelTriaxialDeviatorLoadingSoilTest.dependence_Eur(
@@ -870,6 +882,11 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
+        if self._draw_params.Eur:
+            unload_start_y = {"value": self.unloading_borders[0], "borders": [0.0, self._test_params.qf]}
+        else:
+            unload_start_y = {"value": None}
+
         Eur = {"value": self._draw_params.Eur, "borders": [self._draw_params.Eur/2, self._draw_params.Eur*5]} if self._draw_params.Eur else {"value": None}
         #print(self._test_params.__dict__)
 
@@ -882,7 +899,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
                   "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]},
                   "Eur": Eur,
-                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]}}
+                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]},
+                  "unload_start_y": unload_start_y}
+
+
         return params
 
     def set_draw_params(self, params):
@@ -896,6 +916,16 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.volumetric_strain_xc = params["volumetric_strain_xc"]
         self._draw_params.Eur = params["Eur"]
         self._draw_params.amplitude = params["amplitude"]
+
+        unload_start_y = params["unload_start_y"]
+        if unload_start_y:
+            if abs(round(unload_start_y) - round(self.unloading_borders[0])) > 5:
+                self.unloading_borders = (unload_start_y, 10)
+
+        # if unload_start_y - self.loop_height > 10:
+        #     self.unloading_borders = (unload_start_y, unload_start_y - self.loop_height)
+        # else:
+        #     self.unloading_borders = (10 + self.loop_height, 10)
         """self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(params["dilatancy"])) /
                                                            (1 - np.sin(np.deg2rad(params["dilatancy"])))))"""
 
@@ -1207,6 +1237,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
     def xc_from_qf_e_if_is(sigma_3, type_ground, e, Ip, Il, Ir=None):
         """Функция находит деформацию пика девиаорного нагружения в зависимости от qf и E50, если по параметрам материала
         пик есть, если нет, возвращает xc = 0.15. Обжимающее напряжение должно быть в кПа"""
+        amplitude = False
         none_to_zero = lambda x: 0 if not x else x
         Ip = Ip if Ip else 0
         Il = Il if Il else 0.5
@@ -1254,60 +1285,74 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 if sigma3mor <= 0.1:
                     kr_fgs = round(np.random.uniform(0, 1))
                     _is_random = True
+                    amplitude = True
                 else:
                     kr_fgs = 1
             elif type_ground == 3:  # песок средней групности
                 if sigma3mor <= 0.15 and dens_sand == 3:  # песок средней крупности рыхлый
                     kr_fgs = 0
+                    amplitude = True
                 elif sigma3mor <= 0.15 and dens_sand == 2:  # песок средней крупности средней плотности
                     kr_fgs = round(np.random.uniform(0, 1))
                     _is_random = True
+                    amplitude = True
                 else:  # песок средней групности и sigma3>0.15
                     kr_fgs = 1
             elif type_ground == 4:  # мелкий песок
                 if sigma3mor < 0.1 and dens_sand == 3:  # мелкий песок рыхлый s3<0.1
                     kr_fgs = 0
+                    amplitude = True
                 elif (0.1 <= sigma3mor <= 0.2 and dens_sand == 3) or (sigma3mor <= 0.15 and dens_sand == 2):
                     kr_fgs = round(np.random.uniform(0, 1))  # мелкий песок рыхлый s3<=0.2 и средней плотности s3<=0.15
                     _is_random = True
+                    amplitude = True
                 else:  # мелкий песок рыхлый s3>=0.2 и средней плотности s3>=0.15 (плотный закрыт раньше)
                     kr_fgs = 1
             elif type_ground == 5:  # песок пылеватый
                 if sigma3mor < 0.1 and dens_sand == 3:  # песок пылеватый рыхлый s3<0.1
                     kr_fgs = 0
+                    amplitude = True
                 elif (0.1 <= sigma3mor <= 0.2 and dens_sand == 3) or (
                         sigma3mor <= 0.1 and dens_sand == 2):  # песок пылева-
                     kr_fgs = round(
                         np.random.uniform(0, 1))  # тый рыхлый 0.1<=s3<=0.2 и пылеватый средней плотности s3<=0.1
                     _is_random = True
+                    amplitude = True
                 else:  # песок пылеватый рыхлый s3>0.2 и пылеватый средней плотности s3>0.1 (плотный закрыт раньше)
                     kr_fgs = 1
             elif type_ground == 9:  # Торф
                 kr_fgs = 0
+                amplitude = True
             else:
                 kr_fgs = 0
+                amplitude = True
 
         elif Ip <= 7:  # число пластичности. Супесь
 
             if Il > 1:  # показатель текучести. больше 1 - текучий
                 kr_fgs = 0
+                amplitude = True
             elif 0 < Il <= 1:  # показатель текучести. от 0 до 1 - пластичный (для супеси)
                 kr_fgs = round(np.random.uniform(0, 1))
                 _is_random = True
+                amplitude = True
             else:  # <=0 твердый
                 kr_fgs = 1
 
         elif Ip > 7:  # суглинок и глина
             if Il > 0.5:  # показатель текучести.от 0.5 мягко- и текучепласт., текучий (для суглинков и глины)
                 kr_fgs = 0
+                amplitude = True
             elif 0.25 < Il <= 0.5:  # от 0.25 до 0.5 тугопластичный (для суглинков и глины)
                 kr_fgs = round(np.random.choice([0, 1], p=[0.7, 0.3]))
                 _is_random = True
+                amplitude = True
             else:  # меньше 0.25 твердый и полутвердый (для суглинков и глины)
                 kr_fgs = 1
         else:
             kr_fgs = 0
-        return kr_fgs, _is_random
+            amplitude = True
+        return kr_fgs, _is_random, amplitude
 
     @staticmethod
     def define_xc_qf_E(qf, E50):
@@ -1339,7 +1384,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         xc = 1
 
-        _defined_kr_fgs, is_random = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(sigma_3,
+        _defined_kr_fgs, is_random, amplitude = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(sigma_3,
                                                                                              data_phiz.type_ground,
                                                                                              data_phiz.e,
                                                                                              data_phiz.Ip,
@@ -1368,7 +1413,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         else:
             residual_strength = 0.95
 
-        return xc, residual_strength, pre_defined_kr_fgs
+        return xc, residual_strength, pre_defined_kr_fgs, amplitude
 
     @staticmethod
     def define_dilatancy_from_xc_qres(xc, qres):

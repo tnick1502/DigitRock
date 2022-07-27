@@ -63,8 +63,8 @@ def consolidation_deviation(x_time, xc, deviation):
                                                         points=np.random.uniform(2, 3), borders="zero_diff", one_side=True),
                                  create_deviation_curve(x_time[i_1:i_2], deviation / 5, val=(1, 0.1),
                                                         points=np.random.uniform(2, 3), borders="zero_diff",  one_side=True),
-                                 create_deviation_curve(x_time[i_2:len(x_time)], deviation / 10, val=(1, 0.1),
-                                                        points=np.random.uniform(3, 4), borders="zero_diff",  one_side=True)))
+                                 np.zeros(len(x_time[i_2:len(x_time)]))
+                                 ))
 
     return deviation_array
 
@@ -101,7 +101,8 @@ def function_consalidation(final_volume_strain,
                            Ca=-0.001,
                            reverse=True,
                            point_time=0.25,
-                           initial_bend_coff=0.):
+                           initial_bend_coff=0.,
+                           noise=0.0001):
     '''
     Создание кривой консолидации
     Входные параметры:  Cv - коэффициент консолидации,
@@ -242,9 +243,9 @@ def function_consalidation(final_volume_strain,
     # print(f"final_volume_strain : {final_volume_strain - delta}; result : {y_time[-1]}")
     # print(f"max_time : {max_time_sqrt**2}; result : {x_time[-1]}")
     # print(f"x_time : {x_time[0]}")
-    # y_time -= consolidation_deviation(x_time, t_90_sqrt, deviation)
-    # y_time += np.random.uniform(-0.0004, 0.0004, len(y_time))
-    # y_time = discrete_array(y_time, 0.0008)
+    y_time -= consolidation_deviation(x_time, t_90_sqrt, deviation)
+    y_time += np.random.uniform(-noise, noise, len(y_time))
+    y_time = discrete_array(y_time, noise*2)
     #return x_time, y_time
     return x_time, y_time, np.array([10**t_90_log, 10**t_creep_log, 10**max_time_log, (xP**2),  (xK**2)]), \
          np.array([volume_strain_90, volume_strain_creep, final_volume_strain, yP, yK])-delta
