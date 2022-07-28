@@ -678,7 +678,7 @@ def test_mode_consolidation(canvas, Data, moove=0, report_type="standart", dyn=N
     if report_type == "plaxis":
         sigma_str = '''<p>Референтное давление p<sub rise="2.5" size="6">ref</sub>, МПа:</p>'''
     else:
-        sigma_str = '''<p>Боковое давление σ<sub rise="2.5" size="6">3</sub>, МПа:</p>'''
+        sigma_str = '''<p>Боковое давление σ'<sub rise="2.5" size="6">3</sub>, МПа:</p>'''
 
     if "/" in str(Data["sigma_3"]):
         sigma_3 = str(Data["sigma_3"])
@@ -2034,9 +2034,9 @@ def result_table_CF(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     tableData.append(["Напряжение, МПа", "", "", "", "", ""])
-    tableData.append([Paragraph('''<p>σ<sub rise="0.5" size="5">3c</sub></p>''', CentralStyle),
-                      Paragraph('''<p>σ<sub rise="0.5" size="5">1c</sub></p>''', CentralStyle),
-                      Paragraph('''<p>σ<sub rise="0.5" size="5">1f</sub></p>''', CentralStyle), "", "", ""])
+    tableData.append([Paragraph('''<p>σ'<sub rise="0.5" size="5">3c</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ'<sub rise="0.5" size="5">1c</sub></p>''', CentralStyle),
+                      Paragraph('''<p>σ'<sub rise="0.5" size="5">1f</sub></p>''', CentralStyle), "", "", ""])
 
     tableData.append([zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), "", "", ""])
     tableData.append([zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), "", "", ""])
