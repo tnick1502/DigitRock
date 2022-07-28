@@ -1,5 +1,6 @@
 import os
 import copy
+import random
 from random import choices
 
 import numpy as np
@@ -34,6 +35,8 @@ class ModelK0:
 
     is_hs_model = False
     '''модель расчета K0nc'''
+    mode_ur = False  # True в режиме разгрузки
+    '''режим с разгрузкой'''
 
     def __init__(self):
         """Определяем основную структуру данных"""
@@ -49,6 +52,8 @@ class ModelK0:
         # Результаты опыта
         self._test_result = AttrDict({'K0nc': None, 'sigma_p': None,
                                       'sigma_1': np.asarray([]), 'sigma_3': np.asarray([]),
+                                      'sigma_1_ur': np.asarray([]), 'sigma_3_ur': np.asarray([]),
+                                      'Nuur': None, 'K0oc': None,
                                       'b': None})
 
         #
@@ -102,7 +107,13 @@ class ModelK0:
             if self._is_kinematic_mode:
                 pass
             else:
-                self._test_result.sigma_1, self._test_result.sigma_3 = ModelK0.parse_step_mode_data(self.test_data)
+                if not self.mode_ur:
+                    self._test_result.sigma_1, self._test_result.sigma_3 = ModelK0.parse_step_mode_data(self.test_data)
+                if self.mode_ur:
+                    parsed = ModelK0.parse_step_mode_data(self.test_data, mode_ur=True)
+
+                    self._test_result.sigma_1, self._test_result.sigma_3,\
+                        self._test_result.sigma_1_ur, self._test_result.sigma_3_ur = parsed
 
                 if self.__debug_data:
                     self.check_debug()
@@ -111,6 +122,11 @@ class ModelK0:
             self._test_result.sigma_p,\
             self._test_result.b = ModelK0.define_k0(self._test_result.sigma_1, self._test_result.sigma_3,
                                                     is_hs_model=self.is_hs_model)
+        if self.mode_ur:
+            self._test_result.Nuur = ModelK0.define_Nuur(self._test_result.sigma_1_ur, self._test_result.sigma_3_ur)
+            self._test_result.K0oc = ModelK0.define_K0oc(np.flip(self._test_result.sigma_1_ur),
+                                                         np.flip(self._test_result.sigma_3_ur))
+
         # except:
         #     #app_logger.exception("Ошибка обработки данных РК")
         #     pass
@@ -128,7 +144,6 @@ class ModelK0:
             index_sigma_p = index_sigma_p[0] if len(index_sigma_p) > 0 else 0
 
             sigma_1_cut = self._test_result.sigma_1[index_sigma_p:]
-            sigma_3_cut = self._test_result.sigma_3[index_sigma_p:]
 
             first_point = sigma_1_cut[0] + line_shift
             k0_line_sigma_1 = np.linspace(first_point, sigma_1_cut[-1] + line_shift)
@@ -136,11 +151,16 @@ class ModelK0:
 
             k0_line_sigma_3 = self._test_result.K0nc * k0_line_sigma_1 + b
 
-            return {"sigma_1": self._test_result.sigma_1,
-                    "sigma_3": self._test_result.sigma_3,
-                    "k0_line_x": k0_line_sigma_3,
-                    "k0_line_y": k0_line_sigma_1}
+            plot_data = {"sigma_1": self._test_result.sigma_1,
+                         "sigma_3": self._test_result.sigma_3,
+                         "k0_line_x": k0_line_sigma_3,
+                         "k0_line_y": k0_line_sigma_1}
 
+            if self.mode_ur:
+                plot_data["Nuur_x"] = self._test_result.sigma_3_ur
+                plot_data["Nuur_y"] = self._test_result.sigma_1_ur
+
+            return plot_data
 
     def plotter(self, save_path=None):
         """Построение графиков опыта. Если передать параметр save_path, то графики сохраняться туда"""
@@ -247,7 +267,7 @@ class ModelK0:
         return test_data
 
     @staticmethod
-    def parse_step_mode_data(test_data: 'AttrDict'):
+    def parse_step_mode_data(test_data: 'AttrDict', mode_ur: bool = False):
         action = copy.deepcopy(test_data.action)
         sigma_1 = np.asarray([])
         sigma_3 = np.asarray([])
@@ -271,8 +291,15 @@ class ModelK0:
             first_load_i, = np.where(action == 'LoadStage')
 
             if len(first_load_i) < 1:
-                sigma_1 = np.append(sigma_1, test_data.sigma_1[-1])
-                sigma_3 = np.append(sigma_3, test_data.sigma_3[-1])
+                shear = 0
+                if mode_ur:
+                    ur_i, = np.where(action == 'Unload')
+                    shear = -len(action[ur_i[0]:])
+                    cut += ur_i[0]
+                    action = action[ur_i[0]:]
+
+                sigma_1 = np.append(sigma_1, test_data.sigma_1[shear - 1])
+                sigma_3 = np.append(sigma_3, test_data.sigma_3[shear - 1])
                 break
 
             cut += first_load_i[0]
@@ -287,6 +314,33 @@ class ModelK0:
 
         sigma_1 = np.round(sigma_1, 0) / 1000
         sigma_3 = np.round(sigma_3, 0) / 1000
+
+        if mode_ur:
+            sigma_1_ur = np.asarray([])
+            sigma_3_ur = np.asarray([])
+
+            while len(action) > 0:
+                first_load_i, = np.where(action == 'Unload')
+
+                if len(first_load_i) < 1:
+                    sigma_1_ur = np.append(sigma_1_ur, test_data.sigma_1[-1])
+                    sigma_3_ur = np.append(sigma_3_ur, test_data.sigma_3[-1])
+                    break
+
+                cut += first_load_i[0]
+                action = action[first_load_i[0]:]
+
+                sigma_1_ur = np.append(sigma_1_ur, test_data.sigma_1[cut - 1])
+                sigma_3_ur = np.append(sigma_3_ur, test_data.sigma_3[cut - 1])
+
+                first_stab_i, = np.where(action == 'Stabilization')
+                cut += first_stab_i[0]
+                action = action[first_stab_i[0]:]
+
+            sigma_1_ur = np.round(sigma_1_ur, 0) / 1000
+            sigma_3_ur = np.round(sigma_3_ur, 0) / 1000
+
+            return sigma_1, sigma_3, sigma_1_ur, sigma_3_ur
 
         return sigma_1, sigma_3
 
@@ -374,6 +428,28 @@ class ModelK0:
         return (defined_k0, defined_sigma_p, defined_b) if no_round else (round(defined_k0, 2), defined_sigma_p, defined_b)
 
     @staticmethod
+    def define_Nuur(sigma_1_ur, sigma_3_ur, no_round=False):
+        if not no_round:
+            sigma_1_ur = np.round(np.asarray(sigma_1_ur), ModelK0.SIGMA_PREC)
+            sigma_3_ur = np.round(np.asarray(sigma_3_ur), ModelK0.SIGMA_PREC)
+
+        _K0ur = (sigma_3_ur[-1]-sigma_3_ur[0])/(sigma_1_ur[-1]-sigma_1_ur[0])
+        _Nuur = _K0ur / (1 + _K0ur)
+
+        return _Nuur if no_round else round(_Nuur, 2)
+
+    @staticmethod
+    def define_K0oc(sigma_1_ur, sigma_3_ur, no_round=False):
+        if not no_round:
+            sigma_1_ur = np.round(np.asarray(sigma_1_ur), ModelK0.SIGMA_PREC)
+            sigma_3_ur = np.round(np.asarray(sigma_3_ur), ModelK0.SIGMA_PREC)
+
+        _K0oc = sigma_3_ur[0]/sigma_1_ur[0]
+
+        return _K0oc if no_round else round(_K0oc, 2)
+
+
+    @staticmethod
     def lse_linear_estimation(__x, __y):
         """
         Выполняет МНК приближение прямой вида kx+b к набору данных
@@ -426,7 +502,11 @@ class ModelK0SoilTest(ModelK0):
                                       'sigma_1_step': None,  # входной параметр для ступенчатого режима
                                       'sigma_1_max': None,
                                       'mode_kinematic': False,  # True в кинематическом режме
-                                      'speed': None})  # входной параметр для кинематики
+                                      'speed': None,  # входной параметр для кинематики
+                                      'sigma_1_ur_delta': None,  # входной параметр для разгрузки
+                                      'Nuur': None,  # входной параметр для разгрузки
+                                      'unload_start_point': -1  # Точка начала разгрузки в режиме UR
+                                      })
         self._test_data = AttrDict({'sigma_3': np.asarray([]),
                                     'sigma_1': np.asarray([])})
 
@@ -460,6 +540,23 @@ class ModelK0SoilTest(ModelK0):
                 self._test_params.sigma_3_p = test_params["sigma_3_p"]
             except KeyError:
                 self._test_params.sigma_3_p = 0
+            try:
+                self.is_hs_model = test_params["is_hs_model"]
+            except KeyError:
+                self.is_hs_model = False
+            try:
+                self.mode_ur = test_params["mode_ur"]
+            except KeyError:
+                self.mode_ur = False
+            try:
+                self._test_params.sigma_1_ur_delta = test_params["sigma_1_ur_delta"]
+            except KeyError:
+                self._test_params.sigma_1_ur_delta = 0
+            try:
+                self._test_params.Nuur = test_params["Nuur"]
+            except KeyError:
+                self._test_params.Nuur = 0
+
         else:
             self._test_params.K0nc = statment[statment.current_test].mechanical_properties.K0nc
             self._test_params.OCR = statment[statment.current_test].mechanical_properties.OCR
@@ -473,6 +570,11 @@ class ModelK0SoilTest(ModelK0):
 
             self.is_hs_model = statment.general_parameters.K0_mode
 
+            if statment.general_parameters.test_mode == "Трехосное сжатие K0 с разгрузкой":
+                self.mode_ur = True
+                self._test_params.sigma_1_ur_delta = statment[statment.current_test].mechanical_properties.sigma_1_ur_delta
+                self._test_params.Nuur = statment[statment.current_test].mechanical_properties.Nuur
+
         self._test_modeling()
 
     def set_draw_params(self, params):
@@ -483,8 +585,8 @@ class ModelK0SoilTest(ModelK0):
             params['OCR'] = 0
         self._test_params.OCR = round(params["OCR"], 2)
 
-        if params['sigma_1_max'] < 600:
-            params['sigma_1_max'] = 600
+        if params['sigma_1_max'] < 50:
+            params['sigma_1_max'] = 50
 
         if params['sigma_1_step'] < 1:
             params['sigma_1_step'] = 1
@@ -495,8 +597,16 @@ class ModelK0SoilTest(ModelK0):
 
         self._test_params.sigma_1_step = round(round(params['sigma_1_step'], 0)*0.050, 2)
 
+        if params['sigma_1_ur_delta'] < self._test_params.sigma_1_step:
+            params['sigma_1_ur_delta'] = self._test_params.sigma_1_step
+
+        if params['sigma_1_ur_delta'] >= params['sigma_1_max']:
+            params['sigma_1_ur_delta'] = params['sigma_1_max'] - self._test_params.sigma_1_step
+
         self._test_params.sigma_1_max = ModelK0SoilTest.sigma_1_max_mpa(params['sigma_1_max'],
                                                                         self._test_params.sigma_1_step)
+
+        self._test_params.sigma_1_ur_delta = round(params['sigma_1_ur_delta'])/1000
 
         self._test_modeling()
 
@@ -550,16 +660,36 @@ class ModelK0SoilTest(ModelK0):
 
         # Кинематический режим:
         if self._test_params.mode_kinematic:
-            sigma_1, sigma_3 = ModelK0SoilTest._kinematic_mode_modeling(sigma_1_spl, sgima_1_synth,
-                                                                        sigma_3_spl, sgima_3_synth, self._test_params)
+            # sigma_1, sigma_3 = ModelK0SoilTest._kinematic_mode_modeling(sigma_1_spl, sgima_1_synth,
+            #                                                             sigma_3_spl, sgima_3_synth, self._test_params)
+            pass
         # Ступенчатый режим:
         else:
             sigma_1, sigma_3, action, time, debug_data = ModelK0SoilTest._step_mode_modeling(sigma_1_spl, sgima_1_synth,
                                                                                              sigma_3_spl, sgima_3_synth,
                                                                                              self._test_params,
                                                                                              is_hs_model=self.is_hs_model)
-            self._test_data.sigma_1 = debug_data[0]
-            self._test_data.sigma_3 = debug_data[1]
+            self._test_data.sigma_1 = copy.deepcopy(debug_data[0])
+            self._test_data.sigma_3 = copy.deepcopy(debug_data[1])
+            if self.mode_ur:
+                # plt.figure()
+                sigma_1_ur, sigma_3_ur = ModelK0SoilTest._step_mode_ur_modeling(self._test_data.sigma_1,
+                                                                                self._test_data.sigma_3,
+                                                                                self._test_params)
+
+                self._test_data.sigma_1_ur = copy.deepcopy(sigma_1_ur)
+                self._test_data.sigma_3_ur = copy.deepcopy(sigma_3_ur)
+
+                # plt.plot(np.flip(self._test_data.sigma_3_ur)*1000, np.flip(self._test_data.sigma_1_ur)*1000, c='red')
+                # plt.plot(sigma_3, sigma_1, c='blue')
+                sigma_1_ur, sigma_3_ur, action_ur, time_ur = ModelK0SoilTest._form_ur_data(sigma_1_ur, sigma_3_ur, time)
+                # plt.plot(sigma_3_ur, sigma_1_ur, c='black')
+                # plt.show()
+
+                sigma_1 = np.hstack((sigma_1, sigma_1_ur))
+                sigma_3 = np.hstack((sigma_3, sigma_3_ur))
+                action = np.hstack((action, action_ur))
+                time = np.hstack((time, time_ur))
 
         self.set_debug_data(debug_data)
         self.set_test_data({'sigma_1': sigma_1, 'sigma_3': sigma_3, 'action': action, 'time': time})
@@ -576,10 +706,14 @@ class ModelK0SoilTest(ModelK0):
         self._test_params.sigma_1_max = round(self._test_params.sigma_1_max, SGMA1MAX_PREC)
         self._test_params.sigma_1_step = round(self._test_params.sigma_1_step, SGMA1MAX_PREC)
 
+        if self.mode_ur:
+            self._test_params.sigma_1_ur_delta = round(self._test_params.sigma_1_ur_delta, SGMA1MAX_PREC)
+
         if not self.is_hs_model:
-            num_steps = int(int(self._test_params.sigma_1_max) / int(self._test_params.sigma_1_step * 1000))
+            num_steps = int(int(self._test_params.sigma_1_max * 1000) / int(self._test_params.sigma_1_step * 1000))
             if num_steps > 5:
                 self._test_params.sigma_1_max = self._test_params.sigma_1_step * np.random.randint(4, 5)
+            return
 
         # Геометрические условие:
         if self._test_params.sigma_1_max - self._test_params.sigma_1_step < self._test_params.sigma_p:
@@ -651,7 +785,8 @@ class ModelK0SoilTest(ModelK0):
 
             deviator_loading_dict = ModelK0SoilTest.dictionary_deviator_loading_step(pore_pressure, vertical_pressure,
                                                                                      reload_points,
-                                                                                     action, time)
+                                                                                     action, time,
+                                                                                     last_reload=(not self.mode_ur))
 
             main_dict = ModelK0SoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
                                                                              consolidation_dict,
@@ -672,9 +807,16 @@ class ModelK0SoilTest(ModelK0):
             }
         }
 
+        sigma_1 = np.round(K0_models[statment.current_test]._test_data.sigma_1, 3)
+        sigma_3 = np.round(K0_models[statment.current_test]._test_data.sigma_3, 3)
+
+        if self.mode_ur:
+            sigma_1 = np.hstack((sigma_1, np.round(K0_models[statment.current_test]._test_data.sigma_1_ur, 3)))
+            sigma_3 = np.hstack((sigma_3, np.round(K0_models[statment.current_test]._test_data.sigma_3_ur, 3)))
+
         data['test_data']['1'] = {
-            'main_stress': np.round(K0_models[statment.current_test]._test_data.sigma_1, 3),
-            'sigma_3': np.round(K0_models[statment.current_test]._test_data.sigma_3, 3)
+            'main_stress': sigma_1,
+            'sigma_3': sigma_3
         }
 
         save_cvi_K0(file_path=os.path.join(file_path, file_name), data=data)
@@ -682,11 +824,18 @@ class ModelK0SoilTest(ModelK0):
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
 
+        sigma_1_ur_delta = {'value': None}
+        if self.mode_ur:
+            sigma_1_ur_delta = {'value': round(self._test_params.sigma_1_ur_delta*1000, 3),
+                                'borders': [0, 10000]}
+
         params = {'OCR': {'value': self._test_params.OCR, 'borders': [0, 3]},
                   'sigma_1_step': {'value': round((self._test_params.sigma_1_step*1000)/(0.050*1000), 0),
                                    'borders': [0, 100]},
                   'sigma_1_max': {'value': round(self._test_params.sigma_1_max, 3)*1000,
-                                  'borders': [0, 10000]}}
+                                  'borders': [0, 10000]},
+                  'sigma_1_ur_delta': sigma_1_ur_delta
+                  }
 
         return params
 
@@ -745,6 +894,78 @@ class ModelK0SoilTest(ModelK0):
             sigma_1_as_v_p, action, time, sigma_3_as_p_p = res
 
         return sigma_1_as_v_p, sigma_3_as_p_p, action, time, (sigma_1, sigma_3)
+
+    @staticmethod
+    def _step_mode_ur_modeling(sigma_1, sigma_3, params: 'AttrDict'):
+        unload_start_point_s1 = sigma_1[params.unload_start_point]
+        unload_start_point_s3 = sigma_3[params.unload_start_point]
+
+        #   Считаем число точек и задаем сетку на Сигма1
+        K0ur = params.Nuur/(1 - params.Nuur)
+
+        sigma_1_ur = np.asarray(sigma_1[1: None if params.unload_start_point == -1 else params.unload_start_point + 1])
+
+        # Производим коррекцию:
+        #   от точки разгрузки нужно отсутпить delta_q = sigma_1_ur
+        if params.sigma_1_ur_delta:
+
+            _unload_end = unload_start_point_s1 - params.sigma_1_ur_delta
+
+            ind_sigma_1_ur_delta, = np.where(sigma_1_ur >= _unload_end)
+            ind_sigma_1_ur_delta = ind_sigma_1_ur_delta[0] if len(ind_sigma_1_ur_delta) else 0
+
+            if ind_sigma_1_ur_delta > len(sigma_1_ur) - 1 - 1:
+                ind_sigma_1_ur_delta -= 1
+
+            sigma_1_ur = np.asarray(sigma_1_ur[ind_sigma_1_ur_delta:])
+
+        sigma_3_ur = K0ur * sigma_1_ur + (unload_start_point_s3 - K0ur * unload_start_point_s1)
+
+        for i in range(1, len(sigma_3_ur)-1):
+            plus = random.choices([-1, 1])
+            sigma_3_ur[i] = sigma_3_ur[i] + plus[0] * np.random.uniform(sigma_3_ur[i]*0.005, sigma_3_ur[i]*0.015)
+
+        print(f'K0oc : {ModelK0.define_K0oc(sigma_1_ur, sigma_3_ur)}')
+        print(f'Nuur : {ModelK0.define_Nuur(sigma_1_ur, sigma_3_ur)}')
+
+        return np.flip(sigma_1_ur), np.flip(sigma_3_ur)
+
+    @staticmethod
+    def _form_ur_data(sigma_1_ur, sigma_3_ur, time):
+        sigma_1_ur_res = sigma_1_ur * 1000
+        sigma_3_ur_res = sigma_3_ur * 1000
+        action_ur = np.asarray([])
+        time_ur = np.asarray([])
+
+        sigma_1_ur_as_v_p = np.asarray([])
+        sigma_3_ur_as_p_p = np.asarray([])
+
+        for i in range(1, len(sigma_1_ur_res)):
+            sensor = np.random.uniform(ModelK0SoilTest.SENSOR_LIMITS[0], ModelK0SoilTest.SENSOR_LIMITS[1])
+
+            #                                               ДО                          ОТ
+            res = ModelK0SoilTest._form_step(sigma_1_ur_res[i - 1] + (sigma_1_ur_res[i - 1] - sigma_1_ur_res[i]),
+                                             sigma_1_ur_res[i - 1],
+                                             sigma_3_ur_res[i - 1] + (sigma_3_ur_res[i - 1] - sigma_3_ur_res[i]),
+                                             sigma_3_ur_res[i - 1],
+                                             np.asarray([]), np.asarray([]),
+                                             np.asarray([]), np.asarray([]), sensor, action_type='Unload')
+            sigma_1_ur_as_v_p_step, action_ur_step, time_ur_step, sigma_3_ur_as_p_p_step = res
+            sigma_1_ur_as_v_p_step = np.asarray([mirrow_element(elem, sigma_1_ur_res[i - 1])
+                                                 for elem in sigma_1_ur_as_v_p_step])
+            sigma_3_ur_as_p_p_step = np.asarray([mirrow_element(elem, sigma_3_ur_res[i - 1])
+                                                 for elem in sigma_3_ur_as_p_p_step])
+            sigma_1_ur_as_v_p = np.hstack((sigma_1_ur_as_v_p, sigma_1_ur_as_v_p_step))
+            sigma_3_ur_as_p_p = np.hstack((sigma_3_ur_as_p_p, sigma_3_ur_as_p_p_step))
+
+            time_ur_step += time[-1] if len(time_ur) < 1 else time_ur[-1]
+            time_ur = np.hstack((time_ur, time_ur_step))
+
+            # action_ur_step = np.full(len(action_ur_step), 'Unload')
+            action_ur = np.hstack((action_ur, action_ur_step))
+
+        return sigma_1_ur_as_v_p, sigma_3_ur_as_p_p, action_ur, time_ur
+
 
     @staticmethod
     def _kinematic_mode_modeling(sigma_1_spl, sgima_1_synth, sigma_3_spl, sgima_3_synth, params: 'AttrDict'):
@@ -1166,28 +1387,29 @@ class ModelK0SoilTest(ModelK0):
 
     @staticmethod
     def dictionary_deviator_loading_step(pore_pressure, vertical_pressure, indexs_loop, action, time,
-                                         delta_h_consolidation=0,):
+                                         delta_h_consolidation=0, last_reload: bool = True):
         """Формирует словарь девиаторного нагружения"""
 
         # Разгрукза формируется так же как обычный шаг (экспонентой) вдвое выше текущего значения
         #   затем значения обращаются и экспонента стремится к нулю
         #   Однако разргрузка происходит не ровно до нуля!
-        unload_point_s1 = 2*vertical_pressure[-1] + np.random.randint(1, 3)*ModelK0SoilTest.SENSOR_LIMITS[0]
-        unload_point_s3 = 2*pore_pressure[-1] + np.random.randint(1, 3)*ModelK0SoilTest.SENSOR_LIMITS[0]
-        unload_point_s3 -= np.random.uniform(40, 50)  # разгрукзка по сигма3 происходит не до пред нулевых значений!
+        if last_reload:
+            unload_point_s1 = 2*vertical_pressure[-1] + np.random.randint(1, 3)*ModelK0SoilTest.SENSOR_LIMITS[0]
+            unload_point_s3 = 2*pore_pressure[-1] + np.random.randint(1, 3)*ModelK0SoilTest.SENSOR_LIMITS[0]
+            unload_point_s3 -= np.random.uniform(40, 50)  # разгрукзка по сигма3 происходит не до нулевых значений!
 
-        res = ModelK0SoilTest._form_step(unload_point_s1, vertical_pressure[-1], unload_point_s3, pore_pressure[-1], reload=True)
-        vertical_p_reload, action_reload, time_reload, pore_pressure_reload = res
+            res = ModelK0SoilTest._form_step(unload_point_s1, vertical_pressure[-1], unload_point_s3, pore_pressure[-1], reload=True)
+            vertical_p_reload, action_reload, time_reload, pore_pressure_reload = res
 
-        vertical_p_reload = np.asarray([mirrow_element(elem, vertical_pressure[-1]) for elem in vertical_p_reload])
-        pore_pressure_reload = np.asarray([mirrow_element(elem, pore_pressure[-1]) for elem in pore_pressure_reload])
+            vertical_p_reload = np.asarray([mirrow_element(elem, vertical_pressure[-1]) for elem in vertical_p_reload])
+            pore_pressure_reload = np.asarray([mirrow_element(elem, pore_pressure[-1]) for elem in pore_pressure_reload])
 
-        action_reload = np.full(len(action_reload), 'Unload')
-        vertical_pressure = np.hstack((vertical_pressure, vertical_p_reload))
-        pore_pressure = np.hstack((pore_pressure, pore_pressure_reload))
-        action = np.hstack((action, action_reload))
-        time_reload += time[-1]
-        time = np.hstack((time, time_reload))
+            action_reload = np.full(len(action_reload), 'Unload')
+            vertical_pressure = np.hstack((vertical_pressure, vertical_p_reload))
+            pore_pressure = np.hstack((pore_pressure, pore_pressure_reload))
+            action = np.hstack((action, action_reload))
+            time_reload += time[-1]
+            time = np.hstack((time, time_reload))
 
         assert (len(action) == len(vertical_pressure))\
                and (len(vertical_pressure) == len(pore_pressure))\
@@ -1429,7 +1651,7 @@ class ModelK0SoilTest(ModelK0):
     @staticmethod
     def _form_step(sigma_1_i, sigma_1_i_prev, sigma_3_i, sigma_3_i_prev, sigma_1=np.asarray([]), sigma_3=np.asarray([]),
                    action=np.asarray([]), time=np.asarray([]),
-                   sensor_s1=2.3088, stab_len: int = 365, reload: bool = False):
+                   sensor_s1=2.3088, stab_len: int = 365, reload: bool = False, action_type: 'str' = 'LoadStage'):
 
         # в случае разгрузки участок стабилизации длинее
         if reload:
@@ -1477,7 +1699,7 @@ class ModelK0SoilTest(ModelK0):
 
         time = np.hstack((time, time_i))
         sigma_1 = np.hstack((sigma_1, sigma_1_step))
-        action = np.hstack((action, np.full(len(sigma_1_step), 'LoadStage')))
+        action = np.hstack((action, np.full(len(sigma_1_step), action_type)))
         sigma_3 = np.hstack((sigma_3, sigma_3_step))
 
         # Второй блок : стабилизация

@@ -1120,7 +1120,7 @@ class K0Statment(InitialStatment):
                 "label": "Режим испытания",
                 "vars": [
                     "Трехосное сжатие K0",
-                    # "Трехосное сжатие K0 с разгрузкой"
+                    "Трехосное сжатие K0 с разгрузкой"
                     ]
             },
             "K0_mode": {
@@ -1175,7 +1175,8 @@ class K0Statment(InitialStatment):
                         if not statment[test].mechanical_properties.K0nc:
                             del statment.tests[test]
                     elif statment.general_parameters.test_mode == K0Statment.test_modes[1]:
-                        if not statment[test].mechanical_properties.K0nc or not statment[test].mechanical_properties.K0oc:
+                        if not statment[test].mechanical_properties.K0nc\
+                                or not statment[test].mechanical_properties.Nuur:
                             del statment.tests[test]
 
                 if len(statment) < 1:
@@ -1186,7 +1187,10 @@ class K0Statment(InitialStatment):
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
 
-                    self.load_models(models_name="k0_models.pickle", models=K0_models, models_type=ModelK0SoilTest)
+                    if statment.general_parameters.test_mode == K0Statment.test_modes[0]:
+                        self.load_models(models_name="k0_models.pickle", models=K0_models, models_type=ModelK0SoilTest)
+                    if statment.general_parameters.test_mode == K0Statment.test_modes[1]:
+                        self.load_models(models_name="k0ur_models.pickle", models=K0_models, models_type=ModelK0SoilTest)
 
     @staticmethod
     def is_hs_model(_mode):
