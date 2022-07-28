@@ -560,11 +560,11 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True, moove=0):
                     zap(test_parameter["tau"], 0)],
                    [Paragraph('''<p>K<sub rise="0.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "",
                     zap(test_parameter["K0"], 2),
-                    "Частота, Гц:", "", str(test_parameter["frequency"]).replace(".", ","),
+                    "Частота, Гц:", "", zap(test_parameter["frequency"], 2),
                     Paragraph('''<p>T<sub rise="0.5" size="6">w</sub>, с:</p>''', LeftStyle), "",
-                    str(round(1/test_parameter["frequency"], 3)).replace(".", ",")],
+                    zap(1/test_parameter["frequency"],0)],
                    [Paragraph('''<p>H<sub rise="0.5" size="6">w</sub>, м:</p>''', LeftStyle), "", zap(test_parameter["Hw"],2),
-                    Paragraph('''<p>ρ<sub rise="2.5" size="6">w</sub>, кН/м<sup rise="2.5" size="5">3</sup></p>''', LeftStyle), "", zap(test_parameter["rw"], 2),
+                    Paragraph('''<p>ρ<sub rise="2.5" size="6">w</sub>, кН/м<sup rise="2.5" size="5">3</sup></p>''', LeftStyle), "", zap(test_parameter["rw"], 0),
                     "", "", ""]], colWidths=19.444444 * mm, rowHeights=4 * mm)
 
     if test_parameter["type"] == "Демпфирование" or test_parameter["type"] == "По заданным параметрам":
