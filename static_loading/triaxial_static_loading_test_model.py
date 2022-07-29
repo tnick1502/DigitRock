@@ -470,6 +470,9 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         """Метод считывает параметры отрисованных опытов для передачи на ползунки"""
         return self.deviator_loading.get_draw_params()
 
+    def get_deviator_loading_draw_params_unload_start_y(self):
+        return self.deviator_loading.get_draw_params_unload_start_y()
+
     def set_consolidation_draw_params(self, params):
         """Передача параметров для перерисовки графиков"""
         self.consolidation.set_draw_params(params)
@@ -477,6 +480,9 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
     def set_deviator_loading_draw_params(self, params):
         """Передача параметров для перерисовки графиков"""
         self.deviator_loading.set_draw_params(params)
+
+    def set_deviator_loading_draw_params_unload_start_y(self, params):
+        self.deviator_loading.set_draw_params_unload_start_y(params)
 
     def save_log_file(self, file_path, sample_size: Tuple[int, int] = (76, 38)):
         """Метод генерирует логфайл прибора"""

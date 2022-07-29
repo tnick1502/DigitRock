@@ -482,9 +482,16 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
                                                                        "dilatancy": "Угол дилатансии",
                                                                        "volumetric_strain_xc": "Объемн. деформ. в пике",
                                                                        "Eur": "Модуль разгрузки",
-                                                                       "amplitude": "Амплитуда девиаций",
-                                                                       "unload_start_y": "Сдвиг разгрузки"})
+                                                                       "amplitude": "Амплитуда девиаций"
+                                                                       })
+
         self.deviator_loading_sliders.setFixedHeight(240)
+
+        self.deviator_loading_sliders_unload_start_y_slider = TriaxialStaticLoading_Sliders({"unload_start_y": "Сдвиг разгрузки"})
+        box = getattr(self.deviator_loading_sliders_unload_start_y_slider, "{}_box".format("Настройки отрисовки"))
+        box.setTitle('')
+        self.deviator_loading_sliders_unload_start_y_slider.setFixedHeight(60)
+
 
         self.consolidation_sliders = TriaxialStaticLoading_Sliders({"max_time": "Время испытания",
                                                                     "volume_strain_90": "Объемная деформация в Cv"})
@@ -492,11 +499,14 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
 
         self.consolidation.graph_layout.addWidget(self.consolidation_sliders)
         self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)
+        self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders_unload_start_y_slider)
 
         self.consolidation.setFixedHeight(500 + 90)
-        self.deviator_loading.setFixedHeight(530 + 180)
+        self.deviator_loading.setFixedHeight(530 + 180 + 60)
 
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
+        self.deviator_loading_sliders_unload_start_y_slider.signal[object].connect(self._deviator_loading_sliders_unload_start_y_slider_moove)
+
         self.consolidation_sliders.signal[object].connect(self._consolidation_sliders_moove)
 
     def refresh(self):
@@ -504,6 +514,10 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
             E_models[statment.current_test].set_test_params()
             self.deviator_loading_sliders.set_sliders_params(
                 E_models[statment.current_test].get_deviator_loading_draw_params())
+
+            self.deviator_loading_sliders_unload_start_y_slider.set_sliders_params(
+                E_models[statment.current_test].get_deviator_loading_draw_params_unload_start_y())
+
             self.consolidation_sliders.set_sliders_params(
                 E_models[statment.current_test].get_consolidation_draw_params())
 
@@ -521,6 +535,10 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
         try:
             self.deviator_loading_sliders.set_sliders_params(
                 E_models[statment.current_test].get_deviator_loading_draw_params())
+
+            self.deviator_loading_sliders_unload_start_y_slider.set_sliders_params(
+                E_models[statment.current_test].get_deviator_loading_draw_params_unload_start_y())
+
             self.consolidation_sliders.set_sliders_params(
                 E_models[statment.current_test].get_consolidation_draw_params())
 
@@ -549,6 +567,17 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
         """Обработчик движения слайдера"""
         try:
             E_models[statment.current_test].set_deviator_loading_draw_params(params)
+            self._plot_deviator_loading()
+            self._connect_model_Ui()
+            self.signal.emit(True)
+        except KeyError:
+            pass
+
+    @log_this(app_logger, "debug")
+    def _deviator_loading_sliders_unload_start_y_slider_moove(self, params):
+        """Обработчик движения слайдера"""
+        try:
+            E_models[statment.current_test].set_deviator_loading_draw_params_unload_start_y(params)
             self._plot_deviator_loading()
             self._connect_model_Ui()
             self.signal.emit(True)

@@ -312,7 +312,7 @@ class MohrWidget(QWidget):
             self.deviator_ax.set_ylabel("Девиатор q, МПа")
 
             self.mohr_ax.clear()
-            self.mohr_ax.set_xlabel("σ', МПа")
+            self.mohr_ax.set_xlabel("σ, МПа")
             self.mohr_ax.set_ylabel("τ, МПа")
 
             plots = FC_models[statment.current_test].get_plot_data()
@@ -337,7 +337,7 @@ class MohrWidget(QWidget):
             self.deviator_ax.set_ylabel("Девиатор q, МПа")
 
             self.mohr_ax.clear()
-            self.mohr_ax.set_xlabel("σ', МПа")
+            self.mohr_ax.set_xlabel("σ, МПа")
             self.mohr_ax.set_ylabel("τ, МПа")
 
             if self._model == "FC_models":
@@ -369,7 +369,7 @@ class MohrWidget(QWidget):
             self.deviator_ax.set_ylabel("Девиатор q, МПа")
 
             self.mohr_ax.clear()
-            self.mohr_ax.set_xlabel("σ', МПа")
+            self.mohr_ax.set_xlabel("σ, МПа")
             self.mohr_ax.set_ylabel("τ, МПа")
 
             if self._model == "FC_models":
@@ -917,7 +917,7 @@ class TriaxialStaticLoading_Sliders(QWidget):
 class StaticSoilTestDialog(QDialog):
     def __init__(self, test, parent=None):
         super(StaticSoilTestDialog, self).__init__(parent)
-        self.resize(1200, 700)
+        self.resize(1200, 840)
         self.setWindowTitle("Обработка опыта")
         self._model = test
 
@@ -948,14 +948,26 @@ class StaticSoilTestDialog(QDialog):
                                                                        "amplitude": "Амплитуда девиаций",
                                                                        "unload_start_y": "Сдвиг разгрузки"})
         self.deviator_loading_sliders.setFixedHeight(240)
+
+        self.deviator_loading_sliders_unload_start_y_slider = TriaxialStaticLoading_Sliders({"unload_start_y": "Сдвиг разгрузки"})
+        box = getattr(self.deviator_loading_sliders_unload_start_y_slider, "{}_box".format("Настройки отрисовки"))
+        box.setTitle('')
+        self.deviator_loading_sliders_unload_start_y_slider.setFixedHeight(60)
+
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
+        self.deviator_loading_sliders_unload_start_y_slider.signal[object].connect(self._deviator_loading_sliders_unload_start_y_slider_moove)
+
+
         self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)
+        self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders_unload_start_y_slider)
 
 
         self._connect_model_Ui()
         self._plot_deviator_loading()
 
         self.deviator_loading_sliders.set_sliders_params(self._model.get_deviator_loading_draw_params())
+        self.deviator_loading_sliders_unload_start_y_slider.set_sliders_params(self._model.get_deviator_loading_draw_params_unload_start_y())
+
 
         self.setLayout(self.layout)
 
@@ -1027,6 +1039,15 @@ class StaticSoilTestDialog(QDialog):
         """Обработчик движения слайдера"""
         try:
             self._model.set_deviator_loading_draw_params(params)
+            self._plot_deviator_loading()
+            self._connect_model_Ui()
+        except KeyError:
+            pass
+
+    def _deviator_loading_sliders_unload_start_y_slider_moove(self, params):
+        """Обработчик движения слайдера"""
+        try:
+            self._model.set_deviator_loading_draw_params_unload_start_y(params)
             self._plot_deviator_loading()
             self._connect_model_Ui()
         except KeyError:

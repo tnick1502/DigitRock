@@ -882,11 +882,6 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
-        if self._draw_params.Eur:
-            unload_start_y = {"value": self.unloading_borders[0], "borders": [0.0, self._test_params.qf]}
-        else:
-            unload_start_y = {"value": None}
-
         Eur = {"value": self._draw_params.Eur, "borders": [self._draw_params.Eur/2, self._draw_params.Eur*5]} if self._draw_params.Eur else {"value": None}
         #print(self._test_params.__dict__)
 
@@ -899,10 +894,17 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
                   "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]},
                   "Eur": Eur,
-                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]},
-                  "unload_start_y": unload_start_y}
+                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]}
+                  }
+        return params
 
+    def get_draw_params_unload_start_y(self):
+        if self._draw_params.Eur:
+            unload_start_y = {"value": self.unloading_borders[0], "borders": [0.0, self._test_params.qf]}
+        else:
+            unload_start_y = {"value": None}
 
+        params = {'unload_start_y': unload_start_y}
         return params
 
     def set_draw_params(self, params):
@@ -917,11 +919,6 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.Eur = params["Eur"]
         self._draw_params.amplitude = params["amplitude"]
 
-        unload_start_y = params["unload_start_y"]
-        if unload_start_y:
-            if abs(round(unload_start_y) - round(self.unloading_borders[0])) > 5:
-                self.unloading_borders = (unload_start_y, 10)
-
         # if unload_start_y - self.loop_height > 10:
         #     self.unloading_borders = (unload_start_y, unload_start_y - self.loop_height)
         # else:
@@ -929,6 +926,13 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         """self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(params["dilatancy"])) /
                                                            (1 - np.sin(np.deg2rad(params["dilatancy"])))))"""
 
+        self._test_modeling()
+
+    def set_draw_params_unload_start_y(self, params):
+        unload_start_y = params["unload_start_y"]
+        if unload_start_y:
+            if abs(round(unload_start_y) - round(self.unloading_borders[0])) > 5:
+                self.unloading_borders = (unload_start_y, 10)
         self._test_modeling()
 
     def _test_modeling(self):
