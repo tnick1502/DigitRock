@@ -1333,10 +1333,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
         elif Ip <= 7:  # число пластичности. Супесь
 
-            if Il > 1:  # показатель текучести. больше 1 - текучий
+            if Il > 0.5:  # показатель текучести. больше 1 - текучий
                 kr_fgs = 0
                 amplitude = True
-            elif 0 < Il <= 1:  # показатель текучести. от 0 до 1 - пластичный (для супеси)
+            elif 0.25 < Il <= 0.5:  # показатель текучести. от 0 до 1 - пластичный (для супеси)
                 kr_fgs = round(np.random.uniform(0, 1))
                 _is_random = True
                 amplitude = True
