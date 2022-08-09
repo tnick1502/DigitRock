@@ -396,7 +396,8 @@ class MechanicalProperties:
                     float_df(data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]])),
 
                 "calculated_by_pressure": MechanicalProperties.define_reference_pressure_array_calculated_by_pressure(
-                    self.build_press, self.pit_depth, physical_properties.depth, self.K0),
+                    self.build_press, self.pit_depth, physical_properties.depth, self.K0,
+                    physical_properties.ground_water_depth),
 
                 "state_standard": MechanicalProperties.define_reference_pressure_array_state_standard(
                     physical_properties.e, physical_properties.Il, physical_properties.type_ground, physical_properties.Ir)
@@ -994,12 +995,19 @@ class MechanicalProperties:
 
     @staticmethod
     def define_reference_pressure_array_calculated_by_pressure(build_press: float, pit_depth: float, depth: float,
-                                                               K0: float) -> list:
+                                                               K0: float, ground_water_depth: float) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
         if build_press:
             if not pit_depth:
                 pit_depth = 0
-            sigma_max = 2 * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else 2 * 10 * depth
+
+            if pit_depth >= ground_water_depth:
+                ro = 1
+            else:
+                gv = ground_water_depth - pit_depth
+                ro = (2 * gv + 1 * (depth - gv)) / depth
+
+            sigma_max = ro * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else ro * 10 * depth
 
             sigma_max_1 = MechanicalProperties.round_sigma_3(sigma_max * K0)
             sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.5)
