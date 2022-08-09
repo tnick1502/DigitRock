@@ -1004,8 +1004,7 @@ class MechanicalProperties:
             if pit_depth >= ground_water_depth:
                 ro = 1
             else:
-                gv = ground_water_depth - pit_depth
-                ro = (2 * gv + 1 * (depth - gv)) / depth
+                ro = (2 * ground_water_depth + 1 * (depth - ground_water_depth)) / depth
 
             sigma_max = ro * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else ro * 10 * depth
 
