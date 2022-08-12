@@ -1123,7 +1123,7 @@ def result_table_deviator(canvas, Res, pick, scale = 0.8, moove =0):
         [Paragraph('''<p>Коэффициент фильтрационной консолидации C<sub rise="0.5" size="6">v</sub>, см<sup rise="2" size="6">2</sup>/мин:</p>''', LeftStyle), "", "", zap(Res["Cv_log"], 4),
          "", ""])
     tableData.append(
-        [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", zap(Res["Ca_log"], 4),
+        [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", zap(Res["Ca_log"], 5),
          "", ""])
     tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle),
                       "", ""])
