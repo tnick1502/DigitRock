@@ -1001,6 +1001,9 @@ class MechanicalProperties:
             if not pit_depth:
                 pit_depth = 0
 
+            if not ground_water_depth:
+                ground_water_depth = 0
+
             if pit_depth >= ground_water_depth:
                 ro = 1
             else:
