@@ -82,12 +82,16 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.widgets_line.addWidget(self.chose_volumometer)
 
         self.chose_plot_type = QGroupBox("Режим построения")
-        self.chose_plot_type_layout = QHBoxLayout()
+        self.chose_plot_type_layout = QVBoxLayout()
         self.chose_plot_type.setLayout(self.chose_plot_type_layout)
         self.combo_box = QComboBox()
         self.combo_box.addItems(["E", "E50", "E и E50"])
 
+        self.dilatancy_radio_btn = QRadioButton("Дилатансия")
+        self.dilatancy_radio_btn.setChecked(False)
+
         self.chose_plot_type_layout.addWidget(self.combo_box)
+        self.chose_plot_type_layout.addWidget(self.dilatancy_radio_btn)
         self.widgets_line.addWidget(self.chose_plot_type)
 
 
@@ -179,7 +183,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                 self._plot_Eur_E50(plots, res)
             elif self.combo_box.currentText() == "Eur":
                 self._plot_Eur(plots, res)
-            self._plot_volume_strain(plots, res)
+            self._plot_volume_strain(plots, res, with_dilatancy=self.dilatancy_radio_btn.isChecked())
         except:
             pass
 
@@ -466,7 +470,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_ax.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
         self.deviator_canvas.draw()
 
-    def _plot_volume_strain(self, plots, res):
+    def _plot_volume_strain(self, plots, res, with_dilatancy=False):
         self.volume_strain_ax.clear()
         self.volume_strain_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
         self.volume_strain_ax.set_ylabel("Объемная деформация $ε_v$, д.е.")
@@ -475,18 +479,20 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                                    **plotter_params["static_loading_main_line"])
         self.volume_strain_ax.plot(plots["strain"], plots["volume_strain_approximate"],
                                    **plotter_params["static_loading_red_dotted_line"])
-        if plots["dilatancy"]:
-            self.volume_strain_ax.plot(plots["dilatancy"]["x"], plots["dilatancy"]["y"],
-                                       **plotter_params["static_loading_black_dotted_line"])
 
         self.volume_strain_ax.set_xlim(self.deviator_ax.get_xlim())
 
         self.volume_strain_ax.plot([], [], label="Poissons ratio" + ", д.е. = " + str(res["poissons_ratio"]),
                                    color="#eeeeee")
+
+        if with_dilatancy:
+            if plots["dilatancy"]:
+                self.volume_strain_ax.plot(plots["dilatancy"]["x"], plots["dilatancy"]["y"],
+                                           **plotter_params["static_loading_black_dotted_line"])
         if res["dilatancy_angle"] is not None:
             self.volume_strain_ax.plot([], [],
-                                       label="Dilatancy angle" + ", град. = " + str(res["dilatancy_angle"][0]),
-                                       color="#eeeeee")
+                                        label="Dilatancy angle" + ", град. = " + str(res["dilatancy_angle"][0]),
+                                        color="#eeeeee")
 
         self.volume_strain_ax.legend()
         self.volume_strain_canvas.draw()
