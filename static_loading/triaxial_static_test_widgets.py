@@ -66,6 +66,7 @@ class StaticProcessingWidget(QWidget):
         self.reconsolidation.setFixedHeight(300)
 
         self.deviator_loading.combo_box.activated.connect(self._combo_plot_deviator_changed)
+        self.deviator_loading.dilatancy_radio_btn.clicked.connect(self._combo_plot_deviator_changed)
 
         self._create_UI()
         self._wigets_connect()
