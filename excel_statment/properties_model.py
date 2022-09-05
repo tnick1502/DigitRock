@@ -1180,8 +1180,8 @@ class CyclicProperties(MechanicalProperties):
                 self.t = np.round(0.65 * self.acceleration * self.sigma_1 * float(self.rd))
                 self.MSF = np.round((10 ** (2.24) / ((self.magnitude) ** (2.56))), 2)
                 self.t *= self.MSF
-                if self.t < 1:
-                    self.t = 1
+                if self.t < 1.0:
+                    self.t = 1.0
                 self.t = np.round(self.t)
 
                 self.cycles_count = CyclicProperties.define_cycles_count(self.magnitude)
