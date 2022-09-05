@@ -1201,6 +1201,13 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
         E = zap(Res["E50"], 1)
         Ew = '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>'''
 
+    elif result_E == "E50_with_dilatancy":
+        E = zap(Res["E50"], 1)
+        Ew = '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>'''
+
+        E50 = zap(Res["dilatancy_angle"][0], 1)
+        E50w = '''<p>Угол дилатансии ψ, град:</p>'''
+
     elif result_E == "all":
         E = zap(Res["E"][0], 1)
         Ew = '''<p>Модуль деформации E, МПа:</p>'''
@@ -1212,7 +1219,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
         renderPDF.draw(a, canvas, 36 * mm, (66-moove) * mm)
-        if result_E == "all":
+        if result_E == "all" or result_E == "E50_with_dilatancy":
             tableData.append(
                 [Paragraph(Ew, LeftStyle), "", "",
                  E, "", ""])
@@ -1341,7 +1348,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
             #[Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
              #Res["qf"], ""])
 
-        if result_E == "all":
+        if result_E == "all" or result_E == "E50_with_dilatancy":
             tableData.append(
                 [Paragraph(Ew, LeftStyle), "", "",
                  E, "", ""])
@@ -1374,7 +1381,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
             canvas.drawImage(b, 32 * mm, 114 * mm,
                              width=160 * mm, height=54 * mm)
 
-        if result_E == "all":
+        if result_E == "all" or result_E == "E50_with_dilatancy":
 
             style = [('SPAN', (0, 0), (-1, 0)),
                  ('SPAN', (0, 1), (-1, r)),
@@ -3034,6 +3041,8 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E", moove=moove)
     elif report_type == "standart_E50":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
+    elif report_type == "standart_E50_with_dilatancy":
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50_with_dilatancy", moove=moove)
     elif report_type == "plaxis":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="Eur", moove=moove)
     elif report_type == "E_E50":
@@ -3077,6 +3086,8 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E", moove=moove)
     elif report_type == "standart_E50":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50", moove=moove)
+    elif report_type == "standart_E50_with_dilatancy":
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50_with_dilatancy", moove=moove)
     elif report_type == "E_E50":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="all", moove=moove)
     elif report_type == "user_define_1":
