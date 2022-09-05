@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFrame, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, \
     QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout, \
-    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog
+    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog, QCheckBox
 from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject
 from PyQt5.QtGui import QPalette, QBrush
 import matplotlib.pyplot as plt
@@ -716,7 +716,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 "plaxis": "Plaxis/Midas",
                 "user_define_1": "Пользовательский с ε50",
                 "vibro": "Вибропрочность",
-                "vibroNN": "КриовиброНН"
+                "vibroNN": "КриовиброНН",
+                "standart_E50_with_dilatancy": "Е50 с дилатнсией"
             })
 
         self.tab_4.popIn.connect(self.addTab)
