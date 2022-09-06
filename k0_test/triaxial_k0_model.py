@@ -714,6 +714,8 @@ class ModelK0SoilTest(ModelK0):
             num_steps = int(int(self._test_params.sigma_1_max * 1000) / int(self._test_params.sigma_1_step * 1000))
             if num_steps > 5:
                 self._test_params.sigma_1_max = self._test_params.sigma_1_step * np.random.randint(4, 5)
+            if num_steps < 3:
+                self._test_params.sigma_1_max = self._test_params.sigma_1_step * 3
             return
 
         # Геометрические условие:
