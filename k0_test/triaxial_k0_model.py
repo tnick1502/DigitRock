@@ -597,16 +597,17 @@ class ModelK0SoilTest(ModelK0):
 
         self._test_params.sigma_1_step = round(round(params['sigma_1_step'], 0)*0.050, 2)
 
-        if params['sigma_1_ur_delta'] < self._test_params.sigma_1_step:
-            params['sigma_1_ur_delta'] = self._test_params.sigma_1_step
+        if self.mode_ur:
+            if params['sigma_1_ur_delta'] < self._test_params.sigma_1_step:
+                params['sigma_1_ur_delta'] = self._test_params.sigma_1_step
 
-        if params['sigma_1_ur_delta'] >= params['sigma_1_max']:
-            params['sigma_1_ur_delta'] = params['sigma_1_max'] - self._test_params.sigma_1_step
+            if params['sigma_1_ur_delta'] >= params['sigma_1_max']:
+                params['sigma_1_ur_delta'] = params['sigma_1_max'] - self._test_params.sigma_1_step
+
+            self._test_params.sigma_1_ur_delta = round(params['sigma_1_ur_delta']) / 1000
 
         self._test_params.sigma_1_max = ModelK0SoilTest.sigma_1_max_mpa(params['sigma_1_max'],
                                                                         self._test_params.sigma_1_step)
-
-        self._test_params.sigma_1_ur_delta = round(params['sigma_1_ur_delta'])/1000
 
         self._test_modeling()
 
