@@ -941,8 +941,8 @@ class ModelK0SoilTest(ModelK0):
             plus = random.choices([-1, 1])
             sigma_3_ur[i] = sigma_3_ur[i] + plus[0] * np.random.uniform(sigma_3_ur[i]*0.005, sigma_3_ur[i]*0.015)
 
-        print(f'K0oc : {ModelK0.define_K0oc(sigma_1_ur, sigma_3_ur)}')
-        print(f'Nuur : {ModelK0.define_Nuur(sigma_1_ur, sigma_3_ur)}')
+        # print(f'K0oc : {ModelK0.define_K0oc(sigma_1_ur, sigma_3_ur)}')
+        # print(f'Nuur : {ModelK0.define_Nuur(sigma_1_ur, sigma_3_ur)}')
 
         return np.flip(sigma_1_ur), np.flip(sigma_3_ur)
 
