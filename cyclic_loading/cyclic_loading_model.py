@@ -861,6 +861,11 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                  "borders": [0, 0.5 * np.pi]}
         }
 
+        # Ошибка свзяанная с выставлением значения в нуль:
+        #  Если подать ровно ноль, ползунок выключается со значеним None
+        if self._draw_params.PPR_phase_offset == 0.0:
+            self._draw_params.PPR_phase_offset = 0.0000001
+
         PPR_params = {
             "PPR_n_fail": self._test_params.n_fail,
             "PPR_max": {"value": self._draw_params.PPR_max, "borders": [0.1, 1.2]},
