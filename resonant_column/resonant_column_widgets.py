@@ -458,27 +458,8 @@ class RezonantColumnProcessingApp(AppMixin, QWidget):
             if date:
                 data_customer.end_date = date
 
-            data = {
-                "laboratory": "mdgt",
-                "password": "it_user",
-
-                "test_name": "Cyclic",
-                "object": str(statment.general_data.object_number),
-                "laboratory_number": str(statment.current_test),
-                "test_type": "rezonant_column",
-
-                "data": {
-                    "Лаболаторный номер:": str(statment.current_test),
-                    "Референтное давление Pref, МПа:": str(
-                        np.round(statment[statment.current_test].mechanical_properties.reference_pressure / 1000, 3)),
-                    "Модуль сдвига при сверхмалых деформациях G0, МПа:": str(test_result["G0"]),
-                    "Пороговое значение сдвиговой деформации γ0.7, д.е.:": str(
-                        test_result["threshold_shear_strain"]) + "10(-4)",
-                }
-            }
-
             if self.tab_3.qr:
-                qr = request_qr(data)
+                qr = request_qr()
             else:
                 qr = None
 
@@ -662,26 +643,8 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
             if date:
                 data_customer.end_date = date
 
-            data = {
-                "laboratory": "mdgt",
-                "password": "it_user",
-
-                "test_name": "Cyclic",
-                "object": str(statment.general_data.object_number),
-                "laboratory_number": str(statment.current_test),
-                "test_type": "rezonant_column",
-
-                "data": {
-                    "Лаболаторный номер:": str(statment.current_test),
-                    "Референтное давление Pref, МПа:": str(
-                        np.round(statment[statment.current_test].mechanical_properties.reference_pressure / 1000, 3)),
-                    "Модуль сдвига при сверхмалых деформациях G0, МПа:": str(test_result["G0"]),
-                    "Пороговое значение сдвиговой деформации γ0.7, д.е.:": str(test_result["threshold_shear_strain"]) + "10(-4)",
-                }
-            }
-
             if self.tab_3.qr:
-                qr = request_qr(data)
+                qr = request_qr()
             else:
                 qr = None
 
