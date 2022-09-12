@@ -486,6 +486,19 @@ class ModelK0SoilTest(ModelK0):
 
         - Метод set_draw_params(params) установливает параметры, считанные с позунков и производит отрисовку новых
          данных опыта
+
+
+    ОСОБЕННОСТИ МОДУЛЯ:
+        Модель Мора-Кулона - параметр is_hs_model - определяет отличную от классического режима схему опыта
+        В таком режиме число точек ограничено - 4, 5 точек до Максимального давления.
+        Соответственно, параметры проверяются на соответсвие этому условию. Параметр шага нагружения sigma_1_step
+        будет приоритетнее максимального давления sigma_1_max. На ползунках последний будет подстраиваться под шаг.
+
+        Также в режиме отличное от стандартного определние К0.
+        Коэф. определяется из 0,0 аппроксимируя все данные линейно.
+
+        Все моделирование выполняется в этом режиме выполняется исходя из возможности коррктно построить эту прямую
+        и наложить на нее шумы, чтобы определить соответствующий К0.
     """
 
     SENSOR_LIMITS = (2.308, 2.309)
@@ -597,16 +610,17 @@ class ModelK0SoilTest(ModelK0):
 
         self._test_params.sigma_1_step = round(round(params['sigma_1_step'], 0)*0.050, 2)
 
-        if params['sigma_1_ur_delta'] < self._test_params.sigma_1_step:
-            params['sigma_1_ur_delta'] = self._test_params.sigma_1_step
+        if self.mode_ur:
+            if params['sigma_1_ur_delta'] < self._test_params.sigma_1_step:
+                params['sigma_1_ur_delta'] = self._test_params.sigma_1_step
 
-        if params['sigma_1_ur_delta'] >= params['sigma_1_max']:
-            params['sigma_1_ur_delta'] = params['sigma_1_max'] - self._test_params.sigma_1_step
+            if params['sigma_1_ur_delta'] >= params['sigma_1_max']:
+                params['sigma_1_ur_delta'] = params['sigma_1_max'] - self._test_params.sigma_1_step
+
+            self._test_params.sigma_1_ur_delta = round(params['sigma_1_ur_delta']) / 1000
 
         self._test_params.sigma_1_max = ModelK0SoilTest.sigma_1_max_mpa(params['sigma_1_max'],
                                                                         self._test_params.sigma_1_step)
-
-        self._test_params.sigma_1_ur_delta = round(params['sigma_1_ur_delta'])/1000
 
         self._test_modeling()
 
@@ -713,6 +727,8 @@ class ModelK0SoilTest(ModelK0):
             num_steps = int(int(self._test_params.sigma_1_max * 1000) / int(self._test_params.sigma_1_step * 1000))
             if num_steps > 5:
                 self._test_params.sigma_1_max = self._test_params.sigma_1_step * np.random.randint(4, 5)
+            if num_steps < 3:
+                self._test_params.sigma_1_max = self._test_params.sigma_1_step * 3
             return
 
         # Геометрические условие:
@@ -925,8 +941,8 @@ class ModelK0SoilTest(ModelK0):
             plus = random.choices([-1, 1])
             sigma_3_ur[i] = sigma_3_ur[i] + plus[0] * np.random.uniform(sigma_3_ur[i]*0.005, sigma_3_ur[i]*0.015)
 
-        print(f'K0oc : {ModelK0.define_K0oc(sigma_1_ur, sigma_3_ur)}')
-        print(f'Nuur : {ModelK0.define_Nuur(sigma_1_ur, sigma_3_ur)}')
+        # print(f'K0oc : {ModelK0.define_K0oc(sigma_1_ur, sigma_3_ur)}')
+        # print(f'Nuur : {ModelK0.define_Nuur(sigma_1_ur, sigma_3_ur)}')
 
         return np.flip(sigma_1_ur), np.flip(sigma_3_ur)
 
