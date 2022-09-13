@@ -1044,7 +1044,7 @@ class MechanicalProperties:
 
             # Напряжение, снимаемое при выимке котлована
             sigma_pit = sigma_with_weighing_effect(pit_depth, ground_water_depth)
-            
+
             if pit_depth >= depth:
                 sigma_max = sigma_ref
             else:
