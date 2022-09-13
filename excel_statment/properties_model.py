@@ -13,7 +13,7 @@ from resonant_column.rezonant_column_function import define_G0_threshold_shear_s
 from loggers.logger import app_logger, log_this
 
 from excel_statment.position_configs import PhysicalPropertyPosition, MechanicalPropertyPosition, c_fi_E_PropertyPosition, \
-    DynamicsPropertyPosition, IdentificationColumns
+    DynamicsPropertyPosition, IdentificationColumns, K0Columns
 from excel_statment.functions import str_df, float_df, date_df
 from descriptors import DataTypeValidation
 import math
@@ -307,9 +307,14 @@ class MechanicalProperties:
 
             self.Ca = Ca if Ca else np.round(np.random.uniform(0.01, 0.03), 5)
 
-            self.K0 = MechanicalProperties.define_K0(
-                data_frame, K0_mode, string, physical_properties.Il, self.fi,
-                physical_properties.stratigraphic_index, physical_properties.type_ground)
+            if float_df(data_frame.iat[string, K0Columns["ige"][1]]):
+                self.K0 = float_df(data_frame.iat[string, K0Columns["ige"][1]])
+            elif float_df(data_frame.iat[string, K0Columns["nc"][1]]):
+                self.K0 = float_df(data_frame.iat[string, K0Columns["nc"][1]])
+            else:
+                self.K0 = MechanicalProperties.define_K0(
+                    data_frame, K0_mode, string, physical_properties.Il, self.fi,
+                    physical_properties.stratigraphic_index, physical_properties.type_ground)
             if not self.K0:
                 raise ValueError(f"Ошибка определения K0 в пробе {physical_properties.laboratory_number}")
 
@@ -543,7 +548,7 @@ class MechanicalProperties:
     def define_K0(data_frame: pd.DataFrame, K0_mode: str, string: int, Il: float, fi: float, stratigraphic_index: str, type_ground) -> float:
         """Функция определения K0"""
 
-        def define_K0_GOST(Il, type_ground) -> float:
+        def define_K0_GOST_2015(Il, type_ground) -> float:
             if type_ground == 9:
                 return 1
 
@@ -558,6 +563,27 @@ class MechanicalProperties:
             else:
                 return 1
 
+        def define_K0_GOST_2022(Il, type_ground) -> float:
+            if type_ground == 9:
+                return 1
+
+            if not Il:
+                return 0.5
+            elif Il < 0:
+                return 0.7
+            elif 0 <= Il < 0.25:
+                return 0.7
+            elif 0.25 <= Il < 0.5:
+                return 0.7
+            else:
+                return 1
+
+        def define_K0_GOST_2020(Il, type_ground, fi) -> float:
+            if type_ground in [1, 2, 3, 4, 5]:
+                return np.round((1 - np.sin(np.pi * fi / 180)), 1)
+            else:
+                return define_K0_GOST_2022(Il, type_ground)
+
         def osr(stratigraphic_index, fi) -> float:
             if stratigraphic_index in ["g", "f", "j", "K", "C", "r"]:
                 return 1
@@ -571,13 +597,12 @@ class MechanicalProperties:
             return np.round(K0, 2) if K0 else None
 
         dict_K0 = {
-            "K0: По ГОСТ-56353": define_K0_GOST(Il, type_ground),
-            "K0: K0nc из ведомости": readDataFrame(string, MechanicalPropertyPosition["K0nc"][1]),
-            "K0: K0 из ведомости": readDataFrame(string, MechanicalPropertyPosition["K0oc"][1]),
+            "K0: По ГОСТ 12248.3-2020": define_K0_GOST_2020(Il, type_ground, fi),
+            "K0: По ГОСТ-56353-2022": define_K0_GOST_2022(Il, type_ground),
+            "K0: По ГОСТ-56353-2015": define_K0_GOST_2015(Il, type_ground),
             "K0: Формула Джекки": np.round((1 - np.sin(np.pi * fi / 180)), 2),
             "K0: K0 = 1": 1,
             "K0: Формула Джекки c учетом переупл.": osr(stratigraphic_index, fi),
-            "K0: Из ведомости (столбец FW)": readDataFrame(string, MechanicalPropertyPosition["K0ige"][1]),
         }
 
         return dict_K0[K0_mode]
@@ -1035,7 +1060,6 @@ class MechanicalProperties:
             return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
         else:
             return [400, 800, 1600]
-
 
     @staticmethod
     def define_reference_pressure_array_set_by_user(val) -> list:
@@ -2089,7 +2113,6 @@ class ShearProperties(MechanicalProperties):
               type_ground == 8 or type_ground == 9) and (Il > 1.0):
             return [25, 75, 125]
 
-
 class K0Properties(MechanicalProperties):
     K0nc = DataTypeValidation(float, int)  # K0 нормальной консолидации (входной параметр)
 
@@ -2163,7 +2186,6 @@ class K0Properties(MechanicalProperties):
 
         # значения получаем в кпа, поэтому делим на 1000
         return _sigma_p/1000, _sigma_3_p/1000
-
 
 class RayleighDampingProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""

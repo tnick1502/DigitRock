@@ -110,3 +110,9 @@ GeneralDataColumns = {
     "object_number": ["AI1", (0, 34)],
     "shipment_number": ["J2", (1, 9)]
 }
+
+K0Columns = {
+    "nc": ["GZ", 207],
+    "ocr": ["GY", 206],
+    "ige": ["FW", 178]
+}
