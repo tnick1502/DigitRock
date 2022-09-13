@@ -1023,19 +1023,32 @@ class MechanicalProperties:
     def define_reference_pressure_array_calculated_by_pressure(build_press: float, pit_depth: float, depth: float,
                                                                K0: float, ground_water_depth: float) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
+
+        def sigma_with_weighing_effect(_depth, _ground_water_depth):
+            if _ground_water_depth is not None:
+                if _depth <= _ground_water_depth:
+                    sigma = round(2 * 9.81 * _depth)
+                elif _depth > _ground_water_depth:
+                    sigma = round(2 * 9.81 * _depth - (9.81 * (_depth - _ground_water_depth)))
+            else:
+                sigma = round(2 * 9.81 * _depth)
+
+            return sigma
+
         if build_press:
             if not pit_depth:
                 pit_depth = 0
 
-            if not ground_water_depth:
-                ground_water_depth = 0
+            # Напряжение без учета котлована и здания, но с учетом взвешивающего эффекта
+            sigma_ref = sigma_with_weighing_effect(depth, ground_water_depth)
 
-            if pit_depth >= ground_water_depth:
-                ro = 1
+            # Напряжение, снимаемое при выимке котлована
+            sigma_pit = sigma_with_weighing_effect(pit_depth, ground_water_depth)
+            
+            if pit_depth >= depth:
+                sigma_max = sigma_ref
             else:
-                ro = (2 * ground_water_depth + 1 * (depth - ground_water_depth)) / depth
-
-            sigma_max = ro * (depth - pit_depth) * 10 + build_press if (depth - pit_depth) > 0 else ro * 10 * depth
+                sigma_max = sigma_ref + build_press - sigma_pit
 
             sigma_max_1 = MechanicalProperties.round_sigma_3(sigma_max * K0)
             sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.5)
