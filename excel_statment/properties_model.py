@@ -580,7 +580,8 @@ class MechanicalProperties:
 
         def define_K0_GOST_2020(Il, type_ground, fi) -> float:
             if type_ground in [1, 2, 3, 4, 5]:
-                return np.round((1 - np.sin(np.pi * fi / 180)), 1)
+                K0 = np.round((1 - np.sin(np.pi * fi / 180)), 1)
+                return K0 if K0 >= 0.4 else 0.4
             else:
                 return define_K0_GOST_2022(Il, type_ground)
 
