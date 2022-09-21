@@ -27,6 +27,7 @@ import os
 from general.tab_view import TabMixin, AppMixin
 from version_control.configs import actual_version
 __version__ = actual_version
+from authentication.request_qr import request_qr
 
 class ShearProcessingWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -439,7 +440,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
         self.tab_2.popIn.connect(self.addTab)
         self.tab_2.popOut.connect(self.removeTab)
         self.tab_3 = ShearWidgetSoilTest()
-        self.tab_4 = Save_Dir()
+        self.tab_4 = Save_Dir(qr=True)
         self.tab_4.popIn.connect(self.addTab)
         self.tab_4.popOut.connect(self.removeTab)
 
@@ -556,6 +557,11 @@ class ShearSoilTestApp(AppMixin, QWidget):
 
             _test_mode = statment.general_parameters.test_mode
 
+            if self.tab_4.qr:
+                qr = request_qr()
+            else:
+                qr = None
+
             if ShearStatment.is_dilatancy_type(_test_mode):
                 name = file_path_name + " " + statment.general_data.object_number + " ДС" + ".pdf"
 
@@ -572,7 +578,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
                 report_Shear_Dilatancy(save + "/" + name, data_customer,
                                        statment[statment.current_test].physical_properties, statment.current_test,
                                        os.getcwd() + "/project_data/", test_parameter, test_result,
-                                       (*self.tab_2.deviator_loading.save_canvas(), None), "{:.2f}".format(__version__))
+                                       (*self.tab_2.deviator_loading.save_canvas(), None), "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name,  statment.save_dir.report_directory + "/" + name)
 
@@ -598,7 +604,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
                 report_Shear(save + "/" + name, data_customer,
                              statment[statment.current_test].physical_properties, statment.current_test,
                              os.getcwd() + "/project_data/", test_parameter, test_result,
-                             (*self.tab_3.save_canvas(), *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+                             (*self.tab_3.save_canvas(), *self.tab_3.save_canvas()), "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 

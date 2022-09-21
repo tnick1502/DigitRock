@@ -708,8 +708,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
         self.tab_3.popIn.connect(self.addTab)
         self.tab_3.popOut.connect(self.removeTab)
 
-        self.tab_4 = Save_Dir(
-            {
+        self.tab_4 = Save_Dir({
                 "standart_E": "Стандардный E",
                 "standart_E50": "Стандардный E50",
                 "E_E50": "Совместный E/E50",
@@ -718,7 +717,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 "vibro": "Вибропрочность",
                 "vibroNN": "КриовиброНН",
                 "standart_E50_with_dilatancy": "Е50 с дилатнсией"
-            })
+            }, qr=True)
 
         self.tab_4.popIn.connect(self.addTab)
         self.tab_4.popOut.connect(self.removeTab)
@@ -848,6 +847,11 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
             statment.save_dir.check_dirs()
 
+            if self.tab_4.qr:
+                qr = request_qr()
+            else:
+                qr = None
+
             if statment.general_parameters.test_mode == "Трёхосное сжатие (E)":
                 name = file_path_name + " " + statment.general_data.object_number + " ТС" + ".pdf"
 
@@ -866,7 +870,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                          test_parameter, test_result,
                          (*self.tab_2.consolidation.save_canvas(),
                           *self.tab_2.deviator_loading.save_canvas()), self.tab_4.report_type,
-                         "{:.2f}".format(__version__))
+                         "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -898,7 +902,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                          test_parameter, test_result,
                          (*self.tab_2.consolidation.save_canvas(),
                           *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), self.tab_4.report_type,
-                         "{:.2f}".format(__version__))
+                         "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -934,7 +938,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                          test_parameter, test_result,
                          (*self.tab_2.consolidation.save_canvas(),
                           *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), self.tab_4.report_type,
-                         "{:.2f}".format(__version__))
+                         "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -1002,7 +1006,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                            test_parameter, test_result,
                            (*self.tab_2.deviator_loading.save_canvas(),
                             *self.tab_3.save_canvas()), self.tab_4.report_type,
-                           "{:.2f}".format(__version__))  # , qr_code=qr)
+                           "{:.2f}".format(__version__), qr_code=qr)  # , qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -1068,7 +1072,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                           test_parameter, test_result,
                           (*self.tab_3.save_canvas(),
-                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name, report_directory_FC + "/" + name)
 
@@ -1083,7 +1087,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                          test_parameter, test_result,
                          (*self.tab_2.consolidation.save_canvas(),
                           *self.tab_2.deviator_loading.save_canvas(size=[[6, 4], [6, 2]])), self.tab_4.report_type,
-                         "{:.2f}".format(__version__))
+                         "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name[:-4] + " Р.pdf", report_directory_Eur + "/" + name[:-4] + " Р.pdf")
 
@@ -1132,7 +1136,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                           statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                           test_parameter, test_result,
                           (*self.tab_3.save_canvas(),
-                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+                           *self.tab_3.save_canvas()), "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -1173,7 +1177,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                              statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                              test_parameter, test_result,
                              (*self.tab_3.save_canvas(),
-                              *self.tab_3.save_canvas()), "{:.2f}".format(__version__))
+                              *self.tab_3.save_canvas()), "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -1218,7 +1222,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                              statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                              test_parameter, test_result,
                              (*self.tab_3.save_canvas(),
-                              *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
+                              *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
@@ -1261,7 +1265,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                               statment.getLaboratoryNumber(), os.getcwd() + "/project_data/",
                               test_parameter, test_result,
                               (*self.tab_3.save_canvas(),
-                               *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__))
+                               *self.tab_3.save_canvas()), self.tab_4.report_type, "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 

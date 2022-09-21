@@ -83,7 +83,7 @@ class MohrTable(QWidget):
         self.dell_button = QPushButton("Удалить опыт")
         self.dell_button.setFixedHeight(50)
         self.dell_button.setFixedWidth(120)
-        self.layout_box.addWidget(self.dell_button)
+        # self.layout_box.addWidget(self.dell_button)
 
         self.layout.addWidget(self.box)
 
