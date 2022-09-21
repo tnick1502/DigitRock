@@ -413,7 +413,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         self._reference_pressure_array = None
         self.pre_defined_kr_fgs = None
         self.test_mode = statment.general_parameters.test_mode
-
+        self.is_split_deviator = False
 
 
     def add_test_st(self, pre_defined_kr_fgs=None):

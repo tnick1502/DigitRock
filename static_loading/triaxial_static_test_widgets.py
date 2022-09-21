@@ -99,6 +99,8 @@ class StaticProcessingWidget(QWidget):
 
         self.deviator_loading.chose_volumometer_button_group.buttonClicked.connect(self._deviator_volumeter)
         self.consolidation.chose_volumometer_button_group.buttonClicked.connect(self._consolidation_volumeter)
+        self.deviator_loading.split_deviator_radio_button.clicked.connect(self._split_deviator)
+
         self.consolidation.function_replacement_button_group.buttonClicked.connect(
             self._consolidation_interpolation_type)
 
@@ -189,6 +191,11 @@ class StaticProcessingWidget(QWidget):
         if E_models[statment.current_test].deviator_loading.check_none():
             E_models[statment.current_test].deviator_loading.choise_volume_strain(button.text())
             self._cut_slider_deviator_set_val(E_models[statment.current_test].deviator_loading.get_borders())
+            self._plot_deviator_loading()
+
+    def _split_deviator(self, is_split_deviator):
+        if E_models[statment.current_test].deviator_loading.check_none():
+            E_models[statment.current_test].deviator_loading.set_split_deviator(is_split_deviator)
             self._plot_deviator_loading()
 
     def _deviator_volumeter_current_vol(self, current_volume_strain):
@@ -536,6 +543,9 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
         try:
             self.deviator_loading_sliders.set_sliders_params(
                 E_models[statment.current_test].get_deviator_loading_draw_params())
+
+            self.deviator_loading.split_deviator_radio_button.setChecked(
+                E_models[statment.current_test].deviator_loading.get_split_deviator())
 
             self.deviator_loading_sliders_unload_start_y_slider.set_sliders_params(
                 E_models[statment.current_test].get_deviator_loading_draw_params_unload_start_y())
