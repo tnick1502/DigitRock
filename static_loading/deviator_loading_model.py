@@ -115,6 +115,9 @@ class ModelTriaxialDeviatorLoading:
                                       "poissons_ratio": None,
                                       "dilatancy_angle": None})
 
+        # Разделение девиатора
+        self._split_deviator = False
+
     def set_test_data(self, test_data):
         """Получение и обработка массивов данных, считанных с файла прибора"""
         self._reset_data()
@@ -151,6 +154,12 @@ class ModelTriaxialDeviatorLoading:
                 self._test_data.volume_strain = self._test_data.cell_volume_strain
                 step = ModelTriaxialDeviatorLoading.find_friction_step(self._test_data.strain, self._test_data.deviator)
                 self.change_borders(step, len(self._test_data.strain))
+
+    def set_split_deviator(self, is_split_deviator):
+        self._split_deviator = is_split_deviator
+
+    def get_split_deviator(self):
+        return self._split_deviator
 
     def get_current_volume_strain(self):
         """Метод возвращает действующий волюмометр
@@ -299,7 +308,8 @@ class ModelTriaxialDeviatorLoading:
                 "strain_Eur": strain_Eur,
                 "deviator_Eur": deviator_Eur,
                 "sigma_3": self._test_params.sigma_3/1000,
-                "dilatancy": dilatancy,}
+                "dilatancy": dilatancy,
+                "is_split_deviator": self._split_deviator}
 
     def check_none(self):
         if self._test_data.strain is None:
