@@ -1,4 +1,4 @@
 
-actual_version = 3.47
+actual_version = 3.48
 
 path = "Z:/НАУКА/Разработка/!Программы/Digitrock/version_log.json"
