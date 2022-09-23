@@ -308,67 +308,32 @@ class MohrWidget(QWidget):
             #self._plot()
 
     def _plot(self):
-        if statment.general_parameters.test_mode == "Трёхосное сжатие НН":
-            self.deviator_ax.clear()
-            self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-            self.deviator_ax.set_ylabel("Девиатор q, МПа")
-
-            self.mohr_ax.clear()
-            self.mohr_ax.set_xlabel("σ, МПа")
-            self.mohr_ax.set_ylabel("τ, МПа")
-
+        no_split_flag = False
+        if self._model == "FC_models":
             plots = FC_models[statment.current_test].get_plot_data()
-            res = FC_models[statment.current_test].get_test_results()
+        else:
+            plots = VibrationFC_models[statment.current_test].get_plot_data()
+        if plots is not None:
+            for i in range(len(plots["strain"])):
+                if plots["strain"][i][-1] < 0.13:
+                    no_split_flag = True
+                    break
 
-            if plots is not None:
-                for i in range(len(plots["strain"])):
-                    self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
-                    self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
-
-                self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
-                self.mohr_ax.plot([], [], label="$c_u$" + ", МПа = " + str(res["c"]), color="#eeeeee")
-
-                self.mohr_ax.set_xlim(*plots["x_lims"])
-                self.mohr_ax.set_ylim(*plots["y_lims"])
-
-                self.mohr_ax.legend()
+        if statment.general_parameters.test_mode == "Трёхосное сжатие НН":
+            if not self.is_split_deviator or no_split_flag:
+                self.plot_nn()
+            elif self.is_split_deviator:
+                self.plot_nn_split()
 
         elif statment.general_parameters.test_mode == "Вибропрочность":
-            self.deviator_ax.clear()
-            self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-            self.deviator_ax.set_ylabel("Девиатор q, МПа")
-
-            self.mohr_ax.clear()
-            self.mohr_ax.set_xlabel("σ, МПа")
-            self.mohr_ax.set_ylabel("τ, МПа")
-
-            if self._model == "FC_models":
-                plots = FC_models[statment.current_test].get_plot_data()
-                res = FC_models[statment.current_test].get_test_results()
-            else:
-                plots = VibrationFC_models[statment.current_test].get_plot_data()
-                res = VibrationFC_models[statment.current_test].get_test_results()
-
-            if plots is not None:
-                for i in range(len(plots["strain"])):
-                    self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
-                    self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
-
-                self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
-                self.mohr_ax.plot([], [], label="$c_u$" + ", МПа = " + str(res["c"]), color="#eeeeee")
-
-                if self._model == "VibrationFC_models":
-                    res2 = FC_models[statment.current_test].get_test_results()
-                    self.mohr_ax.plot([], [], label="$K_cu$" + ", МПа = " + str(round(res["c"]/res2["c"], 2)), color="#eeeeee")
-
-                self.mohr_ax.set_xlim(*plots["x_lims"])
-                self.mohr_ax.set_ylim(*plots["y_lims"])
-
-                self.mohr_ax.legend()
+            if not self.is_split_deviator or no_split_flag:
+                self.plot_vibro()
+            elif self.is_split_deviator:
+                self.plot_vibro_split()
         else:
-            if not self.is_split_deviator:
+            if not self.is_split_deviator or no_split_flag:
                 self.plot_normal()
-            if self.is_split_deviator:
+            elif self.is_split_deviator:
                 self.plot_split()
 
         self.deviator_canvas.draw()
@@ -456,15 +421,21 @@ class MohrWidget(QWidget):
 
         if plots is not None:
             for i in range(len(plots["strain"])):
+                strain_split, deviator_split, _ = ModelTriaxialDeviatorLoadingUI.split_deviator(plots["strain"][i],
+                                                                                                plots["deviator"][i])
+
                 if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
-                    self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
+                    self.deviator_ax_1.plot(np.r_[strain_split[0], strain_split[1]],
+                                            np.r_[deviator_split[0], deviator_split[1]],
+                                            **plotter_params["main_line"])
+                    self.deviator_ax_2.plot(np.r_[strain_split[0], strain_split[1]],
+                                            np.r_[deviator_split[0], deviator_split[1]],
+                                            **plotter_params["main_line"])
+
                     self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], color="green", linewidth=2, alpha=0.6)
                     self.mohr_ax.plot(plots["mohr_x_res"][i], plots["mohr_y_res"][i], color="black", linewidth=1,
                                       linestyle="--", alpha=0.6)
                 else:
-                    strain_split, deviator_split, _ = ModelTriaxialDeviatorLoadingUI.split_deviator(plots["strain"][i],
-                                                                                                    plots["deviator"][i])
-
                     self.deviator_ax_1.plot(np.r_[strain_split[0],strain_split[1]],
                                             np.r_[deviator_split[0],deviator_split[1]],
                                             **plotter_params["main_line"])
@@ -495,10 +466,212 @@ class MohrWidget(QWidget):
 
             self.mohr_ax.legend()
 
+            # Задаем пределы на оси
             left_x_min = 0
             left_x_max = 0
             right_x_min = 1
+            for i in range(len(plots["strain"])):
+                strain_split, __, __ = ModelTriaxialDeviatorLoadingUI.split_deviator(plots["strain"][i],
+                                                                                                plots["deviator"][i])
+
+                left_x_min = left_x_min if left_x_min < strain_split[0][0]-abs(strain_split[0][0]*0.05) else strain_split[0][0]-abs(strain_split[0][0]*0.05)
+                left_x_max = left_x_max if left_x_max > strain_split[0][-1] else strain_split[0][-1]
+
+                right_x_min = right_x_min if right_x_min < strain_split[1][0] else strain_split[1][0]
+
+            right_x_lim = 0.155 if 0.155 > strain_split[1][-1] else strain_split[1][-1]
+            self.deviator_ax_1.set_xlim(left_x_min, left_x_max)
+            self.deviator_ax_2.set_xlim(right_x_min, right_x_lim)
+            # Размеры на основной оси сохраняем для считывания другими параметрами
+            self.deviator_ax.set_xlim(left_x_min, right_x_lim)
+
+            ModelTriaxialDeviatorLoadingUI.format_split(self.deviator_ax_1, self.deviator_ax_2)
+            ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax)
+
+    def plot_vibro(self):
+        self.clear_split_axis()
+        self.replot_deviator_axis()
+
+        self.deviator_ax.clear()
+        self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.deviator_ax.set_ylabel("Девиатор q, МПа")
+
+        self.mohr_ax.clear()
+        self.mohr_ax.set_xlabel("σ, МПа")
+        self.mohr_ax.set_ylabel("τ, МПа")
+
+        if self._model == "FC_models":
+            plots = FC_models[statment.current_test].get_plot_data()
+            res = FC_models[statment.current_test].get_test_results()
+        else:
+            plots = VibrationFC_models[statment.current_test].get_plot_data()
+            res = VibrationFC_models[statment.current_test].get_test_results()
+
+        if plots is not None:
+            for i in range(len(plots["strain"])):
+                self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
+                self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
+
+            self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
+            self.mohr_ax.plot([], [], label="$c_u$" + ", МПа = " + str(res["c"]), color="#eeeeee")
+
+            if self._model == "VibrationFC_models":
+                res2 = FC_models[statment.current_test].get_test_results()
+                self.mohr_ax.plot([], [], label="$K_cu$" + ", МПа = " + str(round(res["c"] / res2["c"], 2)),
+                                  color="#eeeeee")
+
+            self.mohr_ax.set_xlim(*plots["x_lims"])
+            self.mohr_ax.set_ylim(*plots["y_lims"])
+
+            self.mohr_ax.legend()
+
+    def plot_vibro_split(self):
+        self.clear_split_axis()
+
+        self.deviator_ax_1 = self.deviator_figure.add_subplot(121)
+        self.deviator_ax_2 = self.deviator_figure.add_subplot(122)
+
+        self.deviator_ax_1.clear()
+        self.deviator_ax_2.clear()
+        self.deviator_ax.clear()
+
+        self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.deviator_ax.set_ylabel("Девиатор q, МПа")
+
+        self.mohr_ax.clear()
+        self.mohr_ax.set_xlabel("σ, МПа")
+        self.mohr_ax.set_ylabel("τ, МПа")
+
+        if self._model == "FC_models":
+            plots = FC_models[statment.current_test].get_plot_data()
+            res = FC_models[statment.current_test].get_test_results()
+        else:
+            plots = VibrationFC_models[statment.current_test].get_plot_data()
+            res = VibrationFC_models[statment.current_test].get_test_results()
+
+        if plots is not None:
+            for i in range(len(plots["strain"])):
+                strain_split, deviator_split, _ = ModelTriaxialDeviatorLoadingUI.split_deviator(plots["strain"][i],
+                                                                                                plots["deviator"][i])
+
+                self.deviator_ax_1.plot(np.r_[strain_split[0], strain_split[1]],
+                                        np.r_[deviator_split[0], deviator_split[1]],
+                                        **plotter_params["main_line"])
+                self.deviator_ax_2.plot(np.r_[strain_split[0], strain_split[1]],
+                                        np.r_[deviator_split[0], deviator_split[1]],
+                                        **plotter_params["main_line"])
+
+                self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
+
+            self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
+            self.mohr_ax.plot([], [], label="$c_u$" + ", МПа = " + str(res["c"]), color="#eeeeee")
+
+            if self._model == "VibrationFC_models":
+                res2 = FC_models[statment.current_test].get_test_results()
+                self.mohr_ax.plot([], [], label="$K_cu$" + ", МПа = " + str(round(res["c"] / res2["c"], 2)),
+                                  color="#eeeeee")
+
+            self.mohr_ax.set_xlim(*plots["x_lims"])
+            self.mohr_ax.set_ylim(*plots["y_lims"])
+
+            self.mohr_ax.legend()
+
             # Задаем пределы на оси
+            left_x_min = 0
+            left_x_max = 0
+            right_x_min = 1
+            for i in range(len(plots["strain"])):
+                strain_split, __, __ = ModelTriaxialDeviatorLoadingUI.split_deviator(plots["strain"][i],
+                                                                                                plots["deviator"][i])
+
+                left_x_min = left_x_min if left_x_min < strain_split[0][0]-abs(strain_split[0][0]*0.05) else strain_split[0][0]-abs(strain_split[0][0]*0.05)
+                left_x_max = left_x_max if left_x_max > strain_split[0][-1] else strain_split[0][-1]
+
+                right_x_min = right_x_min if right_x_min < strain_split[1][0] else strain_split[1][0]
+
+            right_x_lim = 0.155 if 0.155 > strain_split[1][-1] else strain_split[1][-1]
+            self.deviator_ax_1.set_xlim(left_x_min, left_x_max)
+            self.deviator_ax_2.set_xlim(right_x_min, right_x_lim)
+            # Размеры на основной оси сохраняем для считывания другими параметрами
+            self.deviator_ax.set_xlim(left_x_min, right_x_lim)
+
+            ModelTriaxialDeviatorLoadingUI.format_split(self.deviator_ax_1, self.deviator_ax_2)
+            ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax)
+
+    def plot_nn(self):
+        self.clear_split_axis()
+        self.replot_deviator_axis()
+
+        self.deviator_ax.clear()
+        self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.deviator_ax.set_ylabel("Девиатор q, МПа")
+
+        self.mohr_ax.clear()
+        self.mohr_ax.set_xlabel("σ, МПа")
+        self.mohr_ax.set_ylabel("τ, МПа")
+
+        plots = FC_models[statment.current_test].get_plot_data()
+        res = FC_models[statment.current_test].get_test_results()
+
+        if plots is not None:
+            for i in range(len(plots["strain"])):
+                self.deviator_ax.plot(plots["strain"][i], plots["deviator"][i], **plotter_params["main_line"])
+                self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
+
+            self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
+            self.mohr_ax.plot([], [], label="$c_u$" + ", МПа = " + str(res["c"]), color="#eeeeee")
+
+            self.mohr_ax.set_xlim(*plots["x_lims"])
+            self.mohr_ax.set_ylim(*plots["y_lims"])
+
+            self.mohr_ax.legend()
+
+    def plot_nn_split(self):
+        self.clear_split_axis()
+
+        self.deviator_ax_1 = self.deviator_figure.add_subplot(121)
+        self.deviator_ax_2 = self.deviator_figure.add_subplot(122)
+
+        self.deviator_ax_1.clear()
+        self.deviator_ax_2.clear()
+
+        self.deviator_ax.clear()
+        self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.deviator_ax.set_ylabel("Девиатор q, МПа")
+
+        self.mohr_ax.clear()
+        self.mohr_ax.set_xlabel("σ, МПа")
+        self.mohr_ax.set_ylabel("τ, МПа")
+
+        plots = FC_models[statment.current_test].get_plot_data()
+        res = FC_models[statment.current_test].get_test_results()
+
+        if plots is not None:
+            for i in range(len(plots["strain"])):
+                strain_split, deviator_split, _ = ModelTriaxialDeviatorLoadingUI.split_deviator(plots["strain"][i],
+                                                                                                plots["deviator"][i])
+
+                self.deviator_ax_1.plot(np.r_[strain_split[0], strain_split[1]],
+                                        np.r_[deviator_split[0], deviator_split[1]],
+                                        **plotter_params["main_line"])
+                self.deviator_ax_2.plot(np.r_[strain_split[0], strain_split[1]],
+                                        np.r_[deviator_split[0], deviator_split[1]],
+                                        **plotter_params["main_line"])
+
+                self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
+
+            self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
+            self.mohr_ax.plot([], [], label="$c_u$" + ", МПа = " + str(res["c"]), color="#eeeeee")
+
+            self.mohr_ax.set_xlim(*plots["x_lims"])
+            self.mohr_ax.set_ylim(*plots["y_lims"])
+
+            self.mohr_ax.legend()
+
+            # Задаем пределы на оси
+            left_x_min = 0
+            left_x_max = 0
+            right_x_min = 1
             for i in range(len(plots["strain"])):
                 strain_split, __, __ = ModelTriaxialDeviatorLoadingUI.split_deviator(plots["strain"][i],
                                                                                                 plots["deviator"][i])
@@ -602,11 +775,15 @@ class MohrWidget(QWidget):
                                                                                [self.deviator_canvas, self.mohr_canvas],
                                                                                [[6, 2.4], [3, 1.5]],
                                                                                [self.deviator_ax, self.mohr_ax])]
-            self.deviator_ax_2.tick_params(axis='y',
-                                           which='both',
-                                           left='off',
-                                           labelleft='off',
-                                           colors='#eeeeee')
+            try:
+                self.deviator_ax_2.tick_params(axis='y',
+                                               which='both',
+                                               left='off',
+                                               labelleft='off',
+                                               colors='#eeeeee')
+            except:
+                pass
+
             self.deviator_canvas.draw()
 
         c.append(self.m_widget.save_canvas())
@@ -639,7 +816,7 @@ class MohrWidgetSoilTest(TabMixin, MohrWidget):
 
         # Отсечение графика для малых нагружений
         self.split_deviator = QGroupBox("Отсечение девиатора")
-        self.split_deviator_radio_button = QRadioButton('Разделять графики')
+        self.split_deviator_radio_button = QRadioButton('до 0.7qf, после 0.14')
         self.split_deviator_radio_button.setChecked(False)
         self.split_deviator_layout = QHBoxLayout()
         self.split_deviator_layout.addWidget(self.split_deviator_radio_button)

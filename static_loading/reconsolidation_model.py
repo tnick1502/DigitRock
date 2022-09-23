@@ -346,14 +346,14 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                                 "skempton_initial": None,
                                 "skempton_end": None})
 
-    def set_test_params(self, vpd_flag=True):
+    def set_test_params(self,  vpd_flag=True):
         """Записываются параметры для моделирования реконсолидации, запускается процессов моделирования эксперимента и
         нахождения коэффициента кемптона"""
 
-        self.params.sigma_ref = statment[statment.current_test].mechanical_properties.sigma_3
-        self.params.skempton_initial = statment[statment.current_test].physical_properties.skempton_initial
-        self.params.skempton_end = np.random.uniform(0.96, 0.98)
-        self.physical_properties = statment[statment.current_test].physical_properties
+        self.params.sigma_ref = 80#statment[statment.current_test].mechanical_properties.sigma_3
+        self.params.skempton_initial = 0.6101367#statment[statment.current_test].physical_properties.skempton_initial
+        self.params.skempton_end = 0.9642384#np.random.uniform(0.96, 0.98)
+        # self.physical_properties = statment[statment.current_test].physical_properties
 
         if self.params.sigma_ref < 20:
             self.params.sigma_ref = 20
@@ -374,7 +374,7 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
 
     def _test_modeling(self, vpd_flag):
         """Получение модели результатов опыта"""
-        u_vfs_end = self.params.sigma_ref*np.random.uniform(0.6, 0.8)
+        u_vfs_end = 63.55672#self.params.sigma_ref*np.random.uniform(0.6, 0.8)
         if u_vfs_end > 75:
             u_vfs_end = 75
 
@@ -515,6 +515,11 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         if u_vfs_end > 0:
             try:
                 ratio_increase_skempton_vfs = 1.2
+                # Максимальное u_vfs_end выражется из skempton_ref и skempton_step, когда skempton_step < 0.96
+                max_u_vfs = (0.95 * sigma_VFS_step)/(1 - ratio_increase_skempton_vfs)*((1 - ratio_increase_skempton_vfs**count_step_vfs)/(ratio_increase_skempton_vfs**(count_step_vfs-1)))
+                if u_vfs_end > max_u_vfs:
+                    u_vfs_end = max_u_vfs
+
                 skempton_ref = (u_vfs_end / sigma_VFS_step * (1 - ratio_increase_skempton_vfs) /
                                 (1 - ratio_increase_skempton_vfs ** count_step_vfs))
                 skempton_step = [skempton_ref * (ratio_increase_skempton_vfs ** x) for x in range(0, count_step_vfs)]
@@ -893,7 +898,7 @@ def time_series(x: np.ndarray) -> np.ndarray:
 
 if __name__ == '__main__':
     a = ModelTriaxialReconsolidationSoilTest()
-    a.set_test_params(1600, skempton_initial=0.57)
+    a.set_test_params()
     a.plotter()
     plt.show()
 

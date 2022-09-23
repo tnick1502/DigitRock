@@ -67,7 +67,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         # Отсечение графика для малых нагружений
         self.split_deviator = QGroupBox("Отсечение девиатора")
-        self.split_deviator_radio_button = QRadioButton('is_split_deviator')
+        self.split_deviator_radio_button = QRadioButton('до 0.7qf, после 0.14')
         self.split_deviator_radio_button.setChecked(False)
         self.split_deviator_layout = QHBoxLayout()
         self.split_deviator_layout.addWidget(self.split_deviator_radio_button)
@@ -212,7 +212,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         try:
             # Если необходимо безразрывное построение девиатора
-            if not plots["is_split_deviator"]:
+            if not plots["is_split_deviator"] or plots["strain"][-1] < 0.13:
                 if self.combo_box.currentText() == "E":
                     self._plot_E(plots, res)
                 elif self.combo_box.currentText() == "E50":
@@ -227,7 +227,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                     self._plot_Eur(plots, res)
                 self._plot_volume_strain(plots, res, with_dilatancy=self.dilatancy_radio_btn.isChecked())
             # Если необходимо разрывное построение девиатора
-            if plots["is_split_deviator"]:
+            elif plots["is_split_deviator"]:
                 if self.combo_box.currentText() == "E":
                     self._plot_E_split(plots, res)
                 elif self.combo_box.currentText() == "E50":
@@ -319,13 +319,9 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.replot_deviator_axis()
 
         # Создаем пографики малого графика для разделения
-        ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax2)
         ax2_width = .34
         self.deviator_ax2_2 = self.deviator_figure.add_axes([0.62 + ax2_width/2 + 0.01, 0.3, ax2_width/2, .35])
         self.deviator_ax2_1 = self.deviator_figure.add_axes([0.62, 0.3, ax2_width / 2, .35])
-        ModelTriaxialDeviatorLoadingUI.format_split(self.deviator_ax2_1, self.deviator_ax2_2)
-        self.deviator_ax2_1.tick_params(axis=u'both', which=u'both', labelsize=6)
-        self.deviator_ax2_2.tick_params(axis=u'both', which=u'both', labelsize=6)
 
         # Очистки и подписи
         self.deviator_ax_1.clear()
@@ -333,11 +329,19 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         self.deviator_ax.clear()
 
-        self.deviator_ax2.clear()
-        self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
-        self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
         self.deviator_ax2_1.clear()
         self.deviator_ax2_2.clear()
+        self.deviator_ax2.clear()
+
+        ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax2)
+        ModelTriaxialDeviatorLoadingUI.format_split(self.deviator_ax2_1, self.deviator_ax2_2)
+        self.deviator_ax2_1.tick_params(axis=u'both', which=u'both', labelsize=6)
+        self.deviator_ax2_2.tick_params(axis=u'both', which=u'both', labelsize=6)
+        self.deviator_ax2_1.locator_params(axis='x', nbins=3)
+        self.deviator_ax2_2.locator_params(axis='x', nbins=3)
+
+        self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
+        self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
         if plots["strain"] is not None:
 
@@ -409,7 +413,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         self.deviator_ax_2.legend(loc='upper right', bbox_to_anchor=(0.98, 0.92), fontsize=10)
 
-        self.deviator_figure.subplots_adjust(wspace=0.10)
+        self.deviator_figure.subplots_adjust(wspace=0.16)
 
         # Отключение всего что можно на основном графике
         ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax)
@@ -488,9 +492,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         ax2_width = .34
         self.deviator_ax2_2 = self.deviator_figure.add_axes([0.62 + ax2_width/2 + 0.01, 0.3, ax2_width/2, .35])
         self.deviator_ax2_1 = self.deviator_figure.add_axes([0.62, 0.3, ax2_width / 2, .35])
-        ModelTriaxialDeviatorLoadingUI.format_split(self.deviator_ax2_1, self.deviator_ax2_2)
-        self.deviator_ax2_1.tick_params(axis=u'both', which=u'both', labelsize=6)
-        self.deviator_ax2_2.tick_params(axis=u'both', which=u'both', labelsize=6)
+
 
         # Очистки и подписи
         self.deviator_ax_1.clear()
@@ -500,11 +502,19 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
         self.deviator_ax.set_ylabel("Напряжение $𝜎_1$', МПa")
 
-        self.deviator_ax2.clear()
-        self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
-        self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
         self.deviator_ax2_1.clear()
         self.deviator_ax2_2.clear()
+        self.deviator_ax2.clear()
+
+        ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax2)
+        ModelTriaxialDeviatorLoadingUI.format_split(self.deviator_ax2_1, self.deviator_ax2_2)
+        self.deviator_ax2_1.tick_params(axis=u'both', which=u'both', labelsize=6)
+        self.deviator_ax2_2.tick_params(axis=u'both', which=u'both', labelsize=6)
+        self.deviator_ax2_1.locator_params(axis='x', nbins=3)
+        self.deviator_ax2_2.locator_params(axis='x', nbins=3)
+
+        self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
+        self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
         if plots["strain"] is not None:
 
@@ -586,7 +596,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         self.deviator_ax_2.legend(loc='upper right', bbox_to_anchor=(0.98, 0.92), fontsize=10)
 
-        self.deviator_figure.subplots_adjust(wspace=0.10)
+        self.deviator_figure.subplots_adjust(wspace=0.16)
 
         # Отключение всего что можно на основном графике
         ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax)
@@ -658,9 +668,8 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         ax2_width = .34
         self.deviator_ax2_2 = self.deviator_figure.add_axes([0.62 + ax2_width / 2 + 0.01, 0.3, ax2_width / 2, .35])
         self.deviator_ax2_1 = self.deviator_figure.add_axes([0.62, 0.3, ax2_width / 2, .35])
-        ModelTriaxialDeviatorLoadingUI.format_split(self.deviator_ax2_1, self.deviator_ax2_2)
-        self.deviator_ax2_1.tick_params(axis=u'both', which=u'both', labelsize=6)
-        self.deviator_ax2_2.tick_params(axis=u'both', which=u'both', labelsize=6)
+
+        # ModelTriaxialDeviatorLoadingUI.format_split(self.deviator_ax2_1, self.deviator_ax2_2)
 
         # Очистки и подписи
         self.deviator_ax_1.clear()
@@ -673,6 +682,15 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_ax2.clear()
         self.deviator_ax2_1.clear()
         self.deviator_ax2_2.clear()
+
+        ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax2)
+        ModelTriaxialDeviatorLoadingUI.format_split(self.deviator_ax2_1, self.deviator_ax2_2)
+        self.deviator_ax2_1.tick_params(axis=u'both', which=u'both', labelsize=6)
+        self.deviator_ax2_2.tick_params(axis=u'both', which=u'both', labelsize=6)
+        self.deviator_ax2_1.locator_params(axis='x', nbins=3)
+        self.deviator_ax2_2.locator_params(axis='x', nbins=3)
+
+
         self.deviator_ax2.set_ylabel("Напряжение $𝜎_1$', МПa", fontsize=8)
         self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
@@ -751,7 +769,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         self.deviator_ax_2.legend(loc='upper right', bbox_to_anchor=(0.98, 0.92), fontsize=10)
 
-        self.deviator_figure.subplots_adjust(wspace=0.10)
+        self.deviator_figure.subplots_adjust(wspace=0.12)
         # Отключение всего что можно на основном графике
         ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax)
 
@@ -825,6 +843,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_ax.set_ylabel("Напряжение $𝜎_1$', МПa")
 
         self.deviator_ax2.clear()
+        # ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax2)
         self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
         self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
@@ -894,7 +913,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         self.deviator_ax_2.legend(loc='upper right', bbox_to_anchor=(0.98, 0.92), fontsize=10)
 
-        self.deviator_figure.subplots_adjust(wspace=0.10)
+        self.deviator_figure.subplots_adjust(wspace=0.12)
         # Отключение всего что можно на основном графике
         ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax)
         self.deviator_canvas.draw()
@@ -967,6 +986,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_ax.set_ylabel("Девиатор q, МПа")
 
         self.deviator_ax2.clear()
+        # ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax2)
         self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
         self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
@@ -1030,7 +1050,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         self.deviator_ax_2.legend(loc='upper right', bbox_to_anchor=(0.98, 0.92), fontsize=10)
 
-        self.deviator_figure.subplots_adjust(wspace=0.10)
+        self.deviator_figure.subplots_adjust(wspace=0.16)
         # Отключение всего что можно на основном графике
         ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax)
         self.deviator_canvas.draw()
@@ -1098,6 +1118,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         self.deviator_ax.set_ylabel("Девиатор q, МПа")
 
         self.deviator_ax2.clear()
+        # ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax2)
         self.deviator_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
         self.deviator_ax2.set_xlabel("Относительная деформация $ε_1$, д.е.", fontsize=8)
 
@@ -1154,7 +1175,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         self.deviator_ax_2.legend(loc='upper right', bbox_to_anchor=(0.98, 0.82), fontsize=10)
 
-        self.deviator_figure.subplots_adjust(wspace=0.10)
+        self.deviator_figure.subplots_adjust(wspace=0.12)
         # Отключение всего что можно на основном графике
         ModelTriaxialDeviatorLoadingUI.hide_stuff(self.deviator_ax)
 
@@ -1256,7 +1277,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         axis.spines['left'].set_color('none')
         axis.spines['right'].set_color('none')
         axis.tick_params(axis='both', which='both', labelcolor='none', bottom='off', top='off',
-                                     labelbottom='off', right='off', left='off', labelleft='off')
+                                     labelbottom='off', right='off', left='off', labelleft='off', colors='#eeeeee')
 
     @staticmethod
     def format_split(left_subaxis, right_subaxis):
@@ -1289,6 +1310,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         formatter = matplotlib.ticker.FuncFormatter(format)
         left_subaxis.xaxis.set_major_formatter(formatter)
         right_subaxis.xaxis.set_major_formatter(formatter)
+
         # left_subaxis.xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%.4f'))
         # right_subaxis.xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%.4f'))
 
@@ -1372,17 +1394,21 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                                                        [self.deviator_canvas, self.volume_strain_canvas], size,
                                                                                   [self.deviator_ax_2, self.volume_strain_ax],
                                                                                              format)]
-            self.deviator_ax_2.tick_params(axis='y',
-                                           which='both',
-                                           left='off',
-                                           labelleft='off',
-                                           colors='#eeeeee')
-            self.deviator_ax2_2.tick_params(axis='y',
-                                            which='both',
-                                            left='off',
-                                            labelleft='off',
-                                            colors='#eeeeee')
-            self.deviator_ax_2.legend(loc='upper right', bbox_to_anchor=(0.98, 0.92), fontsize=10)
+            try:
+                self.deviator_ax_2.tick_params(axis='y',
+                                               which='both',
+                                               left='off',
+                                               labelleft='off',
+                                               colors='#eeeeee')
+                self.deviator_ax2_2.tick_params(axis='y',
+                                                which='both',
+                                                left='off',
+                                                labelleft='off',
+                                                colors='#eeeeee')
+                self.deviator_ax_2.legend(loc='upper right', bbox_to_anchor=(0.98, 0.92), fontsize=10)
+            except:
+                pass
+
             self.deviator_canvas.draw()
             return result
 
