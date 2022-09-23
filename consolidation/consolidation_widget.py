@@ -28,6 +28,8 @@ from version_control.configs import actual_version
 from general.tab_view import TabMixin
 __version__ = actual_version
 
+from authentication.request_qr import request_qr
+
 
 class ConsilidationSoilTestWidget(TabMixin, QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -276,7 +278,7 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = ConsolidationStatment()
         self.tab_2 = ConsilidationSoilTestWidget()
-        self.tab_3 = Save_Dir()
+        self.tab_3 = Save_Dir(qr=True)
 
         self.save_cv_ca_btn = QCheckBox('Сохранить cv ca')
         self.save_cv_ca_btn.setChecked(False)
@@ -365,11 +367,16 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
             test_result = Consolidation_models[statment.current_test].get_test_results()
             Consolidation_models[statment.current_test].save_cvi_file(save, statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
 
+            if self.tab_3.qr:
+                qr = request_qr()
+            else:
+                qr = None
+
             report_consolidation(save + "/" + name, data_customer,
                                  statment[statment.current_test].physical_properties, statment.current_test,
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
-                                 self.tab_2.consolidation.save_canvas(), "{:.2f}".format(__version__))
+                                 self.tab_2.consolidation.save_canvas(), "{:.2f}".format(__version__), qr_code=qr)
 
             shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 

@@ -34,6 +34,8 @@ from general.general_statement import StatementGenerator
 from general.tab_view import AppMixin, TabMixin
 __version__ = actual_version
 
+from authentication.request_qr import request_qr
+
 class CyclicProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
     ModelTriaxialCyclicLoadingUI"""
@@ -751,7 +753,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                 }
 
                 if self.tab_3.qr:
-                    qr = None #qr = request_qr(data)
+                    qr = request_qr()
                 else:
                     qr = None
 
@@ -779,7 +781,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                 }
 
                 if self.tab_3.qr:
-                    qr = None  # qr = request_qr(data)
+                    qr = request_qr()
                 else:
                     qr = None
 
@@ -787,7 +789,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                                        statment[statment.current_test].physical_properties,
                                        statment.getLaboratoryNumber(),
                                        os.getcwd() + "/project_data/", test_parameter, results,
-                                       [self.tab_2.damping.save_canvas()], "{:.2f}".format(__version__))
+                                       [self.tab_2.damping.save_canvas()], "{:.2f}".format(__version__), qr_code=qr)
 
             elif statment.general_parameters.test_mode == "Динамическая прочность на сдвиг":
                 results["gamma_critical"] = test_result['gamma_critical']
@@ -812,7 +814,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                 }
 
                 if self.tab_3.qr:
-                    qr = None  # qr = request_qr(data)
+                    qr = request_qr()
                 else:
                     qr = None
 

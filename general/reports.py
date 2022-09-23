@@ -232,7 +232,7 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
         t.drawOn(canvas, 25 * mm, 12 * mm)
 
         t = Table([["Номер документа №:", "", "", "", code, "", "", "Дата:", "",
-                    str(data.strftime("%d.%m.%Y")), "", "Лист:", "", list, "", "", "", "", "", ""]], colWidths=9.25 * mm, rowHeights=5 * mm)
+                    str(data.strftime("%d.%m.%Y")), "", "Лист:", "", list, "", "", "", "", "", ""]], colWidths=9.775 * mm, rowHeights=5 * mm)
 
         canvas.line((47) * mm, (280) * mm, (179) * mm, (280) * mm)
 
@@ -252,11 +252,12 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
         t.wrapOn(canvas, 0, 0)
         t.drawOn(canvas, 20 * mm, 5 * mm)
 
-        canvas.line((158.75) * mm, (10) * mm, (158.75) * mm, (51.25) * mm)
-        canvas.line((158.75) * mm, (51.25) * mm, (210-5) * mm, (51.25) * mm)
+        canvas.line((158.75*1.05) * mm, (5) * mm, (158.75*1.05) * mm, (51.25*0.79) * mm)
 
-        t = Table([["Сервис georeport.ru"], [""]], colWidths=46.25 * mm,
-                  rowHeights=4* mm)
+        canvas.line((158.75*1.05) * mm, (51.25*0.79) * mm, (210-5) * mm, (51.25*0.79) * mm)
+
+        t = Table([["Сервис georeport.ru"], [""]], colWidths=46.25*0.85*mm,
+                  rowHeights=1*mm)
         t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
                     ("FONTSIZE", (0, 0), (-1, -1), 7),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -265,10 +266,190 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
                     ("ALIGN", (0, 0), (-1, -1), "CENTER"), ])
         t.wrapOn(canvas, 0, 0)
-        t.drawOn(canvas, 158.75 * mm, 51.25 - 8 + 28* mm)
+        t.drawOn(canvas, 158.75*1.05 * mm, 51.25*0.68 - 8 + 28* mm)
 
-        canvas.drawImage(qr_code, (8.25*0.5 + 158.75 + 0.5) * mm, 8.5 * mm,
-                         width=37 * mm, height=37 * mm)
+        # canvas.drawImage(qr_code, (8.25*0.5 + 158.75*1.05 + 0.5) * mm, (8.5*0.95) * mm,
+        #                  width=(37*0.85) * mm, height=(37*0.85) * mm)
+        canvas.drawImage(qr_code, (170.11875) * mm, (8.5 * 0.65) * mm,
+                         width=(37 * 0.85) * mm, height=(37 * 0.85) * mm)
+
+
+    else:
+        dat3 = [[A[0 + s][0], A[0 + s][1]],
+                ['', A[0 + s][2]],
+                [A[1 + s][0], A[1 + s][1]],
+                [A[2 + s][0], A[2 + s][1]],
+                [A[3 + s][0], A[3 + s][1]]]
+        t = Table(dat3, colWidths=100 * mm, rowHeights=4 * mm)
+        t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (1, 0), (1, -1), 1.4 * mm),
+                    ("LEFTPADDING", (0, 0), (0, -1), 0.3 * mm),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                    ("ALIGN", (0, 0), (-1, -1), "LEFT"), ])
+
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 25 * mm, 12 * mm)
+
+        # Нижняя таблица
+        t = Table([["Номер документа №:", "", "", "", code, "", "", "", "", "", "", "Дата:", "",
+                    str(data.strftime("%d.%m.%Y")), "", "", "Лист:", "", list, ""]], colWidths=9.25 * mm,
+                  rowHeights=5 * mm)
+        t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'TimesK'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("SPAN", (0, 0), (3, 0)),
+                    ("SPAN", (4, 0), (10, 0)),
+                    ("SPAN", (11, 0), (12, 0)),
+                    ("SPAN", (13, 0), (15, 0)),
+                    ("SPAN", (16, 0), (17, 0)),
+                    ("SPAN", (18, 0), (19, 0)),
+                    ('BOX', (0, 0), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 0), (-1, -1), 0.3 * mm, "black")])
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 20 * mm, 5 * mm)
+
+def main_frame_consolidation(canvas, path, Data_customer, code, list, qr_code=None):
+    #if Data_customer.accreditation == "ООО":
+        #accreditation = "ON"
+    #elif Data_customer.accreditation == "ОАО" or Data_customer.accreditation == "АО":
+        #accreditation = "AN"
+
+    data = Data_customer.end_date
+
+
+    canvas.setLineWidth(0.3 * mm)
+    canvas.rect(20 * mm, 5 * mm, 185 * mm, 287 * mm)  # Основная рамка
+
+
+
+    # Верхняя надпись
+    canvas.line((47) * mm, (280 ) * mm, (179) * mm, (280 ) * mm)  # Линия аккредитации
+    canvas.drawImage(path + "Report Data/Logo2.jpg", 23 * mm, 270 * mm,
+                     width=21 * mm, height=21 * mm)  # логотип
+
+    b = svg2rlg(path + "Report Data/qr.svg")
+    b.scale(0.053, 0.053)
+    renderPDF.draw(b, canvas, 180 * mm, 269 * mm)
+
+    canvas.setFont('TimesDj', 20)
+    canvas.drawString((47) * mm, (282) * mm, "МОСТДОРГЕОТРЕСТ")
+    canvas.setFont('TimesDj', 12)
+    canvas.drawString((125) * mm, (284.8) * mm, "испытательная лаборатория")
+    canvas.setFont('Times', 9)
+    canvas.drawString((124.5) * mm, (282) * mm, "129344, г. Москва, ул. Искры, д.31, к.1")
+
+    # Аккредитация
+    A = []  # аккредитация и низ
+    fi = open(path + "Report Data/Data(НЕ УДАЛЯТЬ).txt")
+    line = fi.readline().strip()
+    while line:
+        p = line.split('\t')
+        A.append(p)
+        line = fi.readline().strip()
+    fi.close()
+
+    dat4 = [
+        [accreditation[Data_customer.accreditation][Data_customer.accreditation_key][0]],
+        [accreditation[Data_customer.accreditation][Data_customer.accreditation_key][1]],
+    ]
+
+    #if accreditation == "OS":
+        #dat4 = [[A[9][1]], [A[9][2]]]
+    #elif accreditation == "ON":
+        #dat4 = [[A[10][1]], [A[10][2]]]
+    #elif accreditation == "AS":
+        #dat4 = [[A[11][1]], [A[11][2]]]
+    #elif accreditation == "AN":
+        #dat4 = [[A[12][1]], [A[12][2]]]
+    #else:
+        #dat4 = ["", ""]
+
+
+    t = Table(dat4, colWidths=132 * mm, rowHeights=3 * mm)
+    t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
+                 ("FONTSIZE", (0, 0), (-1, -1), 7),
+                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                 ("LEFTPADDING", (0, 0), (0, -1), 0),
+                 ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                 ("ALIGN", (0, 0), (-1, -1), "CENTER"), ])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, (47) * mm, (273.5) * mm)
+
+
+
+    # Исполнители
+    if accreditation == "AS" or accreditation == "AN":
+        s = 0
+    elif accreditation == "OS" or accreditation == "ON":
+        s = 5
+    else:
+        s = 0
+
+
+    if qr_code:
+        dat3 = [[A[0 + s][0], A[0 + s][1]],
+                ['', A[0 + s][2]],
+                [A[1 + s][0], A[1 + s][1]],
+                [A[2 + s][0], A[2 + s][1]],
+                [A[3 + s][0], A[3 + s][1]]]
+        t = Table(dat3, colWidths=68 * mm, rowHeights = 4 * mm)
+        t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
+                     ("FONTSIZE", (0, 0), (-1, -1), 7),
+                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                     ("LEFTPADDING", (1, 0), (1, -1), 1.4*mm),
+                    ("LEFTPADDING", (0, 0), (0, -1), 0.3 * mm),
+                     ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                     ("ALIGN", (0, 0), (-1, -1), "LEFT"), ])
+
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 25 * mm, 12 * mm)
+
+        t = Table([["Номер документа №:", "", "", "", code, "", "", "Дата:", "",
+                    str(data.strftime("%d.%m.%Y")), "", "Лист:", "", list, "", "", "", "", "", ""]], colWidths=10.3 * mm, rowHeights=5 * mm)
+
+        canvas.line((47) * mm, (280) * mm, (179) * mm, (280) * mm)
+
+        t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'TimesK'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("SPAN", (0, 0), (3, 0)),
+                    ("SPAN", (4, 0), (6, 0)),
+                    ("SPAN", (7, 0), (8, 0)),
+                    ("SPAN", (9, 0), (10, 0)),
+                    ("SPAN", (11, 0), (12, 0)),
+                    ("SPAN", (13, 0), (14, 0)),
+                    #("SPAN", (13, 0), (-1, 0)),
+                    ('BOX', (0, 0), (14, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 0), (14, -1), 0.3 * mm, "black")])
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 20 * mm, 5 * mm)
+
+        canvas.line((158.75*1.1) * mm, (5) * mm, (158.75*1.1) * mm, (51.25*0.68) * mm)
+
+        canvas.line((158.75*1.1) * mm, (51.25*0.68) * mm, (210-5) * mm, (51.25*0.68) * mm)
+
+        t = Table([["Сервис georeport.ru"], [""]], colWidths=46.25*0.85*mm,
+                  rowHeights=1*mm)
+        t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 7),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (1, 0), (1, -1), 1.4 * mm),
+                    ("LEFTPADDING", (0, 0), (0, -1), 0.3 * mm),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"), ])
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 158.75*1.075 * mm, 51.25*0.38 - 8 + 28* mm)
+
+        # canvas.drawImage(qr_code, (8.25*0.5 + 158.75*1.05 + 0.5) * mm, (8.5*0.95) * mm,
+        #                  width=(37*0.85) * mm, height=(37*0.85) * mm)
+        canvas.drawImage(qr_code, (176.3075) * mm, (8.5 * 0.62) * mm,
+                         width=(37 * 0.72) * mm, height=(37 * 0.72) * mm)
+
 
     else:
         dat3 = [[A[0 + s][0], A[0 + s][1]],
@@ -2992,7 +3173,7 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     #result_table_consolidation(canvas, res, [picks[0], picks[1]])
 
     #canvas.showPage()
-    main_frame(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
+    main_frame_consolidation(canvas, path, Data_customer, code, "1/1", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КОНСОЛИДАЦИИ ГРУНТОВ МЕТОДОМ",
                              "КОМПРЕССИОННОГО СЖАТИЯ (ГОСТ 12248.4-2020)"], "/ВК")
@@ -3323,7 +3504,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             [name,
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], sig)
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], sig)
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"
@@ -3338,7 +3519,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], sig)
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], sig)
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_vibration_creep(canvas, test_parameter, moove=moove)
@@ -3371,7 +3552,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     main_frame(canvas, path, Data_customer, code, f"1/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             [name,
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_vibration_creep(canvas, test_parameter, moove=moove)
@@ -3386,7 +3567,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
         main_frame(canvas, path, Data_customer, code, f"{i+2}/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 [name,
-                                 "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2020 п. Д3, ASTM D5311/ASTM D5311M-13)"], "/ВП")
+                                 "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/ВП")
 
         parameter_table(canvas, Data_phiz, Lab, moove=moove)
         t = dict(test_parameter)
@@ -3568,7 +3749,7 @@ def result_table_shear_dilatancy(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
-    r = 32
+    r = 30
     for i in range(r):
         tableData.append([""])
 
@@ -3853,7 +4034,7 @@ def result_table_k0ur(canvas, Res, pick, scale = 0.8):
 
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", "", "", "", ""]]
-    r = 22
+    r = 20
     table_move = 5
 
     for i in range(table_move):

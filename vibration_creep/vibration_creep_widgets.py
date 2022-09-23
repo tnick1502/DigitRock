@@ -27,6 +27,8 @@ from general.tab_view import TabMixin, AppMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
 
+from authentication.request_qr import request_qr
+
 class VibrationCreepSoilTestWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
     ModelTriaxialCyclicLoadingUI"""
@@ -231,6 +233,9 @@ class PredictVCTestResults(QDialog):
         if save_dir:
             statement_title = "Прогнозирование парметров виброползучести"
             titles, data, scales = PredictVCTestResults.transform_data_for_statment(statment)
+
+
+
             try:
                 save_report(titles, data, scales, statment.general_data.end_date, ['Заказчик:', 'Объект:'],
                             [statment.general_data.customer, statment.general_data.object_name], statement_title,
@@ -294,7 +299,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
             "Kd": lambda lab: "; ".join([str(i["Kd"]) for i in VC_models[lab].get_test_results()]),
             "E50d": lambda lab: "; ".join([str(i["E50d"]) for i in VC_models[lab].get_test_results()]),
             "E50": lambda lab: "; ".join([str(i["E50"]) for i in VC_models[lab].get_test_results()]),
-        })
+        }, qr=True)
         self.tab_4.popIn.connect(self.addTab)
         self.tab_4.popOut.connect(self.removeTab)
 
@@ -368,6 +373,11 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
             save = statment.save_dir.arhive_directory + "/" + file_path_name
             save = save.replace("*", "")
 
+            if self.tab_4.qr:
+                qr = request_qr()
+            else:
+                qr = None
+
             if os.path.isdir(save):
                 pass
             else:
@@ -415,7 +425,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                                       VC_models[statment.current_test].get_test_results(),
                                       [pick_vc_array, pick_c_array,
                                        *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])], self.tab_4.report_type,
-                                      "{:.2f}".format(__version__))
+                                      "{:.2f}".format(__version__), qr_code=qr)
 
                 Kd = ""
                 Ed = ""
@@ -442,7 +452,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                                       os.getcwd() + "/project_data/",
                                       test_parameter, E_models[statment.current_test].get_test_results(),
                                       VC_models[statment.current_test].get_test_results(),
-                                      [pick_vc, pick_c, *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])], self.tab_4.report_type, "{:.2f}".format(__version__))
+                                      [pick_vc, pick_c, *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])], self.tab_4.report_type, "{:.2f}".format(__version__), qr_code=qr)
                 res = res[0]
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7

@@ -27,6 +27,7 @@ from general.reports import report_k0, report_k0ur
 from k0_test.triaxial_k0_widgets_UI import K0UI, K0OpenTestUI, \
     K0SoilTestUI, K0IdentificationUI
 from k0_test.triaxial_k0_model import ModelK0
+from authentication.request_qr import request_qr
 
 
 class K0ProcessingWidget(QWidget):
@@ -93,7 +94,7 @@ class K0SoilTestWidget(QWidget):
 
         self.layout.addLayout(self.line_1)
         self.layout.addWidget(self.test_widget)
-        self.save_widget = Save_Dir()
+        self.save_widget = Save_Dir(qr=True)
         self.layout.addWidget(self.save_widget)
         self.layout.setContentsMargins(5, 5, 5, 5)
 
@@ -178,6 +179,7 @@ class K0ProcessingApp(QWidget):
             test_result = self.tab_2.test._model.get_test_results()
 
             results = {"G0": test_result["G0"], "gam07": test_result["threshold_shear_strain"]}
+
 
             report_k0(file_name, self.tab_1.get_customer_data(),
                       self.tab_1.get_physical_data(),
@@ -283,6 +285,12 @@ class K0SoilTestApp(QWidget):
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date
+
+            if self.tab_2.save_widget.qr:
+                qr = request_qr()
+            else:
+                qr = None
+
             if date:
                 data_customer.end_date = date
 
@@ -291,13 +299,13 @@ class K0SoilTestApp(QWidget):
                           statment[statment.current_test].physical_properties,
                           statment.getLaboratoryNumber(),
                           os.getcwd() + "/project_data/", statment[statment.current_test].mechanical_properties, results,
-                          self.tab_2.test_widget.save_canvas(), __version__)
+                          self.tab_2.test_widget.save_canvas(), __version__, qr_code=qr)
             if read_parameters["test_mode"] == K0Statment.test_modes[1]:
                 report_k0ur(file_name, data_customer,
                           statment[statment.current_test].physical_properties,
                           statment.getLaboratoryNumber(),
                           os.getcwd() + "/project_data/", statment[statment.current_test].mechanical_properties, results,
-                          self.tab_2.test_widget.save_canvas(), __version__)
+                          self.tab_2.test_widget.save_canvas(), __version__, qr_code=qr)
 
             number = statment[statment.current_test].physical_properties.sample_number + 7
 
