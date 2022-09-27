@@ -280,7 +280,7 @@ class MechanicalProperties:
 
     @log_this(app_logger, "debug")
     def defineProperties(self, physical_properties, data_frame: pd.DataFrame, string: int,
-                         test_mode=None, K0_mode=None) -> None:
+                         test_mode=None, K0_mode=None, sigma3_lim=None) -> None:
         """Считывание строки свойств"""
         custom_check = True
         if test_mode == "Трёхосное сжатие КН" or test_mode == "Вибропрочность":
@@ -343,10 +343,12 @@ class MechanicalProperties:
                 # else:
                 #     if self.sigma_3 < 100:
                 #         self.sigma_3 = 100
-
-                if self.sigma_3 < 20:
-                    self.sigma_3 = 20
-
+                if not sigma3_lim or sigma3_lim == "Не менее 20 кПа":
+                    if self.sigma_3 < 20:
+                        self.sigma_3 = 20
+                elif sigma3_lim == "Не менее 100 кПа":
+                    if self.sigma_3 < 100:
+                        self.sigma_3 = 100
 
             if self.sigma_3 >= 1600:
                 self.sigma_3 = 1600

@@ -350,10 +350,10 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         """Записываются параметры для моделирования реконсолидации, запускается процессов моделирования эксперимента и
         нахождения коэффициента кемптона"""
 
-        self.params.sigma_ref = 80#statment[statment.current_test].mechanical_properties.sigma_3
-        self.params.skempton_initial = 0.6101367#statment[statment.current_test].physical_properties.skempton_initial
-        self.params.skempton_end = 0.9642384#np.random.uniform(0.96, 0.98)
-        # self.physical_properties = statment[statment.current_test].physical_properties
+        self.params.sigma_ref = statment[statment.current_test].mechanical_properties.sigma_3
+        self.params.skempton_initial = statment[statment.current_test].physical_properties.skempton_initial
+        self.params.skempton_end = np.random.uniform(0.96, 0.98)
+        self.physical_properties = statment[statment.current_test].physical_properties
 
         if self.params.sigma_ref < 20:
             self.params.sigma_ref = 20
@@ -374,7 +374,7 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
 
     def _test_modeling(self, vpd_flag):
         """Получение модели результатов опыта"""
-        u_vfs_end = 63.55672#self.params.sigma_ref*np.random.uniform(0.6, 0.8)
+        u_vfs_end = self.params.sigma_ref*np.random.uniform(0.6, 0.8)
         if u_vfs_end > 75:
             u_vfs_end = 75
 
