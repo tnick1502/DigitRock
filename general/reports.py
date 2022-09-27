@@ -503,14 +503,17 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
     moove = int(len(Data_customer.object_name)/115) + 1
     if moove <= 3:
         moove = 3
-    # moove = moove -1
 
+    objectStyle = LeftStyle
+    if moove >= 6:
+        moove = moove -1
+        objectStyle = LeftStyle_min
 
     t = Table([[name[0], "", "", "", "", "", "", "", "", ""],
                [name[1]],
                ["Протокол испытаний №", "", str_for_excel(Lab + "/" + Data_customer.object_number + lname), "", "", "", "", "", "", ""],
                ['Заказчик:', Paragraph(Data_customer.customer, LeftStyle)],
-               ['Объект:', Paragraph(Data_customer.object_name, LeftStyle)], *[[""] for _ in range(moove)],
+               ['Объект:', Paragraph(Data_customer.object_name, objectStyle)], *[[""] for _ in range(moove)],
                ["Привязка пробы (скв.; глубина отбора):", "", "", Paragraph(borehole + "; " + strNone(Data_phiz.depth).replace(".",",") +" м", LeftStyle), "", "", "ИГЭ/РГЭ:", Paragraph(strNone(Data_phiz.ige), LeftStyle)],
                ['Лабораторный номер №:', "", "", Lab],
                ['Наименование грунта:', "", Paragraph(Data_phiz.soil_name, LeftStyle)], [""]
@@ -2055,11 +2058,14 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, description=
         [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub>, д.е.:</p>''', LeftStyle), "",
          "", Kd, "", ""])
 
+
+    tableData.append(
+        [Paragraph('''<p>Дополнительная деформация виброползучести на период 50 лет, %''', LeftStyle), "",
+         "", "", prediction, ""])
+
     tableData.append(["Примечание:", "", "", Paragraph(description, LeftStyle), "", ""])
     tableData.append(["", "", "", "", "", ""])
-    #tableData.append(
-        #[Paragraph('''<p>Дополнительная деформация виброползучести на период 50 лет, %''', LeftStyle), "",
-         #"", "", prediction, ""])
+
     t = Table(tableData, colWidths=175/6 * mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (-1, r)),
@@ -2076,8 +2082,10 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, description=
                 ('SPAN', (0, -5), (2, -5)),
                 ('SPAN', (-3, -5), (-1, -5)),
 
-                #('SPAN', (0, -4), (3, -4)),
-                #('SPAN', (-2, -4), (-1, -4)),
+                ('SPAN', (0, -4), (3, -4)),
+                ('SPAN', (-2, -4), (-1, -4)),
+                ('SPAN', (0, -6), (2, -6)),
+
                 #('SPAN', (2, -1), (3, -1)),
                 #('SPAN', (4, -1), (5, -1)),
                 #('SPAN', (2, -2), (3, -2)),
@@ -2086,7 +2094,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, description=
               #  ('SPAN', (4, -3), (5, -3)),
 
                 ("BACKGROUND", (0, -5), (2, -1), HexColor(0xebebeb)),
-                #("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
