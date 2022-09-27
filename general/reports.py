@@ -55,6 +55,13 @@ styles = {
             alignment=TA_LEFT,
             valignment='MIDDLE',
         ),
+'default2_min': ParagraphStyle(
+            'default',
+            fontName='Times',
+            fontSize=7,
+            alignment=TA_LEFT,
+            valignment='MIDDLE',
+        ),
 'default3': ParagraphStyle(
             'default',
             fontName='TimesDj',
@@ -67,6 +74,7 @@ styles = {
 CentralStyle = styles['default']
 LeftStyle = styles['default2']
 DjStyle = styles['default']
+LeftStyle_min = styles['default2_min']
 
 
 def strNone(x):
@@ -495,6 +503,7 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
     moove = int(len(Data_customer.object_name)/115) + 1
     if moove <= 3:
         moove = 3
+    # moove = moove -1
 
 
     t = Table([[name[0], "", "", "", "", "", "", "", "", ""],
