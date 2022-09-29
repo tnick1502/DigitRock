@@ -382,7 +382,7 @@ class TriaxialStaticStatment(InitialStatment):
             "sigma3_lim": {
                 "label": "Ограничение на σ3",
                 "vars": [
-                    "Не менее 20 кПа",
+                    "Не менее 50 кПа",
                     "Не менее 100 кПа"
                 ]
             }
