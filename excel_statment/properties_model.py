@@ -343,9 +343,9 @@ class MechanicalProperties:
                 # else:
                 #     if self.sigma_3 < 100:
                 #         self.sigma_3 = 100
-                if not sigma3_lim or sigma3_lim == "Не менее 20 кПа":
-                    if self.sigma_3 < 20:
-                        self.sigma_3 = 20
+                if not sigma3_lim or sigma3_lim == "Не менее 50 кПа":
+                    if self.sigma_3 < 50:
+                        self.sigma_3 = 50
                 elif sigma3_lim == "Не менее 100 кПа":
                     if self.sigma_3 < 100:
                         self.sigma_3 = 100

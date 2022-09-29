@@ -221,7 +221,7 @@ class ModelTriaxialReconsolidation:
         # Доля от шага увеличения порового давления, при кот. считаем его стабилизировавшимся
         procent = 0.95
         # При каком увеличении давления в камере будем считать полноценным шагом
-        delta_sigma = 10  # (меньше 5 не ставить! из-за этапа противодавления)
+        delta_sigma = 15  # (меньше 5 не ставить! из-за этапа противодавления)
         # Сколько цифр после запятой сохранять в коэф.Скемптона
         num_round = 2
 
@@ -346,7 +346,7 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                                 "skempton_initial": None,
                                 "skempton_end": None})
 
-    def set_test_params(self,  vpd_flag=True):
+    def set_test_params(self, vpd_flag=True):
         """Записываются параметры для моделирования реконсолидации, запускается процессов моделирования эксперимента и
         нахождения коэффициента кемптона"""
 
@@ -355,8 +355,8 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         self.params.skempton_end = np.random.uniform(0.96, 0.98)
         self.physical_properties = statment[statment.current_test].physical_properties
 
-        if self.params.sigma_ref < 20:
-            self.params.sigma_ref = 20
+        if self.params.sigma_ref < 50:
+            self.params.sigma_ref = 50
 
         if self.params.skempton_initial <= 0:
             self.params.skempton_initial = 0.4
@@ -374,14 +374,9 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
 
     def _test_modeling(self, vpd_flag):
         """Получение модели результатов опыта"""
-        u_vfs_end = self.params.sigma_ref*np.random.uniform(0.6, 0.8)
-        if u_vfs_end > 75:
-            u_vfs_end = 75
-
         self.params.param_for_b_test = ModelTriaxialReconsolidationSoilTest.define_input(self.params.sigma_ref,
                                                                                          self.params.skempton_initial,
-                                                                                         self.params.skempton_end,
-                                                                                         u_vfs_end=u_vfs_end,
+                                                                                         self.params.skempton_end, u_vfs_end=75,
                                                                                          vpd_flag=vpd_flag)
 
         self._test_data_all = ModelTriaxialReconsolidationSoilTest.create_b_test(self.params.param_for_b_test)
@@ -440,7 +435,7 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         # Шаг поднятия давления при этапе ВФС:   25 для грунтов мягкопластичной и текучей консистенции,
         #                                        50 для грунтов тугопластичной и пластичной консистеции
         #                                        от 100 до 200 для грунтов полутвердой и твердой консистенции
-        sigma_VFS_step = 20
+        sigma_VFS_step = 50
         # Шаг поднятия давления при этапе ВПД:   50 всегда
         sigma_VPD_step = 50
 
@@ -515,11 +510,6 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
         if u_vfs_end > 0:
             try:
                 ratio_increase_skempton_vfs = 1.2
-                # Максимальное u_vfs_end выражется из skempton_ref и skempton_step, когда skempton_step < 0.96
-                max_u_vfs = (0.95 * sigma_VFS_step)/(1 - ratio_increase_skempton_vfs)*((1 - ratio_increase_skempton_vfs**count_step_vfs)/(ratio_increase_skempton_vfs**(count_step_vfs-1)))
-                if u_vfs_end > max_u_vfs:
-                    u_vfs_end = max_u_vfs
-
                 skempton_ref = (u_vfs_end / sigma_VFS_step * (1 - ratio_increase_skempton_vfs) /
                                 (1 - ratio_increase_skempton_vfs ** count_step_vfs))
                 skempton_step = [skempton_ref * (ratio_increase_skempton_vfs ** x) for x in range(0, count_step_vfs)]
@@ -556,10 +546,10 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
             skempton_step.extend(skempton_step_vpd)
 
         # _______________________Этап отладки
-        # if 1:
-        #     plt.figure()
-        #     plt.plot(sigma_steps[1:], skempton_step)
-        #     plt.show()
+        if flag_plot == 1:
+            pass
+            """plot_any(sigma_steps[1:], skempton_step, name_x = "sigma", name_y = "pore_press",
+                      name_file = 'skempton.jpg', path = os.getcwd())"""
         # _______________________
 
         if not flag_define_deformation:
@@ -752,13 +742,10 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
             delta_sigma = press_current - sigma_previous
             # slant_sigma = np.random.uniform(10, 20)
 
-            delta_u = (delta_sigma) * skempton_step[i_sigma] ** 2 / skempton_end
-            delta_u_slant = 0.0000001 if delta_u > 1 else 0.001*delta_u
-
             delta_initial = {'time': t_stabil + np.random.uniform(0, 1),
                              'press': {'delta': press_current - sigma_previous,
                                        'initial': sigma_previous},
-                             'u': {'delta': [delta_u - delta_u_slant,
+                             'u': {'delta': [(delta_sigma) * skempton_step[i_sigma] ** 2 / skempton_end - 0.000001,
                                              (delta_sigma) * skempton_step[i_sigma]],
                                    'initial': u_previos},
                              'v_pore': {'delta': fix_value,
@@ -898,7 +885,7 @@ def time_series(x: np.ndarray) -> np.ndarray:
 
 if __name__ == '__main__':
     a = ModelTriaxialReconsolidationSoilTest()
-    a.set_test_params()
+    a.set_test_params(50.6, skempton_initial=0.87, skempton_end=0.97)
     a.plotter()
     plt.show()
 
