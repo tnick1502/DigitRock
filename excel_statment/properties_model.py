@@ -404,7 +404,7 @@ class MechanicalProperties:
 
             self.pressure_array = {
                 "set_by_user": MechanicalProperties.define_reference_pressure_array_set_by_user(
-                    float_df(data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]])),
+                    data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]]),
 
                 "calculated_by_pressure": MechanicalProperties.define_reference_pressure_array_calculated_by_pressure(
                     self.build_press, self.pit_depth, physical_properties.depth, self.K0,
