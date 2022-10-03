@@ -610,11 +610,14 @@ class ModelTriaxialCyclicLoading_Sliders(QWidget):
                 if PPR_params["PPR_n_fail"] is None:
                     self.PPR_n_fail_slider.set_value(cycles_count_params["cycles_count"]["value"])
                 else:
+                    if PPR_params["PPR_n_fail"] == 0:
+                        PPR_params["PPR_n_fail"] = 1
                     self.PPR_n_fail_slider.set_value(PPR_params["PPR_n_fail"])
             else:
                 current_slider = getattr(self, "{name_var}_slider".format(name_var=var))
                 current_slider.set_borders(*PPR_params[var]["borders"])
                 current_slider.set_value(PPR_params[var]["value"])
+
 
         self._activate = True
 
