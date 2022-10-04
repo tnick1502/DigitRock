@@ -52,8 +52,8 @@ class TestResultModelVibrationCreep:
     Kd: float = None
     E50d: float = None
     E50: float = None
-    prediction: dict = None
-    #{alpha, betta, 50_years, 100_years}
+    prediction: dict = None #{alpha, betta, 50_years, 100_years}
+    cycles_count: int = None
 
     def get_dict(self):
         return {
@@ -133,10 +133,11 @@ class ModelVibrationCreep:
                 E50.append(None)
 
             if test_result.prediction:
-                time_prediction = np.array(dyn_test.time[int(len(dyn_test.time)/4):])
+                time_prediction = np.array(dyn_test.time[int(len(dyn_test.time)/6):])
                 time_prediction[-1] = time_prediction[-1]*2
                 approximate_curve.append([
                     time_prediction,
+                    dyn_test.strain_dynamic[dyn_test.start_dynamic] +
                     test_result.prediction["alpha"]*np.log(time_prediction) + test_result.prediction["betta"]])
             else:
                 approximate_curve.append(None)
@@ -244,6 +245,8 @@ class ModelVibrationCreep:
 
                         test_result.prediction = ModelVibrationCreep.approximate_plastic_creep(dyn_test.time[int(len(dyn_test.time)/3):],
                                                                                                dyn_test.creep_curve[int(len(dyn_test.time)/3):])
+
+                        test_result.cycles_count = int(dyn_test.time[-1] * dyn_test.frequency)
 
                         """test_result.E50 = ModelVibrationCreep.find_E50_dynamic(dyn_test.strain_dynamic,
                                                                              dyn_test.deviator_dynamic, qf*1000)
@@ -383,6 +386,10 @@ class ModelVibrationCreep:
         #time = np.e**time - 1
 
         SEC_IN_YEAR = 31536000
+
+        offset = np.max(strain) - approximate_func(time[-1], a, b)
+
+        b += offset
 
         return {
             "alpha": a,

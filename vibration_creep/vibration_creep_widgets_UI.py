@@ -6,7 +6,7 @@ __version__ = 1
 
 from PyQt5.QtWidgets import QApplication, QGridLayout, QFrame, QLabel, QHBoxLayout,\
     QVBoxLayout, QGroupBox, QWidget, QLineEdit, QPushButton, QTableWidget, QDialog, QHeaderView,  QTableWidgetItem, \
-    QHeaderView, QDialogButtonBox, QFileDialog, QMessageBox, QItemDelegate, QComboBox
+    QHeaderView, QDialogButtonBox, QFileDialog, QMessageBox, QItemDelegate, QComboBox, QRadioButton
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
@@ -35,7 +35,7 @@ class VibrationCreepUI(QWidget):
         super().__init__()
         # Параметры построения для всех графиков
         self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.15, "wspace": 0.12, "hspace": 0.07, "left": 0.1}
-
+        self.prediction = False
         self._create_UI()
 
     def _create_UI(self):
@@ -82,6 +82,14 @@ class VibrationCreepUI(QWidget):
         self.creep_frame.setStyleSheet('background: #ffffff')
         self.creep_frame_layout = QVBoxLayout()
         self.creep_frame.setLayout(self.creep_frame_layout)
+
+        self.chose_prediction = QGroupBox("Прогнозирование")
+        self.chose_prediction_layout = QVBoxLayout()
+        self.chose_prediction.setLayout(self.chose_prediction_layout)
+        self.predition_radio_btn = QRadioButton("Построение аппроксимации")
+        self.predition_radio_btn.setChecked(False)
+        self.chose_prediction_layout.addWidget(self.predition_radio_btn)
+
         self.creep_figure = plt.figure()
         self.creep_figure.subplots_adjust(right=0.98, top=0.9, bottom=0.2, wspace=0.05, hspace=0, left=0.1)
         self.creep_canvas = FigureCanvas(self.creep_figure)
@@ -92,6 +100,13 @@ class VibrationCreepUI(QWidget):
         self.creep_ax.set_xscale("log")
         self.creep_canvas.draw()
         self.creep_frame_layout.setSpacing(0)
+
+        self.line_widget_layout = QHBoxLayout()
+        self.line_widget_layout.addStretch(-1)
+        self.line_widget_layout.addWidget(self.chose_prediction)
+
+        self.creep_frame_layout.addLayout(self.line_widget_layout)
+
         self.creep_frame_layout.addWidget(self.creep_canvas)
         self.creep_toolbar = NavigationToolbar(self.creep_canvas, self)
         self.creep_frame_layout.addWidget(self.creep_toolbar)
@@ -104,6 +119,7 @@ class VibrationCreepUI(QWidget):
 
     def plot(self, plot_data, result_data):
         """Построение графиков опыта"""
+        prediction = self.predition_radio_btn.isChecked()
         self.vibration_creep_ax.clear()
         self.vibration_creep_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
         self.vibration_creep_ax.set_ylabel("Девиатор q, МПа")
@@ -141,11 +157,11 @@ class VibrationCreepUI(QWidget):
             if plot_data["creep_curve"][i] is not None:
                 self.creep_ax.plot(plot_data["time"][i], plot_data["creep_curve"][i], alpha=0.5, color=color,
                               label="frequency = " + str(plot_data["frequency"][i]) + " Hz")
-                #self.creep_ax.plot(*plot_data["approximate_curve"][i], alpha=0.9, color=color,
-                     #                        label="prediction 50/100 year = " + str(
-                    #                             result_data[i]["prediction"]["50_years"]) + "/" + str(
-                    #                             result_data[i]["prediction"]["100_years"]),
-                    #                         linestyle="--")
+                if prediction:
+                    self.creep_ax.plot(*plot_data["approximate_curve"][i], color=color,
+                                                 label="prediction 50/100 year = " + str(
+                                                     result_data[i]["prediction"]["50_years"]) + "/" + str(
+                                                     result_data[i]["prediction"]["100_years"]))
 
             if plot_data["E50d"][i]:
                 self.vibration_creep_ax.plot(*plot_data["E50d"][i], **plotter_params["static_loading_black_dotted_line"])

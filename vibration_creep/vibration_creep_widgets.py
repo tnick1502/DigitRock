@@ -74,11 +74,12 @@ class VibrationCreepSoilTestWidget(TabMixin, QWidget):
         self.main_layout.setContentsMargins(5, 5, 5, 5)
         self.main_layout.addLayout(self.layout)
 
+        self.dynamic_widget.predition_radio_btn.clicked.connect(self._plot)
+
     def set_test_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
         self._plot()
         self.signal.emit()
-
 
     def static_model_change(self, param):
         VC_models[statment.current_test]._test_processing()
@@ -293,6 +294,8 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
             {
                 "standart": "Стандардный отчет",
                 "cryo": "Крио",
+                "predict50": "Прогноз 50 лет",
+                "predict100": "Прогноз 100 лет"
             },
 
             result_table_params={
