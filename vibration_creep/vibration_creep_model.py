@@ -60,7 +60,8 @@ class TestResultModelVibrationCreep:
             "Kd": self.Kd,
             "E50d": self.E50d,
             "E50": self.E50,
-            "prediction": self.prediction
+            "prediction": self.prediction,
+            "cycles_count": self.cycles_count
         }
 
 

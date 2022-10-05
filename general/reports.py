@@ -2008,7 +2008,7 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False, moov
 
 
 
-def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, description="-"):
+def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='standart', description="-"):
 
     try:
         a = ImageReader(pick[1])
@@ -2033,16 +2033,31 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, description=
         Ed = ""
         E50 = ""
         prediction = ""
+        cycles_count = ""
+        formula = ""
         for i in range(len(Res)):
             Kd += zap(Res[i]["Kd"], 2) + "; "
             Ed += zap(Res[i]["E50d"], 1) + "; "
             E50 += zap(Res[i]["E50"], 1) + "; "
+            cycles_count += str(Res[i]["cycles_count"]) + "; "
             prediction += zap(Res[i]["prediction"]["50_years"], 3) + "; "
+            formula += f'{zap(Res[i]["prediction"]["alpha"], 5)}logt + {zap(Res[i]["prediction"]["betta"], 5)}' + "; "
+            if test_type == 'predict50':
+                prediction += zap(Res[i]["prediction"]["50_years"], 3) + "; "
+            elif test_type == 'predict100':
+                prediction += zap(Res[i]["prediction"]["100_years"], 3) + "; "
+
     else:
         Kd = zap(Res[0]["Kd"], 2)
         Ed = zap(Res[0]["E50d"], 1)
         E50 = zap(Res[0]["E50"], 1)
         prediction = zap(Res[0]["prediction"]["50_years"], 3)
+        cycles_count = str(Res[0]["cycles_count"])
+        formula = f'{zap(Res[0]["prediction"]["alpha"], 7)}*log(t) + {zap(Res[0]["prediction"]["betta"], 7)}' + "; "
+        if test_type == 'predict50':
+            prediction = zap(Res[0]["prediction"]["50_years"], 3)
+        elif test_type == 'predict100':
+            prediction = zap(Res[0]["prediction"]["100_years"], 3)
 
     tableData.append(
         [Paragraph(
@@ -2058,20 +2073,89 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, description=
         [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub>, д.е.:</p>''', LeftStyle), "",
          "", Kd, "", ""])
 
-
-    tableData.append(
-        [Paragraph('''<p>Дополнительная деформация виброползучести на период 50 лет, %''', LeftStyle), "",
-         "", "", prediction, ""])
+    if test_type == 'predict50':
+        tableData.append(
+            [Paragraph('''<p>Количество циклов нагружения, ед.</p>''', LeftStyle), "",
+             "", cycles_count, "", ""])
+        tableData.append(
+            [Paragraph('''<p>Уравнение дополнительной деформации</p>''', LeftStyle), "",
+             "", formula, "", ""])
+        tableData.append(
+            [Paragraph('''<p>Дополнительная деформация виброползучести на период 50 лет, %</p>''', LeftStyle), "",
+             "", prediction, "", ""])
+    elif test_type == 'predict100':
+        tableData.append(
+            [Paragraph('''<p>Количество циклов нагружения, ед.</p>''', LeftStyle), "",
+             "", cycles_count, "", ""])
+        tableData.append(
+            [Paragraph('''<p>Уравнение дополнительной деформации</p>''', LeftStyle), "",
+             "", formula, "", ""])
+        tableData.append(
+            [Paragraph('''<p>Дополнительная деформация виброползучести на период 100 лет, %</p>''', LeftStyle), "",
+             "", prediction, "", ""])
 
     tableData.append(["Примечание:", "", "", Paragraph(description, LeftStyle), "", ""])
-    tableData.append(["", "", "", "", "", ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights=4 * mm)
-    t.setStyle([('SPAN', (0, 0), (-1, 0)),
+    if test_type == 'predict50' or test_type == 'predict100':
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                    ('SPAN', (0, 1), (-1, r)),
+
+                    ('SPAN', (0, -1), (2, -1)),
+                    ('SPAN', (-3, -1), (-1, -1)),
+
+                    ('SPAN', (0, -2), (2, -2)),
+                    ('SPAN', (-3, -2), (-1, -2)),
+
+                    ('SPAN', (0, -3), (2, -3)),
+                    ('SPAN', (-3, -3), (-1, -3)),
+
+                    ('SPAN', (0, -4), (2, -4)),
+                    ('SPAN', (-3, -4), (-1, -4)),
+
+                    ('SPAN', (0, -5), (2, -5)),
+                    ('SPAN', (-3, -5), (-1, -5)),
+
+                    ('SPAN', (0, -6), (2, -6)),
+                    ('SPAN', (-3, -6), (-1, -6)),
+
+                    ('SPAN', (0, -7), (2, -7)),
+                    ('SPAN', (-3, -7), (-1, -7)),
+
+                    ('SPAN', (-2, -4), (-1, -4)),
+                    ('SPAN', (0, -6), (2, -6)),
+
+                    # ('SPAN', (2, -1), (3, -1)),
+                    # ('SPAN', (4, -1), (5, -1)),
+                    # ('SPAN', (2, -2), (3, -2)),
+                    # ('SPAN', (4, -2), (5, -2)),
+                    # ('SPAN', (2, -3), (3, -3)),
+                    #  ('SPAN', (4, -3), (5, -3)),
+
+                    ("BACKGROUND", (0, -7), (2, -1), HexColor(0xebebeb)),
+
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                    ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 25 * mm, (42 - 12 - moove - ((r - 30) * 4)) * mm)
+
+    else:
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (-1, r)),
 
-                ('SPAN', (0, -2), (2, -1)),
-                ('SPAN', (-3, -2), (-1, -1)),
+                ('SPAN', (0, -1), (2, -1)),
+                ('SPAN', (-3, -1), (-1, -1)),
+
+                ('SPAN', (0, -2), (2, -2)),
+                ('SPAN', (-3, -2), (-1, -2)),
 
                 ('SPAN', (0, -3), (2, -3)),
                 ('SPAN', (-3, -3), (-1, -3)),
@@ -2082,7 +2166,6 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, description=
                 ('SPAN', (0, -5), (2, -5)),
                 ('SPAN', (-3, -5), (-1, -5)),
 
-                ('SPAN', (0, -4), (3, -4)),
                 ('SPAN', (-2, -4), (-1, -4)),
                 ('SPAN', (0, -6), (2, -6)),
 
@@ -2093,8 +2176,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, description=
                 #('SPAN', (2, -3), (3, -3)),
               #  ('SPAN', (4, -3), (5, -3)),
 
-                ("BACKGROUND", (0, -5), (2, -1), HexColor(0xebebeb)),
-                ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -4), (2, -1), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -2106,8 +2188,8 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, description=
                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
-    t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (38-moove-((r-30)*4)) * mm)
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 25 * mm, (42-moove-((r-30)*4)) * mm)
 
 def result_vibration_creep3(canvas, Res, pick, test_parameter, description="-"):
 
@@ -3506,10 +3588,12 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     if report_type == "standart":
         name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
         sig = "/ВП"
-    else:
+    elif report_type == 'cryo':
         name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КРИОВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
         sig = "/ВПК"
-
+    elif report_type == 'predict50' or report_type == 'predict100':
+        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+        sig = "/ВП"
 
 
     res_static["description"] = Data_phiz.description
@@ -3541,7 +3625,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_vibration_creep(canvas, test_parameter, moove=moove)
 
-    result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]], moove=moove, description=Data_phiz.description)
+    result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]], moove=moove, test_type=report_type, description=Data_phiz.description)
 
     canvas.save()
 
