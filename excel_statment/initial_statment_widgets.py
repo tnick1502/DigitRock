@@ -232,8 +232,12 @@ class InitialStatment(QWidget):
         model_file = os.path.join(statment.save_dir.save_directory, models_name.split(".")[0] + shipment_number + ".pickle")
         models.setModelType(models_type)
         if os.path.exists(model_file):
-            models.load(model_file)
-            app_logger.info(f"Загружен файл модели {models_name.split('.')[0] + shipment_number + '.pickle'}")
+            try:
+                models.load(model_file)
+                app_logger.info(f"Загружен файл модели {models_name.split('.')[0] + shipment_number + '.pickle'}")
+            except AssertionError as err:
+                QMessageBox.critical(self, "Ошибка", str(err), QMessageBox.Ok)
+                raise
         else:
             models.generateTests(generate=self.generate)
             models.dump(model_file)

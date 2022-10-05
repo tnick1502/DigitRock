@@ -3,6 +3,8 @@ from descriptors import DataTypeValidation
 from loggers.logger import app_logger, log_this
 import pickle
 import os
+from version_control.configs import actual_version
+__version__ = actual_version
 
 instances = {}
 
@@ -23,6 +25,7 @@ class Models:
     def __init__(self):
         self.tests = {}
         self.model_class = None
+        self.version = "{:.2f}".format(__version__)
 
     def setModelType(self, model):
         self.model_class = model
@@ -40,11 +43,24 @@ class Models:
 
     def dump(self, path):
         with open(path, "wb") as file:
-            pickle.dump(self.tests, file)
+            pickle.dump(
+                {
+                    "tests": self.tests,
+                    "version": self.version
+                },
+                file
+            )
 
     def load(self, path):
         with open(path, 'rb') as f:
-            self.tests = pickle.load(f)
+            data = pickle.load(f)
+            assert data.get("version", None), \
+                f"Несовпадение версии модели и программы. Программа: {self.version}, модель: неизвестно"
+            assert self.version == data["version"], \
+                f"Несовпадение версии модели и программы. Программа: {self.version}, модель: {data['version']}"
+            assert data.get("tests", None), \
+                f"Несовпадение версии модели и программы. Программа: {self.version}, модель: неизвестно"
+            self.tests = data["tests"]
 
     def __iter__(self):
         for key in self.tests:
