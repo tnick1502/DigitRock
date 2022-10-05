@@ -1083,7 +1083,7 @@ class MechanicalProperties:
 
     @staticmethod
     def define_reference_pressure_array_set_by_user(val) -> list:
-        if val is None:
+        if val is None or (type(val) != str and math.isnan(val)) or val == '':
             return None
         else:
             try:
