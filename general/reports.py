@@ -2035,6 +2035,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
         prediction = ""
         cycles_count = ""
         formula = ""
+        Ered = ""
         for i in range(len(Res)):
             Kd += zap(Res[i]["Kd"], 2) + "; "
             Ed += zap(Res[i]["E50d"], 1) + "; "
@@ -2044,8 +2045,10 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
             formula += f'{zap(Res[i]["prediction"]["alpha"], 5)}logt + {zap(Res[i]["prediction"]["betta"], 5)}' + "; "
             if test_type == 'predict50':
                 prediction += zap(Res[i]["prediction"]["50_years"], 3) + "; "
+                Ered += zap(Res[i]["Ered_50"], 1) + "; "
             elif test_type == 'predict100':
                 prediction += zap(Res[i]["prediction"]["100_years"], 3) + "; "
+                Ered += zap(Res[i]["Ered_100"], 1) + "; "
 
     else:
         Kd = zap(Res[0]["Kd"], 2)
@@ -2056,8 +2059,10 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
         formula = f'{zap(Res[0]["prediction"]["alpha"], 7)}*log(t) + {zap(Res[0]["prediction"]["betta"], 7)}' + "; "
         if test_type == 'predict50':
             prediction = zap(Res[0]["prediction"]["50_years"], 3)
+            Ered = zap(Res[0]["Ered_50"], 1)
         elif test_type == 'predict100':
             prediction = zap(Res[0]["prediction"]["100_years"], 3)
+            Ered = zap(Res[0]["Ered_50"], 1)
 
     tableData.append(
         [Paragraph(
@@ -2083,6 +2088,11 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
         tableData.append(
             [Paragraph('''<p>Дополнительная деформация виброползучести на период 50 лет, %</p>''', LeftStyle), "",
              "", prediction, "", ""])
+        tableData.append(
+            [Paragraph(
+                '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub>, МПа:</p>''',
+                LeftStyle),
+                "", "", Ered, "", ""])
     elif test_type == 'predict100':
         tableData.append(
             [Paragraph('''<p>Количество циклов нагружения, ед.</p>''', LeftStyle), "",
@@ -2093,8 +2103,13 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
         tableData.append(
             [Paragraph('''<p>Дополнительная деформация виброползучести на период 100 лет, %</p>''', LeftStyle), "",
              "", prediction, "", ""])
-
-    tableData.append(["Примечание:", "", "", Paragraph(description, LeftStyle), "", ""])
+        tableData.append(
+            [Paragraph(
+                '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub>, МПа:</p>''',
+                LeftStyle),
+                "", "", Ered, "", ""])
+    else:
+        tableData.append(["Примечание:", "", "", Paragraph(description, LeftStyle), "", ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights=4 * mm)
     if test_type == 'predict50' or test_type == 'predict100':

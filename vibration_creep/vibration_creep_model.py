@@ -52,17 +52,13 @@ class TestResultModelVibrationCreep:
     Kd: float = None
     E50d: float = None
     E50: float = None
+    Ered_50: float = None
+    Ered_100: float = None
     prediction: dict = None #{alpha, betta, 50_years, 100_years}
     cycles_count: int = None
 
     def get_dict(self):
-        return {
-            "Kd": self.Kd,
-            "E50d": self.E50d,
-            "E50": self.E50,
-            "prediction": self.prediction,
-            "cycles_count": self.cycles_count
-        }
+        return self.__dict__
 
 
 class ModelVibrationCreep:
@@ -248,6 +244,14 @@ class ModelVibrationCreep:
                                                                                                dyn_test.creep_curve[int(len(dyn_test.time)/3):])
 
                         test_result.cycles_count = int(dyn_test.time[-1] * dyn_test.frequency)
+
+                        sigma_1 = np.round(statment[statment.current_test].mechanical_properties.sigma_1 / 1000, 3)
+                        test_result.Ered_50 = np.round(
+                            test_result.E50 / (1 + ((test_result.E50 * test_result.prediction["50_years"] / 100) / (0.8 * sigma_1))),
+                            2)
+                        test_result.Ered_100 = np.round(
+                            test_result.E50 / (1 + ((test_result.E50 * test_result.prediction["100_years"] / 100) / (0.8 * sigma_1))),
+                            2)
 
                         """test_result.E50 = ModelVibrationCreep.find_E50_dynamic(dyn_test.strain_dynamic,
                                                                              dyn_test.deviator_dynamic, qf*1000)
