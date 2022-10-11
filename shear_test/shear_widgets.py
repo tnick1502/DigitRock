@@ -133,7 +133,7 @@ class MohrTestManager(QWidget):
 class ShearWidget(QWidget):
     """Класс для табличного отображения параметров кругов Мора"""
 
-    def __init__(self):
+    def __init__(self, model=None):
         super().__init__()
 
         self._model = ModelShear()
@@ -336,7 +336,7 @@ class ShearWidget(QWidget):
                                                    [self.deviator_canvas, self.mohr_canvas], [[6, 2.4], [3, 1.5]],
                                                                               [self.deviator_ax, self.mohr_ax])]
 
-class ShearWidgetSoilTest(ShearWidget):
+class ShearWidgetSoilTest(TabMixin, ShearWidget):
     """Класс для табличного отображения параметров кругов Мора"""
     def __init__(self):
         super().__init__()

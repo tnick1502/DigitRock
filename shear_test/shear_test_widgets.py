@@ -440,6 +440,8 @@ class ShearSoilTestApp(AppMixin, QWidget):
         self.tab_2.popIn.connect(self.addTab)
         self.tab_2.popOut.connect(self.removeTab)
         self.tab_3 = ShearWidgetSoilTest()
+        self.tab_3.popIn.connect(self.addTab)
+        self.tab_3.popOut.connect(self.removeTab)
         self.tab_4 = Save_Dir(qr=True)
         self.tab_4.popIn.connect(self.addTab)
         self.tab_4.popOut.connect(self.removeTab)
