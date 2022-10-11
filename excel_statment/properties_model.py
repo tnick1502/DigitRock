@@ -1061,7 +1061,7 @@ class MechanicalProperties:
             sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.25)
 
             if sigma_max_1 < 1600:
-                return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+                return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 50 else [50, 100, 200]
             else:
                 return [400, 800, 1600]
         else:
@@ -1077,7 +1077,7 @@ class MechanicalProperties:
         sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * 0.5)
         sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * 0.25)
         if sigma_max_1 < 1600:
-            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 100 else [100, 200, 400]
+            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 50 else [50, 100, 200]
         else:
             return [400, 800, 1600]
 
