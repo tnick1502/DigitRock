@@ -292,7 +292,7 @@ class CyclicPredictLiquefaction(QDialog):
         self.buttonBox.setObjectName("buttonBox")
         self.layout.addWidget(self.buttonBox)
 
-        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.accepted.connect(self.on_accept)
         self.buttonBox.rejected.connect(self.reject)
 
         self.layout.setContentsMargins(5, 5, 5, 5)
@@ -421,6 +421,13 @@ class CyclicPredictLiquefaction(QDialog):
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
             except PermissionError:
                 QMessageBox.critical(self, "Ошибка", "Закройте ведомость", QMessageBox.Ok)
+
+    def on_accept(self):
+        ret = QMessageBox.question(self, 'Предупреждение',
+                                   f"Вы уверены что хотите сохранить изменения?",
+                                   QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+        if ret == QMessageBox.Yes:
+            self.accept()
 
     @staticmethod
     def transform_data_for_statment(data):
