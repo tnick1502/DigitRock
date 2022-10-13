@@ -643,7 +643,11 @@ class VibrationCreepStatment(InitialStatment):
                     "K0: Формула Джекки",
                     "K0: K0 = 1",
                     "K0: Формула Джекки c учетом переупл."]
-            }
+            },
+            "sigma3_lim": {
+                "label": "Ограничение на σ3",
+                "vars": ["Не менее 50 кПа",
+                         "Не менее 100 кПа"]}
         }
 
         fill_keys = {
