@@ -13,11 +13,14 @@ import numpy as np
 from openpyxl import load_workbook
 
 # from general.excel_functions import read_customer, form_xlsx_dictionary, table_data
+from excel_statment.params import accreditation
 from general.general_functions import create_json_file, read_json_file, unique_number, number_format
 from general.initial_tables import Table
 from general.report_general_statment import save_report
 import xlrd
 from openpyxl.utils import get_column_letter, column_index_from_string
+
+from general.report_writer import ReportXlsxSaver
 from singletons import statment
 
 
@@ -276,6 +279,8 @@ class StatementGenerator(QDialog):
         self.StatementStructure.plot_structure_button.clicked.connect(self._plot)
 
         self.StatementStructure.save_button.clicked.connect(self._save_report)
+        self.StatementStructure.save_button_xls.clicked.connect(self._save_report_xls)
+
 
         self.StatementStructure.sort_btn.clicked.connect(self._on_sort)
 
@@ -363,6 +368,92 @@ class StatementGenerator(QDialog):
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error))
             return False
+
+    def _save_report_xls(self):
+        if self.statment_data:
+            if self._structure_assretion_tests(self.statment_data, self.StatementStructure.get_structure()):
+                try:
+                    # file = QFileDialog.getOpenFileName(self, 'Open file')[0]
+                    save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
+
+                    if self.statment_test_mode and self.shipment:
+                        save_file_name = f'Ведомость {self.statment_test_mode} {self.shipment}.pdf'
+                    else:
+                        save_file_name = 'Общая ведомость.pdf'
+                    # считывание параметра "Заголовок"
+
+                    statement_title = self.StatementStructure.get_structure().get("statement_title", '')
+
+                    # self.StatementStructure._additional_parameters = \
+                    #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
+                    titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
+
+                    try:
+                        if statment.general_parameters.test_mode == "Виброползучесть":
+                           data = convert_data(data)
+                        elif statment.general_parameters.test_mode == "Демпфирование по Релею":
+                            data = convert_data2(data)
+                    except:
+                        pass
+
+                    for i in range(len(data)):
+                        for j in range(len(data[i])):
+                            if data[i][j] == 'None':
+                                data[i][j] = ' '
+                    if self.sort:
+                        data = self.sort_data_by_skv_depth(data)
+                    # ["customer", "object_name", "data", "accreditation"]
+                    # ["Заказчик", "Объект", "Дата", "Аккредитация"]
+                    # Дата
+                    data_report = self.customer["data"]
+                    customer_data_info = ['Заказчик:', 'Объект:']
+                    # Сами данные (подробнее см. Report.py)
+                    customer_data = [self.customer[i] + "                  " for i in ["customer", "object_name"]]
+
+                    statement_title += f" №{self.customer['object_number']}СВД"
+
+                    try:
+                        if save_file_pass:
+                            writer = ReportXlsxSaver()
+
+                            formatted_tests_data, additional = ReportXlsxSaver.form_tests_data(titles, data)
+
+                            accred1 = {'accreditation': self.accreditation,
+                                       'accreditation_key': self.accreditation_key}
+                            if accred1 is None:
+                                accred1 = {'acrreditation': 'AO', 'acrreditation_key': 'новая'}
+                            if accred1:
+                                accred = [accreditation[accred1['accreditation']][accred1['accreditation_key']][0],
+                                          accreditation[accred1['accreditation']][accred1['accreditation_key']][1]]
+                            else:
+                                accred = [
+                                    'АТТЕСТАТ АККРЕДИТАЦИИ №RU.MCC.АЛ.988 Срок действия с 09 января 2020г.',
+                                    'РЕЕСТР ГЕОНАДЗОРА г. МОСКВЫ №27 (РЕЙТИНГ №4)']
+
+                            writer.set_data(customer=customer_data[0],
+                                            obj_name=customer_data[1],
+                                            test_title=statement_title,
+                                            date=data_report,
+                                            tests_data=formatted_tests_data,
+                                            accreditation=f"{accred[0]}\n{accred[1]}",
+                                            additional_data=additional)
+                            writer.save(f"{save_file_pass}/{save_file_name.replace('.pdf','.xlsx')}")
+
+                            # save_report(titles, data, scales, data_report, customer_data_info, customer_data,
+                            #             statement_title, save_file_pass, unique_number(length=7, postfix="-СВД"),
+                            #             save_file_name, accred1={'accreditation': self.accreditation,
+                            #                                     'accreditation_key': self.accreditation_key})
+                            QMessageBox.about(self, "Сообщение", "Успешно сохранено")
+                    except PermissionError:
+                        QMessageBox.critical(self, "Ошибка", "Закройте файл для записи", QMessageBox.Ok)
+                    except:
+                        pass
+                except (ValueError, IndexError, ZeroDivisionError) as error:
+                    QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+                    pass
+            else:
+                pass
+            pass
 
     def _save_report(self):
         if self.statment_data:
@@ -855,10 +946,23 @@ class StatementStructure(QWidget):
         self.plot_structure_button.setFixedWidth(140)
         self.plot_structure_button.setFixedHeight(70)
         self.end_line.addWidget(self.plot_structure_button)
-        self.save_button = QPushButton("Сохранить ведомость")
+
+        self.save_btns = QGroupBox()
+        self.save_btns_layout = QVBoxLayout()
+        self.save_btns.setLayout(self.save_btns_layout)
+
+        self.save_button = QPushButton("Сохранить pdf")
         self.save_button.setFixedWidth(140)
-        self.save_button.setFixedHeight(70)
-        self.end_line.addWidget(self.save_button)
+        self.save_button.setFixedHeight(25)
+
+        self.save_button_xls = QPushButton("Сохранить xls")
+        self.save_button_xls.setFixedWidth(140)
+        self.save_button_xls.setFixedHeight(25)
+
+        self.save_btns_layout.addWidget(self.save_button)
+        self.save_btns_layout.addWidget(self.save_button_xls)
+
+        self.end_line.addWidget(self.save_btns)
 
         self.sort_btn = QCheckBox("Сортировка по скв/глуб")
         self.sort_btn.setFixedHeight(30)
