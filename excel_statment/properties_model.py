@@ -1543,8 +1543,12 @@ class VibrationCreepProperties(MechanicalProperties):
             if isinstance(getattr(VibrationCreepProperties, key), DataTypeValidation):
                 object.__setattr__(self, key, None)
 
-    def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode) -> None:
-        super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
+    def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode, sigma3_lim=None) -> None:
+        if sigma3_lim:
+            super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode,
+                                     sigma3_lim=sigma3_lim)
+        else:
+            super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
 
         if self.c and self.fi and self.E50:
             frequency = data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]]
