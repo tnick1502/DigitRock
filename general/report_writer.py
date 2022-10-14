@@ -20,14 +20,14 @@ from openpyxl.styles import Alignment
 
 
 class ReportXlsxSaver:
-    __TEMPLATE_PATH: str = r"general/test_join.xlsx"
-    __book: 'Workbook' = None
-    __sheet: 'Worksheet' = None
-    __tests_data: 'dict' = {'labNum': {'skv': None, 'depth': None, 'type': None, 'params': {}}}
-    __params_positions: 'dict' = {}
-    _base_height = 15
-
     def __init__(self):
+        self.__TEMPLATE_PATH: str = r"general/test_join.xlsx"
+        self.__book: 'Workbook' = None
+        self.__sheet: 'Worksheet' = None
+        self.__tests_data: 'dict' = {'labNum': {'skv': None, 'depth': None, 'type': None, 'params': {}}}
+        self.__params_positions: 'dict' = {}
+        self._base_height = 15
+
         self.__book = openpyxl.load_workbook(self.__TEMPLATE_PATH)
         self.__sheet = self.__book.worksheets[0]
 
@@ -195,6 +195,8 @@ class ReportXlsxSaver:
                 _result[row[0]]['params'] = {}
 
             for i in range(4, len(row)):
+                if not titles[i]:
+                    titles[i] = ''
                 title = titles[i].replace('<p>', '').replace('</p>', '').replace("<sub>", '')\
                     .replace('</sub>', '').replace('<sub rise="0.5" size="5">', '')\
                     .replace('<sup rise="-2" size="4">', 'E').replace('</sup>', '')\
