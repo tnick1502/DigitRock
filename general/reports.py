@@ -2090,7 +2090,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
              "", prediction, "", ""])
         tableData.append(
             [Paragraph(
-                '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub>, МПа:</p>''',
+                '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub>, МПа:</p> (50 лет)''',
                 LeftStyle),
                 "", "", Ered, "", ""])
     elif test_type == 'predict100':
@@ -2105,7 +2105,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
              "", prediction, "", ""])
         tableData.append(
             [Paragraph(
-                '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub>, МПа:</p>''',
+                '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub>, МПа:</p> (100 лет)''',
                 LeftStyle),
                 "", "", Ered, "", ""])
     else:
