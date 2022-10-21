@@ -1,6 +1,6 @@
 import copy
 
-from AttrDict import *
+from universal_report.AttrDict import *
 
 
 class UniversalInputDict:

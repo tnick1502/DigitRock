@@ -15,13 +15,13 @@ from reportlab.platypus.flowables import Spacer, Image
 from reportlab.platypus.paragraph import Paragraph
 from reportlab.platypus.tables import TableStyle, Table
 from reportlab.graphics.shapes import (Group, Path)
-from AttrDict import *
+from universal_report.AttrDict import *
 from reportlab.lib.pagesizes import A4, landscape
 import numpy as np
 from matplotlib import pyplot as plt
 from svglib.svglib import svg2rlg
 import matplotlib
-from SampleData import UniversalInputDict
+from universal_report.SampleData import UniversalInputDict
 
 
 def existing(paths):
@@ -66,7 +66,7 @@ styles = {
     ),
     'heading': ParagraphStyle(
         'heading',
-        fontName='TimesBold',
+        fontName='TimesDj',
         fontSize=FONTSIZE_HEADING,
         leading=12,
         spaceBefore=10,
@@ -199,8 +199,8 @@ def createHeader(filename, logoPath, accred, pagesize):
 
         ('FONT', (0, 0), (-1, -1), 'Times', 8),
 
-        ('FONT', (1, 0), (1, 0), 'TimesBold', 21),  # МОСТДОРГЕОТРЕСТ
-        ('FONT', (2, 0), (2, 0), 'TimesBold', 13),  # испытательная лаборатория
+        ('FONT', (1, 0), (1, 0), 'TimesDj', 21),  # МОСТДОРГЕОТРЕСТ
+        ('FONT', (2, 0), (2, 0), 'TimesDj', 13),  # испытательная лаборатория
         ('FONT', (1, 2), (-1, -1), 'Times', 8),  # АТТЕСТАТ, РЕЕСТР
 
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -389,7 +389,7 @@ def init_fonts():
     fonts = {
         'Times': 'Times.ttf',
         'TimesBold': 'TimesDj.ttf',
-        'TimesItalic': 'TimesK.ttf'
+        'TimesK': 'TimesK.ttf'
     }
     for fontName, fontFile in fonts.items():
         pdfmetrics.registerFont(TTFont(fontName, os.path.join(dataPath, fontFile)))
@@ -609,9 +609,9 @@ class TableStyleBuilder:
 
         font = 'Times'
         if self._italic:
-            font = 'TimesItalic'
+            font = 'TimesK'
         if self._bold:
-            font = 'TimesBold'
+            font = 'TimesDj'
 
         ops = [
             ('FONT', (0, 0), (-1, -1), font, 8),
@@ -1076,10 +1076,10 @@ class UniversalReport(Report):
                 continue
             data.append(['', ''])
 
-        while len(data) % 9 != 0:
+        while len(data) % 10 != 0:
             data.append(['', ''])
 
-        rows = int(len(data) / 9)
+        rows = int(len(data) / 10)
         if rows > 1:
             # Произвольное число строк делать здесь!
 
@@ -1097,7 +1097,7 @@ def test_UniversalReport():
     inputData = UniversalInputDict()
     inputData.set_data()
 
-    init_fonts()
+    # init_fonts()
 
     path = os.path.join(existing([
         "C:/Users/Пользователь/Desktop/Новая папка (2)/Новая папка (2)",
