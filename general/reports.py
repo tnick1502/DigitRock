@@ -3488,15 +3488,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     if isinstance(test_parameter["K0"], list):
         test_parameter["K0"] = zap(test_parameter["K0"][0], 3)
 
-    imgs = []
-    for pick in picks:
-        drawing = svg2rlg(pick, True)
-        drawing.hAlign = 'CENTER'
-        drawing.vAlign = 'CENTER'
-        drawing.scale(0.8, 0.8)
-        drawing.width = drawing.width * 0.8
-        drawing.height = drawing.height * 0.8
-        imgs.append(drawing)
+    imgs = [UniversalInputDict.prep_img(pick) for pick in picks]
 
     sample = UniversalInputDict().get_input_sample
     sampleInput = UniversalInputDict()

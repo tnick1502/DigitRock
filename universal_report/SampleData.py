@@ -1,5 +1,7 @@
 import copy
 
+from svglib.svglib import svg2rlg
+
 from universal_report.AttrDict import *
 
 
@@ -162,3 +164,17 @@ class UniversalInputDict:
     @property
     def get_input_sample(self):
         return self.__input_sample
+
+    @staticmethod
+    def prep_img(svg, size='full'):
+        _sizes = {'full': 0.8}
+        _size = _sizes['full']
+
+        drawing = svg2rlg(svg, True)
+        drawing.hAlign = 'CENTER'
+        drawing.vAlign = 'CENTER'
+        drawing.scale(0.8, 0.8)
+        drawing.width = drawing.width * 0.8
+        drawing.height = drawing.height * 0.8
+
+        return drawing

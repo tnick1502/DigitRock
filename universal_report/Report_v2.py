@@ -1002,7 +1002,7 @@ class UniversalReport(Report):
             r.table(exam_table)
             table, spans, background = r.paragraph(alwaysTrue).build()
             tableStyle = TableStyleBuilder().grid().alignLeft().build(spans, background)
-            resltTable = Table(table, style=tableStyle, colWidths=[40 * mm, '*', '*', '*', '*', '*', '*'])
+            resltTable = Table(table, style=tableStyle, colWidths=['*', '*', '*', '*', '*', '*', '*'])
             results_table[-1] = resltTable
 
         result = results_table
