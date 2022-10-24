@@ -6,6 +6,20 @@ from universal_report.AttrDict import *
 
 
 class UniversalInputDict:
+    """
+    Класс для подготовки данных для подачи в `UniversalReport`
+    `UniversalReport` принимает при инициализации данные в формате настоящего класса.
+
+    Инструкция:
+    1. Запрашиваем, если необходимо, образец словаря, котороый должен быть подан в
+        данный класс в set_data
+    2. Заполняем параметры словаря.
+        ! `lists` удобно заполнить вручную, создав с нуля и заменить образец
+        ! некоторые свойства можно оформить при помощи встроенных в данный класс методов
+    3. Направляем заполненный образец в `set_data` в экземпляр настоящего класса
+    4. Подать на вход `UniversalReport` получившейся экземпляр класса
+    """
+
     __input_sample = AttrDict({
         # Заглавие для всех листов
         'test_heading': 'ТЕСТОВОЕ ЗАГЛАВИЕ ДЛЯ ВСЕХ СТРАНИЦ',
@@ -166,9 +180,9 @@ class UniversalInputDict:
         return self.__input_sample
 
     @staticmethod
-    def prep_img(svg, size='full'):
+    def prep_img(svg, size='full') -> 'Drawing':
         _sizes = {'full': 0.8}
-        _size = _sizes['full']
+        _size = _sizes[size]
 
         drawing = svg2rlg(svg, True)
         drawing.hAlign = 'CENTER'
@@ -178,3 +192,45 @@ class UniversalInputDict:
         drawing.height = drawing.height * 0.8
 
         return drawing
+
+    @staticmethod
+    def prep_sigma_3(sigma_3, /) -> str:
+        """
+        Подготовливает под формат сигма 3 в виде списка или в виде числа
+        """
+        if "/" in str(sigma_3):
+            __sigma_3 = str(sigma_3)
+        else:
+            try:
+                __sigma_3 = UniversalInputDict.zap(sigma_3 / 1000, 3)
+            except:
+                __sigma_3 = "-"
+
+        if isinstance(__sigma_3, list):
+            __sigma_3 = UniversalInputDict.zap(sigma_3[0], 3)
+
+        return __sigma_3
+
+    @staticmethod
+    def prep_K0(K0, /) -> str:
+        """
+        Подготовливает под формат сигма K0
+        """
+        if isinstance(K0, list):
+            __K0 = UniversalInputDict.zap(K0[0], 3)
+        else:
+            __K0 = UniversalInputDict.zap(K0, 3)
+
+        return __K0
+
+    @staticmethod
+    def zap(val, prec, none='-') -> str:
+        """ Возвращает значение `val` в виде строки с `prec` знаков после запятой
+        используя запятую как разделитель дробной части
+        """
+        if isinstance(val, str):
+            return val
+        if val is None:
+            return none
+        fmt = "{:." + str(int(prec)) + "f}"
+        return fmt.format(val).replace(".", ",")

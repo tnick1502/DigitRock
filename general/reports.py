@@ -3474,19 +3474,11 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
 
     canvas.save()
 
-    if "/" in str(test_parameter["sigma_3"]):
-        sigma_3 = str(test_parameter["sigma_3"])
-    else:
-        try:
-            sigma_3 = zap(test_parameter["sigma_3"] / 1000, 3)
-        except:
-            sigma_3 = "-"
 
-    if isinstance(sigma_3, list):
-        sigma_3 = zap(test_parameter["sigma_3"][0], 3)
 
-    if isinstance(test_parameter["K0"], list):
-        test_parameter["K0"] = zap(test_parameter["K0"][0], 3)
+
+    _sigma_3 = UniversalInputDict.prep_sigma_3(test_parameter["sigma_3"])
+    _K0 = UniversalInputDict.prep_K0(test_parameter["K0"])
 
     imgs = [UniversalInputDict.prep_img(pick) for pick in picks]
 
@@ -3504,7 +3496,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
                 'date': '-',
                 'report_number': str_for_excel(Lab + "/" + Data_customer.object_number + "/ТД"),
                 'well': Data_phiz.borehole,
-                'depth': str(Data_phiz.depth),
+                'depth': zap(Data_phiz.depth, 1),
                 'ege': Data_phiz.ige,
                 'lab_no': Lab,
                 'classification': Data_phiz.soil_name
@@ -3525,8 +3517,8 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
             # ТАБЛИЦА СВЕДЕНИЯ ОБ ИСПЫТАНИИ
             'exam_table': [
                 {'Режим испытания': test_parameter["mode"]},
-                {"<p>Боковое давление σ'<sub rise='2.5' size='6'>3</sub>, МПа:</p>": sigma_3,
-                 "<p>K<sub rise='2.5' size='6'>0</sub>, д.е.:</p>": test_parameter["K0"]},
+                {"<p>Боковое давление σ'<sub rise='2.5' size='6'>3</sub>, МПа:</p>": _sigma_3,
+                 "<p>K<sub rise='2.5' size='6'>0</sub>, д.е.:</p>": _K0},
                 {'Оборудование': test_parameter["equipment"]},
                 {'Параметры образца:': None, 'Высота, мм': zap(test_parameter["h"], 2),
                  'Диаметр, мм': zap(test_parameter["d"], 2)}
@@ -3549,7 +3541,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
                 'date': '-',
                 'report_number': str_for_excel(Lab + "/" + Data_customer.object_number + "/ТД"),  # Обязательно
                 'well': Data_phiz.borehole,
-                'depth': str(Data_phiz.depth),
+                'depth': zap(Data_phiz.depth, 1),
                 'ege': Data_phiz.ige,
                 'lab_no': Lab,
                 'classification': Data_phiz.soil_name
@@ -3575,7 +3567,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
                                                                                      zap(res["sigma_3_mohr"][1], 3) +
                                                                                      "/" +
                                                                                      zap(res["sigma_3_mohr"][2], 3),
-                 "<p>K<sub rise='2.5' size='6'>0</sub>, д.е.:</p>": test_parameter["K0"]},
+                 "<p>K<sub rise='2.5' size='6'>0</sub>, д.е.:</p>": _K0},
                 {'Оборудование': test_parameter["equipment"]},
                 {'Параметры образца:': None, 'Высота, мм': zap(test_parameter["h"], 2),
                  'Диаметр, мм': zap(test_parameter["d"], 2)}
