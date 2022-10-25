@@ -756,7 +756,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
         self.physical_line_1 = LinePhysicalProperties()
         self.tab_2.line_for_phiz.addWidget(self.physical_line_1)
         self.tab_2.line_for_phiz.addStretch(-1)
-        self.physical_line_1.refresh_button.clicked.connect(self.tab_2.refresh)
+        self.physical_line_1.refresh_button.clicked.connect(self.call_tab2_refresh)
         self.physical_line_1.save_button.clicked.connect(self.save_report_and_continue)
 
         self.physical_line_2 = LinePhysicalProperties()
@@ -770,6 +770,11 @@ class StatickSoilTestApp(AppMixin, QWidget):
         # self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
 
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
+
+    def call_tab2_refresh(self):
+        self.tab_2.refresh()
+        if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
+            self.tab_3.refresh()
 
     def keyPressEvent(self, event):
         if statment.current_test:
