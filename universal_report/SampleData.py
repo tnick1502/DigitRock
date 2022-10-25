@@ -3,6 +3,9 @@ import copy
 from svglib.svglib import svg2rlg
 
 from universal_report.AttrDict import *
+from reportlab.platypus.flowables import Spacer, Image
+from reportlab.lib.units import inch, cm, mm
+from reportlab.platypus.tables import TableStyle, Table
 
 
 class UniversalInputDict:
@@ -181,16 +184,16 @@ class UniversalInputDict:
 
     @staticmethod
     def prep_img(svg, size='full') -> 'Drawing':
-        _sizes = {'full': 0.8}
+        _sizes = {'full': (120, 60, 8)}
+        '''размеры картинок и отступы (ширина, высота, отступ слева)'''
         _size = _sizes[size]
 
         drawing = svg2rlg(svg, True)
-        drawing.hAlign = 'CENTER'
-        drawing.vAlign = 'CENTER'
-        drawing.scale(0.8, 0.8)
-        drawing.width = drawing.width * 0.8
-        drawing.height = drawing.height * 0.8
-
+        drawing.contents[0].transform = (1, 0, 0, -1, _size[2] * mm, _size[1] * mm)
+        drawing.hAlign = 'LEFT'
+        drawing.vAlign = 'TOP'
+        drawing.height = _size[1] * mm
+        drawing.width = _size[0] * mm
         return drawing
 
     @staticmethod

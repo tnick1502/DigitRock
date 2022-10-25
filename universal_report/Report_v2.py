@@ -1011,16 +1011,6 @@ class UniversalReport(Report):
 
     def probeTable1(self, object_data, probe_data, exam_data):
         r = RTable()
-        """
-        r.table([
-            [r.cg('Заказчик'), object_data.customerName],
-            [r.cg('Объект'), object_data.objectName],
-            [r.c2g('Наименование выработки'), probe_data.well, r.cg('Глубина отбора'), ruWithPrec(probe_data.depth, 1)],
-            [r.c2g('Лабораторный номер'), probe_data.labNumber, r.cg('ИГЭ/РГЭ'), ruWithPrec(probe_data.ege, 0),],
-            [r.c2g('Наименование грунта'), probe_data.classification],
-            [r.c2g('Протокол испытаний №'), exam_data.report_number],
-        ])
-        """
         r.table([
             [r.c2g('Протокол испытаний №'), probe_data.report_number],
             [r.cg('Заказчик'), object_data.customerName],
@@ -1037,7 +1027,6 @@ class UniversalReport(Report):
         w = 17.5 * mm
 
         return Table(table, style=tableStyle, colWidths=[w, w, w, 3 * w, w, '*'])
-        # , colWidths=[20 * mm, 20 * mm, '*', 40 * mm, '*']
 
     def probeTable2(self, object_data, probe_data, exam_data):
         _probe_data = probe_data.physical_properties_table
