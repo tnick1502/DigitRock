@@ -1123,11 +1123,16 @@ class ConsolidationProperties:
             if self.Cv > 1.5:
                 self.Cv = np.random.uniform(1, 1.5)
 
-            self.p_max = ConsolidationProperties.spec_round(ConsolidationProperties.define_loading_pressure(
-                float_df(data_frame.iat[string, MechanicalPropertyPosition["p_max"][1]]),
-                build_press=float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]]),
-                pit_depth=float_df(data_frame.iat[string, MechanicalPropertyPosition["pit_depth"][1]]),
-                depth=physical_properties.depth), 3)
+            p_ref = float_df(data_frame.iat[string, MechanicalPropertyPosition["Pref"][1]])
+
+            if p_ref:
+                self.p_max = ConsolidationProperties.spec_round(p_ref, 3)
+            else:
+                self.p_max = ConsolidationProperties.spec_round(ConsolidationProperties.define_loading_pressure(
+                    float_df(data_frame.iat[string, MechanicalPropertyPosition["p_max"][1]]),
+                    build_press=float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]]),
+                    pit_depth=float_df(data_frame.iat[string, MechanicalPropertyPosition["pit_depth"][1]]),
+                    depth=physical_properties.depth), 3)
 
     @staticmethod
     def define_loading_pressure(pmax, build_press: float, pit_depth: float, depth: float):
