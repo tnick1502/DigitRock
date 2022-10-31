@@ -350,7 +350,7 @@ class MechanicalProperties:
                 elif sigma3_lim == "Не менее 100 кПа":
                     if self.sigma_3 < 100:
                         self.sigma_3 = 100
-                    default_pressure_array = [50, 100, 200]
+                    default_pressure_array = [100, 200, 400]
                 else:
                     default_pressure_array = [50, 100, 200]
 
