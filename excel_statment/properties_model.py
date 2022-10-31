@@ -346,9 +346,13 @@ class MechanicalProperties:
                 if not sigma3_lim or sigma3_lim == "Не менее 50 кПа":
                     if self.sigma_3 < 50:
                         self.sigma_3 = 50
+                    default_pressure_array = [50, 100, 200]
                 elif sigma3_lim == "Не менее 100 кПа":
                     if self.sigma_3 < 100:
                         self.sigma_3 = 100
+                    default_pressure_array = [50, 100, 200]
+                else:
+                    default_pressure_array = [50, 100, 200]
 
             if self.sigma_3 >= 1600:
                 self.sigma_3 = 1600
@@ -408,7 +412,7 @@ class MechanicalProperties:
 
                 "calculated_by_pressure": MechanicalProperties.define_reference_pressure_array_calculated_by_pressure(
                     self.build_press, self.pit_depth, physical_properties.depth, self.K0,
-                    physical_properties.ground_water_depth),
+                    physical_properties.ground_water_depth, default_pressure_array),
 
                 "state_standard": MechanicalProperties.define_reference_pressure_array_state_standard(
                     physical_properties.e, physical_properties.Il, physical_properties.type_ground, physical_properties.Ir)
@@ -422,7 +426,7 @@ class MechanicalProperties:
 
             if self.pressure_array["calculated_by_pressure"] is None:
                 self.pressure_array["calculated_by_pressure"] = \
-                    MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3)
+                    MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3, default_pressure_array)
 
 
 
@@ -1027,7 +1031,8 @@ class MechanicalProperties:
 
     @staticmethod
     def define_reference_pressure_array_calculated_by_pressure(build_press: float, pit_depth: float, depth: float,
-                                                               K0: float, ground_water_depth: float) -> list:
+                                                               K0: float, ground_water_depth: float,
+                                                               default_pressure_array: list) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
 
         def sigma_with_weighing_effect(_depth, _ground_water_depth):
@@ -1061,14 +1066,15 @@ class MechanicalProperties:
             sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.25)
 
             if sigma_max_1 < 1600:
-                return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 50 else [50, 100, 200]
+                return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 50 else default_pressure_array
             else:
                 return [400, 800, 1600]
         else:
             return None
 
     @staticmethod
-    def define_reference_pressure_array_calculated_by_referense_pressure(sigma_3: float) -> list:
+    def define_reference_pressure_array_calculated_by_referense_pressure(sigma_3: float,
+                                                                         default_pressure_array: list) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
 
         sigma_max = sigma_3
@@ -1077,7 +1083,7 @@ class MechanicalProperties:
         sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * 0.5)
         sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * 0.25)
         if sigma_max_1 < 1600:
-            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 50 else [50, 100, 200]
+            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 50 else default_pressure_array
         else:
             return [400, 800, 1600]
 
