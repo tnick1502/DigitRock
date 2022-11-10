@@ -890,7 +890,7 @@ def test_mode_consolidation(canvas, Data, moove=0, report_type="standart", dyn=N
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
                [Paragraph(sigma_str, LeftStyle), "", "", sigma_3, "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
-               ["Оборудование:", "", "", "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a" if not dyn else "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a, Wille Geotechnik 13-HG/020:001"],
+               ["Оборудование:", "", "", "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a" if not dyn else "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a, Wille Geotechnik 13-HG/020:001"],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (2, 1)),
@@ -937,7 +937,7 @@ def test_mode_shear(canvas, Data, moove=0):
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
                [Paragraph('''<p>Вертикальное давление p, МПа:</p>''', LeftStyle), "", "", sigma, "", "", "", "", "", ""],
-               ["Оборудование:", "", "", "АСИС ГТ.2.0.5, GIESA UP-25a"],
+               ["Оборудование:", "", "", "АСИС ГТ 2.2.3"],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 1), "Диаметр, мм:", "", zap(Data["d"], 1), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (2, 1)),
@@ -985,7 +985,7 @@ def test_mode_shear_dilatancy(canvas, Data, moove=0):
     t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
                ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
                [Paragraph('''<p>Вертикальное давление p, МПа:</p>''', LeftStyle), "", "", sigma, "", "", "", "", "", ""],
-               ["Оборудование:", "", "", "АСИС ГТ.2.0.5, GIESA UP-25a"],
+               ["Оборудование:", "", "", "АСИС ГТ 2.2.3"],
                ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 1), "Диаметр, мм:", "", zap(Data["d"], 1), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (2, 1)),
@@ -3623,7 +3623,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
                              "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], sig)
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
-    test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"
+    test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a"
     test_mode_vibration_creep(canvas, test_parameter, moove=moove)
 
     result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]], moove=moove)
@@ -3664,7 +3664,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
-    test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ.2.0.5, GIESA UP-25a"
+    test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a"
     main_frame(canvas, path, Data_customer, code, f"1/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             [name,
@@ -3962,7 +3962,7 @@ def report_k0(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     test_parameter.h = 100
     test_parameter.d = 50
     test_parameter.Rezhim = Paragraph('''<p>КД, девиаторное нагружение в режиме К<sub rise="0.5" size="5">0</sub> -консолидации</p>''', LeftStyle)
-    test_parameter.Oborudovanie = r'GIESA UP-25a, АСИС ГТ.2.0.5, камера типа "Б"'
+    test_parameter.Oborudovanie = r'GIESA UP-25a, АСИС ГТ 2.0.5, камера типа "Б"'
 
     code = SaveCode(version)
 
@@ -4119,7 +4119,7 @@ def report_k0ur(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, 
     test_parameter.h = 100
     test_parameter.d = 50
     test_parameter.Rezhim = Paragraph('''<p>КД, девиаторное нагружение в режиме К<sub rise="0.5" size="5">0</sub> -консолидации</p>''', LeftStyle)
-    test_parameter.Oborudovanie = r'GIESA UP-25a, АСИС ГТ.2.0.5, камера типа "Б"'
+    test_parameter.Oborudovanie = r'GIESA UP-25a, АСИС ГТ 2.0.5, камера типа "Б"'
 
     code = SaveCode(version)
 
@@ -4263,7 +4263,7 @@ def StampReport(M, R, p1, p2, Nop, path, version = 1):  # p1 - папка сох
     name = ["ИСПЫТАНИЕ ШАРИКОВЫМ ШТАМПОМ (ГОСТ 12248.3-2020)",""]
     Data = {}
     Data["Rezhim"] = "Статическое нагружение"
-    Data["Oborudovanie"] = "Оборудование: АСИС ГТ.2.0.5"
+    Data["Oborudovanie"] = "Оборудование: АСИС ГТ 2.0.5"
     Data["h"] = 71.4
     Data["d"] = 35
 
