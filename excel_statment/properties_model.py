@@ -323,6 +323,16 @@ class MechanicalProperties:
             if sigma_ref:
                 self.sigma_3 = np.round(sigma_ref * 1000)
                 self.sigma_1 = self.sigma_3
+                if not sigma3_lim or sigma3_lim == "Не менее 50 кПа":
+                    if self.sigma_3 < 50:
+                        self.sigma_3 = 50
+                    default_pressure_array = [50, 100, 200]
+                elif sigma3_lim == "Не менее 100 кПа":
+                    if self.sigma_3 < 100:
+                        self.sigma_3 = 100
+                    default_pressure_array = [100, 200, 400]
+                else:
+                    default_pressure_array = [50, 100, 200]
             else:
                 if physical_properties.ground_water_depth is not None:
                     if physical_properties.depth <= physical_properties.ground_water_depth:
