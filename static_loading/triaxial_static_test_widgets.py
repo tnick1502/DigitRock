@@ -722,6 +722,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 "standart_E": "Стандардный E",
                 "standart_E50": "Стандардный E50",
                 "E_E50": "Совместный E/E50",
+                "plaxis_m": "Plaxis/Midas m",
                 "plaxis": "Plaxis/Midas",
                 "user_define_1": "Пользовательский с ε50",
                 "vibro": "Вибропрочность",
@@ -891,7 +892,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                if self.tab_4.report_type == "standart_E50" or self.tab_4.report_type == "plaxis":
+                if self.tab_4.report_type == "standart_E50" or self.tab_4.report_type == "plaxis_m" or self.tab_4.report_type == "plaxis":
                     set_cell_data(self.tab_1.path,
                                   (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number),
                                    (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
@@ -927,7 +928,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                               ("GI" + str(number), (number, 190)),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
 
-                if self.tab_4.report_type == "standart_E50" or self.tab_4.report_type == "plaxis":
+                if self.tab_4.report_type == "standart_E50" or self.tab_4.report_type == "plaxis_m" or self.tab_4.report_type == "plaxis":
                     set_cell_data(self.tab_1.path,
                                   (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number),
                                    (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
