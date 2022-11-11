@@ -866,9 +866,9 @@ def test_mode_vibration_creep(canvas, test_parameter, moove = 0):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (185-moove) * mm)
 
-def test_mode_consolidation(canvas, Data, moove=0, report_type="standart", dyn=None):
+def test_mode_consolidation(canvas, Data, moove=0, report_type="standart", dyn=None, p_or_sigma=False):
 
-    if report_type == "plaxis":
+    if (report_type == "plaxis_m" or report_type == "plaxis") and p_or_sigma:
         sigma_str = '''<p>Референтное давление p<sub rise="2.5" size="6">ref</sub>, МПа:</p>'''
     else:
         sigma_str = '''<p>Боковое давление σ'<sub rise="2.5" size="6">3</sub>, МПа:</p>'''
@@ -887,11 +887,29 @@ def test_mode_consolidation(canvas, Data, moove=0, report_type="standart", dyn=N
     if isinstance(Data["K0"], list):
         Data["K0"] = zap(Data["K0"][0], 3)
 
-    t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
-               ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
-               [Paragraph(sigma_str, LeftStyle), "", "", sigma_3, "", Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(Data["K0"], 2), ""],
-               ["Оборудование:", "", "", "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a" if not dyn else "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a, Wille Geotechnik 13-HG/020:001"],
-               ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "", zap(Data["d"], 2), ""]], colWidths=17.5* mm, rowHeights=4 * mm)
+    if report_type == "plaxis_m" or report_type == "plaxis":
+
+        t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
+                   ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
+                   [Paragraph(sigma_str, LeftStyle), "", "", sigma_3, "",
+                    Paragraph('''''', LeftStyle), "", "",
+                    "", ""],
+                   ["Оборудование:", "", "",
+                    "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a" if not dyn else "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a, Wille Geotechnik 13-HG/020:001"],
+                   ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "",
+                    zap(Data["d"], 2), ""]], colWidths=17.5 * mm, rowHeights=4 * mm)
+    else:
+        t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
+                   ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
+                   [Paragraph(sigma_str, LeftStyle), "", "", sigma_3, "",
+                    Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "",
+                    zap(Data["K0"], 2), ""],
+                   ["Оборудование:", "", "",
+                    "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a" if not dyn else "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a, Wille Geotechnik 13-HG/020:001"],
+                   ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "",
+                    zap(Data["d"], 2), ""]], colWidths=17.5 * mm, rowHeights=4 * mm)
+
+
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (2, 1)),
                 ('SPAN', (3, 1), (-1, 1)),
@@ -3338,7 +3356,7 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
     elif report_type == "standart_E50_with_dilatancy":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50_with_dilatancy", moove=moove)
-    elif report_type == "plaxis":
+    elif report_type == "plaxis_m" or report_type == "plaxis":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="Eur", moove=moove)
     elif report_type == "E_E50":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all", moove=moove)
@@ -3365,7 +3383,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
 
     code = SaveCode(version)
 
-    if report_type == "plaxis":
+    if report_type == "plaxis_m":
         main_frame(canvas, path, Data_customer, code, "1/3", qr_code=qr_code)
     else:
         main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
@@ -3375,7 +3393,11 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter["K0"] = K0[0]
-    test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
+    p_or_sigma = False
+    if report_type == "plaxis" or report_type == "plaxis_m":
+        p_or_sigma = True
+    test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type, p_or_sigma=p_or_sigma)
+    p_or_sigma = False
 
     if report_type == "standart_E":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E", moove=moove)
@@ -3391,7 +3413,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50", moove=moove)
 
     canvas.showPage()
-    if report_type == "plaxis":
+    if report_type == "plaxis_m":
         main_frame(canvas, path, Data_customer, code, "2/3", qr_code=qr_code)
     else:
         main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
@@ -3406,7 +3428,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
 
     result_table_CF(canvas, res, [picks[2], picks[3]], moove=moove)
 
-    if report_type == "plaxis":
+    if report_type == "plaxis_m":
         canvas.showPage()
 
         main_frame(canvas, path, Data_customer, code, "3/3", qr_code=qr_code)
@@ -3421,6 +3443,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
         test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
 
         result_table_m(canvas, res, picks[4])
+
 
     canvas.save()
 
