@@ -3349,7 +3349,12 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
 
     test_parameter["K0"] = K0[0]
 
-    test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
+    p_or_sigma = False
+    if report_type == "plaxis" or report_type == "plaxis_m":
+        p_or_sigma = True
+    test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type, p_or_sigma=p_or_sigma)
+    p_or_sigma = False
+
     if report_type == "standart_E":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E", moove=moove)
     elif report_type == "standart_E50":
