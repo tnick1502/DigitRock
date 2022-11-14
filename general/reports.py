@@ -1316,86 +1316,158 @@ def result_table_consolidation(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (42-(( r-30)*4)) * mm)
 
-def result_table_deviator(canvas, Res, pick, scale = 0.8, moove =0):
+def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0):
+    if report_type == 'standart':
+        tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+        r = 30
 
-    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
-    r = 30
+        def str_Kf(x):
+            s = "{:.2e}".format(x).replace(".", ",")
+            return s[:-4], str(int(s[5:]))
 
-    def str_Kf(x):
-        s = "{:.2e}".format(x).replace(".", ",")
-        return s[:-4], str(int(s[5:]))
+        kf, pow = str_Kf(Res["Kf_log"])
 
-    kf, pow = str_Kf(Res["Kf_log"])
+        for i in range(r):
+            tableData.append([""])
 
-    for i in range(r):
-        tableData.append([""])
-
-    tableData.append(
-        [Paragraph('''<p>Коэффициент фильтрационной консолидации C<sub rise="0.5" size="6">v</sub>, см<sup rise="2" size="6">2</sup>/мин:</p>''', LeftStyle), "", "", zap(Res["Cv_log"], 4),
-         "", ""])
-    tableData.append(
-        [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", zap(Res["Ca_log"], 5),
-         "", ""])
-    tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle),
-                      "", ""])
-    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
-    tableData.append(["", "", "", "", "", ""])
-
-
-    try:
-        a = svg2rlg(pick[0])
-        a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 36 * mm, (118-moove) * mm)
-        b = svg2rlg(pick[1])
-        b.scale(scale, scale)
-        renderPDF.draw(b, canvas, 36 * mm, (62-moove) * mm)
-    except AttributeError:
-        a = ImageReader(pick[1])
-        canvas.drawImage(a, 32 * mm, 60 * mm,
-                         width=160 * mm, height=54 * mm)
-        b = ImageReader(pick[0])
-        canvas.drawImage(b, 32 * mm, 114 * mm,
-                         width=160 * mm, height=54 * mm)
-
-    style = [('SPAN', (0, -2), (2, -1)),
-             ('SPAN', (-3, -2), (-1, -1)),
-             ('SPAN', (0, 0), (-1, 0)),
-
-             ('SPAN', (0, 1), (-1, r)),
-
-             ('SPAN', (0, -3), (2, -3)),
-             ('SPAN', (-3, -3), (-1, -3)),
-             # ('SPAN', (2, -1), (3, -1)),
-             # ('SPAN', (4, -1), (5, -1)),
-             ('SPAN', (0, -4), (2, -4)),
-             ('SPAN', (-3, -4), (-1, -4)),
-             # ('SPAN', (2, -2), (3, -2)),
-             # ('SPAN', (4, -2), (5, -2)),
-             ('SPAN', (0, -5), (2, -5)),
-             ('SPAN', (-3, -5), (-1, -5)),
+        tableData.append(
+            [Paragraph('''<p>Коэффициент фильтрационной консолидации C<sub rise="0.5" size="6">v</sub>, см<sup rise="2" size="6">2</sup>/мин:</p>''', LeftStyle), "", "", zap(Res["Cv_log"], 4),
+             "", ""])
+        tableData.append(
+            [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", zap(Res["Ca_log"], 5),
+             "", ""])
+        tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle),
+                          "", ""])
+        tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+        tableData.append(["", "", "", "", "", ""])
 
 
-             # ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-             # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-             # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+        try:
+            a = svg2rlg(pick[0])
+            a.scale(scale, scale)
+            renderPDF.draw(a, canvas, 36 * mm, (118-moove) * mm)
+            b = svg2rlg(pick[1])
+            b.scale(scale, scale)
+            renderPDF.draw(b, canvas, 36 * mm, (62-moove) * mm)
+        except AttributeError:
+            a = ImageReader(pick[1])
+            canvas.drawImage(a, 32 * mm, 60 * mm,
+                             width=160 * mm, height=54 * mm)
+            b = ImageReader(pick[0])
+            canvas.drawImage(b, 32 * mm, 114 * mm,
+                             width=160 * mm, height=54 * mm)
 
-             ("BACKGROUND", (0, -5), (2, -1), HexColor(0xebebeb)),
+        style = [('SPAN', (0, -2), (2, -1)),
+                 ('SPAN', (-3, -2), (-1, -1)),
+                 ('SPAN', (0, 0), (-1, 0)),
 
-             ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-             ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-             ("FONTSIZE", (0, 0), (-1, -1), 8),
-             # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
-             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-             ("ALIGN", (0, 0), (-1, r), "CENTER"),
-             ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
-             ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-             ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+                 ('SPAN', (0, 1), (-1, r)),
 
-    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
-    t.setStyle(style)
+                 ('SPAN', (0, -3), (2, -3)),
+                 ('SPAN', (-3, -3), (-1, -3)),
+                 # ('SPAN', (2, -1), (3, -1)),
+                 # ('SPAN', (4, -1), (5, -1)),
+                 ('SPAN', (0, -4), (2, -4)),
+                 ('SPAN', (-3, -4), (-1, -4)),
+                 # ('SPAN', (2, -2), (3, -2)),
+                 # ('SPAN', (4, -2), (5, -2)),
+                 ('SPAN', (0, -5), (2, -5)),
+                 ('SPAN', (-3, -5), (-1, -5)),
 
-    t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (48 - 8 - moove-((r-30)*4) - 4) * mm)
+
+                 # ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                 # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                 # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+
+                 ("BACKGROUND", (0, -5), (2, -1), HexColor(0xebebeb)),
+
+                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                 ("FONTSIZE", (0, 0), (-1, -1), 8),
+                 # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                 ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                 ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+        t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+        t.setStyle(style)
+
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 25 * mm, (48 - 8 - moove-((r-30)*4) - 4) * mm)
+    elif report_type == 'plaxis':
+        tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+        r = 34
+
+        def str_Kf(x):
+            s = "{:.2e}".format(x).replace(".", ",")
+            return s[:-4], str(int(s[5:]))
+
+        kf, pow = str_Kf(Res["Kf_log"])
+
+        for i in range(r):
+            tableData.append([""])
+
+        tableData.append(
+            [Paragraph(
+                '''<p>Модифицированный коэффициент сжимаемости μ<sup rise="2" size="6">*</sup></p>''',
+                LeftStyle), "", "", zap(Res["mu"], 4),
+             "", ""])
+        # tableData.append(
+        #     [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle),
+        #      "", "", zap(Res["Ca_log"], 5),
+        #      "", ""])
+        # tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "",
+        #                   Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle),
+        #                   "", ""])
+        # tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+        # tableData.append(["", "", "", "", "", ""])
+
+
+
+
+        try:
+            a = svg2rlg(pick[1])
+            a.scale(scale, scale)
+            renderPDF.draw(a, canvas, 36 * mm, (118 - moove) * mm)
+
+        except AttributeError:
+            a = ImageReader(pick[1])
+            canvas.drawImage(a, 32 * mm, 60 * mm,
+                             width=160 * mm, height=54 * mm)
+            b = ImageReader(pick[0])
+            canvas.drawImage(b, 32 * mm, 114 * mm,
+                             width=160 * mm, height=54 * mm)
+
+
+        style = [('SPAN', (0, -1), (2, -1)),
+                 ('SPAN', (-3, -1), (-1, -1)),
+                 ('SPAN', (0, 0), (-1, 0)),
+                 ('SPAN', (0, 1), (-1, r)),
+
+                 # ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                 # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                 # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+
+                 ("BACKGROUND", (0, -1), (2, -1), HexColor(0xebebeb)),
+
+                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                 ("FONTSIZE", (0, 0), (-1, -1), 8),
+                 # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                 ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                 ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+        t = Table(tableData, colWidths=175 / 6 * mm, rowHeights=4 * mm)
+        t.setStyle(style)
+
+        t.wrapOn(canvas, 0, 0)
+        t.drawOn(canvas, 25 * mm, (48 - 8 - moove - ((r - 34) * 4) - 4) * mm)
+
 
 def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E", moove=0):
 
@@ -3279,7 +3351,7 @@ def report_triaxial_cyclic_shear(Name, Data_customer, Data_phiz, Lab, path, test
     canvas.save()
 
 
-def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -3309,15 +3381,20 @@ def report_consolidation(Name, Data_customer, Data_phiz, Lab, path, test_paramet
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КОНСОЛИДАЦИИ ГРУНТОВ МЕТОДОМ",
                              "КОМПРЕССИОННОГО СЖАТИЯ (ГОСТ 12248.4-2020)"], "/ВК")
-
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_consolidation_1(canvas, test_parameter, moove=moove)
 
-    result_table_deviator(canvas, res, [picks[0], picks[1]], moove=moove)
+    result_table_deviator(canvas, res, [picks[0], picks[1]], report_type, moove=moove)
+
+
 
     canvas.showPage()
 
     canvas.save()
+
+
+
+
 
 
 def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type=None, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта

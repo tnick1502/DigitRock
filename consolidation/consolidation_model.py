@@ -109,6 +109,7 @@ class ModelTriaxialConsolidation:
                                       "strain100_sqrt": None,
                                       "Cv_log": None,
                                       "Ca_log": None,
+                                      "mu": None,
                                       "t50_log": None,
                                       "t100_log": None,
                                       "strain100_log": None,
@@ -605,6 +606,7 @@ class ModelTriaxialConsolidation:
                     ax_log.plot([], [], label="$t_{100}$" + " = " + str(res["t100_log"]),
                                 color="#eeeeee")
                     ax_log.plot([], [], label="$C_{a}$" + " = " + str(res["Ca_log"]), color="#eeeeee")
+                    ax_log.plot([], [], label="$µ*$" + " = " + str(res["mu"]), color="#eeeeee")
                     ax_log.legend()
 
             if save_path:
@@ -844,6 +846,7 @@ class ModelTriaxialConsolidation:
         self._test_result.t50_log = None
         self._test_result.Cv_log = None
         self._test_result.Ca_log = None
+        self._test_result.mu = None
         self._test_result.t100_log = None
         self._test_result.strain100_log = None
         self._test_result.Kf_log = None
@@ -878,7 +881,7 @@ class ModelTriaxialConsolidation:
                                                    abs(abs(self.processed_points_log.second_line_start_point.y)))
                                                   / (self.processed_points_log.second_line_end_point.x -
                                                      self.processed_points_log.second_line_start_point.x)), 5)
-
+                self._test_result.mu = np.round(self._test_result.Ca_log/(np.log(10)*(1 + statment[statment.current_test].physical_properties.e)),4)
                 self._test_result.t100_log = np.round(10**self.processed_points_log.Cv.x )
                 self._test_result.strain100_log = self.processed_points_log.Cv.y
 
