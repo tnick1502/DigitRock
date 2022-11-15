@@ -1398,7 +1398,7 @@ def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0
         t.drawOn(canvas, 25 * mm, (48 - 8 - moove-((r-30)*4) - 4) * mm)
     elif report_type == 'plaxis':
         tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
-        r = 34
+        r = 33 - 15
 
         def str_Kf(x):
             s = "{:.2e}".format(x).replace(".", ",")
@@ -1408,6 +1408,12 @@ def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0
 
         for i in range(r):
             tableData.append([""])
+
+        for i in range(15):
+            tableData.append(["i","time","","deff","","i+14",".",".",".",".",".",".",".",".","."])
+
+        tableData.append(
+            ["Интерпретация результатов испытания", "", "", "", "", ""])
 
         tableData.append(
             [Paragraph(
@@ -1441,7 +1447,9 @@ def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0
                              width=160 * mm, height=54 * mm)
 
 
-        style = [('SPAN', (0, -1), (2, -1)),
+        style = [
+                 ('SPAN', (0, -2), (-1, -2)), # Интепретация результатов испытания
+                 ('SPAN', (0, -1), (2, -1)),
                  ('SPAN', (-3, -1), (-1, -1)),
                  ('SPAN', (0, 0), (-1, 0)),
                  ('SPAN', (0, 1), (-1, r)),
@@ -1454,19 +1462,21 @@ def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0
 
                  ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                  ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                 ('FONTNAME', (0, -2), (-1, -2), 'TimesDj'),
                  ("FONTSIZE", (0, 0), (-1, -1), 8),
                  # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
                  ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                  ("ALIGN", (0, 0), (-1, r), "CENTER"),
                  ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                 ("ALIGN", (0, -2), (-1, -2), "CENTER"),
                  ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
                  ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
 
-        t = Table(tableData, colWidths=175 / 6 * mm, rowHeights=4 * mm)
+        t = Table(tableData, colWidths=175 / 15 * mm, rowHeights=4 * mm)
         t.setStyle(style)
 
         t.wrapOn(canvas, 0, 0)
-        t.drawOn(canvas, 25 * mm, (48 - 8 - moove - ((r - 34) * 4) - 4) * mm)
+        t.drawOn(canvas, 25 * mm, (48 - 8 - moove - ((r - (33 - 15)) * 4) - 4) * mm)
 
 
 def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E", moove=0):

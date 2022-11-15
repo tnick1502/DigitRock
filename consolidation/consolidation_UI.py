@@ -1,8 +1,8 @@
 """Модуль графического интерфейса моделей
     """
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFrame, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, \
-    QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout,\
-    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox
+    QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout, \
+    QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QCheckBox
 from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject
 
 import matplotlib.pyplot as plt
@@ -93,8 +93,17 @@ class ModelTriaxialConsolidationUI(QWidget):
 
         self.function_replacement.setLayout(self.function_replacement_layuot)
 
+        # Режим построения
+        self.mode_frame = QGroupBox("Тип построения")
+        self.mode_frame_layout = QVBoxLayout()
+        self.mode_plot_dotted = QCheckBox("t50/t100")
+        self.mode_plot_dotted.setChecked(True)
+        self.mode_frame_layout.addWidget(self.mode_plot_dotted)
+        self.mode_frame.setLayout(self.mode_frame_layout)
+
         self.widgets_line.addWidget(self.slider_cut_frame)
         self.widgets_line.addWidget(self.function_replacement)
+        self.widgets_line.addWidget(self.mode_frame)
 
         # Графики
         self.graph_canvas_layout = QHBoxLayout()
@@ -306,31 +315,32 @@ class ModelTriaxialConsolidationUI(QWidget):
                         #self.log_ax.scatter(*plots["d0"], zorder=5, color="tomato")
 
                         # Пунктирные линии
-                        self.log_ax.plot(*plots["log_t50_vertical_line"],
-                                         **plotter_params["consolidation_black_dotted_line"])
-                        self.log_ax.plot(*plots["log_t50_horizontal_line"],
-                                         **plotter_params["consolidation_black_dotted_line"])
+                        if self.mode_plot_dotted.isChecked():
+                            self.log_ax.plot(*plots["log_t50_vertical_line"],
+                                             **plotter_params["consolidation_black_dotted_line"])
+                            self.log_ax.plot(*plots["log_t50_horizontal_line"],
+                                             **plotter_params["consolidation_black_dotted_line"])
 
-                        self.log_ax.plot(*plots["log_t100_vertical_line"],
-                                         **plotter_params["consolidation_black_dotted_line"])
-                        self.log_ax.plot(*plots["log_t100_horizontal_line"],
-                                         **plotter_params["consolidation_black_dotted_line"])
-                        self.log_ax.plot(*plots["d0_line"],
-                                         **plotter_params["consolidation_black_dotted_line"])
+                            self.log_ax.plot(*plots["log_t100_vertical_line"],
+                                             **plotter_params["consolidation_black_dotted_line"])
+                            self.log_ax.plot(*plots["log_t100_horizontal_line"],
+                                             **plotter_params["consolidation_black_dotted_line"])
+                            self.log_ax.plot(*plots["d0_line"],
+                                             **plotter_params["consolidation_black_dotted_line"])
 
-                        # Текстовые подписи
-                        self.log_ax.text(*plots["log_t100_text"], '$t_{100}$', horizontalalignment='center',
-                                    verticalalignment='bottom')
-                        self.log_ax.text(*plots["log_strain100_text"], '$ε_{100}$', horizontalalignment='right',
-                                    verticalalignment='center')
+                            # Текстовые подписи
+                            self.log_ax.text(*plots["log_t100_text"], '$t_{100}$', horizontalalignment='center',
+                                        verticalalignment='bottom')
+                            self.log_ax.text(*plots["log_strain100_text"], '$ε_{100}$', horizontalalignment='right',
+                                        verticalalignment='center')
 
-                        self.log_ax.text(*plots["log_t50_text"], '$t_{50}$', horizontalalignment='center',
-                                         verticalalignment='bottom')
-                        self.log_ax.text(*plots["log_strain50_text"], '$ε_{50}$', horizontalalignment='right',
-                                         verticalalignment='center')
+                            self.log_ax.text(*plots["log_t50_text"], '$t_{50}$', horizontalalignment='center',
+                                             verticalalignment='bottom')
+                            self.log_ax.text(*plots["log_strain50_text"], '$ε_{50}$', horizontalalignment='right',
+                                             verticalalignment='center')
 
-                        self.log_ax.text(*plots["d0"], '$d_{0}$', horizontalalignment='center',
-                                         verticalalignment='center')
+                            self.log_ax.text(*plots["d0"], '$d_{0}$', horizontalalignment='center',
+                                             verticalalignment='center')
 
                     def str_Kf(x):
                         s = "{:.2e}".format(x).replace(".", ",")
