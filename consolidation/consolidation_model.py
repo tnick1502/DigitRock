@@ -115,7 +115,8 @@ class ModelTriaxialConsolidation:
                                       "strain100_log": None,
                                       "d0": None,
                                       "velocity": None,
-                                      "Kf_log": None})
+                                      "Kf_log": None,
+                                      "plaxis_table": None})
 
     def set_test_data(self, test_data):
         """Получение и обработка массивов данных, считанных с файла прибора"""
@@ -850,6 +851,7 @@ class ModelTriaxialConsolidation:
         self._test_result.t100_log = None
         self._test_result.strain100_log = None
         self._test_result.Kf_log = None
+        self._test_result.plaxis_table = None
 
         if self.processed_points_log.Cv:
             if self.processed_points_log.Cv.y > np.max(self._test_data.volume_strain_approximate):
@@ -889,6 +891,8 @@ class ModelTriaxialConsolidation:
                                                                                 self._test_result.d0,
                                                                                 self._test_params.p_max,
                                                                                 self._test_result.Cv_log)
+                self._test_result.plaxis_table = [self._test_data.time, self._test_data.volume_strain]
+
 
     @staticmethod
     def define_Kf(strain100, strain0, pmax, Cv):

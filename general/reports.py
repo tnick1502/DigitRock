@@ -1316,7 +1316,8 @@ def result_table_consolidation(canvas, Res, pick, scale = 0.8):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (42-(( r-30)*4)) * mm)
 
-def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0):
+
+def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
     if report_type == 'standart':
         tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
         r = 30
@@ -1331,24 +1332,27 @@ def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0
             tableData.append([""])
 
         tableData.append(
-            [Paragraph('''<p>Коэффициент фильтрационной консолидации C<sub rise="0.5" size="6">v</sub>, см<sup rise="2" size="6">2</sup>/мин:</p>''', LeftStyle), "", "", zap(Res["Cv_log"], 4),
+            [Paragraph(
+                '''<p>Коэффициент фильтрационной консолидации C<sub rise="0.5" size="6">v</sub>, см<sup rise="2" size="6">2</sup>/мин:</p>''',
+                LeftStyle), "", "", zap(Res["Cv_log"], 4),
              "", ""])
         tableData.append(
-            [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle), "", "", zap(Res["Ca_log"], 5),
+            [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle),
+             "", "", zap(Res["Ca_log"], 5),
              "", ""])
-        tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "", Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle),
+        tableData.append([Paragraph('''<p>Коэффициент фильтрации, м/сут:</p>''', LeftStyle), "", "",
+                          Paragraph(f'''<p>{kf}*10<sup rise="2" size="6">{pow}</sup></p>''', LeftStyle),
                           "", ""])
         tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
         tableData.append(["", "", "", "", "", ""])
 
-
         try:
             a = svg2rlg(pick[0])
             a.scale(scale, scale)
-            renderPDF.draw(a, canvas, 36 * mm, (118-moove) * mm)
+            renderPDF.draw(a, canvas, 36 * mm, (118 - moove) * mm)
             b = svg2rlg(pick[1])
             b.scale(scale, scale)
-            renderPDF.draw(b, canvas, 36 * mm, (62-moove) * mm)
+            renderPDF.draw(b, canvas, 36 * mm, (62 - moove) * mm)
         except AttributeError:
             a = ImageReader(pick[1])
             canvas.drawImage(a, 32 * mm, 60 * mm,
@@ -1374,7 +1378,6 @@ def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0
                  ('SPAN', (0, -5), (2, -5)),
                  ('SPAN', (-3, -5), (-1, -5)),
 
-
                  # ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
                  # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
                  # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
@@ -1391,14 +1394,14 @@ def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0
                  ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
                  ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
 
-        t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+        t = Table(tableData, colWidths=175 / 6 * mm, rowHeights=4 * mm)
         t.setStyle(style)
 
         t.wrapOn(canvas, 0, 0)
-        t.drawOn(canvas, 25 * mm, (48 - 8 - moove-((r-30)*4) - 4) * mm)
+        t.drawOn(canvas, 25 * mm, (48 - 8 - moove - ((r - 30) * 4) - 4) * mm)
     elif report_type == 'plaxis':
         tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
-        r = 33 - 15
+        r = 33 - 17
 
         def str_Kf(x):
             s = "{:.2e}".format(x).replace(".", ",")
@@ -1409,17 +1412,73 @@ def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0
         for i in range(r):
             tableData.append([""])
 
-        for i in range(15):
-            tableData.append(["i","time","","deff","","i+14",".",".",".",".",".",".",".",".","."])
+        _debug = [
+            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
+             "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37",
+             "38", "39", "40", "41", "42"],
+            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
+             "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37",
+             "38", "39", "40", "41", "42"]]
+
+        def create_dev_table(Data):
+            if len(Data[0]) < 42:
+                Data[0] = Data[0] + ["-"] * (42 - len(Data[0]))
+                Data[1] = Data[1] + ["-"] * (42 - len(Data[1]))
+
+            base_cicl = []
+            new_Data = []
+
+            One, Two = Data
+            head = ['№ п/п', 'Время, мин', 'Отн. деформация ε1, д.е.']
+
+            for D in range(len(Data[0])):
+
+                if D <= 13:
+                    base_cicl.append(str(D + 1))
+                    base_cicl.append(One[D])
+                    base_cicl.append(Two[D])
+                    new_Data.append(base_cicl)
+                    base_cicl = []
+                elif D <= 27 and D > 14:
+                    base_cicl.append(str(D + 1))
+                    base_cicl.append(One[D])
+                    base_cicl.append(Two[D])
+                    for i in range(len(base_cicl)):
+                        new_Data[D - 14].append(base_cicl[i])
+                    base_cicl = []
+                else:
+                    base_cicl.append(str(D + 1))
+                    base_cicl.append(One[D])
+                    base_cicl.append(Two[D])
+                    for i in range(len(base_cicl)):
+                        new_Data[D - 28].append(base_cicl[i])
+                    base_cicl = []
+            _b = []
+            _b.append(head * 3)
+            _b.append(new_Data)
+            return _b
+
+        base = create_dev_table(_debug)
+
+        for i in range(len(base[1])):
+            if i == 0:
+               tableData.append(
+                    [base[0][0], Paragraph(base[0][1], CentralStyle), "", Paragraph(base[0][2], CentralStyle), "",
+                     base[0][3], Paragraph(base[0][4], CentralStyle), "", Paragraph(base[0][5], CentralStyle), "", base[0][6], Paragraph(base[0][7], CentralStyle),"",
+                     Paragraph(base[0][8], CentralStyle), ""])
+               tableData.append([""]*15)
+               tableData.append([""] * 15)
+            tableData.append([base[1][i][0], base[1][i][1], "", base[1][i][2], "", base[1][i][3], base[1][i][4], "", base[1][i][5], "",
+                              base[1][i][6], base[1][i][7], "", base[1][i][8], ""])
 
         tableData.append(
             ["Интерпретация результатов испытания", "", "", "", "", ""])
-
+        # TODO ТУТ перед четвёркой
         tableData.append(
             [Paragraph(
                 '''<p>Модифицированный коэффициент сжимаемости μ<sup rise="2" size="6">*</sup></p>''',
-                LeftStyle), "", "", zap(Res["mu"], 4),
-             "", ""])
+                LeftStyle), "", "", "", 4,
+                "", ""])
         # tableData.append(
         #     [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle),
         #      "", "", zap(Res["Ca_log"], 5),
@@ -1429,9 +1488,6 @@ def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0
         #                   "", ""])
         # tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
         # tableData.append(["", "", "", "", "", ""])
-
-
-
 
         try:
             a = svg2rlg(pick[1])
@@ -1446,37 +1502,149 @@ def result_table_deviator(canvas, Res, pick, report_type, scale = 0.8,  moove =0
             canvas.drawImage(b, 32 * mm, 114 * mm,
                              width=160 * mm, height=54 * mm)
 
-
         style = [
-                 ('SPAN', (0, -2), (-1, -2)), # Интепретация результатов испытания
-                 ('SPAN', (0, -1), (2, -1)),
-                 ('SPAN', (-3, -1), (-1, -1)),
-                 ('SPAN', (0, 0), (-1, 0)),
-                 ('SPAN', (0, 1), (-1, r)),
+            ('SPAN', (0, 0), (-1, 0)),
+            ('SPAN', (0, 1), (-1, r)),
+            ('SPAN', (0, -2), (-1, -2)),  # Интепретация результатов испытания
+            ('SPAN', (0, -1), (7, -1)),
+            ('SPAN', (8, -1), (14, -1)),
 
-                 # ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-                 # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-                 # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+            ('SPAN', (0, -17), (0, -19)),
+            ('SPAN', (1, -17), (2, -19)),
+            ('SPAN', (3, -17), (4, -19)),
+            ('SPAN', (5, -17), (5, -19)),
+            ('SPAN', (6, -17), (7, -19)),
+            ('SPAN', (8, -17), (9, -19)),
+            ('SPAN', (10, -17), (10, -19)),
+            ('SPAN', (11, -17), (12, -19)),
+            ('SPAN', (13, -17), (14, -19)),
 
-                 ("BACKGROUND", (0, -1), (2, -1), HexColor(0xebebeb)),
+            ('SPAN', (1, -3), (2, -3)),
+            ('SPAN', (3, -3), (4, -3)),
+            ('SPAN', (6, -3), (7, -3)),
+            ('SPAN', (8, -3), (9, -3)),
+            ('SPAN', (11, -3), (12, -3)),
+            ('SPAN', (13, -3), (14, -3)),
 
-                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-                 ('FONTNAME', (0, -2), (-1, -2), 'TimesDj'),
-                 ("FONTSIZE", (0, 0), (-1, -1), 8),
-                 # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
-                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                 ("ALIGN", (0, 0), (-1, r), "CENTER"),
-                 ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
-                 ("ALIGN", (0, -2), (-1, -2), "CENTER"),
-                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+            ('SPAN', (1, -4), (2, -4)),
+            ('SPAN', (3, -4), (4, -4)),
+            ('SPAN', (6, -4), (7, -4)),
+            ('SPAN', (8, -4), (9, -4)),
+            ('SPAN', (11, -4), (12, -4)),
+            ('SPAN', (13, -4), (14, -4)),
+
+            ('SPAN', (1, -5), (2, -5)),
+            ('SPAN', (3, -5), (4, -5)),
+            ('SPAN', (6, -5), (7, -5)),
+            ('SPAN', (8, -5), (9, -5)),
+            ('SPAN', (11, -5), (12, -5)),
+            ('SPAN', (13, -5), (14, -5)),
+
+            ('SPAN', (1, -6), (2, -6)),
+            ('SPAN', (3, -6), (4, -6)),
+            ('SPAN', (6, -6), (7, -6)),
+            ('SPAN', (8, -6), (9, -6)),
+            ('SPAN', (11, -6), (12, -6)),
+            ('SPAN', (13, -6), (14, -6)),
+
+            ('SPAN', (1, -7), (2, -7)),
+            ('SPAN', (3, -7), (4, -7)),
+            ('SPAN', (6, -7), (7, -7)),
+            ('SPAN', (8, -7), (9, -7)),
+            ('SPAN', (11, -7), (12, -7)),
+            ('SPAN', (13, -7), (14, -7)),
+
+            ('SPAN', (1, -8), (2, -8)),
+            ('SPAN', (3, -8), (4, -8)),
+            ('SPAN', (6, -8), (7, -8)),
+            ('SPAN', (8, -8), (9, -8)),
+            ('SPAN', (11, -8), (12, -8)),
+            ('SPAN', (13, -8), (14, -8)),
+
+            ('SPAN', (1, -9), (2, -9)),
+            ('SPAN', (3, -9), (4, -9)),
+            ('SPAN', (6, -9), (7, -9)),
+            ('SPAN', (8, -9), (9, -9)),
+            ('SPAN', (11, -9), (12, -9)),
+            ('SPAN', (13, -9), (14, -9)),
+
+            ('SPAN', (1, -10), (2, -10)),
+            ('SPAN', (3, -10), (4, -10)),
+            ('SPAN', (6, -10), (7, -10)),
+            ('SPAN', (8, -10), (9, -10)),
+            ('SPAN', (11, -10), (12, -10)),
+            ('SPAN', (13, -10), (14, -10)),
+
+            ('SPAN', (1, -11), (2, -11)),
+            ('SPAN', (3, -11), (4, -11)),
+            ('SPAN', (6, -11), (7, -11)),
+            ('SPAN', (8, -11), (9, -11)),
+            ('SPAN', (11, -11), (12, -11)),
+            ('SPAN', (13, -11), (14, -11)),
+
+            ('SPAN', (1, -12), (2, -12)),
+            ('SPAN', (3, -12), (4, -12)),
+            ('SPAN', (6, -12), (7, -12)),
+            ('SPAN', (8, -12), (9, -12)),
+            ('SPAN', (11, -12), (12, -12)),
+            ('SPAN', (13, -12), (14, -12)),
+
+            ('SPAN', (1, -13), (2, -13)),
+            ('SPAN', (3, -13), (4, -13)),
+            ('SPAN', (6, -13), (7, -13)),
+            ('SPAN', (8, -13), (9, -13)),
+            ('SPAN', (11, -13), (12, -13)),
+            ('SPAN', (13, -13), (14, -13)),
+
+            ('SPAN', (1, -14), (2, -14)),
+            ('SPAN', (3, -14), (4, -14)),
+            ('SPAN', (6, -14), (7, -14)),
+            ('SPAN', (8, -14), (9, -14)),
+            ('SPAN', (11, -14), (12, -14)),
+            ('SPAN', (13, -14), (14, -14)),
+
+            ('SPAN', (1, -15), (2, -15)),
+            ('SPAN', (3, -15), (4, -15)),
+            ('SPAN', (6, -15), (7, -15)),
+            ('SPAN', (8, -15), (9, -15)),
+            ('SPAN', (11, -15), (12, -15)),
+            ('SPAN', (13, -15), (14, -15)),
+
+            ('SPAN', (1, -16), (2, -16)),
+            ('SPAN', (3, -16), (4, -16)),
+            ('SPAN', (6, -16), (7, -16)),
+            ('SPAN', (8, -16), (9, -16)),
+            ('SPAN', (11, -16), (12, -16)),
+            ('SPAN', (13, -16), (14, -16)),
+
+            # ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+            # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+            # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+
+            ("BACKGROUND", (0, -1), (7, -1), HexColor(0xebebeb)),
+
+            ("BACKGROUND", (0, -19), (-1, -17), HexColor(0xebebeb)),
+            ("BACKGROUND", (0, -16), (0, -3), HexColor(0xebebeb)),
+            ("BACKGROUND", (5, -16), (5, -3), HexColor(0xebebeb)),
+            ("BACKGROUND", (10, -16), (10, -3), HexColor(0xebebeb)),
+
+            ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+            ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+            ('FONTNAME', (0, -2), (-1, -2), 'TimesDj'),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (-1, r), "CENTER"),
+            ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+            ("ALIGN", (0, -2), (-1, -2), "CENTER"),
+            ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+            ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
 
         t = Table(tableData, colWidths=175 / 15 * mm, rowHeights=4 * mm)
         t.setStyle(style)
 
         t.wrapOn(canvas, 0, 0)
-        t.drawOn(canvas, 25 * mm, (48 - 8 - moove - ((r - (33 - 15)) * 4) - 4) * mm)
+        t.drawOn(canvas, 25 * mm, (48 - 8 - moove - ((r - (33 - 17)) * 4) - 4) * mm)
 
 
 def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E", moove=0):
