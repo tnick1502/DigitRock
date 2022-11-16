@@ -226,6 +226,8 @@ class ModelTriaxialConsolidationUI(QWidget):
                                  color="#eeeeee")
                     self.sqrt_ax.plot([], [], label="$t_{50}$" + " = " + str(round(res["t50_sqrt"], 3)),
                                       color="#eeeeee")
+                    self.sqrt_ax.plot([], [], label="$μ^{*}$" + " = " + '$' + f'{res["mu"]}' + '$', color="#eeeeee")
+
                     self.sqrt_ax.legend()
 
             self.sqrt_canvas.draw()
@@ -352,6 +354,7 @@ class ModelTriaxialConsolidationUI(QWidget):
                     self.log_ax.plot([], [], label="$t_{100}$" + " = " + str(res["t100_log"]), color="#eeeeee")
                     self.log_ax.plot([], [], label="$C_{a}$" + " = " + str(res["Ca_log"]), color="#eeeeee")
                     self.log_ax.plot([], [], label="$kf$" + " = " + '$' + f'{kf}*10^' + '{' + str(pow) + '}' + '$', color="#eeeeee")
+                    self.log_ax.plot([], [], label="$μ^{*}$" + " = " + '$' + f'{res["mu"]}' + '$', color="#eeeeee")
                     self.log_ax.legend()
 
             self.sqrt_canvas.draw()

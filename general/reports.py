@@ -1429,7 +1429,7 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
             new_Data = []
 
             One, Two = Data
-            head = ['№ п/п', 'Время, мин', 'Отн. деформация ε1, д.е.']
+            head = ['№ п/п', 'Время, мин', '<p>Отн. деформация ε<sub rise="0.5" size="6">1</sub></p>, д.е.']
 
             for D in range(len(Data[0])):
 
@@ -1439,7 +1439,7 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
                     base_cicl.append(Two[D])
                     new_Data.append(base_cicl)
                     base_cicl = []
-                elif D <= 27 and D > 14:
+                elif D <= 27 and D >= 14:
                     base_cicl.append(str(D + 1))
                     base_cicl.append(One[D])
                     base_cicl.append(Two[D])
@@ -1447,6 +1447,8 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
                         new_Data[D - 14].append(base_cicl[i])
                     base_cicl = []
                 else:
+                    if D >= 42:
+                        break
                     base_cicl.append(str(D + 1))
                     base_cicl.append(One[D])
                     base_cicl.append(Two[D])
@@ -1458,25 +1460,30 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
             _b.append(new_Data)
             return _b
 
-        base = create_dev_table(_debug)
+        # base = create_dev_table(_debug)
+        base = create_dev_table(Res["plaxis_table"])
 
         for i in range(len(base[1])):
             if i == 0:
                tableData.append(
-                    [base[0][0], Paragraph(base[0][1], CentralStyle), "", Paragraph(base[0][2], CentralStyle), "",
-                     base[0][3], Paragraph(base[0][4], CentralStyle), "", Paragraph(base[0][5], CentralStyle), "", base[0][6], Paragraph(base[0][7], CentralStyle),"",
+                    [base[0][0], Paragraph(base[0][1], CentralStyle), "",
+                     Paragraph(base[0][2], CentralStyle), "",
+                     base[0][3], Paragraph(base[0][4], CentralStyle), "",
+                     Paragraph(base[0][5], CentralStyle), "",
+                     base[0][6], Paragraph(base[0][7], CentralStyle), "",
                      Paragraph(base[0][8], CentralStyle), ""])
                tableData.append([""]*15)
                tableData.append([""] * 15)
-            tableData.append([base[1][i][0], base[1][i][1], "", base[1][i][2], "", base[1][i][3], base[1][i][4], "", base[1][i][5], "",
-                              base[1][i][6], base[1][i][7], "", base[1][i][8], ""])
+            tableData.append([base[1][i][0], zap(base[1][i][1], 1), "", zap(base[1][i][2], 3), "",
+                              base[1][i][3], zap(base[1][i][4], 1), "", zap(base[1][i][5], 4), "",
+                              base[1][i][6], zap(base[1][i][7], 1), "", zap(base[1][i][8], 4), ""])
 
         tableData.append(
             ["Интерпретация результатов испытания", "", "", "", "", ""])
         # TODO ТУТ перед четвёркой
         tableData.append(
             [Paragraph(
-                '''<p>Модифицированный коэффициент сжимаемости μ<sup rise="2" size="6">*</sup></p>''',
+                '''<p>Модифицированный коэффициент сжимаемости μ<sup rise="2" size="6">*</sup>, ед</p>''',
                 LeftStyle), "", "", "", 4,
                 "", ""])
         # tableData.append(
@@ -3616,8 +3623,10 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
     elif report_type == "standart_E50_with_dilatancy":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50_with_dilatancy", moove=moove)
-    elif report_type == "plaxis_m" or report_type == "plaxis":
+    elif report_type == "plaxis_m":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="Eur", moove=moove)
+    elif report_type == "plaxis":
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E", moove=moove)
     elif report_type == "E_E50":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all", moove=moove)
     elif report_type == "user_define_1":
@@ -3659,7 +3668,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type, p_or_sigma=p_or_sigma)
     p_or_sigma = False
 
-    if report_type == "standart_E":
+    if report_type == "standart_E" or report_type == "plaxis":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E", moove=moove)
     elif report_type == "standart_E50":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50", moove=moove)

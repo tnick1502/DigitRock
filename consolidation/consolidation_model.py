@@ -891,7 +891,8 @@ class ModelTriaxialConsolidation:
                                                                                 self._test_result.d0,
                                                                                 self._test_params.p_max,
                                                                                 self._test_result.Cv_log)
-                self._test_result.plaxis_table = [self._test_data.time, self._test_data.volume_strain]
+                self._test_result.plaxis_table = [[i for i in self._test_data.time],
+                                                  [j for j in self._test_data.volume_strain]]
 
 
     @staticmethod
