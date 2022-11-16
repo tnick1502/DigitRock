@@ -27,6 +27,7 @@ from general.tab_view import AppMixin, TabMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
 from authentication.request_qr import request_qr
+from authentication.control import control
 
 class RezonantColumnProcessingWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -671,6 +672,8 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
 
             RC_models.dump(os.path.join(statment.save_dir.save_directory,
                                         f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
+
+            control()
 
 
         except AssertionError as error:
