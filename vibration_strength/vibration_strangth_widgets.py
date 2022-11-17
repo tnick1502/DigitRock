@@ -28,6 +28,7 @@ from tests_log.equipment import static
 from tests_log.test_classes import TestsLogTriaxialStatic
 import os
 from version_control.configs import actual_version
+from authentication.control import control
 
 __version__ = actual_version
 import numpy as np
@@ -246,6 +247,8 @@ class VibrationStrangthSoilTestApp(QWidget):
 
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
+
+            control()
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
