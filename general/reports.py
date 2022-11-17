@@ -1414,11 +1414,11 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
 
 
         def create_dev_table(Data):
-            l=51
-            l1 =int(l/3)
+            l = 51
+            l1 = int(l/3)
 
             for i in range(len(Data[1])):
-                if type(Data[1][i])!='str':
+                if type(Data[1][i]) != str:
                     Data[1][i] = abs(Data[1][i])
 
             if len(Data[0]) < l:
@@ -1494,7 +1494,8 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
         tableData.append(
             [Paragraph(
                 '''<p>Модифицированный коэффициент сжимаемости μ<sup rise="2" size="6">*</sup>, ед</p>''',
-                LeftStyle), "", "", zap(Res["Ca_log"], 4), "", ""])
+                LeftStyle), "", "", "", "", "", "", "",
+                zap(Res["mu"], 4), "", "", "", "", "", "",])
         # tableData.append(
         #     [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle),
         #      "", "", zap(Res["Ca_log"], 5),
@@ -1674,6 +1675,11 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
             ("ALIGN", (0, 0), (-1, r), "CENTER"),
             ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
             ("ALIGN", (0, -2), (-1, -2), "CENTER"),
+
+            ("ALIGN", (1, -22), (4, -3), "CENTER"),
+            ("ALIGN", (6, -22), (9, -3), "CENTER"),
+            ("ALIGN", (11, -22), (14, -3), "CENTER"),
+
             ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
             ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
 
