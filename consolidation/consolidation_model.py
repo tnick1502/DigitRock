@@ -1076,6 +1076,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._test_params.m = statment[statment.current_test].mechanical_properties.m
 
         self._draw_params.max_time = (((0.848 * 2 * 2) / (4 * self._test_params.Cv))) *2*2* np.random.uniform(5, 7)
+        self._draw_params.min_time = (((0.848 * 2 * 2) / (4 * self._test_params.Cv))) * 5
         self._draw_params.strain = define_final_deformation(self._test_params.p_max, self._test_params.Eoed,
                                                             self._test_params.m)
 
@@ -1100,7 +1101,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         params = {
             "max_time":
                 {"value": self._draw_params.max_time,
-                 "borders": [self._draw_params.max_time / 2, self._draw_params.max_time * 10]},
+                 "borders": [self._draw_params.min_time / 2, self._draw_params.max_time * 10]},
             "strain":
                 {"value": -self._draw_params.strain,
                  "borders":[-self._draw_params.strain / 2, -self._draw_params.strain * 2]},

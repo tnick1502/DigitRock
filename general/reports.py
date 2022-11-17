@@ -1401,7 +1401,7 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
         t.drawOn(canvas, 25 * mm, (48 - 8 - moove - ((r - 30) * 4) - 4) * mm)
     elif report_type == 'plaxis':
         tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
-        r = 33 - 17
+        r = 34 - 20
 
         def str_Kf(x):
             s = "{:.2e}".format(x).replace(".", ",")
@@ -1412,18 +1412,26 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
         for i in range(r):
             tableData.append([""])
 
-        _debug = [
-            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-             "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37",
-             "38", "39", "40", "41", "42"],
-            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-             "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37",
-             "38", "39", "40", "41", "42"]]
 
         def create_dev_table(Data):
-            if len(Data[0]) < 42:
-                Data[0] = Data[0] + ["-"] * (42 - len(Data[0]))
-                Data[1] = Data[1] + ["-"] * (42 - len(Data[1]))
+            l=51
+            l1 =int(l/3)
+
+            for i in range(len(Data[1])):
+                if type(Data[1][i])!='str':
+                    Data[1][i] = abs(Data[1][i])
+
+            if len(Data[0]) < l:
+                Data[0] = Data[0] + ["-"] * (l - len(Data[0]))
+                Data[1] = Data[1] + ["-"] * (l - len(Data[1]))
+
+            if len(Data[0]) > l-1:
+                Data[0][l-2] = "..."
+                Data[1][l-2] = "..."
+                Data[0][l - 1] = Data[0][-1]
+                Data[1][l - 1] = Data[1][-1]
+                Data[0] = Data[0][:l]
+                Data[1] = Data[1][:l]
 
             base_cicl = []
             new_Data = []
@@ -1433,27 +1441,27 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
 
             for D in range(len(Data[0])):
 
-                if D <= 13:
+                if D <= (l1-1):
                     base_cicl.append(str(D + 1))
                     base_cicl.append(One[D])
                     base_cicl.append(Two[D])
                     new_Data.append(base_cicl)
                     base_cicl = []
-                elif D <= 27 and D >= 14:
+                elif D <= (l1*2-1)  and D >= l1:
                     base_cicl.append(str(D + 1))
                     base_cicl.append(One[D])
                     base_cicl.append(Two[D])
                     for i in range(len(base_cicl)):
-                        new_Data[D - 14].append(base_cicl[i])
+                        new_Data[D - l1].append(base_cicl[i])
                     base_cicl = []
                 else:
-                    if D >= 42:
+                    if D >= l:
                         break
                     base_cicl.append(str(D + 1))
                     base_cicl.append(One[D])
                     base_cicl.append(Two[D])
                     for i in range(len(base_cicl)):
-                        new_Data[D - 28].append(base_cicl[i])
+                        new_Data[D - l1*2].append(base_cicl[i])
                     base_cicl = []
             _b = []
             _b.append(head * 3)
@@ -1472,11 +1480,13 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
                      Paragraph(base[0][5], CentralStyle), "",
                      base[0][6], Paragraph(base[0][7], CentralStyle), "",
                      Paragraph(base[0][8], CentralStyle), ""])
-               tableData.append([""]*15)
                tableData.append([""] * 15)
+               tableData.append([""] * 15)
+            print(base[1][i][6],base[1][i][7], base[1][i][8])
             tableData.append([base[1][i][0], zap(base[1][i][1], 1), "", zap(base[1][i][2], 3), "",
                               base[1][i][3], zap(base[1][i][4], 1), "", zap(base[1][i][5], 4), "",
                               base[1][i][6], zap(base[1][i][7], 1), "", zap(base[1][i][8], 4), ""])
+
 
         tableData.append(
             ["Интерпретация результатов испытания", "", "", "", "", ""])
@@ -1484,8 +1494,7 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
         tableData.append(
             [Paragraph(
                 '''<p>Модифицированный коэффициент сжимаемости μ<sup rise="2" size="6">*</sup>, ед</p>''',
-                LeftStyle), "", "", "", 4,
-                "", ""])
+                LeftStyle), "", "", zap(Res["Ca_log"], 4), "", ""])
         # tableData.append(
         #     [Paragraph('''<p>Коэфффициент вторичной консолидации C<sub rise="0.5" size="6">a</sub>:</p>''', LeftStyle),
         #      "", "", zap(Res["Ca_log"], 5),
@@ -1499,7 +1508,7 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
         try:
             a = svg2rlg(pick[1])
             a.scale(scale, scale)
-            renderPDF.draw(a, canvas, 36 * mm, (118 - moove) * mm)
+            renderPDF.draw(a, canvas, 36 * mm, (128 - moove) * mm)
 
         except AttributeError:
             a = ImageReader(pick[1])
@@ -1516,15 +1525,15 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
             ('SPAN', (0, -1), (7, -1)),
             ('SPAN', (8, -1), (14, -1)),
 
-            ('SPAN', (0, -17), (0, -19)),
-            ('SPAN', (1, -17), (2, -19)),
-            ('SPAN', (3, -17), (4, -19)),
-            ('SPAN', (5, -17), (5, -19)),
-            ('SPAN', (6, -17), (7, -19)),
-            ('SPAN', (8, -17), (9, -19)),
-            ('SPAN', (10, -17), (10, -19)),
-            ('SPAN', (11, -17), (12, -19)),
-            ('SPAN', (13, -17), (14, -19)),
+            ('SPAN', (0, -20), (0, -22)),
+            ('SPAN', (1, -20), (2, -22)),
+            ('SPAN', (3, -20), (4, -22)),
+            ('SPAN', (5, -20), (5, -22)),
+            ('SPAN', (6, -20), (7, -22)),
+            ('SPAN', (8, -20), (9, -22)),
+            ('SPAN', (10, -20), (10, -22)),
+            ('SPAN', (11, -20), (12, -22)),
+            ('SPAN', (13, -20), (14, -22)),
 
             ('SPAN', (1, -3), (2, -3)),
             ('SPAN', (3, -3), (4, -3)),
@@ -1624,16 +1633,37 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
             ('SPAN', (11, -16), (12, -16)),
             ('SPAN', (13, -16), (14, -16)),
 
+            ('SPAN', (1, -17), (2, -17)),
+            ('SPAN', (3, -17), (4, -17)),
+            ('SPAN', (6, -17), (7, -17)),
+            ('SPAN', (8, -17), (9, -17)),
+            ('SPAN', (11, -17), (12, -17)),
+            ('SPAN', (13, -17), (14, -17)),
+
+            ('SPAN', (1, -18), (2, -18)),
+            ('SPAN', (3, -18), (4, -18)),
+            ('SPAN', (6, -18), (7, -18)),
+            ('SPAN', (8, -18), (9, -18)),
+            ('SPAN', (11, -18), (12, -18)),
+            ('SPAN', (13, -18), (14, -18)),
+
+            ('SPAN', (1, -19), (2, -19)),
+            ('SPAN', (3, -19), (4, -19)),
+            ('SPAN', (6, -19), (7, -19)),
+            ('SPAN', (8, -19), (9, -19)),
+            ('SPAN', (11, -19), (12, -19)),
+            ('SPAN', (13, -19), (14, -19)),
+
             # ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
             # ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
             # ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
 
             ("BACKGROUND", (0, -1), (7, -1), HexColor(0xebebeb)),
 
-            ("BACKGROUND", (0, -19), (-1, -17), HexColor(0xebebeb)),
-            ("BACKGROUND", (0, -16), (0, -3), HexColor(0xebebeb)),
-            ("BACKGROUND", (5, -16), (5, -3), HexColor(0xebebeb)),
-            ("BACKGROUND", (10, -16), (10, -3), HexColor(0xebebeb)),
+            ("BACKGROUND", (0, -22), (-1, -20), HexColor(0xebebeb)),
+            ("BACKGROUND", (0, -19), (0, -3), HexColor(0xebebeb)),
+            ("BACKGROUND", (5, -19), (5, -3), HexColor(0xebebeb)),
+            ("BACKGROUND", (10, -19), (10, -3), HexColor(0xebebeb)),
 
             ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
             ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -1651,7 +1681,7 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
         t.setStyle(style)
 
         t.wrapOn(canvas, 0, 0)
-        t.drawOn(canvas, 25 * mm, (48 - 8 - moove - ((r - (33 - 17)) * 4) - 4) * mm)
+        t.drawOn(canvas, 25 * mm, (48 - 8 - moove - ((r - (34 - 20)) * 4) - 4) * mm)
 
 
 def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E", moove=0):
