@@ -884,6 +884,7 @@ class ModelTriaxialConsolidation:
                                                   / (self.processed_points_log.second_line_end_point.x -
                                                      self.processed_points_log.second_line_start_point.x)), 5)
                 self._test_result.mu = np.round(self._test_result.Ca_log/(np.log(10)*(1 + statment[statment.current_test].physical_properties.e)),4)
+                print(self._test_result.Ca_log)
                 self._test_result.t100_log = np.round(10**self.processed_points_log.Cv.x )
                 self._test_result.strain100_log = self.processed_points_log.Cv.y
 

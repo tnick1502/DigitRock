@@ -1421,10 +1421,6 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
                 if type(Data[1][i]) != str:
                     Data[1][i] = abs(Data[1][i])
 
-            if len(Data[0]) < l:
-                Data[0] = Data[0] + ["-"] * (l - len(Data[0]))
-                Data[1] = Data[1] + ["-"] * (l - len(Data[1]))
-
             if len(Data[0]) > l-1:
                 Data[0][l-2] = "..."
                 Data[1][l-2] = "..."
@@ -1433,11 +1429,16 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
                 Data[0] = Data[0][:l]
                 Data[1] = Data[1][:l]
 
+            if len(Data[0]) < l:
+                Data[0] = Data[0] + ["-"] * (l - len(Data[0]))
+                Data[1] = Data[1] + ["-"] * (l - len(Data[1]))
+
             base_cicl = []
             new_Data = []
 
             One, Two = Data
-            head = ['№ п/п', 'Время, мин', '<p>Отн. деформация ε<sub rise="0.5" size="6">1</sub></p>, д.е.']
+            head = ['№ п/п', 'Время, мин', '<p>Отн. деформация ε<sub size="5" rise="0.5">1</sub></p>, д.е.']
+            # head = ['№ п/п', 'Время, мин', '<text>Отн. деформация <text size="12">ε</text><sub size="5" rise="0.5">1</sub></text>, д.е.']
 
             for D in range(len(Data[0])):
 
@@ -1491,6 +1492,7 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
         tableData.append(
             ["Интерпретация результатов испытания", "", "", "", "", ""])
         # TODO ТУТ перед четвёркой
+
         tableData.append(
             [Paragraph(
                 '''<p>Модифицированный коэффициент сжимаемости μ<sup rise="2" size="6">*</sup>, ед</p>''',
