@@ -3664,7 +3664,7 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
     elif report_type == "plaxis_m":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="Eur", moove=moove)
     elif report_type == "plaxis":
-        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E", moove=moove)
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
     elif report_type == "E_E50":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="all", moove=moove)
     elif report_type == "user_define_1":
@@ -3706,9 +3706,9 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type, p_or_sigma=p_or_sigma)
     p_or_sigma = False
 
-    if report_type == "standart_E" or report_type == "plaxis":
+    if report_type == "standart_E":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E", moove=moove)
-    elif report_type == "standart_E50":
+    elif report_type == "standart_E50" or report_type == "plaxis":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50", moove=moove)
     elif report_type == "standart_E50_with_dilatancy":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50_with_dilatancy", moove=moove)
