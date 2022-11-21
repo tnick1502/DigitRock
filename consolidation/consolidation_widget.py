@@ -29,6 +29,7 @@ from general.tab_view import TabMixin
 __version__ = actual_version
 
 from authentication.request_qr import request_qr
+from authentication.control import control
 
 
 class ConsilidationSoilTestWidget(TabMixin, QWidget):
@@ -443,6 +444,8 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
 
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
+
+            control()
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
