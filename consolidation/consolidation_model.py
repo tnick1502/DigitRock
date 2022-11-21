@@ -754,7 +754,7 @@ class ModelTriaxialConsolidation:
         # Сделаем чтобы на осях кв.корня и логарифма шаг по оси был постоянным
         self._test_data.time_sqrt = np.linspace(self._test_data.time_cut[0] ** 0.5, self._test_data.time_cut[-1] ** 0.5, self.points_count)
         #self._test_data.time_log = np.log10(np.linspace(0., self._test_data.time_cut[-1] ** 0.5, self.points_count))
-        print(f"self._test_data.time_cut[0] ** 0.5 : {self._test_data.time_cut[0] ** 0.5}")
+        # print(f"self._test_data.time_cut[0] ** 0.5 : {self._test_data.time_cut[0] ** 0.5}")
         if type == "poly":
             # Аппроксимация полиномом
             poly_pow = param
