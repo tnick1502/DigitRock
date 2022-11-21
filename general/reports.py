@@ -1483,7 +1483,6 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
                      Paragraph(base[0][8], CentralStyle), ""])
                tableData.append([""] * 15)
                tableData.append([""] * 15)
-            print(base[1][i][6],base[1][i][7], base[1][i][8])
             tableData.append([base[1][i][0], zap(base[1][i][1], 1), "", zap(base[1][i][2], 3), "",
                               base[1][i][3], zap(base[1][i][4], 1), "", zap(base[1][i][5], 4), "",
                               base[1][i][6], zap(base[1][i][7], 1), "", zap(base[1][i][8], 4), ""])

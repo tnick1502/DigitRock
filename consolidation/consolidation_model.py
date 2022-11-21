@@ -754,7 +754,7 @@ class ModelTriaxialConsolidation:
         # Сделаем чтобы на осях кв.корня и логарифма шаг по оси был постоянным
         self._test_data.time_sqrt = np.linspace(self._test_data.time_cut[0] ** 0.5, self._test_data.time_cut[-1] ** 0.5, self.points_count)
         #self._test_data.time_log = np.log10(np.linspace(0., self._test_data.time_cut[-1] ** 0.5, self.points_count))
-        print(f"self._test_data.time_cut[0] ** 0.5 : {self._test_data.time_cut[0] ** 0.5}")
+        # print(f"self._test_data.time_cut[0] ** 0.5 : {self._test_data.time_cut[0] ** 0.5}")
         if type == "poly":
             # Аппроксимация полиномом
             poly_pow = param
@@ -884,7 +884,6 @@ class ModelTriaxialConsolidation:
                                                   / (self.processed_points_log.second_line_end_point.x -
                                                      self.processed_points_log.second_line_start_point.x)), 5)
                 self._test_result.mu = np.round(self._test_result.Ca_log/(np.log(10)*(1 + statment[statment.current_test].physical_properties.e)),4)
-                print(self._test_result.Ca_log)
                 self._test_result.t100_log = np.round(10**self.processed_points_log.Cv.x )
                 self._test_result.strain100_log = self.processed_points_log.Cv.y
 

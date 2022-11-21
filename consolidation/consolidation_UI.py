@@ -285,7 +285,6 @@ class ModelTriaxialConsolidationUI(QWidget):
 
                 #self.log_ax.set_xticklabels([0.1,1,10,100,1000,10000])
 
-                print(new_tick_locations)
 
                 # Логарифм
                 # Основной график
