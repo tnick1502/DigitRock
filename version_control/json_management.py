@@ -26,7 +26,7 @@ def add_data(version: str, text: str):
 
 def get_actual_version() -> float:
     """Получение актуальной версии программы"""
-    data = open_json(path)
+    data = open_json(local)
     return "{:.2f}".format(max([float(i) for i in list(data.keys())]))
 
 def test_version(version: float) -> bool:
