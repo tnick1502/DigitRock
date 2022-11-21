@@ -106,6 +106,8 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
         self.consolidation.log_canvas.mpl_connect("motion_notify_event", self._canvas_on_moove)
         self.consolidation.log_canvas.mpl_connect('button_release_event', self._canvas_on_release)
 
+        self.consolidation.mode_plot_dotted.clicked.connect(self._mode_dotted_connect)
+
     def _connect_model_Ui(self):
         """Связь слайдеров с моделью"""
         self._cut_slider_consolidation_set_len(len(Consolidation_models[statment.current_test]._test_data.time))
@@ -171,6 +173,10 @@ class ConsilidationSoilTestWidget(TabMixin, QWidget):
             Consolidation_models[statment.current_test].set_interpolation_type(interpolation_type)
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
+
+    def _mode_dotted_connect(self):
+        self._plot_consolidation_sqrt()
+        self._plot_consolidation_log()
 
     def _prec_type(self, checked):
         prec = None
@@ -278,7 +284,10 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         self.tab_widget = QTabWidget()
         self.tab_1 = ConsolidationStatment()
         self.tab_2 = ConsilidationSoilTestWidget()
-        self.tab_3 = Save_Dir(qr=True)
+        self.tab_3 = Save_Dir( {
+                "standart": "Стандардный",
+                "plaxis": "Plaxis"},
+            qr=True)
 
         self.save_cv_ca_btn = QCheckBox('Сохранить cv ca')
         self.save_cv_ca_btn.setChecked(False)
@@ -376,7 +385,7 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
                                  statment[statment.current_test].physical_properties, statment.current_test,
                                  os.getcwd() + "/project_data/",
                                  test_parameter, test_result,
-                                 self.tab_2.consolidation.save_canvas(), "{:.2f}".format(__version__), qr_code=qr)
+                                 self.tab_2.consolidation.save_canvas(), self.tab_3.report_type, "{:.2f}".format(__version__), qr_code=qr)
 
             shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 

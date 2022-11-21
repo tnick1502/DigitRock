@@ -1029,7 +1029,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                if self.tab_4.report_type == "Standart_E50":
+                if self.tab_4.report_type == "Standart_E50" or self.tab_4.report_type == "plaxis":
                     set_cell_data(
                         self.tab_1.path,
                         (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][2] + str(number),
@@ -1123,11 +1123,16 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 set_cell_data(self.tab_1.path,
                               ("GI" + str(number), (number, 190)),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
-
-                set_cell_data(self.tab_1.path,
+                if self.tab_4.report_type == "plaxis":
+                    set_cell_data(self.tab_1.path,
                               (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
                                (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
-                              test_result["E"][0], sheet="Лист1", color="FF6961")
+                              test_result["E50"][0], sheet="Лист1", color="FF6961")
+                else:
+                    set_cell_data(self.tab_1.path,
+                                  (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
+                                   (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
+                                  test_result["E"][0], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)':
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
