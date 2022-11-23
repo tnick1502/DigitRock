@@ -1,5 +1,8 @@
 import copy
+from typing import Union
 
+from reportlab.graphics.shapes import Drawing
+from reportlab.lib import colors
 from svglib.svglib import svg2rlg
 
 from universal_report.AttrDict import *
@@ -70,7 +73,7 @@ class UniversalInputDict:
             ],
             # ТАБЛИЦА РЕЗУЛЬТАТОВ ИСПЫТАНИИЯ
             # Порядок в списке формирует порядок на листе, последний словарь задает таблицу с описанием
-            # Для подачи рисунка или таблицы на одной строке подавать просто их
+            # Для подачи рисунка или таблицы на одной строке подавать просто их в виде Drawing или Table
             # Для подачи пары подать список с нужным порядоком на строке
             'results_table': [  # Ключ и последелний сорварь с 'description' обязательны
                 # 'sample_drawing',
@@ -183,18 +186,39 @@ class UniversalInputDict:
         return self.__input_sample
 
     @staticmethod
-    def prep_img(svg, size='full') -> 'Drawing':
-        _sizes = {'full': (120, 60, 8)}
+    def prep_img(svg, size: str = 'full') -> Union['Table', 'Drawing']:
+        """
+        Подготавливает svg картинки под печать, возвращает таблицу для большой картинки и Drawing для малой
+        size: str, 'full', 'small'
+        """
+        svg.seek(0)
+
+        _sizes = {'full': (120, 40, 8), 'small': (60, 40, 8)}
         '''размеры картинок и отступы (ширина, высота, отступ слева)'''
         _size = _sizes[size]
 
-        drawing = svg2rlg(svg, True)
-        drawing.contents[0].transform = (1, 0, 0, -1, _size[2] * mm, _size[1] * mm)
+        drawing = svg2rlg(svg)
+
+        drawing.contents[0].transform = (1, 0, 0, -1, 0, 0)
+
         drawing.hAlign = 'LEFT'
-        drawing.vAlign = 'TOP'
+        drawing.vAlign = 'CENTER'
+
         drawing.height = _size[1] * mm
         drawing.width = _size[0] * mm
-        return drawing
+        drawing.transform = (1, 0, 0, -1, _size[2] * mm, _size[1] * mm)
+
+        drawing = drawing.resized()
+
+        if size == 'full':
+            return Table([[drawing]], rowHeights=[drawing.height + 4 * mm],
+                         style=[('VALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                ('ALIGN', (0, 0), (-1, -1), 'CENTER')
+                                ])
+            # ('GRID', (0, 0), (-1, -1), 2, colors.red)
+            # ('GRID', (0, 0), (-1, -1), 2, colors.red)
+        if size == 'small':
+            return drawing
 
     @staticmethod
     def prep_sigma_3(sigma_3, /) -> str:

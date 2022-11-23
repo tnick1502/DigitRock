@@ -949,7 +949,7 @@ class UniversalReport(Report):
         results_table = probe_data['results_table']
 
         for i in range(len(results_table) - 1):
-            # Для тестов
+            # Весь ИФ для тестов
             if type(results_table[i]) == str:
                 if results_table[i] == 'sample_drawing':
                     xs = np.linspace(0, 2 * np.pi)
@@ -966,7 +966,7 @@ class UniversalReport(Report):
             # Обход случая, когда данные подабтся списком в паре
             if type(results_table[i]) == list:
                 for j in range(len(results_table[i])):
-                    # Для тестов
+                    # Весь ИФ для тестов
                     if type(results_table[i][j]) == str:
                         if results_table[i][j] == 'sample_drawing':
                             xs = np.linspace(0, 2 * np.pi)
@@ -976,18 +976,16 @@ class UniversalReport(Report):
                             results_table[i][j] = drawing
 
                         if results_table[i][j] == 'sample_table':
-                            pass
+                            _sample_table = {'title': 'Напряжение, МПа',
+                                             'data_cols': [['sigma_3', 0.1, 0.2, 0.3],
+                                                           ['sigma_1c', 0.1, 0.2, 0.3],
+                                                           ['sigma_1f', 0.355, 0.765, 1.080]]}
 
-                    # Случай, когда подается таблица
-                    if type(results_table[i][j]) == dict:
-                        pass
+                            _result_table = self.reportProbeTable3(_sample_table)
+                            results_table[i][j] = _result_table
 
-                results_table[i] = Table([results_table[i]])
+                results_table[i] = Table([results_table[i]], style=[('VALIGN', (0, 0), (-1, -1), 'CENTER')])
                 continue
-
-            # Случай, когда подается еще таблица
-            if type(results_table[i]) == dict:
-                pass
 
         # Форматирование конечной таблицы с результатами
         if type(results_table[-1]) == dict:
@@ -1080,6 +1078,25 @@ class UniversalReport(Report):
         table = transpose(data)
         return table
 
+    @staticmethod
+    def reportProbeTable3(data: 'dict') -> 'Table':
+        table = data['data_cols']
+        table = adjustedTable(table)
+        table = transpose(table)
+        table = mapTable(table, lambda r, c, d: ruWithPrec(d, 2 if c == 0 else 3, ""))
+        header = [data['title']]
+        table = [header] + table
+
+        r = RTable()
+        table = mapTable(table, UniversalReport.grayRows(2))
+        r.table(table)
+        table, spans, background = r.paragraph(alwaysTrue).alignCenter().build()
+        tableStyle = TableStyleBuilder().grid().alignCenter().build(spans, background)
+        return Table(table, style=tableStyle)
+
+    @staticmethod
+    def grayRows(n):
+        return lambda r, c, d: Cell(d, 1, 1, gray) if r < n else d
 
 def test_UniversalReport():
     """ Функция для тестирования UniversalReport"""

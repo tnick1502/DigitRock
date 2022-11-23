@@ -3424,6 +3424,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     test_parameter["K0"] = K0[0]
     test_mode_consolidation(canvas, test_parameter, moove=moove, report_type=report_type)
 
+
     if report_type == "standart_E":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E", moove=moove)
     elif report_type == "standart_E50":
@@ -3480,7 +3481,8 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
     _sigma_3 = UniversalInputDict.prep_sigma_3(test_parameter["sigma_3"])
     _K0 = UniversalInputDict.prep_K0(test_parameter["K0"])
 
-    imgs = [UniversalInputDict.prep_img(pick) for pick in picks]
+    imgs = [UniversalInputDict.prep_img(picks[0]), UniversalInputDict.prep_img(picks[1]),
+            UniversalInputDict.prep_img(picks[2]), UniversalInputDict.prep_img(picks[3], size='small')]
 
     sample = UniversalInputDict().get_input_sample
     sampleInput = UniversalInputDict()
@@ -3574,8 +3576,8 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
             ],
             # ТАБЛИЦА РЕЗУЛЬТАТОВ ИСПЫТАНИИЯ
             'results_table': [
+                ['sample_table', imgs[3]],
                 imgs[2],
-                imgs[3],
                 {
                     "<p>Эффективное сцепление с', МПа:</p>": zap(res["c"], 3),
                     "<p>Эффективный угол внутреннего трения φ', град:</p>": zap(res["fi"], 1),
