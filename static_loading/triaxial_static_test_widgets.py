@@ -34,6 +34,7 @@ from general.tab_view import AppMixin
 __version__ = actual_version
 
 from authentication.request_qr import request_qr
+from authentication.control import control
 from saver import XMLWidget
 
 
@@ -722,6 +723,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 "standart_E": "Стандардный E",
                 "standart_E50": "Стандардный E50",
                 "E_E50": "Совместный E/E50",
+                "plaxis_m": "Plaxis/Midas m",
                 "plaxis": "Plaxis/Midas",
                 "user_define_1": "Пользовательский с ε50",
                 "vibro": "Вибропрочность",
@@ -756,7 +758,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
         self.physical_line_1 = LinePhysicalProperties()
         self.tab_2.line_for_phiz.addWidget(self.physical_line_1)
         self.tab_2.line_for_phiz.addStretch(-1)
-        self.physical_line_1.refresh_button.clicked.connect(self.tab_2.refresh)
+        self.physical_line_1.refresh_button.clicked.connect(self.call_tab2_refresh)
         self.physical_line_1.save_button.clicked.connect(self.save_report_and_continue)
 
         self.physical_line_2 = LinePhysicalProperties()
@@ -770,6 +772,11 @@ class StatickSoilTestApp(AppMixin, QWidget):
         # self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
 
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
+
+    def call_tab2_refresh(self):
+        self.tab_2.refresh()
+        if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
+            self.tab_3.refresh()
 
     def keyPressEvent(self, event):
         if statment.current_test:
@@ -886,7 +893,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                if self.tab_4.report_type == "standart_E50" or self.tab_4.report_type == "plaxis":
+                if self.tab_4.report_type == "standart_E50" or self.tab_4.report_type == "plaxis_m" or self.tab_4.report_type == "plaxis":
                     set_cell_data(self.tab_1.path,
                                   (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number),
                                    (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
@@ -922,7 +929,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                               ("GI" + str(number), (number, 190)),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
 
-                if self.tab_4.report_type == "standart_E50" or self.tab_4.report_type == "plaxis":
+                if self.tab_4.report_type == "standart_E50" or self.tab_4.report_type == "plaxis_m" or self.tab_4.report_type == "plaxis":
                     set_cell_data(self.tab_1.path,
                                   (c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][0][2] + str(number),
                                    (number, c_fi_E_PropertyPosition["Трёхосное сжатие (E)"][1][2])),
@@ -1022,7 +1029,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
-                if self.tab_4.report_type == "Standart_E50":
+                if self.tab_4.report_type == "Standart_E50" or self.tab_4.report_type == "plaxis":
                     set_cell_data(
                         self.tab_1.path,
                         (c_fi_E_PropertyPosition["Трёхосное сжатие (F, C, E)"][0][2] + str(number),
@@ -1116,11 +1123,16 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 set_cell_data(self.tab_1.path,
                               ("GI" + str(number), (number, 190)),
                               test_result["Eur"], sheet="Лист1", color="FF6961")
-
-                set_cell_data(self.tab_1.path,
+                if self.tab_4.report_type == "plaxis":
+                    set_cell_data(self.tab_1.path,
                               (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
                                (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
-                              test_result["E"][0], sheet="Лист1", color="FF6961")
+                              test_result["E50"][0], sheet="Лист1", color="FF6961")
+                else:
+                    set_cell_data(self.tab_1.path,
+                                  (c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][0][2] + str(number),
+                                   (number, c_fi_E_PropertyPosition["Трёхосное сжатие с разгрузкой"][1][2])),
+                                  test_result["E"][0], sheet="Лист1", color="FF6961")
 
             elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)':
                 name = file_path_name + " " + statment.general_data.object_number + " ТД" + ".pdf"
@@ -1311,6 +1323,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
+
+            control()
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

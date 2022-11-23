@@ -35,6 +35,7 @@ from general.tab_view import AppMixin, TabMixin
 __version__ = actual_version
 
 from authentication.request_qr import request_qr
+from authentication.control import control
 
 class CyclicProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -884,6 +885,8 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                                             f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
             #statment.dump(''.join(os.path.split(self.tab_3.directory)[:-1]),
                           #ame=statment.general_parameters.test_mode + ".pickle")
+
+            control()
 
 
         except AssertionError as error:

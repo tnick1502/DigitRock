@@ -1295,14 +1295,14 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         if none_to_zero(Ip) == 0:  # число пластичности. Пески (и торф?)
             if dens_sand == 1 or type_ground == 1:  # любой плотный или гравелистый песок
                 kr_fgs = 1
-            elif type_ground == 2:  # крупный песок
-                if sigma3mor <= 0.1:
-                    kr_fgs = round(np.random.uniform(0, 1))
-                    _is_random = True
-                    amplitude = True
-                else:
-                    kr_fgs = 1
-            elif type_ground == 3:  # песок средней групности
+            # elif type_ground == 2:  # крупный песок
+            #     if sigma3mor <= 0.1:
+            #         kr_fgs = round(np.random.uniform(0, 1))
+            #         _is_random = True
+            #         amplitude = True
+            #     else:
+            #         kr_fgs = 1
+            elif type_ground == 2 or type_ground == 3:  # песок средней групности
                 if sigma3mor <= 0.15 and dens_sand == 3:  # песок средней крупности рыхлый
                     kr_fgs = 0
                     amplitude = True
@@ -1396,6 +1396,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
     @staticmethod
     def define_xc_value_residual_strength(data_phiz, sigma_3, qf, E, pre_defined_kr_fgs=None):
 
+        no_peak = False
+        if pre_defined_kr_fgs == 0:
+            no_peak = True
+
         xc = 1
 
         _defined_kr_fgs, is_random, amplitude = ModelTriaxialDeviatorLoadingSoilTest.xc_from_qf_e_if_is(sigma_3,
@@ -1419,6 +1423,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             xc = ModelTriaxialDeviatorLoadingSoilTest.define_xc_qf_E(qf, E)
             pre_defined_kr_fgs = 1
         else:
+            xc = 0.15
+            pre_defined_kr_fgs = None
+
+        if no_peak:
             xc = 0.15
             pre_defined_kr_fgs = None
 

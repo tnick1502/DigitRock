@@ -1,5 +1,8 @@
 import requests
 from singletons import statment
+import warnings
+
+warnings.filterwarnings('ignore')
 
 def request_qr():
     with requests.Session() as sess:

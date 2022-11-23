@@ -109,12 +109,14 @@ class ModelTriaxialConsolidation:
                                       "strain100_sqrt": None,
                                       "Cv_log": None,
                                       "Ca_log": None,
+                                      "mu": None,
                                       "t50_log": None,
                                       "t100_log": None,
                                       "strain100_log": None,
                                       "d0": None,
                                       "velocity": None,
-                                      "Kf_log": None})
+                                      "Kf_log": None,
+                                      "plaxis_table": None})
 
     def set_test_data(self, test_data):
         """Получение и обработка массивов данных, считанных с файла прибора"""
@@ -605,6 +607,7 @@ class ModelTriaxialConsolidation:
                     ax_log.plot([], [], label="$t_{100}$" + " = " + str(res["t100_log"]),
                                 color="#eeeeee")
                     ax_log.plot([], [], label="$C_{a}$" + " = " + str(res["Ca_log"]), color="#eeeeee")
+                    ax_log.plot([], [], label="$µ*$" + " = " + str(res["mu"]), color="#eeeeee")
                     ax_log.legend()
 
             if save_path:
@@ -751,7 +754,7 @@ class ModelTriaxialConsolidation:
         # Сделаем чтобы на осях кв.корня и логарифма шаг по оси был постоянным
         self._test_data.time_sqrt = np.linspace(self._test_data.time_cut[0] ** 0.5, self._test_data.time_cut[-1] ** 0.5, self.points_count)
         #self._test_data.time_log = np.log10(np.linspace(0., self._test_data.time_cut[-1] ** 0.5, self.points_count))
-        print(f"self._test_data.time_cut[0] ** 0.5 : {self._test_data.time_cut[0] ** 0.5}")
+        # print(f"self._test_data.time_cut[0] ** 0.5 : {self._test_data.time_cut[0] ** 0.5}")
         if type == "poly":
             # Аппроксимация полиномом
             poly_pow = param
@@ -844,9 +847,11 @@ class ModelTriaxialConsolidation:
         self._test_result.t50_log = None
         self._test_result.Cv_log = None
         self._test_result.Ca_log = None
+        self._test_result.mu = None
         self._test_result.t100_log = None
         self._test_result.strain100_log = None
         self._test_result.Kf_log = None
+        self._test_result.plaxis_table = None
 
         if self.processed_points_log.Cv:
             if self.processed_points_log.Cv.y > np.max(self._test_data.volume_strain_approximate):
@@ -878,7 +883,7 @@ class ModelTriaxialConsolidation:
                                                    abs(abs(self.processed_points_log.second_line_start_point.y)))
                                                   / (self.processed_points_log.second_line_end_point.x -
                                                      self.processed_points_log.second_line_start_point.x)), 5)
-
+                self._test_result.mu = np.round(self._test_result.Ca_log/(np.log(10)*(1 + statment[statment.current_test].physical_properties.e)),4)
                 self._test_result.t100_log = np.round(10**self.processed_points_log.Cv.x )
                 self._test_result.strain100_log = self.processed_points_log.Cv.y
 
@@ -886,6 +891,9 @@ class ModelTriaxialConsolidation:
                                                                                 self._test_result.d0,
                                                                                 self._test_params.p_max,
                                                                                 self._test_result.Cv_log)
+                self._test_result.plaxis_table = [[i for i in self._test_data.time],
+                                                  [j for j in self._test_data.volume_strain]]
+
 
     @staticmethod
     def define_Kf(strain100, strain0, pmax, Cv):
@@ -1068,6 +1076,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._test_params.m = statment[statment.current_test].mechanical_properties.m
 
         self._draw_params.max_time = (((0.848 * 2 * 2) / (4 * self._test_params.Cv))) *2*2* np.random.uniform(5, 7)
+        self._draw_params.min_time = (((0.848 * 2 * 2) / (4 * self._test_params.Cv))) * 5
         self._draw_params.strain = define_final_deformation(self._test_params.p_max, self._test_params.Eoed,
                                                             self._test_params.m)
 
@@ -1092,7 +1101,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         params = {
             "max_time":
                 {"value": self._draw_params.max_time,
-                 "borders": [self._draw_params.max_time / 2, self._draw_params.max_time * 10]},
+                 "borders": [self._draw_params.min_time / 2, self._draw_params.max_time * 10]},
             "strain":
                 {"value": -self._draw_params.strain,
                  "borders":[-self._draw_params.strain / 2, -self._draw_params.strain * 2]},

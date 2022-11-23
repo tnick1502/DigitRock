@@ -26,6 +26,7 @@ from version_control.configs import actual_version
 from general.tab_view import TabMixin, AppMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
+from authentication.control import control
 
 from authentication.request_qr import request_qr
 
@@ -479,6 +480,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
+            control()
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

@@ -293,7 +293,7 @@ class RezonantColumnStatment(InitialStatment):
                     initial_columns=columns_marker), "Заполните K0 в ведомости"
                 assert column_fullness_test(self.path, columns=list(zip(*c_fi_E_PropertyPosition["Резонансная колонка"])),
                                             initial_columns=columns_marker), \
-                    "Заполните параметры прочности и деформируемости (BD, BC, BE)"
+                    "Заполните параметры прочности и деформируемости (HM, HN, HO)"
 
                 assert not marker, "Проверьте " + customer
 

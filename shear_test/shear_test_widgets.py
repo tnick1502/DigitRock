@@ -28,6 +28,7 @@ from general.tab_view import TabMixin, AppMixin
 from version_control.configs import actual_version
 __version__ = actual_version
 from authentication.request_qr import request_qr
+from authentication.control import control
 
 class ShearProcessingWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -640,6 +641,8 @@ class ShearSoilTestApp(AppMixin, QWidget):
 
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
+
+            control()
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
