@@ -3027,7 +3027,7 @@ def result_table_CF_KN(canvas, Res, pick, scale = 0.8, moove=0):
     tableData.append([Paragraph('''<p>σ'<sub rise="0.5" size="5">3c</sub></p>''', CentralStyle),
                       Paragraph('''<p>σ'<sub rise="0.5" size="5">3f</sub></p>''', CentralStyle),
                       Paragraph('''<p>σ'<sub rise="0.5" size="5">1f</sub></p>''', CentralStyle),
-                      Paragraph('''<p>u<sub rise="0.5" size="5">f</sub></p>''', CentralStyle), "", "", "", ""])
+                      Paragraph('''<p><sub rise="0.5" size="5">Δ</sub>u<sub rise="0.5" size="5">f</sub></p>''', CentralStyle), "", "", "", ""])
 
     tableData.append([zap(Res["sigma_3_mohr"][0] + Res["u_mohr"][0], 3), zap(Res["sigma_3_mohr"][0], 3), zap(Res["sigma_1_mohr"][0], 3), zap(Res["u_mohr"][0], 3) if Res["u_mohr"][0] != 0 else "-", "", "", "", ""])
     tableData.append([zap(Res["sigma_3_mohr"][1] + Res["u_mohr"][1], 3), zap(Res["sigma_3_mohr"][1], 3), zap(Res["sigma_1_mohr"][1], 3), zap(Res["u_mohr"][1], 3) if Res["u_mohr"][1] != 0 else "-", "", "", "", ""])
