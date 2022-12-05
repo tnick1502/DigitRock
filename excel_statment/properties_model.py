@@ -87,7 +87,12 @@ class PhysicalProperties:
                 self.complete_flag = False
 
         try:
-            self.ige = str(int(float(self.ige)))
+            ige = float(self.ige)
+
+            if ige % 1 < 0.001:
+                self.ige = str(int(ige))
+            else:
+                self.ige = str(ige)
         except:
             pass
 
