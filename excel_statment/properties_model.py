@@ -325,6 +325,20 @@ class MechanicalProperties:
 
             sigma_ref = float_df(data_frame.iat[string, DynamicsPropertyPosition["reference_pressure"][1]])
 
+            pressure_array_set_by_user = MechanicalProperties.define_reference_pressure_array_set_by_user(
+                data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]]
+            )
+
+            if pressure_array_set_by_user:
+                if len(pressure_array_set_by_user) == 4:
+                    sigma_3_user = pressure_array_set_by_user[3]
+                    pressure_array_set_by_user = pressure_array_set_by_user[:3]
+                else:
+                    sigma_3_user = None
+
+                if 0 in pressure_array_set_by_user:
+                    pressure_array_set_by_user = None
+
             if sigma_ref:
                 self.sigma_3 = np.round(sigma_ref * 1000)
                 self.sigma_1 = self.sigma_3
@@ -338,6 +352,17 @@ class MechanicalProperties:
                     default_pressure_array = [100, 200, 400]
                 else:
                     default_pressure_array = [50, 100, 200]
+
+            elif sigma_3_user:
+                self.sigma_3 = np.round(sigma_3_user)
+                self.sigma_1 = np.round(self.sigma_3/self.K0)
+                if not sigma3_lim or sigma3_lim == "Не менее 50 кПа":
+                    default_pressure_array = [50, 100, 200]
+                elif sigma3_lim == "Не менее 100 кПа":
+                    default_pressure_array = [100, 200, 400]
+                else:
+                    default_pressure_array = [50, 100, 200]
+
             else:
                 if physical_properties.ground_water_depth is not None:
                     if physical_properties.depth <= physical_properties.ground_water_depth:
@@ -422,8 +447,7 @@ class MechanicalProperties:
                 self.Eur = None
 
             self.pressure_array = {
-                "set_by_user": MechanicalProperties.define_reference_pressure_array_set_by_user(
-                    data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]]),
+                "set_by_user": pressure_array_set_by_user,
 
                 "calculated_by_pressure": MechanicalProperties.define_reference_pressure_array_calculated_by_pressure(
                     self.build_press, self.pit_depth, physical_properties.depth, self.K0,
@@ -1103,15 +1127,17 @@ class MechanicalProperties:
             return [400, 800, 1600]
 
     @staticmethod
-    def define_reference_pressure_array_set_by_user(val) -> list:
-        if val is None or (type(val) != str and math.isnan(val)) or val == '':
+    def define_reference_pressure_array_set_by_user(str_pressure_array) -> list:
+        if str_pressure_array is None or (type(str_pressure_array) != str and math.isnan(str_pressure_array)) or str_pressure_array == '':
             return None
         else:
             try:
-                val = list(map(lambda val: int(float(val.replace(",", ".").strip(" ")) * 1000), val.split("/")))
+                pressure_array = [int(float(pressure.replace(",", ".").replace(" ", "")) * 1000) for pressure in
+                                  str_pressure_array.split("/") if pressure]
             except:
                 app_logger.exception("Некорректно введены пользовательские ступени давления")
-            return val
+                return None
+            return pressure_array
 
 class ConsolidationProperties:
     Eoed = DataTypeValidation(float, int)
