@@ -1494,7 +1494,7 @@ def result_table_deviator(canvas, Res, pick, report_type, scale=0.8, moove=0):
 
         tableData.append(
             [Paragraph(
-                '''<p>Модифицированный коэффициент сжимаемости μ<sup rise="2" size="6">*</sup>, ед</p>''',
+                '''<p>Модифицированный коэффициент ползучести μ<sup rise="2" size="6">*</sup>, ед</p>''',
                 LeftStyle), "", "", "", "", "", "", "",
                 zap(Res["mu"], 4), "", "", "", "", "", "",])
         # tableData.append(
