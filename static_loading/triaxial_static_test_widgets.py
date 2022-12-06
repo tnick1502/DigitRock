@@ -747,7 +747,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.signal[bool].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.update())
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.update(x))
 
         self.tab_4.save_button.clicked.connect(self.save_report)
         self.tab_4.save_all_button.clicked.connect(self.save_all_reports)

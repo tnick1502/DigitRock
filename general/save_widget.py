@@ -124,8 +124,8 @@ class Save_Dir(TabMixin, QWidget):
         else:
             return None
 
-    def update(self):
-        statment.save_dir.set_directory(statment.save_dir.save_directory, statment.general_parameters.test_mode,
+    def update(self, s):
+        statment.save_dir.set_directory(s, statment.general_parameters.test_mode,
                                         statment.general_data.shipment_number, additional_dirs=self.additional_dirs)
         self.save_directory_text.setText(statment.save_dir.save_directory)
         self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))
