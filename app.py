@@ -179,7 +179,7 @@ class VersionLog(QDialog):
                 json_data = json.load(file)
             return "\n\n".join([f"{version}:\n{info}" for version, info in json_data.items()])
 
-        self.textbox.setText(open_json(path))
+        self.textbox.setText(open_json(self.path))
 
 
 class App(QMainWindow):  # Окно и виджеты на нем
