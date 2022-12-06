@@ -73,6 +73,7 @@ class RezonantColumnProcessingWidget(TabMixin, QWidget):
         self.test_widget.cut_slider.setLow(0)
         self.test_widget.cut_slider.setHigh(len)
 
+    @log_this(app_logger, "debug")
     def set_test_params(self, params):
         try:
             self._cut_slider_set_len(len(RC_models[statment.current_test]._test_data.G_array))
