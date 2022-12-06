@@ -4,11 +4,9 @@ import sys
 import os
 from pdf_watermark.widget import PDFWatermark
 
-from general.general_functions import create_path
 from singletons import statment
-from general.general_statement import StatementGenerator
-from loggers.logger import app_logger
 from general.tab_view import TabMixin
+
 
 class Save_Dir(TabMixin, QWidget):
     """Класс создает интерфейс для сохранения отчетов.
@@ -16,8 +14,10 @@ class Save_Dir(TabMixin, QWidget):
      после чего в этой директории создаются соответствующие папки.
      Название папки отчета передается в класс через коструктор mode"""
 
-    def __init__(self, report_type=None, result_table_params=None, qr=None):
+    def __init__(self, report_type=None, result_table_params=None, qr=None,  additional_dirs: list = []):
         super().__init__()
+
+        self.additional_dirs = additional_dirs
 
         self._report_types = report_type
 
@@ -117,7 +117,6 @@ class Save_Dir(TabMixin, QWidget):
         self.setLayout(self.savebox_layout)
         self.savebox_layout.setContentsMargins(5, 5, 5, 5)
 
-
     @property
     def report_type(self):
         if self._report_types_widget is not None:
@@ -126,6 +125,8 @@ class Save_Dir(TabMixin, QWidget):
             return None
 
     def update(self):
+        statment.save_dir.set_directory(statment.save_dir.save_directory, statment.general_parameters.test_mode,
+                                        statment.general_data.shipment_number, additional_dirs=self.additional_dirs)
         self.save_directory_text.setText(statment.save_dir.save_directory)
         self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))
         if self._result_table_params is not None:
@@ -135,7 +136,8 @@ class Save_Dir(TabMixin, QWidget):
     def change_save_directory(self):
         """Самостоятельный выбор папки сохранения"""
         s = QFileDialog.getExistingDirectory(self, "Select Directory")
-        statment.save_dir.set_directory(s, statment.general_parameters.test_mode, statment.general_data.shipment_number)
+        statment.save_dir.set_directory(s, statment.general_parameters.test_mode, statment.general_data.shipment_number,
+                                        additional_dirs=self.additional_dirs)
 
     def _doubleclick(self, item):
         "Обработчик события двойного клика в проводнике. Открывает файл"

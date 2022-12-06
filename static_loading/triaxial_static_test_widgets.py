@@ -696,7 +696,7 @@ class StatickProcessingApp(QWidget):
 
 
 class StatickSoilTestApp(AppMixin, QWidget):
-
+    @log_this(app_logger, "debug")
     def __init__(self, parent=None, geometry=None):
         """Определяем основную структуру данных"""
         super().__init__(parent=parent)
@@ -729,7 +729,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 "vibro": "Вибропрочность",
                 "vibroNN": "КриовиброНН",
                 "standart_E50_with_dilatancy": "Е50 с дилатнсией"
-            }, qr=True)
+            }, qr=True, additional_dirs=["plaxis_log"])
 
         self.tab_4.popIn.connect(self.addTab)
         self.tab_4.popOut.connect(self.removeTab)
@@ -772,6 +772,11 @@ class StatickSoilTestApp(AppMixin, QWidget):
         # self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
 
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
+
+        self.plaxis_log_path = os.path.join(statment.save_dir.save_directory, "plaxis_log")
+
+        if not os.path.exists(self.plaxis_log_path):
+            os.mkdir(self.plaxis_log_path)
 
     def call_tab2_refresh(self):
         self.tab_2.refresh()

@@ -221,7 +221,7 @@ class InitialStatment(QWidget):
             set_cell_data(self.path, (GeneralDataColumns["shipment_number"][0],
                                       (2, 9)),
                           statment.general_data.shipment_number, sheet="Лист1", color="FF6961")
-        statment.save_dir.set_directory(self.path, statment_name.split(".")[0], statment.general_data.shipment_number)
+        #statment.save_dir.set_directory(self.path, statment_name.split(".")[0], statment.general_data.shipment_number, additional_dirs=["plaxis"])
 
     def load_models(self, models_name, models, models_type):
         if statment.general_data.shipment_number:
