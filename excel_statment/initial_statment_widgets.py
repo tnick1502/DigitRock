@@ -440,7 +440,10 @@ class TriaxialStaticStatment(InitialStatment):
                     properties_type=MechanicalProperties,
                     general_params=combo_params)
 
-                statment.general_parameters.reconsolidation = False
+                if self.open_line.get_data()["test_mode"] == "Трёхосное сжатие КН":
+                    statment.general_parameters.reconsolidation = True
+                else:
+                    statment.general_parameters.reconsolidation = False
 
                 keys = list(statment.tests.keys())
                 for test in keys:

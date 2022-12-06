@@ -338,6 +338,8 @@ class MechanicalProperties:
 
                 if 0 in pressure_array_set_by_user:
                     pressure_array_set_by_user = None
+            else:
+                sigma_3_user = None
 
             if sigma_ref:
                 self.sigma_3 = np.round(sigma_ref * 1000)
