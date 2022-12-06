@@ -237,7 +237,7 @@ class K0SoilTestApp(QWidget):
 
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_widget.update())
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_widget.update(x))
 
         self.physical_line_1 = LinePhysicalProperties()
         self.tab_2.line_for_phiz.addWidget(self.physical_line_1)

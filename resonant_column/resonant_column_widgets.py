@@ -398,7 +398,7 @@ class RezonantColumnProcessingApp(AppMixin, QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(lambda x:
-                                                   self.tab_3.update())
+                                                   self.tab_3.update(x))
         self.physical_line = LinePhysicalProperties()
 
         self.tab_1.signal[bool].connect(lambda x: self.tab_2._plot())
@@ -583,7 +583,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(lambda x:
-                                                   self.tab_3.update())
+                                                   self.tab_3.update(x))
         self.physical_line = LinePhysicalProperties()
 
         self.tab_1.signal[bool].connect(self.tab_2.set_test_params)

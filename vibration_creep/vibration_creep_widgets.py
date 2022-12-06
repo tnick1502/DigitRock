@@ -319,7 +319,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
 
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
-        self.tab_1.statment_directory[str].connect(lambda signal: self.tab_4.update())
+        self.tab_1.statment_directory[str].connect(lambda signal: self.tab_4.update(signal))
         #self.tab_1.signal[object].connect(self.tab_2.identification.set_data)
         self.tab_1.signal[bool].connect(self._set_params)
         self.tab_4.save_button.clicked.connect(self.save_report)
