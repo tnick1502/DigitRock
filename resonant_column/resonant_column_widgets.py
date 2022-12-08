@@ -73,6 +73,7 @@ class RezonantColumnProcessingWidget(TabMixin, QWidget):
         self.test_widget.cut_slider.setLow(0)
         self.test_widget.cut_slider.setHigh(len)
 
+    @log_this(app_logger, "debug")
     def set_test_params(self, params):
         try:
             self._cut_slider_set_len(len(RC_models[statment.current_test]._test_data.G_array))
@@ -398,7 +399,7 @@ class RezonantColumnProcessingApp(AppMixin, QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(lambda x:
-                                                   self.tab_3.update())
+                                                   self.tab_3.update(x))
         self.physical_line = LinePhysicalProperties()
 
         self.tab_1.signal[bool].connect(lambda x: self.tab_2._plot())
@@ -583,7 +584,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(lambda x:
-                                                   self.tab_3.update())
+                                                   self.tab_3.update(x))
         self.physical_line = LinePhysicalProperties()
 
         self.tab_1.signal[bool].connect(self.tab_2.set_test_params)

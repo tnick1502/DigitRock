@@ -615,7 +615,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.physical_line = LinePhysicalProperties()
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.update())
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.update(x))
         self.tab_1.signal[bool].connect(self.tab_2.set_params)
         self.tab_1.signal[bool].connect(self.tab_2.identification.set_data)
         self.tab_2.signal.connect(self.tab_3.result_table.update)

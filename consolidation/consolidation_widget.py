@@ -304,7 +304,7 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         self.physical_line = LinePhysicalProperties()
 
         self.tab_1.signal[bool].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.update())
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.update(x))
         self.tab_1.signal[bool].connect(lambda x: self.physical_line.set_data())
 
         self.tab_3.save_button.clicked.connect(self.save_report)
