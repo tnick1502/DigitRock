@@ -1773,6 +1773,8 @@ class VibrationCreepProperties(MechanicalProperties):
 
 class ShearProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
+    SHEAR = 10
+    '''Cрез не природное и не водонасыщенное'''
     SHEAR_NATURAL = 11
     '''Срез природное'''
     SHEAR_SATURATED = 12
@@ -1934,16 +1936,18 @@ class ShearProperties(MechanicalProperties):
         return round(sigma, param)
 
     @staticmethod
-    def shear_type(test_mode: str) -> int:
-        if test_mode == "Срез природное":
+    def shear_type(_test_mode: str) -> int:
+        if _test_mode.lower() == "Срез".lower():
+            return ShearProperties.SHEAR
+        elif _test_mode.lower() == "Срез природное".lower():
             return ShearProperties.SHEAR_NATURAL
-        elif test_mode == "Срез водонасыщенное":
+        elif _test_mode.lower() == "Срез водонасыщенное".lower():
             return ShearProperties.SHEAR_SATURATED
-        elif test_mode == "Срез плашка по плашке":
+        elif _test_mode.lower() == "Срез плашка по плашке".lower():
             return ShearProperties.SHEAR_DD
-        elif test_mode == "Срез НН":
+        elif _test_mode.lower() == "Срез НН".lower():
             return ShearProperties.SHEAR_NN
-        elif test_mode == "Срез дилатансия":
+        elif _test_mode.lower() == "Срез дилатансия".lower():
             return ShearProperties.SHEAR_DILATANCY
         else:
             return 0

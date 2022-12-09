@@ -209,7 +209,7 @@ class InitialStatment(QWidget):
             statment.setGeneralParameters(general_params)
             statment.readExcelFile(self.path, None)
             #statment.dump("".join([i for i in os.path.split(self.path)[:-1]]), name=statment_name)
-            app_logger.info(f"Сгенерирован сохраненен новый файл ведомости {statment_name}")
+            # app_logger.info(f"Сгенерирован сохраненен новый файл ведомости {statment_name}")
 
         self.customer_line.set_data()
         self.accreditation.set_data()
@@ -786,6 +786,8 @@ class ConsolidationStatment(InitialStatment):
 
 class ShearStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
+    SHEAR = ShearProperties.SHEAR
+    '''Cрез не природное и не водонасыщенное'''
     SHEAR_NATURAL = ShearProperties.SHEAR_NATURAL
     '''Срез природное'''
     SHEAR_SATURATED = ShearProperties.SHEAR_SATURATED
@@ -797,6 +799,11 @@ class ShearStatment(InitialStatment):
     SHEAR_DILATANCY = ShearProperties.SHEAR_DILATANCY
     '''Срез дилатансия'''
     def __init__(self):
+        self._shear_type = "Срез"
+
+        self.combo_params_loaded = None
+        '''Параметры испыатания, с которомы Успешно была загружена модель'''
+
         data_test_parameters = {
 
             "equipment": {
@@ -823,7 +830,7 @@ class ShearStatment(InitialStatment):
                 "vars": [
                     "Не выбрано",
                     "Природное",
-                    "Водонасщенное"]
+                    "Водонасыщенное"]
             }
             }
 
@@ -861,9 +868,29 @@ class ShearStatment(InitialStatment):
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
             else:
+                if self.open_line.get_data()['test_mode'] in ['Срез природное', 'Срез водонасыщенное']:
+                    if self.open_line.get_data()['optional'] == 'Не выбрано':
+                        self._shear_type = "Срез"
+                    else:
+                        self._shear_type = f"Срез {self.open_line.get_data()['optional']}"
+                else:
+                    self._shear_type = self.open_line.get_data()['test_mode']
+
+                _path = f"{''.join([i for i in os.path.split(self.path)[:-1]])}/{self._shear_type}"
+
+                if_exist_check = os.path.exists(_path) and len(list(filter(lambda val: '.pickle' in val, os.listdir(_path)))) > 0
+                if if_exist_check:
+                    ret = QMessageBox.question(self, 'Предупреждение',
+                                               f"Файл модели уже существует в папке {self.path}/{self._shear_type}. "
+                                               f"Вы уверены что он соответствует выбранным парметрам опыта и файлу задания?",
+                                               QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+                    if ret != QMessageBox.Yes:
+                        if self.combo_params_loaded:
+                            self.open_line.set_data(self.combo_params_loaded)
+                        return
 
                 self.load_statment(
-                    statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
+                    statment_name=self._shear_type + ".pickle",
                     properties_type=ShearProperties,
                     general_params=combo_params)
 
@@ -892,7 +919,9 @@ class ShearStatment(InitialStatment):
                     self.table_physical_properties.clear()
                 else:
                     self.table_physical_properties.set_data()
+                    statment.general_parameters.test_mode = self._shear_type
                     self.statment_directory.emit(self.path)
+                    statment.general_parameters.test_mode = combo_params["test_mode"]
                     self.open_line.text_file_path.setText(self.path)
 
                     # if ShearStatment.shear_type(statment.general_parameters.test_mode) == self.SHEAR_NATURAL:
@@ -910,13 +939,14 @@ class ShearStatment(InitialStatment):
                     # elif ShearStatment.shear_type(statment.general_parameters.test_mode) == self.SHEAR_DILATANCY:
                     #     self.load_models(models_name="Shear_dilatancy_models.pickle",
                     #                      models=Shear_Dilatancy_models, models_type=ModelShearDilatancySoilTest)
-                    _test_mode = statment.general_parameters.test_mode
-                    if not ShearStatment.is_dilatancy_type(_test_mode):
-                        self.load_models(models_name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0],
+                    if not ShearStatment.is_dilatancy_type(self._shear_type):
+                        self.load_models(models_name=ShearStatment.models_name(ShearStatment.shear_type(self._shear_type)).split('.')[0],
                                          models=Shear_models, models_type=ModelShearSoilTest)
-                    elif ShearStatment.is_dilatancy_type(_test_mode):
-                        self.load_models(models_name=ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0],
+                    elif ShearStatment.is_dilatancy_type(self._shear_type):
+                        self.load_models(models_name=ShearStatment.models_name(ShearStatment.shear_type(self._shear_type)).split('.')[0],
                                          models=Shear_Dilatancy_models, models_type=ModelShearDilatancySoilTest)
+
+                    self.combo_params_loaded = self.open_line.get_data()
 
     def button_open_click(self):
         combo_params = self.open_line.get_data()
@@ -958,7 +988,9 @@ class ShearStatment(InitialStatment):
 
     @staticmethod
     def models_name(shear_type: int) -> str:
-        if shear_type == ShearStatment.SHEAR_NATURAL:
+        if shear_type == ShearStatment.SHEAR:
+            return "Shear_models.pickle"
+        elif shear_type == ShearStatment.SHEAR_NATURAL:
             return "Shear_natural_models.pickle"
         elif shear_type == ShearStatment.SHEAR_SATURATED:
             return "Shear_saturated_models.pickle"
