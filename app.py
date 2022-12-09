@@ -149,8 +149,7 @@ def check_local_version(version):
 class VersionLog(QDialog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.path = 'version_control/version_log.json'
+        self.path = "Z:/Digitrock/version_log.json"
         self._UI()
         self.update()
 
