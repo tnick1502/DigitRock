@@ -39,6 +39,6 @@ def test_version(version: float) -> bool:
     return True if float(version) == float(get_actual_version()) else False
 
 if __name__ == "__main__":
-    add_data("3.59", """
-    1. Добавлено сохранение лога плаксис в формате '{лаб. номер} {давление} kPa.txt' в отдельную папку
+    add_data("3.60", """
+    1. Добавлена функция автоматического расчета порового давления для опыта КД
     """)
