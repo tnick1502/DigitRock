@@ -33,7 +33,7 @@ def request_qr():
             return "qr.png"
     except Exception as err:
         assert True, f'Не удается подключиться к серверу georeport: {str(err)}'
-        
+
 
 if __name__=="__main__":
     with requests.Session() as sess:
