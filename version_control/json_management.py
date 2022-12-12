@@ -39,6 +39,7 @@ def test_version(version: float) -> bool:
     return True if float(version) == float(get_actual_version()) else False
 
 if __name__ == "__main__":
-    add_data("3.60", """
-    1. Добавлена функция автоматического расчета порового давления для опыта КД
+    add_data("3.61", """
+    1. Исправление работы слайдеров РК
+    2. Автоматическое включение аутентификации динамики
     """)
