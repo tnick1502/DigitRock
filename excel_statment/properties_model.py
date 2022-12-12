@@ -1150,8 +1150,6 @@ class MechanicalProperties:
 
         return u
 
-
-
 class ConsolidationProperties:
     Eoed = DataTypeValidation(float, int)
     Cv = DataTypeValidation(float, int)
@@ -1271,10 +1269,11 @@ class CyclicProperties(MechanicalProperties):
                     self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
                             9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
 
-                if self.sigma_1 < 10:
-                    self.sigma_1 = 10
-
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
+                if self.sigma_3 < 10:
+                    self.sigma_3 = 10
+                    self.sigma_1 = np.round(self.sigma_3 / self.K0)
 
                 self.acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]]) # В долях g
                 if self.acceleration:
