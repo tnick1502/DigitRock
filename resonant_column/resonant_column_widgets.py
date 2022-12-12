@@ -569,7 +569,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         self.tab_3 = Save_Dir(result_table_params={
             "G0": lambda lab: RC_models[lab].get_test_results()['G0'],
             "gam_07": lambda lab: RC_models[lab].get_test_results()["threshold_shear_strain"],
-        }, qr=True)
+        }, qr={"state": True})
         self.tab_3.popIn.connect(self.addTab)
         self.tab_3.popOut.connect(self.removeTab)
 

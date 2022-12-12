@@ -64,8 +64,18 @@ class Save_Dir(TabMixin, QWidget):
         self.advanced_box_layout.addWidget(self.jornal_button)
 
         self.qr_checkbox = QCheckBox("QR аутентификации")
-        self.qr = False
+        try:
+            if qr.get("state", None):
+                self.qr = qr.get("state")
+            else:
+                self.qr = False
+        except:
+            self.qr = False
+
+        self.qr_checkbox.setChecked(self.qr)
+
         self.qr_checkbox.stateChanged.connect(self.qr_changed)
+
 
         self.pdf_watermark_button = QPushButton("Маркировка отчетов")  # Button(icons + "Сохранить.png", 52, 52, 0.7)
         self.pdf_watermark_button.clicked.connect(self.pdf_watermark)
