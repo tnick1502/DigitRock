@@ -593,7 +593,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_data)
         self.tab_3.save_button.clicked.connect(self.save_report)
         self.tab_3.save_all_button.clicked.connect(self.save_all_reports)
-        self.tab_2.signal.connect(self.tab_3.update)
+        self.tab_2.signal.connect(self.tab_3.result_table.update)
 
         self.button_predict = QPushButton("Прогнозирование")
         self.button_predict.setFixedHeight(50)
