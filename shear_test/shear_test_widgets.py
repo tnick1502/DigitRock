@@ -696,10 +696,10 @@ class ShearSoilTestApp(AppMixin, QWidget):
             self.tab_widget.setTabEnabled(2, True)
 
         #        Устарело!
-        if self.tab_1.open_line.get_data()["test_mode"] != self.previous_test_type:
-            test_mode = self.tab_1.open_line.get_data()["test_mode"]
-            self.tab_1.set_optional_parameter(test_mode)
-        self.previous_test_type = self.tab_1.open_line.get_data()["test_mode"]
+        # if self.tab_1.open_line.get_data()["test_mode"] != self.previous_test_type:
+        #     test_mode = self.tab_1.open_line.get_data()["test_mode"]
+        #     self.tab_1.set_optional_parameter(test_mode)
+        # self.previous_test_type = self.tab_1.open_line.get_data()["test_mode"]
 
     def save_report_and_continue(self):
         try:
