@@ -472,16 +472,7 @@ class MechanicalProperties:
 
 
             if test_mode == "Трёхосное сжатие КН":
-                self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
-                if max(self.u) <= 5:
-                    self.u[0] = np.random.uniform(1.6, 2.5)
-                    self.u[1] = np.random.uniform(2.6, 3)
-                else:
-                    if self.u[0] <= 1.5:
-                        self.u[0] = np.random.uniform(1.6, 2.9)
-
-                    if (self.u[1] <= 1.5) or (self.u[1] <= self.u[0]):
-                        self.u[1] = np.random.uniform(3.6, 5)
+                self.u = MechanicalProperties.define_pore_pressure_array(self.Cv, self.pressure_array["current"])
 
             if test_mode == "Вибропрочность":
                 self.Kcu = np.random.uniform(0.6, 0.95)
@@ -1141,6 +1132,24 @@ class MechanicalProperties:
                 return None
             return pressure_array
 
+    @staticmethod
+    def define_pore_pressure_array(Cv: float, pressure_array: list) -> list:
+        pore_pressure_percent = sigmoida(mirrow_element(Cv, 1), 15, 1.8, 18, 2.7)/100
+
+        u = [np.round(pressure * pore_pressure_percent * np.random.uniform(0.85, 0.95), 1) for pressure in pressure_array]
+
+        if max(u) <= 5:
+            u[0] = np.random.uniform(1.6, 2.5)
+            u[1] = np.random.uniform(2.6, 3)
+        else:
+            if u[0] <= 1.5:
+                u[0] = np.random.uniform(1.6, 2.9)
+
+            if (u[1] <= 1.5) or (u[1] <= u[0]):
+                u[1] = np.random.uniform(3.6, 5)
+
+        return u
+
 class ConsolidationProperties:
     Eoed = DataTypeValidation(float, int)
     Cv = DataTypeValidation(float, int)
@@ -1260,10 +1269,11 @@ class CyclicProperties(MechanicalProperties):
                     self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
                             9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
 
-                if self.sigma_1 < 10:
-                    self.sigma_1 = 10
-
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
+                if self.sigma_3 < 10:
+                    self.sigma_3 = 10
+                    self.sigma_1 = np.round(self.sigma_3 / self.K0)
 
                 self.acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]]) # В долях g
                 if self.acceleration:

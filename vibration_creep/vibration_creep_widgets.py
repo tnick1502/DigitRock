@@ -303,7 +303,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
             "Kd": lambda lab: "; ".join([str(i["Kd"]) for i in VC_models[lab].get_test_results()]),
             "E50d": lambda lab: "; ".join([str(i["E50d"]) for i in VC_models[lab].get_test_results()]),
             "E50": lambda lab: "; ".join([str(i["E50"]) for i in VC_models[lab].get_test_results()]),
-        }, qr=True)
+        },  qr={"state": True})
         self.tab_4.popIn.connect(self.addTab)
         self.tab_4.popOut.connect(self.removeTab)
 

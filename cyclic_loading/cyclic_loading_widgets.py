@@ -598,7 +598,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             "Макс. деформ.": lambda lab: Cyclic_models[lab].get_test_results()['max_strain'],
             "Цикл разрушения": lambda lab: Cyclic_models[lab].get_test_results()['fail_cycle'],
             "Заключение": lambda lab: Cyclic_models[lab].get_test_results()['conclusion'],
-        }, qr=True)
+        },  qr={"state": True})
 
         self.tab_3.popIn.connect(self.addTab)
         self.tab_3.popOut.connect(self.removeTab)
