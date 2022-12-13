@@ -1131,7 +1131,6 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             if xc:
                 xc = ModelShearDilatancySoilTest.define_xc_qf_E(qf, E)
 
-
                 # Коррекция хс
                 XC_LIM_k = 0.11
                 XC_LIM_E = 0.11
@@ -1168,6 +1167,14 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             xc = np.random.uniform(0.025, 0.03)
             # if ShearProperties.shear_type(test_mode) == ShearProperties.SHEAR_DD:
             xc = xc*k
+        #     print('xc4', xc)
+        # print('xc5', xc)
+
+        # if data_phiz.Il is not None:
+        #     if data_phiz.type_ground == 7 and data_phiz.Il <= 0.25:
+        #         print('xc1', xc)
+        #         xc = xc * 1.3
+        #         print('xc2', xc)
 
         return xc, residual_strength, _E50
 
