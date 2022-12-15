@@ -1959,9 +1959,9 @@ class ShearProperties(MechanicalProperties):
             return ShearProperties.SHEAR_SATURATED
         elif _test_mode.lower() == "Срез плашка по плашке".lower():
             return ShearProperties.SHEAR_DD
-        elif _test_mode.lower() == "Срез плашка по плашке природный".lower():
+        elif _test_mode.lower() == "Срез плашка по плашке природное".lower():
             return ShearProperties.SHEAR_DD_NATURAL
-        elif _test_mode.lower() == "Срез плашка по плашке водонасыщенный".lower():
+        elif _test_mode.lower() == "Срез плашка по плашке водонасыщенное".lower():
             return ShearProperties.SHEAR_DD_SATURATED
         elif _test_mode.lower() == "Срез НН".lower():
             return ShearProperties.SHEAR_NN
