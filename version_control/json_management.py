@@ -1,7 +1,7 @@
 import json
 
 path = "Z:/Digitrock/version_log.json"
-local = 'version_control/version_log.json'
+local = 'c://projects/DigitRock/version_control/version_log.json'
 
 def open_json(path: str) -> dict:
     """Считывание json файла в словарь"""
@@ -39,9 +39,6 @@ def test_version(version: float) -> bool:
     return True if float(version) == float(get_actual_version()) else False
 
 if __name__ == "__main__":
-    add_data("3.61", """
-    1. Исправление работы слайдеров РК
-    2. Автоматическое включение аутентификации динамики
-    3. В динамике теперь минимальный сигма3 берется 10, а сигма1 в этом случае считается через К0
-    4. В срезе сохранение модели и протоколов происходит в папку с названием соответствующем выбору состояния водонасыщения
+    add_data("3.62", """
+    1. В срезе плашка по плашке сохранение модели и протоколов происходит в папку с названием соответствующем выбору состояния водонасыщения
     """)
