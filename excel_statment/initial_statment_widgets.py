@@ -794,6 +794,10 @@ class ShearStatment(InitialStatment):
     '''Срез водонасыщенное'''
     SHEAR_DD = ShearProperties.SHEAR_DD
     '''Срез плашка по плашке'''
+    SHEAR_DD_NATURAL = ShearProperties.SHEAR_DD_NATURAL
+    '''Срез плашка по плашке природный'''
+    SHEAR_DD_SATURATED = ShearProperties.SHEAR_DD_SATURATED
+    '''Срез плашка по плашке водонасыщенный'''
     SHEAR_NN = ShearProperties.SHEAR_NN
     '''Срез НН'''
     SHEAR_DILATANCY = ShearProperties.SHEAR_DILATANCY
@@ -873,6 +877,11 @@ class ShearStatment(InitialStatment):
                         self._shear_type = "Срез"
                     else:
                         self._shear_type = f"Срез {self.open_line.get_data()['optional']}"
+                elif self.open_line.get_data()['test_mode'] in ['Срез плашка по плашке']:
+                    if self.open_line.get_data()['optional'] == 'Не выбрано':
+                        self._shear_type = self.open_line.get_data()['test_mode']
+                    else:
+                        self._shear_type = f"{self.open_line.get_data()['test_mode']} {self.open_line.get_data()['optional'].lower()}"
                 else:
                     self._shear_type = self.open_line.get_data()['test_mode']
 
@@ -998,6 +1007,10 @@ class ShearStatment(InitialStatment):
             return "Shear_nn_models.pickle"
         elif shear_type == ShearStatment.SHEAR_DD:
             return "Shear_dd_models.pickle"
+        elif shear_type == ShearStatment.SHEAR_DD_NATURAL:
+            return "Shear_dd_models_natural.pickle"
+        elif shear_type == ShearStatment.SHEAR_DD_SATURATED:
+            return "Shear_dd_models_saturated.pickle"
         elif shear_type == ShearStatment.SHEAR_DILATANCY:
             return "Shear_dilatancy_models.pickle"
 

@@ -502,7 +502,9 @@ class ShearSoilTestApp(AppMixin, QWidget):
     def set_test_parameters(self, params):
         if self.tab_1.shear_test_type_from_open_line() in [ShearStatment.SHEAR, ShearStatment.SHEAR_NATURAL,
                                                            ShearStatment.SHEAR_SATURATED,
-                                                           ShearStatment.SHEAR_NN, ShearStatment.SHEAR_DD]:
+                                                           ShearStatment.SHEAR_NN, ShearStatment.SHEAR_DD,
+                                                           ShearStatment.SHEAR_DD_NATURAL,
+                                                           ShearStatment.SHEAR_DD_SATURATED]:
             self.tab_3.item_identification.set_data()
             self.tab_3.set_params()
             self.physical_line_2.set_data()
@@ -534,7 +536,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
             mode = "КД"
             if test_mode == ShearStatment.SHEAR_NN:
                 mode = "НН"
-            elif test_mode == ShearStatment.SHEAR_DD:
+            elif test_mode in [ShearStatment.SHEAR_DD, ShearStatment.SHEAR_DD_NATURAL, ShearStatment.SHEAR_DD_SATURATED]:
                 mode = "ПП"
 
             test_parameter = {"equipment": statment.general_parameters.equipment,
@@ -685,7 +687,9 @@ class ShearSoilTestApp(AppMixin, QWidget):
     def on_test_type_changed(self):
         if self.tab_1.shear_test_type_from_open_line() in [ShearStatment.SHEAR,
                                                            ShearStatment.SHEAR_NATURAL, ShearStatment.SHEAR_SATURATED,
-                                                           ShearStatment.SHEAR_NN, ShearStatment.SHEAR_DD]:
+                                                           ShearStatment.SHEAR_NN, ShearStatment.SHEAR_DD,
+                                                           ShearStatment.SHEAR_DD_NATURAL,
+                                                           ShearStatment.SHEAR_DD_SATURATED]:
             self.tab_widget.setTabEnabled(1, False)
             self.tab_widget.setTabEnabled(2, True)
         elif self.tab_1.shear_test_type_from_open_line() == ShearStatment.SHEAR_DILATANCY:
