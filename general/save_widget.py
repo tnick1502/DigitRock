@@ -135,7 +135,25 @@ class Save_Dir(TabMixin, QWidget):
             return None
 
     def update(self, s):
-        statment.save_dir.set_directory(s, statment.general_parameters.test_mode,
+        try:
+            if statment.general_parameters.test_mode in [
+                "Трёхосное сжатие (E)",
+                "Трёхосное сжатие (F, C)",
+                "Трёхосное сжатие (F, C, E)",
+                "Трёхосное сжатие с разгрузкой",
+                "Трёхосное сжатие с разгрузкой (plaxis)",
+                "Трёхосное сжатие (F, C, Eur)",
+                "Трёхосное сжатие КН",
+                "Трёхосное сжатие НН",
+                "Трёхосное сжатие (F, C) res"
+            ]:
+                waterfill = ' ' + statment.general_parameters.waterfill if statment.general_parameters.waterfill not in ('', 'Не указывать') else ''
+            else:
+                waterfill = ''
+        except AttributeError:
+            waterfill = ''
+
+        statment.save_dir.set_directory(s, statment.general_parameters.test_mode + waterfill,
                                         statment.general_data.shipment_number, additional_dirs=self.additional_dirs)
         self.save_directory_text.setText(statment.save_dir.save_directory)
         self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))

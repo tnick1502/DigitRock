@@ -197,9 +197,11 @@ class InitialStatment(QWidget):
         """Открытие и проверка заполненности всего файла веддомости"""
         pass
 
-    def load_statment(self, statment_name, properties_type, general_params):
+    def load_statment(self, statment_name, properties_type, general_params, waterfill=''):
 
-        statment_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/" + statment_name
+        waterfill = ' ' + waterfill if waterfill not in ('', 'Не указывать') else ''
+
+        statment_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/" + statment_name + waterfill
 
         if os.path.exists(statment_file):
             statment.load(statment_file)
@@ -221,7 +223,7 @@ class InitialStatment(QWidget):
             set_cell_data(self.path, (GeneralDataColumns["shipment_number"][0],
                                       (2, 9)),
                           statment.general_data.shipment_number, sheet="Лист1", color="FF6961")
-        statment.save_dir.set_directory(self.path, statment_name.split(".")[0], statment.general_data.shipment_number)
+        statment.save_dir.set_directory(self.path, statment_name.split(".")[0] + waterfill, statment.general_data.shipment_number)
 
     def load_models(self, models_name, models, models_type):
         if statment.general_data.shipment_number:
@@ -438,7 +440,8 @@ class TriaxialStaticStatment(InitialStatment):
                 self.load_statment(
                     statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
                     properties_type=MechanicalProperties,
-                    general_params=combo_params)
+                    general_params=combo_params,
+                    waterfill=combo_params["waterfill"])
 
                 if self.open_line.get_data()["test_mode"] == "Трёхосное сжатие КН":
                     statment.general_parameters.reconsolidation = True
