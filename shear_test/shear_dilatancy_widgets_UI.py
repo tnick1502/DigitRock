@@ -155,8 +155,14 @@ class ModelShearDilatancyUI(QWidget):
                                       **plotter_params["static_loading_gray_line"])
                 self.deviator_ax.scatter(plots["strain"], plots["deviator"], s=50)
 
+                h, d = statment.general_parameters.equipment_sample_h_d
+                if d == 71.4:
+                    xlim = 7.25
+                elif d == 150:
+                    xlim = 16
+
                 lim = self.deviator_ax.get_xlim()
-                self.deviator_ax.set_xlim([lim[0], 7.25])
+                self.deviator_ax.set_xlim([lim[0], xlim])
 
                 self.volume_strain_ax.plot(plots["strain"], plots["volume_strain"], **plotter_params["static_loading_main_line"])
                 self.volume_strain_ax.plot(plots["strain"], plots["volume_strain_approximate"],
@@ -166,7 +172,7 @@ class ModelShearDilatancyUI(QWidget):
                     self.volume_strain_ax.plot(plots["dilatancy"]["x"], plots["dilatancy"]["y"],
                                           **plotter_params["static_loading_black_dotted_line"])
 
-                self.volume_strain_ax.set_xlim([lim[0], 7.25])
+                self.volume_strain_ax.set_xlim([lim[0], xlim])
 
                 self.volume_strain_ax.plot([], [], label="Poissons ratio" + ", д.е. = " + str(res["poissons_ratio"]),
                                       color="#eeeeee")

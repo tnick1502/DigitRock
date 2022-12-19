@@ -818,7 +818,8 @@ class ShearStatment(InitialStatment):
                 "vars": [
                     "Не выбрано",
                     "АСИС ГТ.2.0.5",
-                    "GIESA UP-25a",]
+                    "GIESA UP-25a",
+                    "ASIS ГТ 2.2.6"]
             },
 
             "test_mode": {
@@ -894,12 +895,21 @@ class ShearStatment(InitialStatment):
                 if if_exist_check:
                     ret = QMessageBox.question(self, 'Предупреждение',
                                                f"Файл модели уже существует в папке {self.path}/{self._shear_type}. "
-                                               f"Вы уверены что он соответствует выбранным парметрам опыта и файлу задания?",
+                                               f"Вы уверены что он соответствует выбранным параметрам опыта и файлу задания?",
                                                QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
                     if ret != QMessageBox.Yes:
                         if self.combo_params_loaded:
                             self.open_line.set_data(self.combo_params_loaded)
                         return
+
+                if combo_params['equipment'] == 'ASIS ГТ 2.2.6':
+                    h = 140  # mm
+                    d = 150  # mm
+                    combo_params['equipment_sample_h_d'] = (h, d)
+                else:
+                    h = 35.0  # mm
+                    d = 71.4  # mm
+                    combo_params['equipment_sample_h_d'] = (h, d)
 
                 self.load_statment(
                     statment_name=self._shear_type + ".pickle",

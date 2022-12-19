@@ -522,8 +522,10 @@ class ShearSoilTestApp(AppMixin, QWidget):
             #     h, d = 300, 150
             # else:
             #     d, h = statment[statment.current_test].physical_properties.sample_size
-            h = 35.0
-            d = 71.4
+            # h = 35.0
+            # d = 71.4
+
+            h, d = statment.general_parameters.equipment_sample_h_d
 
             moisture_type = self.tab_1.open_line.get_data()["optional"]
             moisture = ""
