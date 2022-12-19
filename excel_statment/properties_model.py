@@ -390,8 +390,9 @@ class MechanicalProperties:
                         self.sigma_3 = 50
                     default_pressure_array = [50, 100, 200]
                 elif sigma3_lim == "Не менее 100 кПа":
-                    if self.sigma_3 < 100:
-                        self.sigma_3 = 100
+                    calculated_pressure = MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3, [100, 200, 400])
+                    if calculated_pressure[0] < 100:
+                        self.sigma_3 = 400  # Для расчетного давления задается максимальное сигма
                     default_pressure_array = [100, 200, 400]
                 else:
                     default_pressure_array = [50, 100, 200]

@@ -84,7 +84,9 @@ class ModelShearDilatancy:
                                     "pore_pressure_cut": None,
                                     "volume_strain_cut": None,
                                     "deviator_cut": None,
-                                    "reload_points_cut": None})
+                                    "reload_points_cut": None,
+
+                                    "equipment_sample_h_d": (None, None)})
 
         self._test_params = AttrDict({"sigma": None, "u": None, "K0": 1})
 
@@ -110,6 +112,7 @@ class ModelShearDilatancy:
             self._test_data.pore_volume_strain = test_data["pore_volume_strain"]
             self._test_data.cell_volume_strain = test_data["cell_volume_strain"]
             self._test_data.reload_points = test_data["reload_points"]
+            self._test_data.equipment_sample_h_d = test_data["equipment_sample_h_d"]
 
             self._test_params.sigma = round((test_data["sigma"]), 3)
             self._test_params.u = round((test_data["u"]), 2)
@@ -216,7 +219,14 @@ class ModelShearDilatancy:
             ax_deviator.plot(plots["strain"], plots["deviator"], **plotter_params["static_loading_main_line"])
             ax_deviator.plot(plots["strain_cut"], plots["deviator_cut"], **plotter_params["static_loading_main_line"])
             lim = ax_deviator.get_xlim()
-            ax_deviator.set_xlim([lim[0], 7.25])
+
+            h, d = self._test_data.equipment_sample_h_d
+            if d == 71.4:
+                xlim = 7.25
+            elif d == 150:
+                xlim = 16
+
+            ax_deviator.set_xlim([lim[0], xlim])
             # if plots["E50"]:
             #     ax_deviator.plot(*plots["E50"], **plotter_params["static_loading_sandybrown_dotted_line"])
             #     ax_deviator.plot(plots["E"]["x"], plots["E"]["y"], **plotter_params["static_loading_sandybrown_dotted_line"])
@@ -242,7 +252,7 @@ class ModelShearDilatancy:
                 ax_volume_strain.plot([], [], label="Dilatancy angle" + ", град. = " + str(res["dilatancy_angle"][0]),
                                       color="#eeeeee")
 
-            ax_volume_strain.set_xlim([lim[0], 7.25])
+            ax_volume_strain.set_xlim([lim[0], xlim])
 
             ax_deviator.legend()
             ax_volume_strain.legend()
@@ -298,7 +308,8 @@ class ModelShearDilatancy:
 
         self._test_result.poissons_ratio = ModelShearDilatancy.define_poissons(self._test_data.strain_cut,
                                                                                self._test_data.deviator_cut,
-                                                                               self._test_data.volume_strain_approximate)
+                                                                               self._test_data.volume_strain_approximate,
+                                                                               self._test_data.equipment_sample_h_d)
 
         self._test_result.dilatancy_angle = ModelShearDilatancy.define_dilatancy(self._test_data.strain_cut,
                                                                                  self._test_data.deviator_cut,
@@ -434,11 +445,11 @@ class ModelShearDilatancy:
             return None
 
     @staticmethod
-    def define_poissons(strain, deviator, volume_strain):
+    def define_poissons(strain, deviator, volume_strain, sample_size):
         # Коэффициент Пуассона
         qf = np.max(deviator)
         strain50 = (np.interp(qf / 5, deviator, strain))
-        puasson = (np.interp(strain50, strain, volume_strain) / strain50)/(71.4/35)
+        puasson = (np.interp(strain50, strain, volume_strain) / strain50)/(sample_size[1]/sample_size[0])
         return -np.round(puasson, 2)
 
     @staticmethod
@@ -563,7 +574,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                                       "data_phiz": None,
                                       "u": 0,
                                       "delta_h_consolidation": 0,
-                                      "velocity": 1})
+                                      "velocity": 1,
+                                      "equipment_sample_h_d": (None, None)})
 
         self._draw_params = AttrDict({"fail_strain": None,
                                       "residual_strength_param": None,
@@ -590,6 +602,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         self._test_params.data_physical = statment[statment.current_test].physical_properties
         self._test_params.velocity = ModelShearDilatancySoilTest.define_velocity(
                  statment[statment.current_test].physical_properties.Ip, statment[statment.current_test].physical_properties.type_ground)
+        self._test_params.equipment_sample_h_d = statment.general_parameters.equipment_sample_h_d
         _test_mode = statment.general_parameters.test_mode
 
         xc, residual_strength, self._test_params.E50  = ModelShearDilatancySoilTest.define_xc_value_residual_strength(
@@ -654,7 +667,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                                                                        self._test_data.pore_volume_strain,
                                                                        self._test_params.sigma,
                                                                        self._test_params.velocity,
-                                                                       nonzero_vertical_def=nonzero_vertical_def)
+                                                                       nonzero_vertical_def=nonzero_vertical_def,
+                                                                       equipment_sample_h_d=self._test_params.equipment_sample_h_d)
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -694,7 +708,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         # if max_time <= 500:
         #     max_time = 500
 
-        amount_point=int(7.14/0.25)+1
+        amount_point = int(self._test_params.equipment_sample_h_d[1]/10/0.25) + 1
 
         # dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(self._draw_params.dilatancy)) /
         #                      (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
@@ -763,14 +777,17 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         k = np.max(np.round(self._test_data.deviator[begin:] - self._test_data.deviator[begin], 3)) / self._test_params.tau_max
         self._test_data.deviator = np.round(self._test_data.deviator/k, 3)
 
-        self._test_data.strain = (self._test_data.strain / 0.15) * 0.1 * 71.4
-        self._test_data.pore_volume_strain = self._test_data.pore_volume_strain / (((
-                    (1 - 2 * self._draw_params.poisson) / (
-                        self._draw_params.poisson * (71.4 / 35)))) / 71.4 / 0.1 * 0.15)
+        self._test_data.strain = (self._test_data.strain / 0.15) * 0.1 * self._test_params.equipment_sample_h_d[1]
+        self._test_data.pore_volume_strain = self._test_data.pore_volume_strain /\
+                                             ((((1 - 2 * self._draw_params.poisson) /
+                                                (self._draw_params.poisson *
+                                                 (self._test_params.equipment_sample_h_d[1] /
+                                                  self._test_params.equipment_sample_h_d[0])))) /
+                                              self._test_params.equipment_sample_h_d[1] / 0.1 * 0.15)
 
         self._test_data.strain = np.round(self._test_data.strain, 6)
-        self._test_data.pore_volume_strain = np.round(self._test_data.pore_volume_strain,6)
-        self._test_data.cell_volume_strain = np.round(self._test_data.cell_volume_strain,6)
+        self._test_data.pore_volume_strain = np.round(self._test_data.pore_volume_strain, 6)
+        self._test_data.cell_volume_strain = np.round(self._test_data.cell_volume_strain, 6)
 
         #i_end, = np.where(self._test_data.strain > self._draw_params.fail_strain + np.random.uniform(0.03, 0.04))
         #if len(i_end):
@@ -781,6 +798,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         # self._test_data.pore_volume_strain = ModelShearDilatancySoilTest.list_generator(self._test_data.pore_volume_strain , amount_point)
 
         self._test_data.volume_strain = self._test_data.pore_volume_strain
+
+        self._test_data.equipment_sample_h_d = self._test_params.equipment_sample_h_d
 
         self.change_borders(begin, len(self._test_data.volume_strain))
 
@@ -1192,10 +1211,10 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         return 5.5 - 30 * xc
 
     @staticmethod
-    def dictionary_deviator_loading(strain, tau, vertical_strain, sigma, velocity, nonzero_vertical_def=True):
+    def dictionary_deviator_loading(strain, tau, vertical_strain, sigma, velocity, equipment_sample_h_d, nonzero_vertical_def=True):
         """Формирует словарь девиаторного нагружения"""
 
-        time_end = (7.14 / velocity) * 60
+        time_end = (equipment_sample_h_d[1]/10 / velocity) * 60
         time = np.linspace(0, time_end, len(strain)) + 0.004
         time_initial = np.hstack((np.full(5, 0.004), np.repeat(np.array([60 + np.random.uniform(0.3, 0.6),
                                                                          1860 + np.random.uniform(0.3, 0.6)]), 2)))
@@ -1228,8 +1247,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             "Time": np.round(time,3),
             "Action": action,
             "Action_Changed": action_changed,
-            "SampleHeight_mm": np.round(np.full(len(time), 35)),
-            "SampleDiameter_mm": np.round(np.full(len(time), 71.4),1),
+            "SampleHeight_mm": np.round(np.full(len(time), equipment_sample_h_d[0])),
+            "SampleDiameter_mm": np.round(np.full(len(time), equipment_sample_h_d[1]),1),
             "VerticalPress_kPa": np.round(vertical_press, 4),
             "VerticalDeformation_mm": np.round(vertical_deformation,7) if nonzero_vertical_def else np.round(np.random.uniform(0, 0.0005, len(vertical_deformation)),7),
             "ShearDeformation_mm": np.round(shear_deformation,8),

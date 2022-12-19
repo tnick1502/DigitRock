@@ -290,7 +290,14 @@ class ShearWidget(QWidget):
                 self.deviator_ax.scatter(plots["strain"][i], plots["deviator"][i], s=20)
                 #self.mohr_ax.plot(plots["mohr_x"][i], plots["mohr_y"][i], **plotter_params["main_line"])
             lim = self.deviator_ax.get_xlim()
-            self.deviator_ax.set_xlim([lim[0], 7.25])
+
+            h, d = statment.general_parameters.equipment_sample_h_d
+            if d == 71.4:
+                xlim = 7.25
+            elif d == 150:
+                xlim = 16
+
+            self.deviator_ax.set_xlim([lim[0], xlim])
             self.mohr_ax.scatter(plots["sigma"],plots["tau_max"], color=['r', 'r', 'r'])
             self.mohr_ax.plot(plots["mohr_line_x"], plots["mohr_line_y"], **plotter_params["main_line"])
 
