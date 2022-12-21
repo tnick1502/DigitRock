@@ -148,6 +148,8 @@ def save_cvi_E(file_path: str, data: dict):
     set_cell(COL['ige'], FIRST_ROW, data['ige'])
     set_cell(COL['sample_composition'], FIRST_ROW, data['sample_composition'])
     set_cell(COL['b'], FIRST_ROW, data['b'])
+    set_cell(COL['sample_aria'], FIRST_ROW, data['sample_aria'])
+    set_cell(COL['stock_aria'], FIRST_ROW, data['stock_aria'])
 
     set_cell(COL['depth'], FIRST_ROW, data['depth'])
     set_cell(COL['depth'] + 1, FIRST_ROW, data['depth'] + 0.2)
