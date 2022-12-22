@@ -484,7 +484,7 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
     def set_deviator_loading_draw_params_unload_start_y(self, params):
         self.deviator_loading.set_draw_params_unload_start_y(params)
 
-    def save_log_file(self, file_path, sample_size: Tuple[int, int] = (76, 38)):
+    def save_log_file(self, file_path, sample_size: Tuple[int, int] = (76, 38), save_plaxis=False):
         """Метод генерирует логфайл прибора"""
 
         if self.reconsolidation is not None:
@@ -509,13 +509,14 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         create_json_file('/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json",
                          self.get_processing_parameters())
 
-        try:
-            plaxis = self.deviator_loading.get_plaxis_dictionary()
-            with open('/'.join(os.path.split(file_path)[:-1]) + "/plaxis_log.txt", "w") as file:
-                for i in range(len(plaxis["strain"])):
-                    file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
-        except Exception as err:
-            app_logger.exception(f"Проблема сохранения массива для plaxis {statment.current_test}")
+        if save_plaxis:
+            try:
+                plaxis = self.deviator_loading.get_plaxis_dictionary()
+                with open('/'.join(os.path.split(file_path)[:-1]) + "/plaxis_log.txt", "w") as file:
+                    for i in range(len(plaxis["strain"])):
+                        file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
+            except Exception as err:
+                app_logger.exception(f"Проблема сохранения массива для plaxis {statment.current_test}")
 
 
     def save_cvi_file(self, file_path, file_name):
