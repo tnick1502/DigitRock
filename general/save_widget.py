@@ -1,3 +1,4 @@
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QGroupBox, QHeaderView, QTableWidgetItem, \
     QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton, QTableWidget, QCheckBox
 import sys
@@ -200,7 +201,7 @@ class Save_Dir(TabMixin, QWidget):
             self.qr = False
 
 class ReportType(QGroupBox):
-
+    clicked = pyqtSignal()
     def __init__(self, report_types: dict = {"имя переменной": "имя отчета для отображения"}):
         super().__init__()
         self.setTitle('Тип отчета')
@@ -226,6 +227,7 @@ class ReportType(QGroupBox):
         radioButton = self.sender()
         if radioButton.isChecked():
             self._checked = radioButton.value
+        self.clicked.emit()
 
     @property
     def checked(self):

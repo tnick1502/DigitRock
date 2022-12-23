@@ -16,7 +16,7 @@ from general.save_widget import Save_Dir
 from excel_statment.functions import set_cell_data
 from excel_statment.position_configs import c_fi_E_PropertyPosition, MechanicalPropertyPosition
 from general.reports import report_consolidation, report_FCE, report_FC, report_FC_KN, report_E, report_FC_NN, \
-    report_FC_res
+    report_FC_res, zap
 from static_loading.triaxial_static_widgets_UI import ModelTriaxialItemUI, ModelTriaxialFileOpenUI, \
     ModelTriaxialReconsolidationUI, \
     ModelTriaxialConsolidationUI, ModelTriaxialDeviatorLoadingUI
@@ -777,6 +777,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
         self.tab_1.open_line.combo_changes_signal.connect(self.on_test_type_changed)
 
+        self.tab_4._report_types_widget.clicked.connect(self.on_report_type_clicked)
+
         if not os.path.exists(self.plaxis_log_path):
             os.mkdir(self.plaxis_log_path)
 
@@ -839,6 +841,20 @@ class StatickSoilTestApp(AppMixin, QWidget):
         except AttributeError:
             pass
 
+    def on_report_type_clicked(self):
+        try:
+            report_type = self.tab_4.report_type
+            if 'plaxis' in report_type.lower():
+                self.tab_4.plaxis_btn.setChecked(True)
+            else:
+                if self.tab_1.open_line.get_data()['test_mode'] == 'Трёхосное сжатие с разгрузкой (plaxis)':
+                    return
+
+                self.tab_4.plaxis_btn.setChecked(False)
+
+        except AttributeError:
+            pass
+
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
@@ -869,6 +885,12 @@ class StatickSoilTestApp(AppMixin, QWidget):
                               "h": h,
                               "d": d}
 
+            if self.tab_1.open_line.get_data()["K0_mode"] in ["K0: По ГОСТ 12248.3-2020", "K0: Формула Джекки"]\
+                    and statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4]:
+                test_parameter["K0"][0] = zap(test_parameter["K0"][0], 1)
+            else:
+                test_parameter["K0"][0] = zap(test_parameter["K0"][0], 2)
+
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date
             if date:
@@ -894,7 +916,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 if not save_plaxis:
                     if os.path.exists(statment.save_dir.plaxis_log):
-                        os.rmdir(statment.save_dir.plaxis_log)
+                        # os.rmdir(statment.save_dir.plaxis_log)
+                        return 
                 if save_plaxis:
                     if not os.path.exists(statment.save_dir.plaxis_log):
                         os.makedirs(statment.save_dir.plaxis_log)

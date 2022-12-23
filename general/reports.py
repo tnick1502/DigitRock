@@ -887,6 +887,9 @@ def test_mode_consolidation(canvas, Data, moove=0, report_type="standart", dyn=N
     if isinstance(Data["K0"], list):
         Data["K0"] = zap(Data["K0"][0], 3)
 
+    if type(Data["K0"]) != str:
+        Data["K0"] = zap(Data["K0"], 2)
+
     if report_type == "plaxis_m" or report_type == "plaxis":
 
         t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
@@ -903,7 +906,7 @@ def test_mode_consolidation(canvas, Data, moove=0, report_type="standart", dyn=N
                    ["Режим испытания:", "", "", Data["mode"], "", "", "", "", "", ""],
                    [Paragraph(sigma_str, LeftStyle), "", "", sigma_3, "",
                     Paragraph('''<p>K<sub rise="2.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "",
-                    zap(Data["K0"], 2), ""],
+                    Data["K0"], ""],
                    ["Оборудование:", "", "",
                     "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a" if not dyn else "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a, Wille Geotechnik 13-HG/020:001"],
                    ["Параметры образца:", "", "", "Высота, мм:", "", zap(Data["h"], 2), "Диаметр, мм:", "",
