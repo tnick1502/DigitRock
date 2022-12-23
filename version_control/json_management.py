@@ -1,7 +1,7 @@
 import json
 
 path = "Z:/Digitrock/version_log.json"
-local = 'c://projects/DigitRock/version_control/version_log.json'
+local = 'version_control/version_log.json'
 
 def open_json(path: str) -> dict:
     """Считывание json файла в словарь"""
@@ -39,8 +39,8 @@ def test_version(version: float) -> bool:
     return True if float(version) == float(get_actual_version()) else False
 
 if __name__ == "__main__":
-    add_data("3.63", """
-    1. Для опыта трехосного нагружение добавлена подпись водонасыщения к папке сохранения опыта
-    2. Добавлен прибор ASIS ГТ 2.2.6 в программу среза
-    3. Исправлены ошибки ограничения 100 и сохранения файла plaxis в опыте трехонсого сжатия
+    add_data("3.64", """
+    1. Добавлено сохранение файла плаксис по галочке с предустановкой по отчету
+    2. Добавлено округление K0 везде, где расчет по формуле Джеки
+    3. Исправлена ошибка ограничения на боковое давление
     """)

@@ -1,3 +1,4 @@
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QGroupBox, QHeaderView, QTableWidgetItem, \
     QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton, QTableWidget, QCheckBox
 import sys
@@ -14,7 +15,8 @@ class Save_Dir(TabMixin, QWidget):
      после чего в этой директории создаются соответствующие папки.
      Название папки отчета передается в класс через коструктор mode"""
 
-    def __init__(self, report_type=None, result_table_params=None, qr=None,  additional_dirs: list = []):
+    def __init__(self, report_type=None, result_table_params=None, qr=None,  additional_dirs: list = [],
+                 plaxis_btn=False):
         super().__init__()
 
         self.additional_dirs = additional_dirs
@@ -23,12 +25,12 @@ class Save_Dir(TabMixin, QWidget):
 
         self._result_table_params = result_table_params
 
-        self.create_UI(qr)
+        self.create_UI(qr, plaxis_btn)
 
         self.save_directory_text.setText(statment.save_dir.save_directory)
         self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))
 
-    def create_UI(self, qr):
+    def create_UI(self, qr, plaxis_btn=False):
 
         self.savebox_layout = QVBoxLayout()
         self.savebox_layout_line_1 = QHBoxLayout()
@@ -83,6 +85,11 @@ class Save_Dir(TabMixin, QWidget):
 
         if qr:
             self.advanced_box_layout.addWidget(self.qr_checkbox)
+
+        if plaxis_btn:
+            self.plaxis_btn = QCheckBox("файл Plaxis")
+            self.plaxis_btn.setChecked(False)
+            self.advanced_box_layout.addWidget(self.plaxis_btn)
 
         self.advanced_box_layout.addStretch(-1)
 
@@ -194,7 +201,7 @@ class Save_Dir(TabMixin, QWidget):
             self.qr = False
 
 class ReportType(QGroupBox):
-
+    clicked = pyqtSignal()
     def __init__(self, report_types: dict = {"имя переменной": "имя отчета для отображения"}):
         super().__init__()
         self.setTitle('Тип отчета')
@@ -220,6 +227,7 @@ class ReportType(QGroupBox):
         radioButton = self.sender()
         if radioButton.isChecked():
             self._checked = radioButton.value
+        self.clicked.emit()
 
     @property
     def checked(self):

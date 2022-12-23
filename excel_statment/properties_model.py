@@ -390,10 +390,22 @@ class MechanicalProperties:
                         self.sigma_3 = 50
                     default_pressure_array = [50, 100, 200]
                 elif sigma3_lim == "Не менее 100 кПа":
-                    calculated_pressure = MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3, [100, 200, 400])
-                    if calculated_pressure[0] < 100:
-                        self.sigma_3 = 400  # Для расчетного давления задается максимальное сигма
+                    if self.sigma_3 < 100:
+                        self.sigma_3 = 100
                     default_pressure_array = [100, 200, 400]
+
+                    # calculated_pressure = MechanicalProperties.define_reference_pressure_array_calculated_by_pressure(
+                    #     self.build_press, self.pit_depth, physical_properties.depth, self.K0,
+                    #     physical_properties.ground_water_depth, [100, 200, 400])
+                    #
+                    # if calculated_pressure is None:
+                    #     calculated_pressure = MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(
+                    #         self.sigma_3, [100, 200, 400])
+                    #     if calculated_pressure[0] < 100:
+                    #         calculated_pressure = default_pressure_array
+                    # else:
+                    #     if calculated_pressure[0] < 100:
+                    #         calculated_pressure = default_pressure_array
                 else:
                     default_pressure_array = [50, 100, 200]
 
@@ -644,7 +656,7 @@ class MechanicalProperties:
             "K0: По ГОСТ 12248.3-2020": define_K0_GOST_2020(Il, type_ground, fi),
             "K0: По ГОСТ-56353-2022": define_K0_GOST_2022(Il, type_ground),
             "K0: По ГОСТ-56353-2015": define_K0_GOST_2015(Il, type_ground),
-            "K0: Формула Джекки": np.round((1 - np.sin(np.pi * fi / 180)), 2),
+            "K0: Формула Джекки": np.round((1 - np.sin(np.pi * fi / 180)), 1),
             "K0: K0 = 1": 1,
             "K0: Формула Джекки c учетом переупл.": osr(stratigraphic_index, fi),
         }
@@ -1099,7 +1111,7 @@ class MechanicalProperties:
             sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.25)
 
             if sigma_max_1 < 1600:
-                return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 50 else default_pressure_array
+                return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= default_pressure_array[0] else default_pressure_array
             else:
                 return [400, 800, 1600]
         else:
@@ -1116,7 +1128,7 @@ class MechanicalProperties:
         sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * 0.5)
         sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * 0.25)
         if sigma_max_1 < 1600:
-            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 50 else default_pressure_array
+            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= default_pressure_array[0] else default_pressure_array
         else:
             return [400, 800, 1600]
 
