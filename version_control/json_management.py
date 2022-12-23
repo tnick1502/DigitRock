@@ -1,7 +1,7 @@
 import json
 
 path = "Z:/Digitrock/version_log.json"
-local = 'c://projects/DigitRock/version_control/version_log.json'
+local = 'version_control/version_log.json'
 
 def open_json(path: str) -> dict:
     """Считывание json файла в словарь"""
