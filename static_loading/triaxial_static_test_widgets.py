@@ -917,7 +917,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 if not save_plaxis:
                     if os.path.exists(statment.save_dir.plaxis_log):
                         # os.rmdir(statment.save_dir.plaxis_log)
-                        return 
+                        pass
                 if save_plaxis:
                     if not os.path.exists(statment.save_dir.plaxis_log):
                         os.makedirs(statment.save_dir.plaxis_log)
