@@ -1,14 +1,13 @@
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QGroupBox, QHeaderView, QTableWidgetItem, \
     QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton, QTableWidget, QCheckBox
 import sys
 import os
 from pdf_watermark.widget import PDFWatermark
 
-from general.general_functions import create_path
 from singletons import statment
-from general.general_statement import StatementGenerator
-from loggers.logger import app_logger
 from general.tab_view import TabMixin
+
 
 class Save_Dir(TabMixin, QWidget):
     """Класс создает интерфейс для сохранения отчетов.
@@ -16,19 +15,22 @@ class Save_Dir(TabMixin, QWidget):
      после чего в этой директории создаются соответствующие папки.
      Название папки отчета передается в класс через коструктор mode"""
 
-    def __init__(self, report_type=None, result_table_params=None, qr=None):
+    def __init__(self, report_type=None, result_table_params=None, qr=None,  additional_dirs: list = [],
+                 plaxis_btn=False):
         super().__init__()
+
+        self.additional_dirs = additional_dirs
 
         self._report_types = report_type
 
         self._result_table_params = result_table_params
 
-        self.create_UI(qr)
+        self.create_UI(qr, plaxis_btn)
 
         self.save_directory_text.setText(statment.save_dir.save_directory)
         self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))
 
-    def create_UI(self, qr):
+    def create_UI(self, qr, plaxis_btn=False):
 
         self.savebox_layout = QVBoxLayout()
         self.savebox_layout_line_1 = QHBoxLayout()
@@ -64,8 +66,18 @@ class Save_Dir(TabMixin, QWidget):
         self.advanced_box_layout.addWidget(self.jornal_button)
 
         self.qr_checkbox = QCheckBox("QR аутентификации")
-        self.qr = False
+        try:
+            if qr.get("state", None):
+                self.qr = qr.get("state")
+            else:
+                self.qr = False
+        except:
+            self.qr = False
+
+        self.qr_checkbox.setChecked(self.qr)
+
         self.qr_checkbox.stateChanged.connect(self.qr_changed)
+
 
         self.pdf_watermark_button = QPushButton("Маркировка отчетов")  # Button(icons + "Сохранить.png", 52, 52, 0.7)
         self.pdf_watermark_button.clicked.connect(self.pdf_watermark)
@@ -73,6 +85,11 @@ class Save_Dir(TabMixin, QWidget):
 
         if qr:
             self.advanced_box_layout.addWidget(self.qr_checkbox)
+
+        if plaxis_btn:
+            self.plaxis_btn = QCheckBox("файл Plaxis")
+            self.plaxis_btn.setChecked(False)
+            self.advanced_box_layout.addWidget(self.plaxis_btn)
 
         self.advanced_box_layout.addStretch(-1)
 
@@ -117,7 +134,6 @@ class Save_Dir(TabMixin, QWidget):
         self.setLayout(self.savebox_layout)
         self.savebox_layout.setContentsMargins(5, 5, 5, 5)
 
-
     @property
     def report_type(self):
         if self._report_types_widget is not None:
@@ -125,7 +141,27 @@ class Save_Dir(TabMixin, QWidget):
         else:
             return None
 
-    def update(self):
+    def update(self, s):
+        try:
+            if statment.general_parameters.test_mode in [
+                "Трёхосное сжатие (E)",
+                "Трёхосное сжатие (F, C)",
+                "Трёхосное сжатие (F, C, E)",
+                "Трёхосное сжатие с разгрузкой",
+                "Трёхосное сжатие с разгрузкой (plaxis)",
+                "Трёхосное сжатие (F, C, Eur)",
+                "Трёхосное сжатие КН",
+                "Трёхосное сжатие НН",
+                "Трёхосное сжатие (F, C) res"
+            ]:
+                waterfill = ' ' + statment.general_parameters.waterfill if statment.general_parameters.waterfill not in ('', 'Не указывать') else ''
+            else:
+                waterfill = ''
+        except AttributeError:
+            waterfill = ''
+
+        statment.save_dir.set_directory(s, statment.general_parameters.test_mode + waterfill,
+                                        statment.general_data.shipment_number, additional_dirs=self.additional_dirs)
         self.save_directory_text.setText(statment.save_dir.save_directory)
         self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))
         if self._result_table_params is not None:
@@ -135,7 +171,8 @@ class Save_Dir(TabMixin, QWidget):
     def change_save_directory(self):
         """Самостоятельный выбор папки сохранения"""
         s = QFileDialog.getExistingDirectory(self, "Select Directory")
-        statment.save_dir.set_directory(s, statment.general_parameters.test_mode, statment.general_data.shipment_number)
+        statment.save_dir.set_directory(s, statment.general_parameters.test_mode, statment.general_data.shipment_number,
+                                        additional_dirs=self.additional_dirs)
 
     def _doubleclick(self, item):
         "Обработчик события двойного клика в проводнике. Открывает файл"
@@ -164,7 +201,7 @@ class Save_Dir(TabMixin, QWidget):
             self.qr = False
 
 class ReportType(QGroupBox):
-
+    clicked = pyqtSignal()
     def __init__(self, report_types: dict = {"имя переменной": "имя отчета для отображения"}):
         super().__init__()
         self.setTitle('Тип отчета')
@@ -190,6 +227,7 @@ class ReportType(QGroupBox):
         radioButton = self.sender()
         if radioButton.isChecked():
             self._checked = radioButton.value
+        self.clicked.emit()
 
     @property
     def checked(self):

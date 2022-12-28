@@ -87,7 +87,12 @@ class PhysicalProperties:
                 self.complete_flag = False
 
         try:
-            self.ige = str(int(float(self.ige)))
+            ige = float(self.ige)
+
+            if ige % 1 < 0.001:
+                self.ige = str(int(ige))
+            else:
+                self.ige = str(ige)
         except:
             pass
 
@@ -320,9 +325,46 @@ class MechanicalProperties:
 
             sigma_ref = float_df(data_frame.iat[string, DynamicsPropertyPosition["reference_pressure"][1]])
 
+            pressure_array_set_by_user = MechanicalProperties.define_reference_pressure_array_set_by_user(
+                data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]]
+            )
+
+            if pressure_array_set_by_user:
+                if len(pressure_array_set_by_user) == 4:
+                    sigma_3_user = pressure_array_set_by_user[3]
+                    pressure_array_set_by_user = pressure_array_set_by_user[:3]
+                else:
+                    sigma_3_user = None
+
+                if 0 in pressure_array_set_by_user:
+                    pressure_array_set_by_user = None
+            else:
+                sigma_3_user = None
+
             if sigma_ref:
                 self.sigma_3 = np.round(sigma_ref * 1000)
                 self.sigma_1 = self.sigma_3
+                if not sigma3_lim or sigma3_lim == "Не менее 50 кПа":
+                    if self.sigma_3 < 50:
+                        self.sigma_3 = 50
+                    default_pressure_array = [50, 100, 200]
+                elif sigma3_lim == "Не менее 100 кПа":
+                    if self.sigma_3 < 100:
+                        self.sigma_3 = 100
+                    default_pressure_array = [100, 200, 400]
+                else:
+                    default_pressure_array = [50, 100, 200]
+
+            elif sigma_3_user:
+                self.sigma_3 = np.round(sigma_3_user)
+                self.sigma_1 = np.round(self.sigma_3/self.K0)
+                if not sigma3_lim or sigma3_lim == "Не менее 50 кПа":
+                    default_pressure_array = [50, 100, 200]
+                elif sigma3_lim == "Не менее 100 кПа":
+                    default_pressure_array = [100, 200, 400]
+                else:
+                    default_pressure_array = [50, 100, 200]
+
             else:
                 if physical_properties.ground_water_depth is not None:
                     if physical_properties.depth <= physical_properties.ground_water_depth:
@@ -346,9 +388,26 @@ class MechanicalProperties:
                 if not sigma3_lim or sigma3_lim == "Не менее 50 кПа":
                     if self.sigma_3 < 50:
                         self.sigma_3 = 50
+                    default_pressure_array = [50, 100, 200]
                 elif sigma3_lim == "Не менее 100 кПа":
                     if self.sigma_3 < 100:
                         self.sigma_3 = 100
+                    default_pressure_array = [100, 200, 400]
+
+                    # calculated_pressure = MechanicalProperties.define_reference_pressure_array_calculated_by_pressure(
+                    #     self.build_press, self.pit_depth, physical_properties.depth, self.K0,
+                    #     physical_properties.ground_water_depth, [100, 200, 400])
+                    #
+                    # if calculated_pressure is None:
+                    #     calculated_pressure = MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(
+                    #         self.sigma_3, [100, 200, 400])
+                    #     if calculated_pressure[0] < 100:
+                    #         calculated_pressure = default_pressure_array
+                    # else:
+                    #     if calculated_pressure[0] < 100:
+                    #         calculated_pressure = default_pressure_array
+                else:
+                    default_pressure_array = [50, 100, 200]
 
             if self.sigma_3 >= 1600:
                 self.sigma_3 = 1600
@@ -403,12 +462,11 @@ class MechanicalProperties:
                 self.Eur = None
 
             self.pressure_array = {
-                "set_by_user": MechanicalProperties.define_reference_pressure_array_set_by_user(
-                    data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]]),
+                "set_by_user": pressure_array_set_by_user,
 
                 "calculated_by_pressure": MechanicalProperties.define_reference_pressure_array_calculated_by_pressure(
                     self.build_press, self.pit_depth, physical_properties.depth, self.K0,
-                    physical_properties.ground_water_depth),
+                    physical_properties.ground_water_depth, default_pressure_array),
 
                 "state_standard": MechanicalProperties.define_reference_pressure_array_state_standard(
                     physical_properties.e, physical_properties.Il, physical_properties.type_ground, physical_properties.Ir)
@@ -422,21 +480,12 @@ class MechanicalProperties:
 
             if self.pressure_array["calculated_by_pressure"] is None:
                 self.pressure_array["calculated_by_pressure"] = \
-                    MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3)
+                    MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3, default_pressure_array)
 
 
 
             if test_mode == "Трёхосное сжатие КН":
-                self.u = [np.round(self.u * np.random.uniform(0.8, 0.9) * (i / max(self.pressure_array["current"])), 1) for i in self.pressure_array["current"][:-1]] + [self.u]
-                if max(self.u) <= 5:
-                    self.u[0] = np.random.uniform(1.6, 2.5)
-                    self.u[1] = np.random.uniform(2.6, 3)
-                else:
-                    if self.u[0] <= 1.5:
-                        self.u[0] = np.random.uniform(1.6, 2.9)
-
-                    if (self.u[1] <= 1.5) or (self.u[1] <= self.u[0]):
-                        self.u[1] = np.random.uniform(3.6, 5)
+                self.u = MechanicalProperties.define_pore_pressure_array(self.Cv, self.pressure_array["current"])
 
             if test_mode == "Вибропрочность":
                 self.Kcu = np.random.uniform(0.6, 0.95)
@@ -607,7 +656,7 @@ class MechanicalProperties:
             "K0: По ГОСТ 12248.3-2020": define_K0_GOST_2020(Il, type_ground, fi),
             "K0: По ГОСТ-56353-2022": define_K0_GOST_2022(Il, type_ground),
             "K0: По ГОСТ-56353-2015": define_K0_GOST_2015(Il, type_ground),
-            "K0: Формула Джекки": np.round((1 - np.sin(np.pi * fi / 180)), 2),
+            "K0: Формула Джекки": np.round((1 - np.sin(np.pi * fi / 180)), 1),
             "K0: K0 = 1": 1,
             "K0: Формула Джекки c учетом переупл.": osr(stratigraphic_index, fi),
         }
@@ -1027,7 +1076,8 @@ class MechanicalProperties:
 
     @staticmethod
     def define_reference_pressure_array_calculated_by_pressure(build_press: float, pit_depth: float, depth: float,
-                                                               K0: float, ground_water_depth: float) -> list:
+                                                               K0: float, ground_water_depth: float,
+                                                               default_pressure_array: list) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
 
         def sigma_with_weighing_effect(_depth, _ground_water_depth):
@@ -1061,14 +1111,15 @@ class MechanicalProperties:
             sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * K0 * 0.25)
 
             if sigma_max_1 < 1600:
-                return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 50 else [50, 100, 200]
+                return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= default_pressure_array[0] else default_pressure_array
             else:
                 return [400, 800, 1600]
         else:
             return None
 
     @staticmethod
-    def define_reference_pressure_array_calculated_by_referense_pressure(sigma_3: float) -> list:
+    def define_reference_pressure_array_calculated_by_referense_pressure(sigma_3: float,
+                                                                         default_pressure_array: list) -> list:
         """Функция рассчета обжимающих давлений для кругов мора"""
 
         sigma_max = sigma_3
@@ -1077,20 +1128,40 @@ class MechanicalProperties:
         sigma_max_2 = MechanicalProperties.round_sigma_3(sigma_max * 0.5)
         sigma_max_3 = MechanicalProperties.round_sigma_3(sigma_max * 0.25)
         if sigma_max_1 < 1600:
-            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= 50 else [50, 100, 200]
+            return [sigma_max_3, sigma_max_2, sigma_max_1] if sigma_max_3 >= default_pressure_array[0] else default_pressure_array
         else:
             return [400, 800, 1600]
 
     @staticmethod
-    def define_reference_pressure_array_set_by_user(val) -> list:
-        if val is None or (type(val) != str and math.isnan(val)) or val == '':
+    def define_reference_pressure_array_set_by_user(str_pressure_array) -> list:
+        if str_pressure_array is None or (type(str_pressure_array) != str and math.isnan(str_pressure_array)) or str_pressure_array == '':
             return None
         else:
             try:
-                val = list(map(lambda val: int(float(val.replace(",", ".").strip(" ")) * 1000), val.split("/")))
+                pressure_array = [int(float(pressure.replace(",", ".").replace(" ", "")) * 1000) for pressure in
+                                  str_pressure_array.split("/") if pressure]
             except:
                 app_logger.exception("Некорректно введены пользовательские ступени давления")
-            return val
+                return None
+            return pressure_array
+
+    @staticmethod
+    def define_pore_pressure_array(Cv: float, pressure_array: list) -> list:
+        pore_pressure_percent = sigmoida(mirrow_element(Cv, 1), 15, 1.8, 18, 2.7)/100
+
+        u = [np.round(pressure * pore_pressure_percent * np.random.uniform(0.85, 0.95), 1) for pressure in pressure_array]
+
+        if max(u) <= 5:
+            u[0] = np.random.uniform(1.6, 2.5)
+            u[1] = np.random.uniform(2.6, 3)
+        else:
+            if u[0] <= 1.5:
+                u[0] = np.random.uniform(1.6, 2.9)
+
+            if (u[1] <= 1.5) or (u[1] <= u[0]):
+                u[1] = np.random.uniform(3.6, 5)
+
+        return u
 
 class ConsolidationProperties:
     Eoed = DataTypeValidation(float, int)
@@ -1123,11 +1194,16 @@ class ConsolidationProperties:
             if self.Cv > 1.5:
                 self.Cv = np.random.uniform(1, 1.5)
 
-            self.p_max = ConsolidationProperties.spec_round(ConsolidationProperties.define_loading_pressure(
-                float_df(data_frame.iat[string, MechanicalPropertyPosition["p_max"][1]]),
-                build_press=float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]]),
-                pit_depth=float_df(data_frame.iat[string, MechanicalPropertyPosition["pit_depth"][1]]),
-                depth=physical_properties.depth), 3)
+            p_ref = float_df(data_frame.iat[string, MechanicalPropertyPosition["Pref"][1]])
+
+            if p_ref:
+                self.p_max = ConsolidationProperties.spec_round(p_ref, 3)
+            else:
+                self.p_max = ConsolidationProperties.spec_round(ConsolidationProperties.define_loading_pressure(
+                    float_df(data_frame.iat[string, MechanicalPropertyPosition["p_max"][1]]),
+                    build_press=float_df(data_frame.iat[string, MechanicalPropertyPosition["build_press"][1]]),
+                    pit_depth=float_df(data_frame.iat[string, MechanicalPropertyPosition["pit_depth"][1]]),
+                    depth=physical_properties.depth), 3)
 
     @staticmethod
     def define_loading_pressure(pmax, build_press: float, pit_depth: float, depth: float):
@@ -1206,10 +1282,11 @@ class CyclicProperties(MechanicalProperties):
                     self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
                             9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
 
-                if self.sigma_1 < 10:
-                    self.sigma_1 = 10
-
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
+                if self.sigma_3 < 10:
+                    self.sigma_3 = 10
+                    self.sigma_1 = np.round(self.sigma_3 / self.K0)
 
                 self.acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]]) # В долях g
                 if self.acceleration:
@@ -1719,12 +1796,18 @@ class VibrationCreepProperties(MechanicalProperties):
 
 class ShearProperties(MechanicalProperties):
     """Расширенный класс с дополнительными обработанными свойствами"""
+    SHEAR = 10
+    '''Cрез не природное и не водонасыщенное'''
     SHEAR_NATURAL = 11
     '''Срез природное'''
     SHEAR_SATURATED = 12
     '''Срез водонасыщенное'''
     SHEAR_DD = 13
     '''Срез плашка по плашке'''
+    SHEAR_DD_NATURAL = 131
+    '''Срез плашка по плашке природный'''
+    SHEAR_DD_SATURATED = 132
+    '''Срез плашка по плашке водонасыщенный'''
     SHEAR_NN = 14
     '''Срез НН'''
     SHEAR_DILATANCY = 2
@@ -1817,7 +1900,7 @@ class ShearProperties(MechanicalProperties):
 
             self.pressure_array = {
                 "set_by_user": (ShearProperties.define_reference_pressure_array_set_by_user(
-                    float_df(data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]]))),
+                    (data_frame.iat[string, MechanicalPropertyPosition["pressure_array"][1]]))),
 
                 "calculated_by_pressure": (ShearProperties.define_reference_pressure_array_calculated_by_pressure(
                     self.build_press, self.pit_depth, physical_properties.depth)),
@@ -1880,16 +1963,22 @@ class ShearProperties(MechanicalProperties):
         return round(sigma, param)
 
     @staticmethod
-    def shear_type(test_mode: str) -> int:
-        if test_mode == "Срез природное":
+    def shear_type(_test_mode: str) -> int:
+        if _test_mode.lower() == "Срез".lower():
+            return ShearProperties.SHEAR
+        elif _test_mode.lower() == "Срез природное".lower():
             return ShearProperties.SHEAR_NATURAL
-        elif test_mode == "Срез водонасыщенное":
+        elif _test_mode.lower() == "Срез водонасыщенное".lower():
             return ShearProperties.SHEAR_SATURATED
-        elif test_mode == "Срез плашка по плашке":
+        elif _test_mode.lower() == "Срез плашка по плашке".lower():
             return ShearProperties.SHEAR_DD
-        elif test_mode == "Срез НН":
+        elif _test_mode.lower() == "Срез плашка по плашке природное".lower():
+            return ShearProperties.SHEAR_DD_NATURAL
+        elif _test_mode.lower() == "Срез плашка по плашке водонасыщенное".lower():
+            return ShearProperties.SHEAR_DD_SATURATED
+        elif _test_mode.lower() == "Срез НН".lower():
             return ShearProperties.SHEAR_NN
-        elif test_mode == "Срез дилатансия":
+        elif _test_mode.lower() == "Срез дилатансия".lower():
             return ShearProperties.SHEAR_DILATANCY
         else:
             return 0

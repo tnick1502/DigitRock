@@ -484,7 +484,7 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
     def set_deviator_loading_draw_params_unload_start_y(self, params):
         self.deviator_loading.set_draw_params_unload_start_y(params)
 
-    def save_log_file(self, file_path, sample_size: Tuple[int, int] = (76, 38)):
+    def save_log_file(self, file_path, sample_size: Tuple[int, int] = (76, 38), save_plaxis=False):
         """Метод генерирует логфайл прибора"""
 
         if self.reconsolidation is not None:
@@ -509,15 +509,31 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         create_json_file('/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json",
                          self.get_processing_parameters())
 
-        try:
-            plaxis = self.deviator_loading.get_plaxis_dictionary()
-            with open('/'.join(os.path.split(file_path)[:-1]) + "/plaxis_log.txt", "w") as file:
-                for i in range(len(plaxis["strain"])):
-                    file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
-        except Exception as err:
-            app_logger.exception(f"Проблема сохранения массива для plaxis {statment.current_test}")
+        if save_plaxis:
+            try:
+                plaxis = self.deviator_loading.get_plaxis_dictionary()
+                with open('/'.join(os.path.split(file_path)[:-1]) + "/plaxis_log.txt", "w") as file:
+                    for i in range(len(plaxis["strain"])):
+                        file.write(f"{plaxis['strain'][i]}\t{plaxis['deviator'][i]}\n")
+            except Exception as err:
+                app_logger.exception(f"Проблема сохранения массива для plaxis {statment.current_test}")
+
 
     def save_cvi_file(self, file_path, file_name):
+        if statment.general_parameters.equipment == "АСИС ГТ.2.0.5 (150х300)":
+            d, h = 150, 300
+        else:
+            d, h = statment[statment.current_test].physical_properties.sample_size
+
+        sample_aria = round(((d/10) / 2)**2 * 3.14, 1)
+
+        if (d == 38 and h == 76) or (d == 50 and h == 100):
+            stock_aria = 3.1
+        elif d == 100 and h == 200:
+            stock_aria = round((2.5 / 2)**2 * 3.14, 1)
+        elif d == 150 and h == 300:
+            stock_aria = round((4 / 2) ** 2 * 3.14, 1)
+
         data = {
             "laboratory_number": statment[statment.current_test].physical_properties.laboratory_number,
             "borehole": statment[statment.current_test].physical_properties.borehole,
@@ -525,7 +541,8 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
             "depth": statment[statment.current_test].physical_properties.depth,
             "sample_composition": "Н" if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4, 5] else "С",
             "b": np.round(np.random.uniform(0.95, 0.98), 2),
-
+            "sample_aria": sample_aria,
+            "stock_aria": stock_aria,
             "test_data": {
             }
         }

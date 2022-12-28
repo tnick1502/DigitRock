@@ -17,6 +17,7 @@ from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sl
 from loggers.logger import app_logger, log_this, handler
 from singletons import K0_models, statment
 from excel_statment.initial_statment_widgets import K0Statment
+from authentication.control import control
 from excel_statment.initial_statment_widgets import TableCastomer
 from excel_statment.functions import set_cell_data
 from general.report_general_statment import save_report
@@ -236,7 +237,7 @@ class K0SoilTestApp(QWidget):
 
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_widget.update())
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_2.save_widget.update(x))
 
         self.physical_line_1 = LinePhysicalProperties()
         self.tab_2.line_for_phiz.addWidget(self.physical_line_1)
@@ -345,6 +346,7 @@ class K0SoilTestApp(QWidget):
             if read_parameters["test_mode"] == K0Statment.test_modes[1]:
                 K0_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"k0ur_models{statment.general_data.get_shipment_number()}.pickle"))
+            control()
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

@@ -28,6 +28,7 @@ from tests_log.equipment import static
 from tests_log.test_classes import TestsLogTriaxialStatic
 import os
 from version_control.configs import actual_version
+from authentication.control import control
 
 __version__ = actual_version
 import numpy as np
@@ -69,7 +70,7 @@ class VibrationStrangthSoilTestApp(QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.signal[bool].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.update())
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.update(x))
 
         self.tab_4.save_button.clicked.connect(self.save_report)
         self.tab_4.save_all_button.clicked.connect(self.save_all_reports)
@@ -246,6 +247,8 @@ class VibrationStrangthSoilTestApp(QWidget):
 
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
+
+            control()
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

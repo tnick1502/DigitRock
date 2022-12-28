@@ -1720,6 +1720,12 @@ def curve(qf, e50, **kwargs):
         x = x * delta
 
         index_x2, = np.where(np.round(x, 6) >= 0.15)
+        
+        if len(index_x2) == 0:
+            y = copy.deepcopy(y_no_noise)
+            x = copy.deepcopy(x_no_noise)
+            break
+
         from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading
         RES_E50 = ModelTriaxialDeviatorLoading.define_E50_qf(x[:index_x2[0]], y[:index_x2[0]])
 

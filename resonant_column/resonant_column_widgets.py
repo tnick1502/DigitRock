@@ -27,6 +27,7 @@ from general.tab_view import AppMixin, TabMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
 from authentication.request_qr import request_qr
+from authentication.control import control
 
 class RezonantColumnProcessingWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -72,6 +73,7 @@ class RezonantColumnProcessingWidget(TabMixin, QWidget):
         self.test_widget.cut_slider.setLow(0)
         self.test_widget.cut_slider.setHigh(len)
 
+    @log_this(app_logger, "debug")
     def set_test_params(self, params):
         try:
             self._cut_slider_set_len(len(RC_models[statment.current_test]._test_data.G_array))
@@ -397,7 +399,7 @@ class RezonantColumnProcessingApp(AppMixin, QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(lambda x:
-                                                   self.tab_3.update())
+                                                   self.tab_3.update(x))
         self.physical_line = LinePhysicalProperties()
 
         self.tab_1.signal[bool].connect(lambda x: self.tab_2._plot())
@@ -567,7 +569,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         self.tab_3 = Save_Dir(result_table_params={
             "G0": lambda lab: RC_models[lab].get_test_results()['G0'],
             "gam_07": lambda lab: RC_models[lab].get_test_results()["threshold_shear_strain"],
-        }, qr=True)
+        }, qr={"state": True})
         self.tab_3.popIn.connect(self.addTab)
         self.tab_3.popOut.connect(self.removeTab)
 
@@ -582,7 +584,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.statment_directory[str].connect(lambda x:
-                                                   self.tab_3.update())
+                                                   self.tab_3.update(x))
         self.physical_line = LinePhysicalProperties()
 
         self.tab_1.signal[bool].connect(self.tab_2.set_test_params)
@@ -591,7 +593,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_data)
         self.tab_3.save_button.clicked.connect(self.save_report)
         self.tab_3.save_all_button.clicked.connect(self.save_all_reports)
-        self.tab_2.signal.connect(self.tab_3.update)
+        self.tab_2.signal.connect(self.tab_3.result_table.update)
 
         self.button_predict = QPushButton("Прогнозирование")
         self.button_predict.setFixedHeight(50)
@@ -671,6 +673,8 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
 
             RC_models.dump(os.path.join(statment.save_dir.save_directory,
                                         f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
+
+            control()
 
 
         except AssertionError as error:

@@ -118,13 +118,21 @@ class SaveDir:
      после чего в этой директории создаются соответствующие папки.
      Название папки отчета передается в класс через коструктор mode"""
 
-    def __init__(self, path="", ):
+    def __init__(self, path=""):
         super().__init__()
 
         self._save_directory = "C:/"
 
+        self.additional_dirs = []
+
         self.postfix = ""
         self.mode = ""
+
+    def __getattr__(self, item):
+        if item in self.additional_dirs:
+            return self._save_directory + f"/{item}/"
+        else:
+            raise AttributeError
 
     @property
     def report_directory(self):
@@ -146,31 +154,41 @@ class SaveDir:
     def directory(self):
         return self._save_directory
 
-    def _create_save_directory(self, path, mode=""):
-        """Создание папки и подпапок для сохранения отчета"""
-
-        self._save_directory = path + "/" + mode
-
+    def _create_paths(self):
         create_path(self._save_directory)
 
         for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
             create_path(path)
+
+        for path in [getattr(self, dir) for dir in self.additional_dirs]:
+            create_path(path)
+
+    def _create_save_directory(self, path, mode=""):
+        """Создание папки и подпапок для сохранения отчета"""
+        self._save_directory = path + "/" + mode
+
+        self._create_paths()
 
         app_logger.info(f"Папка сохранения опытов {self._save_directory}")
 
     def check_dirs(self):
-        create_path(self._save_directory)
-        for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
-            create_path(path)
+        self._create_paths()
 
     def clear_dirs(self):
         for path in [self.report_directory, self.arhive_directory, self.cvi_directory]:
             if os.path.exists(path):
                 shutil.rmtree(path)
+
+        for path in [getattr(self, dir) for dir in self.additional_dirs]:
+            if os.path.exists(path):
+                shutil.rmtree(path)
+
         self.check_dirs()
 
-    def set_directory(self, dir, mode, postfix=""):
+    def set_directory(self, dir, mode, postfix="", additional_dirs: list = []):
         """Получение пути к файлу ведомости excel"""
+        self.additional_dirs = additional_dirs
+
         self.mode = mode
 
         if postfix:

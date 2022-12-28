@@ -178,6 +178,16 @@ class ComboBox_Initial_ParametersV2(QWidget):
             data[key] = obj.currentText()
         return data
 
+    def set_data(self, data):
+        """Задание выбранных параметров"""
+        for key in self.data:
+            if key in data:
+                obj = getattr(self, "combo_{}".format(key))
+                obj.blockSignals(True)
+                idx = obj.findText(data[key])
+                obj.setCurrentIndex(idx)
+                obj.blockSignals(False)
+
 class TablePhysicalProperties(QTableWidget):
     """Класс отрисовывает таблицу физических свойств"""
     laboratory_number_click_signal = pyqtSignal(bool)

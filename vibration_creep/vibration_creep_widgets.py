@@ -26,6 +26,7 @@ from version_control.configs import actual_version
 from general.tab_view import TabMixin, AppMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
+from authentication.control import control
 
 from authentication.request_qr import request_qr
 
@@ -302,7 +303,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
             "Kd": lambda lab: "; ".join([str(i["Kd"]) for i in VC_models[lab].get_test_results()]),
             "E50d": lambda lab: "; ".join([str(i["E50d"]) for i in VC_models[lab].get_test_results()]),
             "E50": lambda lab: "; ".join([str(i["E50"]) for i in VC_models[lab].get_test_results()]),
-        }, qr=True)
+        },  qr={"state": True})
         self.tab_4.popIn.connect(self.addTab)
         self.tab_4.popOut.connect(self.removeTab)
 
@@ -318,7 +319,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
 
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
-        self.tab_1.statment_directory[str].connect(lambda signal: self.tab_4.update())
+        self.tab_1.statment_directory[str].connect(lambda signal: self.tab_4.update(signal))
         #self.tab_1.signal[object].connect(self.tab_2.identification.set_data)
         self.tab_1.signal[bool].connect(self._set_params)
         self.tab_4.save_button.clicked.connect(self.save_report)
@@ -479,6 +480,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
+            control()
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

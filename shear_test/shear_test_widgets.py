@@ -28,6 +28,7 @@ from general.tab_view import TabMixin, AppMixin
 from version_control.configs import actual_version
 __version__ = actual_version
 from authentication.request_qr import request_qr
+from authentication.control import control
 
 class ShearProcessingWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -463,7 +464,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.tab_1.signal[bool].connect(self.set_test_parameters)
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.update())
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_4.update(x))
 
         self.previous_test_type = ''
         self.tab_1.open_line.combo_changes_signal.connect(self.on_test_type_changed)
@@ -499,8 +500,11 @@ class ShearSoilTestApp(AppMixin, QWidget):
                     self.set_test_parameters(True)
 
     def set_test_parameters(self, params):
-        if self.tab_1.shear_test_type_from_open_line() in [ShearStatment.SHEAR_NATURAL, ShearStatment.SHEAR_SATURATED,
-                                                           ShearStatment.SHEAR_NN, ShearStatment.SHEAR_DD]:
+        if self.tab_1.shear_test_type_from_open_line() in [ShearStatment.SHEAR, ShearStatment.SHEAR_NATURAL,
+                                                           ShearStatment.SHEAR_SATURATED,
+                                                           ShearStatment.SHEAR_NN, ShearStatment.SHEAR_DD,
+                                                           ShearStatment.SHEAR_DD_NATURAL,
+                                                           ShearStatment.SHEAR_DD_SATURATED]:
             self.tab_3.item_identification.set_data()
             self.tab_3.set_params()
             self.physical_line_2.set_data()
@@ -518,8 +522,10 @@ class ShearSoilTestApp(AppMixin, QWidget):
             #     h, d = 300, 150
             # else:
             #     d, h = statment[statment.current_test].physical_properties.sample_size
-            h = 35.0
-            d = 71.4
+            # h = 35.0
+            # d = 71.4
+
+            h, d = statment.general_parameters.equipment_sample_h_d
 
             moisture_type = self.tab_1.open_line.get_data()["optional"]
             moisture = ""
@@ -532,7 +538,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
             mode = "КД"
             if test_mode == ShearStatment.SHEAR_NN:
                 mode = "НН"
-            elif test_mode == ShearStatment.SHEAR_DD:
+            elif test_mode in [ShearStatment.SHEAR_DD, ShearStatment.SHEAR_DD_NATURAL, ShearStatment.SHEAR_DD_SATURATED]:
                 mode = "ПП"
 
             test_parameter = {"equipment": statment.general_parameters.equipment,
@@ -568,7 +574,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
                 name = file_path_name + " " + statment.general_data.object_number + " ДС" + ".pdf"
 
                 Shear_models.dump(os.path.join(statment.save_dir.save_directory,
-                                            f"{ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
+                                            f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
 
                 Shear_Dilatancy_models[statment.current_test].save_log_file(save + "/" + "Test.1.log",
                                                                             nonzero_vertical_def=self.vertical_def_btn.isChecked())
@@ -593,7 +599,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
                                                                   ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_NATURAL)
 
                 Shear_models.dump(os.path.join(statment.save_dir.save_directory,
-                                            f"{ShearStatment.models_name(ShearStatment.shear_type(_test_mode)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
+                                            f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
 
 
                 test_result = {}
@@ -609,9 +615,6 @@ class ShearSoilTestApp(AppMixin, QWidget):
                              (*self.tab_3.save_canvas(), *self.tab_3.save_canvas()), "{:.2f}".format(__version__), qr_code=qr)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
-
-                c_pos = c_fi_E_PropertyPosition[statment.general_parameters.test_mode][0][0]
-                fi_pos = c_fi_E_PropertyPosition[statment.general_parameters.test_mode][0][1]
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
 
@@ -640,6 +643,8 @@ class ShearSoilTestApp(AppMixin, QWidget):
 
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
+
+            control()
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
@@ -682,8 +687,11 @@ class ShearSoilTestApp(AppMixin, QWidget):
         self.dialog.show()
 
     def on_test_type_changed(self):
-        if self.tab_1.shear_test_type_from_open_line() in [ShearStatment.SHEAR_NATURAL, ShearStatment.SHEAR_SATURATED,
-                                                           ShearStatment.SHEAR_NN, ShearStatment.SHEAR_DD]:
+        if self.tab_1.shear_test_type_from_open_line() in [ShearStatment.SHEAR,
+                                                           ShearStatment.SHEAR_NATURAL, ShearStatment.SHEAR_SATURATED,
+                                                           ShearStatment.SHEAR_NN, ShearStatment.SHEAR_DD,
+                                                           ShearStatment.SHEAR_DD_NATURAL,
+                                                           ShearStatment.SHEAR_DD_SATURATED]:
             self.tab_widget.setTabEnabled(1, False)
             self.tab_widget.setTabEnabled(2, True)
         elif self.tab_1.shear_test_type_from_open_line() == ShearStatment.SHEAR_DILATANCY:
@@ -693,10 +701,11 @@ class ShearSoilTestApp(AppMixin, QWidget):
             self.tab_widget.setTabEnabled(1, True)
             self.tab_widget.setTabEnabled(2, True)
 
-        if self.tab_1.open_line.get_data()["test_mode"] != self.previous_test_type:
-            test_mode = self.tab_1.open_line.get_data()["test_mode"]
-            self.tab_1.set_optional_parameter(test_mode)
-        self.previous_test_type = self.tab_1.open_line.get_data()["test_mode"]
+        #        Устарело!
+        # if self.tab_1.open_line.get_data()["test_mode"] != self.previous_test_type:
+        #     test_mode = self.tab_1.open_line.get_data()["test_mode"]
+        #     self.tab_1.set_optional_parameter(test_mode)
+        # self.previous_test_type = self.tab_1.open_line.get_data()["test_mode"]
 
     def save_report_and_continue(self):
         try:

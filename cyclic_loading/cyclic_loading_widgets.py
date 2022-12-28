@@ -35,6 +35,7 @@ from general.tab_view import AppMixin, TabMixin
 __version__ = actual_version
 
 from authentication.request_qr import request_qr
+from authentication.control import control
 
 class CyclicProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -597,7 +598,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             "Макс. деформ.": lambda lab: Cyclic_models[lab].get_test_results()['max_strain'],
             "Цикл разрушения": lambda lab: Cyclic_models[lab].get_test_results()['fail_cycle'],
             "Заключение": lambda lab: Cyclic_models[lab].get_test_results()['conclusion'],
-        }, qr=True)
+        },  qr={"state": True})
 
         self.tab_3.popIn.connect(self.addTab)
         self.tab_3.popOut.connect(self.removeTab)
@@ -614,7 +615,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
         self.physical_line = LinePhysicalProperties()
-        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.update())
+        self.tab_1.statment_directory[str].connect(lambda x: self.tab_3.update(x))
         self.tab_1.signal[bool].connect(self.tab_2.set_params)
         self.tab_1.signal[bool].connect(self.tab_2.identification.set_data)
         self.tab_2.signal.connect(self.tab_3.result_table.update)
@@ -884,6 +885,8 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                                             f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
             #statment.dump(''.join(os.path.split(self.tab_3.directory)[:-1]),
                           #ame=statment.general_parameters.test_mode + ".pickle")
+
+            control()
 
 
         except AssertionError as error:

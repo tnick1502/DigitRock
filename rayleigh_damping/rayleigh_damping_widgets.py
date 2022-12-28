@@ -9,6 +9,7 @@ import shutil
 import os
 import threading
 from authentication.request_qr import request_qr
+from authentication.control import control
 
 from excel_statment.initial_tables import LinePhysicalProperties
 from excel_statment.initial_statment_widgets import RayleighDampingStatment
@@ -171,7 +172,7 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
 
         handler.emit = lambda record: self.log_widget.append(handler.format(record))
 
-        self.tab_1.statment_directory[str].connect(lambda signal: self.tab_4.update())
+        self.tab_1.statment_directory[str].connect(lambda signal: self.tab_4.update(signal))
         #self.tab_1.signal[object].connect(self.tab_2.identification.set_data)
         self.tab_1.signal[bool].connect(self._set_params)
         self.tab_4.save_button.clicked.connect(self.save_report)
@@ -288,6 +289,8 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
 
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
+
+            control()
 
 
         except AssertionError as error:
