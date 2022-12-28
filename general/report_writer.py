@@ -276,10 +276,10 @@ class ReportXlsxSaver:
                 break
 
         # После всех проб заполняем дополнительные параметры
-        _last_col = get_column_letter(len(self.__tests_data[0]) + 1)
+        _last_col = get_column_letter(len(self.__tests_data[0]) + self.pos_of('last_title_col') - 4)
 
-        self.__sheet.merge_cells(f"{self.pos_of('labNum')}{_cur_row}:{_last_col}{_cur_row}")
-        _cur_row = _cur_row + 1
+        # self.__sheet.merge_cells(f"{self.pos_of('labNum')}{_cur_row}:{_last_col}{_cur_row}")
+        # _cur_row = _cur_row + 1
 
         if additional_data:
             for data in additional_data:
@@ -376,6 +376,56 @@ class ReportXlsxSaver:
                            'labNum': 'B', 'skv': 'C', 'depth': 'D', 'type': 'E',
                            'first_row': 13 + self.page_slant, 'last_title_col': 12,
                            'page_of_pages': f'Q{54 + self.page_slant}'}
+            return __positions[key]
+
+        if self.__template_filename == 'xls_statment_DEMPH_template.xlsx':
+            __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
+                           'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
+                           'date': f'J{53 + self.page_slant}', 'doc_num': f'H{53 + self.page_slant}',
+                           'bottomTableJoinFirstCol': 'K', 'bottomTableJoinLastCol': 17,
+                           'labNum': 'B', 'skv': 'C', 'depth': 'D', 'type': 'E',
+                           'first_row': 13 + self.page_slant, 'last_title_col': 13,
+                           'page_of_pages': f'Q{53 + self.page_slant}'}
+            return __positions[key]
+
+        if self.__template_filename == 'xls_statment_RELEY_template.xlsx':
+            __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
+                           'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
+                           'date': f'J{53 + self.page_slant}', 'doc_num': f'H{53 + self.page_slant}',
+                           'bottomTableJoinFirstCol': 'K', 'bottomTableJoinLastCol': 17,
+                           'labNum': 'B', 'skv': 'C', 'depth': 'D', 'type': 'E',
+                           'first_row': 13 + self.page_slant, 'last_title_col': 11,
+                           'page_of_pages': f'Q{53 + self.page_slant}'}
+            return __positions[key]
+
+        if self.__template_filename == 'xls_statment_RESONANT_template.xlsx':
+            __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
+                           'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
+                           'date': f'J{53 + self.page_slant}', 'doc_num': f'H{53 + self.page_slant}',
+                           'bottomTableJoinFirstCol': 'K', 'bottomTableJoinLastCol': 17,
+                           'labNum': 'B', 'skv': 'C', 'depth': 'D', 'type': 'E',
+                           'first_row': 13 + self.page_slant, 'last_title_col': 13,
+                           'page_of_pages': f'Q{53 + self.page_slant}'}
+            return __positions[key]
+
+        if self.__template_filename == 'xls_statment_SEISMO_template.xlsx':
+            __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
+                           'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
+                           'date': f'J{52 + self.page_slant}', 'doc_num': f'H{52 + self.page_slant}',
+                           'bottomTableJoinFirstCol': 'K', 'bottomTableJoinLastCol': 17,
+                           'labNum': 'B', 'skv': 'C', 'depth': 'D', 'type': 'E',
+                           'first_row': 13 + self.page_slant, 'last_title_col': 11,
+                           'page_of_pages': f'R{52 + self.page_slant}'}
+            return __positions[key]
+
+        if self.__template_filename == 'xls_statment_STORM_template.xlsx':
+            __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
+                           'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
+                           'date': f'J{52 + self.page_slant}', 'doc_num': f'H{52 + self.page_slant}',
+                           'bottomTableJoinFirstCol': 'K', 'bottomTableJoinLastCol': 17,
+                           'labNum': 'B', 'skv': 'C', 'depth': 'D', 'type': 'E',
+                           'first_row': 13 + self.page_slant, 'last_title_col': 11,
+                           'page_of_pages': f'R{52 + self.page_slant}'}
             return __positions[key]
 
         __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',

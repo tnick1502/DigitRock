@@ -430,9 +430,24 @@ class StatementGenerator(QDialog):
                     if not self.StatementStructure.is_template_changed():
 
                         # Здесь необходимо для других шаблонов прописать соответсвующие им файлы
-                        if self.StatementStructure._statement_structures == 'vibration_creep':
+                        if self.StatementStructure.combo_box.currentText() == 'vibration_creep':
                             template_filename = 'xls_statment_VIBRO_template.xlsx'
                             num_page_rows = 55
+                        elif self.StatementStructure.combo_box.currentText() == 'damping':
+                            template_filename = 'xls_statment_DEMPH_template.xlsx'
+                            num_page_rows = 54
+                        elif self.StatementStructure.combo_box.currentText() == 'rayleigh_damping':
+                            template_filename = 'xls_statment_RELEY_template.xlsx'
+                            num_page_rows = 54
+                        elif self.StatementStructure.combo_box.currentText() == 'Resonance column':
+                            template_filename = 'xls_statment_RESONANT_template.xlsx'
+                            num_page_rows = 54
+                        elif self.StatementStructure.combo_box.currentText() == 'Seismic liquefaction':
+                            template_filename = 'xls_statment_SEISMO_template.xlsx'
+                            num_page_rows = 53
+                        elif self.StatementStructure.combo_box.currentText() == 'Storm liquefaction':
+                            template_filename = 'xls_statment_STORM_template.xlsx'
+                            num_page_rows = 53
 
                         writer = ReportXlsxSaver(template_filename=template_filename,
                                                  num_page_rows=num_page_rows)
