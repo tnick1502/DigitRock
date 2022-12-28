@@ -739,9 +739,6 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     while count < num_steps:
 
         index_015, = np.where(x >= 0.15)
-        print('1', x[-1])
-        # if len(index_015) == 0:
-        #     index_015 = [-1]
         ip1, = np.where(y[:index_015[0]] >= y_rel_p)
         if not np.size(ip1) > 0:
             # print("нет точки начала разгрузки")
@@ -1140,7 +1137,6 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
         xc = x50 * 1.1  # хс не может быть меньше x50
 
     max_x = xc + 0.6
-    print('xc', xc)
     x = np.linspace(0, max_x, int((amount_points * max_x / 0.15) / 4))
     y = np.linspace(0, max_x, int((amount_points * max_x / 0.15) / 4))
     a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, xocr = params_gip_exp_tg(x, e50, qf, x50, xc,
@@ -1730,8 +1726,6 @@ def curve(qf, e50, **kwargs):
             x = copy.deepcopy(x_no_noise)
             break
 
-        # if len(index_x2) == 0:
-        #     index_x2 = [-1]
         from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading
         RES_E50 = ModelTriaxialDeviatorLoading.define_E50_qf(x[:index_x2[0]], y[:index_x2[0]])
 
