@@ -372,85 +372,138 @@ class StatementGenerator(QDialog):
     def _save_report_xls(self):
         if self.statment_data:
             if self._structure_assretion_tests(self.statment_data, self.StatementStructure.get_structure()):
-                try:
+                # try:
                     # file = QFileDialog.getOpenFileName(self, 'Open file')[0]
-                    save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
+                save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
-                    if self.statment_test_mode and self.shipment:
-                        save_file_name = f'Ведомость {self.statment_test_mode} {self.shipment}.pdf'
-                    else:
-                        save_file_name = 'Общая ведомость.pdf'
-                    # считывание параметра "Заголовок"
+                if self.statment_test_mode and self.shipment:
+                    save_file_name = f'Ведомость {self.statment_test_mode} {self.shipment}.pdf'
+                else:
+                    save_file_name = 'Общая ведомость.pdf'
+                # считывание параметра "Заголовок"
 
-                    statement_title = self.StatementStructure.get_structure().get("statement_title", '')
+                statement_title = self.StatementStructure.get_structure().get("statement_title", '')
 
-                    # self.StatementStructure._additional_parameters = \
-                    #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
-                    titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
+                # self.StatementStructure._additional_parameters = \
+                #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
+                titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
 
-                    try:
-                        if statment.general_parameters.test_mode == "Виброползучесть":
-                           data = convert_data(data)
-                        elif statment.general_parameters.test_mode == "Демпфирование по Релею":
-                            data = convert_data2(data)
-                    except:
-                        pass
+                try:
+                    if statment.general_parameters.test_mode == "Виброползучесть":
+                       data = convert_data(data)
+                    elif statment.general_parameters.test_mode == "Демпфирование по Релею":
+                        data = convert_data2(data)
+                except:
+                    pass
 
-                    for i in range(len(data)):
-                        for j in range(len(data[i])):
-                            if data[i][j] == 'None':
-                                data[i][j] = ' '
-                    if self.sort:
-                        data = self.sort_data_by_skv_depth(data)
-                    # ["customer", "object_name", "data", "accreditation"]
-                    # ["Заказчик", "Объект", "Дата", "Аккредитация"]
-                    # Дата
-                    data_report = self.customer["data"]
-                    customer_data_info = ['Заказчик:', 'Объект:']
-                    # Сами данные (подробнее см. Report.py)
-                    customer_data = [self.customer[i] + "                  " for i in ["customer", "object_name"]]
+                for i in range(len(data)):
+                    for j in range(len(data[i])):
+                        if data[i][j] == 'None':
+                            data[i][j] = ' '
+                if self.sort:
+                    data = self.sort_data_by_skv_depth(data)
+                # ["customer", "object_name", "data", "accreditation"]
+                # ["Заказчик", "Объект", "Дата", "Аккредитация"]
+                # Дата
+                data_report = self.customer["data"]
+                customer_data_info = ['Заказчик:', 'Объект:']
+                # Сами данные (подробнее см. Report.py)
+                customer_data = [self.customer[i] + "                  " for i in ["customer", "object_name"]]
 
-                    statement_title += f" №{self.customer['object_number']}СВД"
+                statement_title += f" №{self.customer['object_number']}СВД"
 
-                    try:
-                        if save_file_pass:
+                try:
+                    if save_file_pass:
+                        accred1 = {'accreditation': self.accreditation,
+                                   'accreditation_key': self.accreditation_key}
+                        if accred1 is None:
+                            accred1 = {'acrreditation': 'AO', 'acrreditation_key': 'новая'}
+                        if accred1:
+                            accred = [accreditation[accred1['accreditation']][accred1['accreditation_key']][0],
+                                      accreditation[accred1['accreditation']][accred1['accreditation_key']][1]]
+                        else:
+                            accred = [
+                                'АТТЕСТАТ АККРЕДИТАЦИИ №RU.MCC.АЛ.988 Срок действия с 09 января 2020г.',
+                                'РЕЕСТР ГЕОНАДЗОРА г. МОСКВЫ №27 (РЕЙТИНГ №4)']
+
+                        is_template = False
+                        template_filename = None
+                        if self.StatementStructure.combo_box.currentText() == 'vibriation_creep':
+                            template_filename = 'xls_statment_VIBRO_template.xlsx'
+                            num_page_rows = 55
+                            is_template = True
+                        elif self.StatementStructure.combo_box.currentText() == 'damping':
+                            template_filename = 'xls_statment_DEMPH_template.xlsx'
+                            num_page_rows = 54
+                            is_template = True
+
+                        elif self.StatementStructure.combo_box.currentText() == 'rayleigh_damping':
+                            template_filename = 'xls_statment_RELEY_template.xlsx'
+                            num_page_rows = 54
+                            is_template = True
+
+                        elif self.StatementStructure.combo_box.currentText() == 'Resonance column':
+                            template_filename = 'xls_statment_RESONANT_template.xlsx'
+                            num_page_rows = 54
+                            is_template = True
+
+                        elif self.StatementStructure.combo_box.currentText() == 'Seismic liquefaction':
+                            template_filename = 'xls_statment_SEISMO_template.xlsx'
+                            num_page_rows = 53
+                            is_template = True
+
+                        elif self.StatementStructure.combo_box.currentText() == 'Storm liquefaction':
+                            template_filename = 'xls_statment_STORM_template.xlsx'
+                            num_page_rows = 53
+                            is_template = True
+
+                        else:
+                            is_template = False
+
+                        # Если данные в полях не отличают от шаблона, то можно воспользоваться шаблоном
+                        if not self.StatementStructure.is_template_changed() and is_template and template_filename:
+
+                            # Здесь необходимо для других шаблонов прописать соответсвующие им файлы
+
+
+                            writer = ReportXlsxSaver(template_filename=template_filename,
+                                                     num_page_rows=num_page_rows)
+
+                            formatted_tests_data, additional = writer.form_tests_data_list_mode(titles, data)
+
+                            writer.set_data_row_mode(customer=customer_data[0],
+                                                     obj_name=customer_data[1],
+                                                     test_title=statement_title,
+                                                     date=data_report,
+                                                     tests_data=formatted_tests_data,
+                                                     accreditation=f"{accred[0]}\n{accred[1]}",
+                                                     additional_data=additional,
+                                                     doc_num=unique_number(length=7, postfix="-СВД"))
+                            writer.save(f"{save_file_pass}/{save_file_name.replace('.pdf','.xlsx')}")
+                        else:
                             writer = ReportXlsxSaver()
 
-                            formatted_tests_data, additional = ReportXlsxSaver.form_tests_data(titles, data)
+                            formatted_tests_data, additional = writer.form_tests_data_dict_mode(titles, data)
 
-                            accred1 = {'accreditation': self.accreditation,
-                                       'accreditation_key': self.accreditation_key}
-                            if accred1 is None:
-                                accred1 = {'acrreditation': 'AO', 'acrreditation_key': 'новая'}
-                            if accred1:
-                                accred = [accreditation[accred1['accreditation']][accred1['accreditation_key']][0],
-                                          accreditation[accred1['accreditation']][accred1['accreditation_key']][1]]
-                            else:
-                                accred = [
-                                    'АТТЕСТАТ АККРЕДИТАЦИИ №RU.MCC.АЛ.988 Срок действия с 09 января 2020г.',
-                                    'РЕЕСТР ГЕОНАДЗОРА г. МОСКВЫ №27 (РЕЙТИНГ №4)']
-
-                            writer.set_data(customer=customer_data[0],
-                                            obj_name=customer_data[1],
-                                            test_title=statement_title,
-                                            date=data_report,
-                                            tests_data=formatted_tests_data,
-                                            accreditation=f"{accred[0]}\n{accred[1]}",
-                                            additional_data=additional)
-                            writer.save(f"{save_file_pass}/{save_file_name.replace('.pdf','.xlsx')}")
-
-                            # save_report(titles, data, scales, data_report, customer_data_info, customer_data,
-                            #             statement_title, save_file_pass, unique_number(length=7, postfix="-СВД"),
-                            #             save_file_name, accred1={'accreditation': self.accreditation,
-                            #                                     'accreditation_key': self.accreditation_key})
-                            QMessageBox.about(self, "Сообщение", "Успешно сохранено")
-                    except PermissionError:
-                        QMessageBox.critical(self, "Ошибка", "Закройте файл для записи", QMessageBox.Ok)
-                    except:
-                        pass
-                except (ValueError, IndexError, ZeroDivisionError) as error:
-                    QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
-                    pass
+                            writer.set_data_dict_mode(customer=customer_data[0],
+                                                      obj_name=customer_data[1],
+                                                      test_title=statement_title,
+                                                      date=data_report,
+                                                      tests_data=formatted_tests_data,
+                                                      accreditation=f"{accred[0]}\n{accred[1]}",
+                                                      additional_data=additional,
+                                                      doc_num=unique_number(length=7, postfix="-СВД"))
+                            writer.save(f"{save_file_pass}/{save_file_name.replace('.pdf', '.xlsx')}")
+                        # save_report(titles, data, scales, data_report, customer_data_info, customer_data,
+                        #             statement_title, save_file_pass, unique_number(length=7, postfix="-СВД"),
+                        #             save_file_name, accred1={'accreditation': self.accreditation,
+                        #                                     'accreditation_key': self.accreditation_key})
+                        QMessageBox.about(self, "Сообщение", "Успешно сохранено")
+                except PermissionError:
+                    QMessageBox.critical(self, "Ошибка", "Закройте файл для записи", QMessageBox.Ok)
+                # except (ValueError, IndexError, ZeroDivisionError) as error:
+                #     QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+                #     pass
             else:
                 pass
             pass
@@ -1079,6 +1132,21 @@ class StatementStructure(QWidget):
         """Для вызова извне. Считывает структуру таблицы"""
         self._get_structure()
         return self._statement_structure
+
+    def is_template_changed(self) -> bool:
+        """ Проверяет, отличается ли в комбо боксе шаблон от вбитого в поля"""
+        template = self._statement_structures[self.combo_box.currentText()]
+        statement_title, triggers, cells, titles, *__ = StatementStructure.form_output_from_structure(template)
+
+        # curr_statement_title = self.parameter_title.text()
+        # curr_triggers = StatementStructure.read_line(self.parameter_trigger.text())
+        curr_cells = self.parameter_cells.text()
+        curr_titles = self.parameter_column_titles.text()
+        # curr_decimal = StatementStructure.read_line(self.parameter_decimal.text())
+        # curr_scale_factor = StatementStructure.read_scale(self.scale_factor.text())
+        # curr_additional_parameters = self.additional_parameters.text()
+
+        return cells != curr_cells or titles != curr_titles
 
     @staticmethod
     def form_output_from_structure(structure):
