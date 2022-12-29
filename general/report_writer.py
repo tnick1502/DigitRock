@@ -2,7 +2,7 @@ from copy import copy
 from typing import List, Union
 
 import openpyxl
-from openpyexcel.utils import get_column_letter, coordinate_from_string
+from openpyexcel.utils import get_column_letter, coordinate_from_string, column_index_from_string
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.styles import Alignment
@@ -169,7 +169,7 @@ class ReportXlsxSaver:
                 _cur_row = _cur_row + 1
         # Конец заполнения дополнительных параметров
 
-        _b_table_first_row = coordinate_from_string(self.pos_of('date'))[-1] + (_cur_row - self.pos_of('first_row')) - 2
+        _b_table_first_row = coordinate_from_string(self.pos_of('date'))[-1] + (_cur_row - self.pos_of('first_row')) - 3
         '''первая строчка нижней таблицы, + 2 дает последнюю строку листа'''
 
         # Добавляем строки так, чтобы документ был на весю высоту А4, если строк недостаточно
@@ -195,10 +195,10 @@ class ReportXlsxSaver:
                                      f"{get_column_letter(self.pos_of('bottomTableJoinLastCol'))}{_b_table_first_row + 2}")
 
             # Вся экселька обернута в границы, поэтому необходимо
-            left_border = copy(self.__sheet['U5'].border)
+            left_border = copy(self.__sheet['S5'].border)
             right_border = copy(self.__sheet['A5'].border)
             for i in range(2, _b_table_first_row):
-                self.__sheet[f"U{i}"].border = left_border
+                self.__sheet[f"S{i}"].border = left_border
                 self.__sheet[f"A{i}"].border = right_border
 
             self.__sheet.print_area = f"A1:{get_column_letter(self.pos_of('bottomTableJoinLastCol') + 1)}" \
@@ -210,23 +210,26 @@ class ReportXlsxSaver:
         _last_page_num = 1
         for page in range(len(tests_data) - 1):
             self.print_page_row_mode(customer, obj_name, test_title, date, tests_data[page],
-                                     additional_data, page_of_pages=f'{page + 1}/{len(tests_data)}', doc_num=doc_num)
+                                     additional_data=None, page_of_pages=f'{page + 1}/{len(tests_data)}', doc_num=doc_num)
             self.page_slant += self.page_size_rows
             _last_page_num += 1
 
+        try:
+            col_count = len(tests_data[0][0])
+        except IndexError:
+            col_count = None
+
         self.print_page_row_mode(customer, obj_name, test_title, date, tests_data[-1], additional_data, accreditation,
-                                 page_of_pages=f'{_last_page_num}/{len(tests_data)}', doc_num=doc_num)
+                                 page_of_pages=f'{_last_page_num}/{len(tests_data)}', doc_num=doc_num,
+                                 col_count=col_count)
 
     def print_page_row_mode(self, customer: 'str', obj_name: 'str', test_title: 'str', date: 'str', tests_data: 'List',
                             additional_data: 'List' = None, accreditation: 'str' = None, page_of_pages: 'str' = '1/1',
-                            doc_num: 'str' = None):
+                            doc_num: 'str' = None, col_count: 'int' = None):
         """
 
         """
         self.__tests_data = copy(tests_data)
-
-        if len(self.__tests_data) < 1:
-            return
 
         # данные по объекту
         self.__sheet[self.pos_of('date')].value = date
@@ -276,7 +279,12 @@ class ReportXlsxSaver:
                 break
 
         # После всех проб заполняем дополнительные параметры
-        _last_col = get_column_letter(len(self.__tests_data[0]) + self.pos_of('last_title_col') - 4)
+        if col_count is None:
+            if len(self.__tests_data) == 0:
+                col_count = self.pos_of('bottomTableJoinLastCol') - self.pos_of('last_title_col') + 4 - 1
+            else:
+                col_count = len(self.__tests_data[0])
+        _last_col = get_column_letter(col_count + self.pos_of('last_title_col') - 4)
 
         # self.__sheet.merge_cells(f"{self.pos_of('labNum')}{_cur_row}:{_last_col}{_cur_row}")
         # _cur_row = _cur_row + 1
@@ -362,7 +370,7 @@ class ReportXlsxSaver:
             __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
                            'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
                            'date': f'J{54 + self.page_slant}', 'doc_num': f'H{54 + self.page_slant}',
-                           'bottomTableJoinFirstCol': 'K', 'bottomTableJoinLastCol': 17,
+                           'bottomTableJoinFirstCol': 'K', 'bottomTableJoinLastCol': 18,
                            'labNum': 'B', 'skv': 'C', 'depth': 'D', 'type': 'E',
                            'first_row': 13 + self.page_slant, 'last_title_col': 12,
                            'page_of_pages': f'Q{54 + self.page_slant}'}
@@ -450,6 +458,10 @@ class ReportXlsxSaver:
         _page = 0
 
         for ind, row in enumerate(data):
+            if ind > self.page_size_rows - 10 - (self.pos_of("first_row") + self.page_slant) + (_page * self.page_size_rows):
+                _page += 1
+                _result.append([])
+
             if len(row) == 1 and len(row[0]) > 0:
                 _additional.append(row[0])
                 continue
@@ -457,10 +469,6 @@ class ReportXlsxSaver:
                 continue
 
             _result[_page].append(row)
-
-            if ind > self.page_size_rows - 10 + (_page * self.page_size_rows):
-                _page += 1
-                _result.append([])
 
         return _result, _additional
 

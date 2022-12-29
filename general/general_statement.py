@@ -412,80 +412,95 @@ class StatementGenerator(QDialog):
 
                 statement_title += f" №{self.customer['object_number']}СВД"
 
-                # try:
-                if save_file_pass:
-                    accred1 = {'accreditation': self.accreditation,
-                               'accreditation_key': self.accreditation_key}
-                    if accred1 is None:
-                        accred1 = {'acrreditation': 'AO', 'acrreditation_key': 'новая'}
-                    if accred1:
-                        accred = [accreditation[accred1['accreditation']][accred1['accreditation_key']][0],
-                                  accreditation[accred1['accreditation']][accred1['accreditation_key']][1]]
-                    else:
-                        accred = [
-                            'АТТЕСТАТ АККРЕДИТАЦИИ №RU.MCC.АЛ.988 Срок действия с 09 января 2020г.',
-                            'РЕЕСТР ГЕОНАДЗОРА г. МОСКВЫ №27 (РЕЙТИНГ №4)']
+                try:
+                    if save_file_pass:
+                        accred1 = {'accreditation': self.accreditation,
+                                   'accreditation_key': self.accreditation_key}
+                        if accred1 is None:
+                            accred1 = {'acrreditation': 'AO', 'acrreditation_key': 'новая'}
+                        if accred1:
+                            accred = [accreditation[accred1['accreditation']][accred1['accreditation_key']][0],
+                                      accreditation[accred1['accreditation']][accred1['accreditation_key']][1]]
+                        else:
+                            accred = [
+                                'АТТЕСТАТ АККРЕДИТАЦИИ №RU.MCC.АЛ.988 Срок действия с 09 января 2020г.',
+                                'РЕЕСТР ГЕОНАДЗОРА г. МОСКВЫ №27 (РЕЙТИНГ №4)']
 
-                    # Если данные в полях не отличают от шаблона, то можно воспользоваться шаблоном
-                    if not self.StatementStructure.is_template_changed():
-
-                        # Здесь необходимо для других шаблонов прописать соответсвующие им файлы
-                        if self.StatementStructure.combo_box.currentText() == 'vibration_creep':
+                        is_template = False
+                        template_filename = None
+                        if self.StatementStructure.combo_box.currentText() == 'vibriation_creep':
                             template_filename = 'xls_statment_VIBRO_template.xlsx'
                             num_page_rows = 55
+                            is_template = True
                         elif self.StatementStructure.combo_box.currentText() == 'damping':
                             template_filename = 'xls_statment_DEMPH_template.xlsx'
                             num_page_rows = 54
+                            is_template = True
+
                         elif self.StatementStructure.combo_box.currentText() == 'rayleigh_damping':
                             template_filename = 'xls_statment_RELEY_template.xlsx'
                             num_page_rows = 54
+                            is_template = True
+
                         elif self.StatementStructure.combo_box.currentText() == 'Resonance column':
                             template_filename = 'xls_statment_RESONANT_template.xlsx'
                             num_page_rows = 54
+                            is_template = True
+
                         elif self.StatementStructure.combo_box.currentText() == 'Seismic liquefaction':
                             template_filename = 'xls_statment_SEISMO_template.xlsx'
                             num_page_rows = 53
+                            is_template = True
+
                         elif self.StatementStructure.combo_box.currentText() == 'Storm liquefaction':
                             template_filename = 'xls_statment_STORM_template.xlsx'
                             num_page_rows = 53
+                            is_template = True
 
-                        writer = ReportXlsxSaver(template_filename=template_filename,
-                                                 num_page_rows=num_page_rows)
+                        else:
+                            is_template = False
 
-                        formatted_tests_data, additional = writer.form_tests_data_list_mode(titles, data)
+                        # Если данные в полях не отличают от шаблона, то можно воспользоваться шаблоном
+                        if not self.StatementStructure.is_template_changed() and is_template and template_filename:
 
-                        writer.set_data_row_mode(customer=customer_data[0],
-                                                 obj_name=customer_data[1],
-                                                 test_title=statement_title,
-                                                 date=data_report,
-                                                 tests_data=formatted_tests_data,
-                                                 accreditation=f"{accred[0]}\n{accred[1]}",
-                                                 additional_data=additional,
-                                                 doc_num=unique_number(length=7, postfix="-СВД"))
-                        writer.save(f"{save_file_pass}/{save_file_name.replace('.pdf','.xlsx')}")
-                    else:
-                        writer = ReportXlsxSaver()
+                            # Здесь необходимо для других шаблонов прописать соответсвующие им файлы
 
-                        formatted_tests_data, additional = writer.form_tests_data_dict_mode(titles, data)
 
-                        writer.set_data_dict_mode(customer=customer_data[0],
-                                                  obj_name=customer_data[1],
-                                                  test_title=statement_title,
-                                                  date=data_report,
-                                                  tests_data=formatted_tests_data,
-                                                  accreditation=f"{accred[0]}\n{accred[1]}",
-                                                  additional_data=additional,
-                                                  doc_num=unique_number(length=7, postfix="-СВД"))
-                        writer.save(f"{save_file_pass}/{save_file_name.replace('.pdf', '.xlsx')}")
-                    # save_report(titles, data, scales, data_report, customer_data_info, customer_data,
-                    #             statement_title, save_file_pass, unique_number(length=7, postfix="-СВД"),
-                    #             save_file_name, accred1={'accreditation': self.accreditation,
-                    #                                     'accreditation_key': self.accreditation_key})
-                    QMessageBox.about(self, "Сообщение", "Успешно сохранено")
-                    # except PermissionError:
-                    #     QMessageBox.critical(self, "Ошибка", "Закройте файл для записи", QMessageBox.Ok)
-                    # except:
-                    #     pass
+                            writer = ReportXlsxSaver(template_filename=template_filename,
+                                                     num_page_rows=num_page_rows)
+
+                            formatted_tests_data, additional = writer.form_tests_data_list_mode(titles, data)
+
+                            writer.set_data_row_mode(customer=customer_data[0],
+                                                     obj_name=customer_data[1],
+                                                     test_title=statement_title,
+                                                     date=data_report,
+                                                     tests_data=formatted_tests_data,
+                                                     accreditation=f"{accred[0]}\n{accred[1]}",
+                                                     additional_data=additional,
+                                                     doc_num=unique_number(length=7, postfix="-СВД"))
+                            writer.save(f"{save_file_pass}/{save_file_name.replace('.pdf','.xlsx')}")
+                        else:
+                            writer = ReportXlsxSaver()
+
+                            formatted_tests_data, additional = writer.form_tests_data_dict_mode(titles, data)
+
+                            writer.set_data_dict_mode(customer=customer_data[0],
+                                                      obj_name=customer_data[1],
+                                                      test_title=statement_title,
+                                                      date=data_report,
+                                                      tests_data=formatted_tests_data,
+                                                      accreditation=f"{accred[0]}\n{accred[1]}",
+                                                      additional_data=additional,
+                                                      doc_num=unique_number(length=7, postfix="-СВД"))
+                            writer.save(f"{save_file_pass}/{save_file_name.replace('.pdf', '.xlsx')}")
+                        # save_report(titles, data, scales, data_report, customer_data_info, customer_data,
+                        #             statement_title, save_file_pass, unique_number(length=7, postfix="-СВД"),
+                        #             save_file_name, accred1={'accreditation': self.accreditation,
+                        #                                     'accreditation_key': self.accreditation_key})
+                        QMessageBox.about(self, "Сообщение", "Успешно сохранено")
+                except PermissionError:
+                    QMessageBox.critical(self, "Ошибка", "Закройте файл для записи", QMessageBox.Ok)
                 # except (ValueError, IndexError, ZeroDivisionError) as error:
                 #     QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
                 #     pass
