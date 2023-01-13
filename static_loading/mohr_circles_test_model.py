@@ -428,7 +428,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         if self._check_clone(test):
             self._tests.append(test)
             self.sort_tests()
-            if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
+            if statment.general_parameters.test_mode in ["Трёхосное сжатие (F, C, E)", 'Трёхосное сжатие (F, C, Eur)']:
                 test_kr_fgs = test.deviator_loading.pre_defined_kr_fgs
                 if test_kr_fgs and self.current_kr_fgs_ind is not None and self.pre_defined_kr_fgs is not None:
                     for i in range(self.current_kr_fgs_ind, len(self.pre_defined_kr_fgs)):
@@ -448,7 +448,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         self._reference_pressure_array = reference_pressure_array
 
     def _test_modeling(self):
-        if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
+        if statment.general_parameters.test_mode in ["Трёхосное сжатие (F, C, E)", 'Трёхосное сжатие (F, C, Eur)']:
             pre_defined_kr_fgs = E_models[statment.current_test].deviator_loading.pre_defined_kr_fgs
             sigma = E_models[statment.current_test].deviator_loading._test_params["sigma_3"]
             _pre_defined_kr_fgs = []
@@ -564,7 +564,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 if statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == "Вибропрочность":
                     self.add_test_st_NN()
                 else:
-                    if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
+                    if statment.general_parameters.test_mode in ["Трёхосное сжатие (F, C, E)", 'Трёхосное сжатие (F, C, Eur)']:
                         self.current_kr_fgs_ind = i
                         self.add_test_st(pre_defined_kr_fgs=self.pre_defined_kr_fgs[i])
                     else:

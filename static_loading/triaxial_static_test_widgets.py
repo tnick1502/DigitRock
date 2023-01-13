@@ -784,7 +784,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
     def call_tab2_refresh(self):
         self.tab_2.refresh()
-        if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
+        if statment.general_parameters.test_mode in ["Трёхосное сжатие (F, C, E)", 'Трёхосное сжатие (F, C, Eur)']:
             self.tab_3.refresh()
 
     def keyPressEvent(self, event):
