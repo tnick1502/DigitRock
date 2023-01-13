@@ -39,7 +39,6 @@ def test_version(version: float) -> bool:
     return True if float(version) == float(get_actual_version()) else False
 
 if __name__ == "__main__":
-    add_data("3.65", """
-    1. Исправлена ошибка падения программы с всплывающим окном при обновлении моделей
-    2. Внесены изменения в программу общей ведомости под индвидуальные шаблоны    
+    add_data("3.66", """
+    1. Добавлена связь пиков кривых Е и FC в FCEur 
     """)
