@@ -58,7 +58,7 @@ styles = {
 'default2_min': ParagraphStyle(
             'default',
             fontName='Times',
-            fontSize=7,
+            fontSize=5,
             alignment=TA_LEFT,
             valignment='MIDDLE',
         ),
@@ -3518,21 +3518,22 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     if test_parameter["type"] == "Сейсморазжижение":
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
                                  "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/С")
     elif test_parameter["type"] == "По заданным параметрам":
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                                 "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/С")
     elif test_parameter["type"] == "Штормовое разжижение":
-        sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
                                  "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
                                 "/ШТ")
-    parameter_table(canvas, Data_phiz, Lab)
-    test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter)
-    result_table__triaxial_cyclic(canvas, res, [picks[2]])
+
+    parameter_table(canvas, Data_phiz, Lab, moove=moove)
+    test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
+    result_table__triaxial_cyclic(canvas, res, [picks[2]], moove=moove)
 
     canvas.showPage()
 
