@@ -729,7 +729,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 "vibro": "Вибропрочность",
                 "vibroNN": "КриовиброНН",
                 "standart_E50_with_dilatancy": "Е50 с дилатнсией"
-            }, qr=True, additional_dirs=["plaxis_log"], plaxis_btn=True)
+            }, qr=True, additional_dirs=["plaxis_log_E50", "plaxis_log_FC"], plaxis_btn=True)
 
         self.tab_4.popIn.connect(self.addTab)
         self.tab_4.popOut.connect(self.removeTab)
@@ -936,7 +936,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 if save_plaxis:
                     shutil.copy(
                         os.path.join(save, f"plaxis_log.txt"),
-                        os.path.join(statment.save_dir.plaxis_log,
+                        os.path.join(statment.save_dir.plaxis_log_E50,
                                      f"{file_path_name} {statment[statment.current_test].mechanical_properties.sigma_3} kPa.txt"))
 
                 shutil.copy(os.path.join(save, f"{file_path_name} ЦВИ.xls"),
@@ -980,7 +980,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 if save_plaxis:
                     shutil.copy(
                         os.path.join(save, f"plaxis_log.txt"),
-                        os.path.join(statment.save_dir.plaxis_log,
+                        os.path.join(statment.save_dir.plaxis_log_E50,
                                      f"{file_path_name} {statment[statment.current_test].mechanical_properties.sigma_3} kPa.txt"))
 
                 test_result = E_models[statment.current_test].get_test_results()
@@ -1024,7 +1024,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 if save_plaxis:
                     shutil.copy(
                         os.path.join(save, f"plaxis_log.txt"),
-                        os.path.join(statment.save_dir.plaxis_log,
+                        os.path.join(statment.save_dir.plaxis_log_E50,
                                      f"{file_path_name} {statment[statment.current_test].mechanical_properties.sigma_3} kPa.txt"))
 
                 test_result = E_models[statment.current_test].get_test_results()
@@ -1068,7 +1068,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 if save_plaxis:
                     shutil.copy(
                         os.path.join(save, f"plaxis_log.txt"),
-                        os.path.join(statment.save_dir.plaxis_log,
+                        os.path.join(statment.save_dir.plaxis_log_E50,
                                      f"{file_path_name} {statment[statment.current_test].mechanical_properties.sigma_3} kPa.txt"))
 
                     for test in FC_models[statment.current_test]._tests:
@@ -1077,7 +1077,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                         shutil.copy(
                             os.path.join(path, f"plaxis_log.txt"),
-                            os.path.join(statment.save_dir.plaxis_log,
+                            os.path.join(statment.save_dir.plaxis_log_FC,
                                          f"{file_path_name} {int(results['sigma_3']*1000)} kPa.txt"))
 
 
@@ -1178,7 +1178,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 if save_plaxis:
                     shutil.copy(
                         os.path.join(save, f"plaxis_log.txt"),
-                        os.path.join(statment.save_dir.plaxis_log,
+                        os.path.join(statment.save_dir.plaxis_log_E50,
                                      f"{file_path_name} {statment[statment.current_test].mechanical_properties.sigma_3} kPa.txt"))
 
                     for test in FC_models[statment.current_test]._tests:
@@ -1187,7 +1187,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                         shutil.copy(
                             os.path.join(path, f"plaxis_log.txt"),
-                            os.path.join(statment.save_dir.plaxis_log,
+                            os.path.join(statment.save_dir.plaxis_log_FC,
                                          f"{file_path_name} {int(results['sigma_3'] * 1000)} kPa.txt"))
 
                 test_result = E_models[statment.current_test].get_test_results()
@@ -1266,7 +1266,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                         shutil.copy(
                             os.path.join(path, f"plaxis_log.txt"),
-                            os.path.join(statment.save_dir.plaxis_log,
+                            os.path.join(statment.save_dir.plaxis_log_FC,
                                          f"{file_path_name} {int(results['sigma_3'] * 1000)} kPa.txt"))
 
                 test_result = {}
@@ -1320,7 +1320,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                         shutil.copy(
                             os.path.join(path, f"plaxis_log.txt"),
-                            os.path.join(statment.save_dir.plaxis_log,
+                            os.path.join(statment.save_dir.plaxis_log_FC,
                                          f"{file_path_name} {int(results['sigma_3'] * 1000)} kPa.txt"))
 
                 test_result = {}
@@ -1372,7 +1372,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                         shutil.copy(
                             os.path.join(path, f"plaxis_log.txt"),
-                            os.path.join(statment.save_dir.plaxis_log,
+                            os.path.join(statment.save_dir.plaxis_log_FC,
                                          f"{file_path_name} {int(results['sigma_3'] * 1000)} kPa.txt"))
 
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),
@@ -1420,7 +1420,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                         shutil.copy(
                             os.path.join(path, f"plaxis_log.txt"),
-                            os.path.join(statment.save_dir.plaxis_log,
+                            os.path.join(statment.save_dir.plaxis_log_FC,
                                          f"{file_path_name} {int(results['sigma_3'] * 1000)} kPa.txt"))
 
                 shutil.copy(os.path.join(save, f"{file_path_name} FC ЦВИ.xls"),

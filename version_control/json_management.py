@@ -40,5 +40,5 @@ def test_version(version: float) -> bool:
 
 if __name__ == "__main__":
     add_data("3.66", """
-    1. Добавлена связь пиков кривых Е и FC в FCEur 
+    1. Plaxis log lkz FC и Е хранится в разных папках 
     """)
