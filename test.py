@@ -1,11 +1,6 @@
-from general.general_functions import sigmoida, mirrow_element
-import numpy as np
-import matplotlib.pyplot as plt
+import os
+import datetime
 
-x = np.linspace(0.001, 2)
-
-u = sigmoida(mirrow_element(x, 1), 15, 1.8, 18, 2.7)
-
-plt.plot(x, sigmoida(mirrow_element(x, 1), 15, 1.8, 18, 2.7))
-
-plt.show()
+for entry in os.scandir("Z:/DigitRock Models Backup/112-89/Резонансная колонка"):
+    if entry.is_dir():
+        print(datetime.datetime.strptime(os.path.split(entry)[-1], '%d-%m-%Y %H-%M-%S'))

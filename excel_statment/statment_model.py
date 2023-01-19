@@ -252,6 +252,7 @@ class Statment:
     current_test: str
     original_keys: list = None
     save_dir = DataTypeValidation(SaveDir)
+    backup_dir = "Z:/DigitRock Models Backup"
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):
@@ -326,6 +327,33 @@ class Statment:
             self.general_parameters = data["general_parameters"]
             self.test_class = data["test_class"]
             self.original_keys = data["original_keys"]
+
+    def save(self, models: list, models_names: list):
+        date_format = "%m.%d.%Y %H-%M-%S"
+        str_datetime = datetime.now().strftime(date_format)
+
+        backup_object = os.path.join(self.backup_dir, self.general_data.object_number)
+        backup_test = os.path.join(backup_object, self.general_parameters.test_mode)
+        backup_date_path = os.path.join(backup_test, str_datetime)
+
+        create_path(backup_object)
+        create_path(backup_test)
+        create_path(backup_date_path)
+
+        paths = []
+        for entry in os.scandir(backup_test):
+            if entry.is_dir():
+                paths.append(datetime.strptime(os.path.split(entry)[-1], date_format))
+
+        if len(paths) > 3:
+            shutil.rmtree(os.path.join(backup_test, min(paths).strftime(date_format)))
+
+        shutil.copy(self.general_data.path, os.path.join(backup_date_path, os.path.split(self.general_data.path)[-1]))
+
+        for model, model_name in zip(models, models_names):
+            model_path = os.path.join(backup_date_path, self.general_parameters.test_mode)
+            create_path(model_path)
+            model.dump(os.path.join(model_path, model_name))
 
     @staticmethod
     def createDataFrame(excel_path) -> pd.DataFrame:
