@@ -518,6 +518,13 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
             app_logger.info("Объект успешно выгнан")
             self.save_massage = True
 
+            try:
+                statment.save([VC_models, E_models],
+                              [f"VC_models{statment.general_data.get_shipment_number()}.pickle",
+                               f"E_models{statment.general_data.get_shipment_number()}.pickle"])
+            except Exception as err:
+                QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
         t = threading.Thread(target=save)
         progress.show()
         t.start()
