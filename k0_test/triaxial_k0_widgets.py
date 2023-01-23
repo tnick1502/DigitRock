@@ -373,6 +373,12 @@ class K0SoilTestApp(QWidget):
             QMessageBox.about(self, "Сообщение", "Объект выгнан")
             self.save_massage = True
 
+        try:
+            statment.save([K0_models],
+                          [f"k0_models{statment.general_data.get_shipment_number()}.pickle"])
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
         t = threading.Thread(target=save)
         progress.show()
         t.start()
