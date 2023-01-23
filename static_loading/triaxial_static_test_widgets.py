@@ -1533,6 +1533,20 @@ class StatickSoilTestApp(AppMixin, QWidget):
             app_logger.info("Объект успешно выгнан")
             self.save_massage = True
 
+            try:
+                models = [model for model in [E_models, FC_models] if len(model)]
+
+                names = []
+                if len(E_models):
+                    names.append(f"E_models{statment.general_data.get_shipment_number()}.pickle")
+                if len(FC_models):
+                    names.append(f"FC_models{statment.general_data.get_shipment_number()}.pickle")
+
+                statment.save(models, names)
+
+            except Exception as err:
+                QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
         t = threading.Thread(target=save)
         progress.show()
         t.start()
