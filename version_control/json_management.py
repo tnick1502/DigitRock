@@ -39,6 +39,8 @@ def test_version(version: float) -> bool:
     return True if float(version) == float(get_actual_version()) else False
 
 if __name__ == "__main__":
-    add_data("3.66", """
-    1. Plaxis log lkz FC и Е хранится в разных папках 
+    add_data("3.67", """
+    1. Исправлен баг виброползучести при частоте 1 Гц
+    2. Новая функция генерации порового давления на кругах для КН. Также добавлена возможность считывания с ведомости
+    3. Добавлено дополнительное сохранение ведомости и модели в папку Z:/DigitRock Models Backup при нажатии "Сохранить все"
     """)
