@@ -482,10 +482,13 @@ class MechanicalProperties:
                 self.pressure_array["calculated_by_pressure"] = \
                     MechanicalProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma_3, default_pressure_array)
 
-
-
             if test_mode == "Трёхосное сжатие КН":
-                self.u = MechanicalProperties.define_pore_pressure_array(self.Cv, self.pressure_array["current"])
+                if self.u:
+                    self.u = MechanicalProperties.define_pore_pressure_array_set_by_user(
+                        self.u, self.pressure_array["current"])
+                else:
+                    self.u = MechanicalProperties.define_pore_pressure_array(
+                        physical_properties.W, self.dilatancy_angle, self.Cv, self.pressure_array["current"])
 
             if test_mode == "Вибропрочность":
                 self.Kcu = np.random.uniform(0.6, 0.95)
@@ -1146,10 +1149,15 @@ class MechanicalProperties:
             return pressure_array
 
     @staticmethod
-    def define_pore_pressure_array(Cv: float, pressure_array: list) -> list:
-        pore_pressure_percent = sigmoida(mirrow_element(Cv, 1), 15, 1.8, 18, 2.7)/100
+    def define_pore_pressure_array(W: float, dilatancy_angle: float, Cv: float, pressure_array: list) -> list:
+        pore_pressure_percent = sigmoida(W, 17, 80, 32, 120)
+        Cv_koef = sigmoida(mirrow_element(Cv, 1), 0.15, 1.8, 0.95, 2.7)
+        dilatancy_koef = sigmoida(mirrow_element(dilatancy_angle, 12.5), 0.1, 12.5, 0.9, 25)
 
-        u = [np.round(pressure * pore_pressure_percent * np.random.uniform(0.85, 0.95), 1) for pressure in pressure_array]
+        pore_pressure_percent = pore_pressure_percent * Cv_koef * dilatancy_koef / 100
+
+        u = [np.round(pressure * pore_pressure_percent * np.random.uniform(0.85, 0.95), 1) for pressure in
+             pressure_array]
 
         if max(u) <= 5:
             u[0] = np.random.uniform(1.6, 2.5)
@@ -1162,6 +1170,24 @@ class MechanicalProperties:
                 u[1] = np.random.uniform(3.6, 5)
 
         return u
+
+    @staticmethod
+    def define_pore_pressure_array_set_by_user(max_pore_pressure: float, pressure_array: list) -> list:
+        u = [np.round(max_pore_pressure * np.random.uniform(0.8, 0.9) * (i / max(pressure_array)), 1) for i in
+             pressure_array[:-1]] + [max_pore_pressure]
+
+        if max(u) <= 5:
+            u[0] = np.random.uniform(1.6, 2.5)
+            u[1] = np.random.uniform(2.6, 3)
+        else:
+            if u[0] <= 1.5:
+                u[0] = np.random.uniform(1.6, 2.9)
+
+            if (u[1] <= 1.5) or (u[1] <= u[0]):
+                u[1] = np.random.uniform(3.6, 5)
+
+        return u
+
 
 class ConsolidationProperties:
     Eoed = DataTypeValidation(float, int)
