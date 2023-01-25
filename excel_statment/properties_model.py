@@ -1708,7 +1708,7 @@ class VibrationCreepProperties(MechanicalProperties):
 
     @staticmethod
     def define_Kd_sand(type, e, frequency, sigma_3):
-        FREQUENCY = np.array([2, 5, 10, 30, 40, 61.5, 100])
+        FREQUENCY = np.array([1, 5, 10, 30, 40, 61.5, 100])
 
         if e is None:
             e = np.round(np.random.uniform(0.6, 0.7), 2)
