@@ -40,4 +40,5 @@ def test_version(version: float) -> bool:
 
 if __name__ == "__main__":
     add_data("3.67", """
+    1. Добавлены новые режимы выбора К0
     """)
