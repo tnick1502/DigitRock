@@ -88,7 +88,7 @@ DynamicsPropertyPosition = {
     "rw": ["HU", 228],
     "Hw": ["HS", 226],
     "frequency_storm": ["HT", 227],
-    "cycles_count_storm": ["HT", 225],
+    "cycles_count_storm": ["HR", 225],
     "frequency_vibration_creep": ["AN", 39],
     "Kd_vibration_creep": ["CB", 79],
     "sigma_d_vibration_creep": ["AO", 40],

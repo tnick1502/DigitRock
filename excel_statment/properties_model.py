@@ -1198,7 +1198,6 @@ class MechanicalProperties:
 
         return u
 
-
 class ConsolidationProperties:
     Eoed = DataTypeValidation(float, int)
     Cv = DataTypeValidation(float, int)
@@ -1344,6 +1343,17 @@ class CyclicProperties(MechanicalProperties):
                 self.cycles_count = CyclicProperties.define_cycles_count(self.magnitude)
 
                 self.frequency = 0.5
+
+            if test_mode == "По заданным параметрам":
+                try:
+                    self.sigma_3 = float_df(data_frame.iat[string, DynamicsPropertyPosition["reference_pressure"][1]]) * 1000
+                    self.sigma_1 = np.round(self.sigma_3/self.K0)
+
+                    self.t = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]]) / 2
+                    self.cycles_count = int(float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]]))
+                    self.frequency = float_df(data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]])
+                except:
+                    raise ValueError("Проверьте задание параметров: sigma3 (FW), Амплитуда (AO), кол-во циклов (HR), Частота (AN)")
 
             elif test_mode == "Штормовое разжижение":
                 self.rw = float_df(data_frame.iat[string, DynamicsPropertyPosition["rw"][1]])
