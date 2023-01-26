@@ -264,7 +264,9 @@ class RezonantColumnStatment(InitialStatment):
                                         "K0: По ГОСТ-56353-2015",
                                         "K0: Формула Джекки",
                                         "K0: K0 = 1",
-                                        "K0: Формула Джекки c учетом переупл."]
+                                        "K0: Формула Джекки c учетом переупл.",
+                                        "K0: С ведомости (GZ)",
+                                        "K0: С ведомости (FW)"]
                                 }
         }
 
@@ -364,7 +366,9 @@ class TriaxialStaticStatment(InitialStatment):
                     "K0: По ГОСТ-56353-2015",
                     "K0: Формула Джекки",
                     "K0: K0 = 1",
-                    "K0: Формула Джекки c учетом переупл."
+                    "K0: Формула Джекки c учетом переупл.",
+                    "K0: С ведомости (GZ)",
+                    "K0: С ведомости (FW)"
                 ]
             },
 
@@ -549,7 +553,9 @@ class CyclicStatment(InitialStatment):
                     "K0: По ГОСТ-56353-2015",
                     "K0: Формула Джекки",
                     "K0: K0 = 1",
-                    "K0: Формула Джекки c учетом переупл."
+                    "K0: Формула Джекки c учетом переупл.",
+                    "K0: С ведомости (GZ)",
+                    "K0: С ведомости (FW)"
                 ]
             }
         }
@@ -648,7 +654,10 @@ class VibrationCreepStatment(InitialStatment):
                     "K0: По ГОСТ-56353-2015",
                     "K0: Формула Джекки",
                     "K0: K0 = 1",
-                    "K0: Формула Джекки c учетом переупл."]
+                    "K0: Формула Джекки c учетом переупл.",
+                    "K0: С ведомости (GZ)",
+                    "K0: С ведомости (FW)"
+                ]
             },
             "sigma3_lim": {
                 "label": "Ограничение на σ3",
@@ -1051,7 +1060,10 @@ class VibrationStrangthStatment(InitialStatment):
                     "K0: По ГОСТ-56353-2015",
                     "K0: Формула Джекки",
                     "K0: K0 = 1",
-                    "K0: Формула Джекки c учетом переупл."]
+                    "K0: Формула Джекки c учетом переупл.",
+                    "K0: С ведомости (GZ)",
+                    "K0: С ведомости (FW)"
+                ]
             },
 
             "waterfill": {
@@ -1182,7 +1194,6 @@ class RayleighDampingStatment(InitialStatment):
 
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
-
 
 class K0Statment(InitialStatment):
     """Класс обработки файла задания для трехосника"""

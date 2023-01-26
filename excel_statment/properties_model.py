@@ -312,10 +312,20 @@ class MechanicalProperties:
 
             self.Ca = Ca if Ca else np.round(np.random.uniform(0.01, 0.03), 5)
 
-            if float_df(data_frame.iat[string, K0Columns["ige"][1]]):
-                self.K0 = float_df(data_frame.iat[string, K0Columns["ige"][1]])
-            elif float_df(data_frame.iat[string, K0Columns["nc"][1]]):
-                self.K0 = float_df(data_frame.iat[string, K0Columns["nc"][1]])
+            if K0_mode == "K0: С ведомости (FW)":
+                K0 = float_df(data_frame.iat[string, K0Columns["ige"][1]])
+                if not K0:
+                    raise ValueError("Неправильное значение К0 в ячейке 178")
+                else:
+                    self.K0 = K0
+                if float_df(data_frame.iat[string, K0Columns["ige"][1]]):
+                    self.K0 = float_df(data_frame.iat[string, K0Columns["ige"][1]])
+            elif K0_mode == "K0: С ведомости (GZ)":
+                K0 = float_df(data_frame.iat[string, K0Columns["nc"][1]])
+                if not K0:
+                    raise ValueError("Неправильное значение К0 в ячейке 208")
+                else:
+                    self.K0 = K0
             else:
                 self.K0 = MechanicalProperties.define_K0(
                     data_frame, K0_mode, string, physical_properties.Il, self.fi,
