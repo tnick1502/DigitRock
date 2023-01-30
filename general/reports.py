@@ -76,6 +76,21 @@ LeftStyle = styles['default2']
 DjStyle = styles['default']
 LeftStyle_min = styles['default2_min']
 
+TextDataMainFrame = {
+    "laboratory_name": {
+        "ru": "МОСТДОРГЕОТРЕСТ",
+        "en": "MOSTDORGEOTREST",
+    },
+    "name_signature": {
+            "ru": "испытательная лаборатория",
+            "en": "soil testing laboratory",
+        },
+    "address": {
+        "ru": "129344, г. Москва, ул. Искры, д.31, к.1",
+        "en": "129344, Moscow, Iskry street, 31, building 1",
+    }
+}
+
 
 def strNone(x):
     if x is not None:
