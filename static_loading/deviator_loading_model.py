@@ -512,6 +512,12 @@ class ModelTriaxialDeviatorLoading:
         self._test_params.sigma_3 = params["sigma_3"]
         self.change_borders(params["cut"]["left"], params["cut"]["right"])
 
+    def get_for_average(self):
+        return {
+            "strain": self._test_data.strain_cut,
+            "deviator": self._test_data.deviator_cut
+        }
+
     @staticmethod
     def find_friction_step(strain, deviator):
         """Функция поиска начального хода штока"""

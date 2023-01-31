@@ -1476,7 +1476,6 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
             # statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
             # name=statment.general_parameters.test_mode + ".pickle")
-
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
                 app_logger.info(
