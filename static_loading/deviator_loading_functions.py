@@ -1967,7 +1967,7 @@ def curve(qf, e50, **kwargs):
             pass
 
 
-    random_param = np.random.uniform(-0.00125 / 4., 0.00125 / 4., len(y1))
+    random_param = np.random.uniform(-0.0001, 0.0001, len(y1))
     y1 += random_param
     y2 += random_param
 
@@ -2003,11 +2003,11 @@ def curve(qf, e50, **kwargs):
     y1[0] = 0.  # искусственное зануление первой точки
     y2[0] = 0.
 
-    random_param = np.random.uniform(-0.00125 / 8., 0.00125 / 8., len(y1))
+    random_param = np.random.uniform(-0.0001, 0.0001, len(y1))
     y1 = y1 + random_param
-    y1 = discrete_array(y1, 0.00125 / 2.)  # дискретизация по уровню функции обьемной деформации
+    y1 = discrete_array(y1, 0.0001)  # дискретизация по уровню функции обьемной деформации
     y2 = y2 + random_param
-    y2 = discrete_array(y2, 0.00125 / 8.)  # дискретизация по уровню функции обьемной деформации
+    y2 = discrete_array(y2, 0.0001)  # дискретизация по уровню функции обьемной деформации
 
     # if xc < 0.15:
     #     y[-1] = qf2 + abs(y_start[0])

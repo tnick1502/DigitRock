@@ -716,6 +716,7 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                                                          cell_volume_slant, _delta_initial['v_cell']['initial'])
             cell_volume_current = cell_volume_current - pore_volume_current
 
+
             pore_volume_current += _delta_initial['v_pore']['initial']
             time_current += _dict_accum['time'][-1]
 
@@ -807,6 +808,8 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
                                                           end_vertical_deformation - initial_vertical_deformation,
                                                           10) + initial_vertical_deformation
 
+        pore_volume_noise = 0.0001 * np.pi * 19**2 * (76)
+
         dict = {
             'Time': [float("{:.3f}".format(x / 60)) for x in
                      (dict_accum['time'] + np.random.uniform(-0.1, 0.1, len(dict_accum['time'])))],
@@ -818,10 +821,11 @@ class ModelTriaxialReconsolidationSoilTest(ModelTriaxialReconsolidation):
             'VerticalDeformation_mm': array_discreate_noise(vertical_deformation, discrete_step_deformation, 8),
             'CellPress_kPa': array_discreate_noise(dict_accum['sigma_accum'], discrete_step_press, 5,
                                                    koef_noise_before=0.1),
-            'CellVolume_mm3': array_discreate_noise(dict_accum['cell_volume_accum'], discrete_step_volume, 2),
+            'CellVolume_mm3': array_discreate_noise(dict_accum['cell_volume_accum'], pore_volume_noise, 5,
+                                                    koef_noise_before=1, koef_noise_after=0.03),
             'PorePress_kPa': array_discreate_noise(dict_accum['u_accum'], discrete_step_u, 5, koef_noise_before=0.1),
-            'PoreVolume_mm3': array_discreate_noise(dict_accum['pore_volume_accum'], discrete_step_volume, 3,
-                                                    koef_noise_before=0.5),
+            'PoreVolume_mm3': array_discreate_noise(dict_accum['pore_volume_accum'], pore_volume_noise, 5,
+                                                    koef_noise_before=1),
             'VerticalPress_kPa': array_discreate_noise(dict_accum['sigma_accum'], discrete_step_press, 5),
             'Trajectory': trajectory_accum
 
@@ -882,6 +886,8 @@ def time_series(x: np.ndarray) -> np.ndarray:
     """
     time = np.linspace(0, len(x) - 1, len(x))
     return time
+
+
 
 if __name__ == '__main__':
     a = ModelTriaxialReconsolidationSoilTest()

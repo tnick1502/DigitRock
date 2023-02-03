@@ -212,8 +212,8 @@ def function_consalidation(Cv=3, volume_strain_90=-np.random.uniform(0.14, 0.2),
 
 
     y_time += consolidation_deviation(x_time, xc, deviation)
-    y_time += np.random.uniform(-0.0004, 0.0004, len(y_time))
-    y_time = discrete_array(y_time, 0.0008)
+    y_time += np.random.uniform(-0.0001, 0.0001, len(y_time))
+    y_time = discrete_array(y_time, 0.0001)
 
     return x_time, y_time
 
@@ -386,8 +386,8 @@ def function_consalidation_without_Cv(Cv=3, volume_strain_90=-np.random.uniform(
     y_time += load_stage_strain
 
     y_time += consolidation_deviation(x_time, xc, deviation)
-    y_time += np.random.uniform(-0.0004, 0.0004, len(y_time))
-    y_time = discrete_array(y_time, 0.0008)
+    y_time += np.random.uniform(-0.0001, 0.0001, len(y_time))
+    y_time = discrete_array(y_time, 0.0001)
 
     return x_time, y_time#, x_log, y_0_xca, y_0_xc, x
 
@@ -477,8 +477,8 @@ def function_consalidation2(Cv=3, Ca="-",deviation=0.003, point_time=0.25,
         y=y[:index_ln_xca[0]+1]
 
     #y += consolidation_deviation(x, time_100, deviation)
-    y += np.random.uniform(-0.0004, 0.0004, len(y))
-    y = discrete_array(y, 0.0008)
+    y += np.random.uniform(-0.0001, 0.0001, len(y))
+    y = discrete_array(y, 0.0001)
 
     return x, y
 

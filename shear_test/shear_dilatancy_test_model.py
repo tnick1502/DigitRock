@@ -1211,6 +1211,62 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         return 5.5 - 30 * xc
 
     @staticmethod
+    def number_format(x, characters_number=0, split=".", change_negatives=True):
+        """Функция возвращает число с заданным количеством знаков после запятой
+        :param characters_number: количество знаков после запятой
+        :param format: строка или число
+        :param split: кразделитель дробной части. точка или запятая
+        :param change_negatives: удаление начального знака минус"""
+
+        if str(type(x)) in ["<class 'numpy.float64'>", "<class 'numpy.int32'>", "<class 'int'>", "<class 'float'>"]:
+            # установим нужный формат
+            _format = "{:." + str(characters_number) + "f}"
+            round_x = np.round(x, characters_number)
+            x = _format.format(round_x)
+
+            # Уберем начальный минус  (появляется, например, когда округляем -0.0003 до 1 знака)
+            if change_negatives:
+                if x[0] == "-":
+                    x = x[1:len(x)]
+
+            if split == ".":
+                return x
+            elif split == ",":
+                return x.replace(".", ",")
+
+
+        else:
+            _format = "{:." + str(characters_number) + "f}"
+
+            if str(type(x)) == "<class 'numpy.ndarray'>":
+                x = list(x)
+
+            for i in range(len(x)):
+                # Уберем начальный минус  (появляется, например, когда округляем -0.0003 до 1 знака)
+                x[i] = _format.format(x[i])
+                if change_negatives:
+                    if x[i][0] == "-":
+                        x[i] = x[i][1:len(x)]
+
+                if split == ".":
+                    pass
+                elif split == ",":
+                    x[i].replace(".", ",")
+
+            return x
+
+    @staticmethod
+    def current_value_array(array, number, change_negatives=True):
+        s = []
+        for i in range(len(array)):
+            num = ModelShearDilatancySoilTest.number_format(array[i], number,
+                                                                change_negatives=change_negatives).replace(".", ",")
+            if num in ["0,0", "0,00", "0,000", "0,0000", "0,00000", "0,000000"]:
+                num = "0"
+            s.append(num)
+        return s
+
+    @staticmethod
     def dictionary_deviator_loading(strain, tau, vertical_strain, sigma, velocity, equipment_sample_h_d, nonzero_vertical_def=True):
         """Формирует словарь девиаторного нагружения"""
 
@@ -1255,6 +1311,14 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             "ShearPress_kPa": np.round(shear_press, 6),
             "Stage": stage
         }
+
+        data["Time"] = ModelShearDilatancySoilTest.current_value_array(data["Time"], 3)
+        data["SampleHeight_mm"] = ModelShearDilatancySoilTest.current_value_array(data["SampleHeight_mm"], 0)
+        data["SampleDiameter_mm"] = ModelShearDilatancySoilTest.current_value_array(data["SampleDiameter_mm"], 1)
+        data["VerticalPress_kPa"] = ModelShearDilatancySoilTest.current_value_array(data["VerticalPress_kPa"], 4)
+        data["VerticalDeformation_mm"] = ModelShearDilatancySoilTest.current_value_array(data["VerticalDeformation_mm"], 7)
+        data['ShearDeformation_mm'] = ModelShearDilatancySoilTest.current_value_array(data["ShearDeformation_mm"], 8)
+        data['ShearPress_kPa'] = ModelShearDilatancySoilTest.current_value_array(data["ShearPress_kPa"], 6)
 
         return data
 
