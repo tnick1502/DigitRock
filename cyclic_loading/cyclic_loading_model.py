@@ -1655,7 +1655,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         return time, strain, deviator
 
     @staticmethod
-    def generate_willie_log_file(file_path, deviator, PPR, strain, frequency, N, points_in_cycle, setpoint, cell_pressure, reconsolidation_time, post_name=None, time=None, split = ","):
+    def generate_willie_log_file(file_path, deviator, PPR, strain, frequency, N, points_in_cycle, setpoint, cell_pressure, reconsolidation_time, post_name=None, time=None):
         """Сохранение текстового файла формата Willie.
                     Передается папка, массивы"""
         if post_name:
@@ -1669,10 +1669,6 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
             if s == "-0.000000":
                 s = "0.000000"
-
-            if split == ",":
-                s = s.replace(".", ",")
-
             return s
 
         def make_string(data, i):
@@ -1682,8 +1678,6 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                     s += wille_number_format(data[key][i]) + '\t'
                 except ValueError:
                     s += data[key][i] + '\t'
-                    if split == ",":
-                        s = s.replace('.',',')
                 except IndexError:
                     pass
             s += '\n'
