@@ -1040,8 +1040,12 @@ def save_report(titles1, data1, scales1, data_report1, customer_data_info1,
     global pod_mass
     if type_format == 1:
         pod_mass = [data[d:d + 21] for d in xrange(0, len(data), 21)]
+        if len(pod_mass[-1]) < 3:
+            pod_mass = [data[d:d + 21-2] for d in xrange(0, len(data), 21-2)]
     else:
         pod_mass = [data[d:d + 23] for d in xrange(0, len(data), 23)]
+        if len(pod_mass[-1]) < 3:
+            pod_mass = [data[d:d + 23-2] for d in xrange(0, len(data), 23-2)]
 
     # Делитель таблицы
     all_table = []
