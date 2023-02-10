@@ -1002,19 +1002,20 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             self._test_data.strain * (76 - self._test_params.delta_h_consolidation)/ (
                                              76 - self._test_params.delta_h_consolidation), 6)
 
-        # Объем штока
-        V = np.pi * 10 * 10 * self._test_data.cell_volume_strain * 76
-        strain_V = V/(np.pi * 19 * 19 * 76)
+        d, h = statment[statment.current_test].physical_properties.sample_size
+
+        V = np.pi * 10 * 10 * self._test_data.cell_volume_strain * h
+        strain_V = V/(np.pi * (d/2) * (d/2) * h)
 
         self._test_data.cell_volume_strain = self._test_data.cell_volume_strain + strain_V
 
 
-        self._test_data.pore_volume_strain = np.round((self._test_data.pore_volume_strain * np.pi * 19 ** 2 * (
-                    76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
-                    76 - self._test_params.delta_h_consolidation)), 6)
-        self._test_data.cell_volume_strain = np.round((self._test_data.cell_volume_strain * np.pi * 19 ** 2 * (
-                    76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
-                    76 - self._test_params.delta_h_consolidation)), 6)
+        self._test_data.pore_volume_strain = np.round((self._test_data.pore_volume_strain * np.pi * (d/2) ** 2 * (
+                    h - self._test_params.delta_h_consolidation)) / (np.pi * (d/2) ** 2 * (
+                    h - self._test_params.delta_h_consolidation)), 6)
+        self._test_data.cell_volume_strain = np.round((self._test_data.cell_volume_strain * np.pi * (d/2) ** 2 * (
+                    h - self._test_params.delta_h_consolidation)) / (np.pi * (d/2) ** 2 * (
+                    h - self._test_params.delta_h_consolidation)), 6)
 
         if statment.general_parameters.test_mode != "Трёхосное сжатие (F, C) res":
             i_end = ModelTriaxialDeviatorLoadingSoilTest.define_final_loading_point(self._test_data.deviator, 0.08 + np.random.uniform(0.01, 0.03))
@@ -1043,11 +1044,11 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             self._test_data.strain * (76 - self._test_params.delta_h_consolidation) / (
                     76 - self._test_params.delta_h_consolidation), 6)
 
-        self._test_data.pore_volume_strain = np.round((self._test_data.pore_volume_strain * np.pi * 19 ** 2 * (
-                76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
+        self._test_data.pore_volume_strain = np.round((self._test_data.pore_volume_strain * np.pi * (d/2) ** 2 * (
+                76 - self._test_params.delta_h_consolidation)) / (np.pi * (d/2) ** 2 * (
                 76 - self._test_params.delta_h_consolidation)), 6)
-        self._test_data.cell_volume_strain = np.round((self._test_data.cell_volume_strain * np.pi * 19 ** 2 * (
-                76 - self._test_params.delta_h_consolidation)) / (np.pi * 19 ** 2 * (
+        self._test_data.cell_volume_strain = np.round((self._test_data.cell_volume_strain * np.pi * (d/2) ** 2 * (
+                76 - self._test_params.delta_h_consolidation)) / (np.pi * (d/2) ** 2 * (
                 76 - self._test_params.delta_h_consolidation)), 6)
 
         self._test_data.volume_strain = self._test_data.pore_volume_strain

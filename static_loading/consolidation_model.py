@@ -993,8 +993,8 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         self._test_params.E = statment[statment.current_test].mechanical_properties.E50
         self._test_params.sigma_3 = statment[statment.current_test].mechanical_properties.sigma_3
         self._test_params.K0 = statment[statment.current_test].mechanical_properties.K0
-
-        self._draw_params.max_time = (((0.848 * 3.8 * 3.8) / (4 * self._test_params.Cv)))*np.random.uniform(5, 7)
+        h = statment[statment.current_test].physical_properties.sample_size[1]
+        self._draw_params.max_time = (((0.848 * ((h/2)/10) * ((h/2)/10)) / (4 * self._test_params.Cv)))*np.random.uniform(5, 7)
         self._draw_params.volume_strain_90 = np.random.uniform(0.14, 0.2)
 
         self._test_data.delta_h_consolidation = round((76 * (self._test_params.sigma_3 / (3 * self._test_params.E)) \
@@ -1037,6 +1037,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 
     def _test_modeling(self):
         """Функция моделирования опыта"""
+        d, h = statment[statment.current_test].physical_properties.sample_size
         random = np.random.choice([2, 3])
         if random == 1:
             self._test_data.time, self._test_data.pore_volume_strain = function_consalidation(Cv=self._test_params.Cv,
@@ -1046,7 +1047,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                                         E=self._test_params.E,
                                                         sigma_3=self._test_params.sigma_3,
                                                         max_time=self._draw_params.max_time,
-                                                        approximate=True)
+                                                        approximate=True, h=h)
         elif random == 2:
             self._test_data.time, self._test_data.pore_volume_strain = function_consalidation(Cv=self._test_params.Cv,
                                                         volume_strain_90=-self._draw_params.volume_strain_90,
@@ -1055,7 +1056,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                                         E=self._test_params.E,
                                                         sigma_3=self._test_params.sigma_3 if self._test_params.sigma_3 >= 100 else 100,
                                                         max_time=self._draw_params.max_time,
-                                                        approximate=False)
+                                                        approximate=False, h=h)
         elif random == 3:
             self._test_data.time, self._test_data.pore_volume_strain = function_consalidation_without_Cv(Cv=self._test_params.Cv,
                                                         volume_strain_90=-self._draw_params.volume_strain_90,
@@ -1063,19 +1064,20 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                                         Ca=-self._test_params.Ca,
                                                         E=self._test_params.E,
                                                         sigma_3=self._test_params.sigma_3 if self._test_params.sigma_3 >= 100 else 100,
-                                                        max_time=self._draw_params.max_time)
+                                                        max_time=self._draw_params.max_time, h=h)
 
         self._test_data.cell_volume_strain = self._test_data.pore_volume_strain + \
                                              create_deviation_curve(self._test_data.time,
                             abs(self._test_data.pore_volume_strain[-1] - self._test_data.pore_volume_strain[0]) * 0.1,
                                                                     val = (1, 0.1), points = np.random.uniform(5, 20))
+
         self._test_data.time = np.round(self._test_data.time, 3)
         self._test_data.cell_volume_strain = np.round(
-            self._test_data.cell_volume_strain * np.pi * (19 ** 2) / (76 - self._test_data.delta_h_reconsolidation) /
-            (np.pi * (19 ** 2) / (76 - self._test_data.delta_h_reconsolidation)), 6)
+            self._test_data.cell_volume_strain * np.pi * ((d/2) ** 2) / (h - self._test_data.delta_h_reconsolidation) /
+            (np.pi * ((d/2) ** 2) / (h - self._test_data.delta_h_reconsolidation)), 6)
         self._test_data.pore_volume_strain = np.round(
-            self._test_data.pore_volume_strain * np.pi * (19 ** 2) / (76 - self._test_data.delta_h_reconsolidation) /
-            (np.pi * (19 ** 2) / (76 - self._test_data.delta_h_reconsolidation)), 6)
+            self._test_data.pore_volume_strain * np.pi * ((d/2) ** 2) / (h - self._test_data.delta_h_reconsolidation) /
+            (np.pi * ((d/2) ** 2) / (h - self._test_data.delta_h_reconsolidation)), 6)
 
     def get_duration(self):
         return self._test_data.time[-1]
@@ -1136,9 +1138,9 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             "Deviator_kPa": np.random.uniform(-1, 1, len(time)),
             "VerticalDeformation_mm": vertical_deformation,
             "CellPress_kPa": cell_press + np.random.uniform(-0.1, 0.1, len(time)),
-            "CellVolume_mm3": -cell_volume_strain * np.pi * (19 ** 2) * (sample_size[0]-delta_h_reconsolidation),
+            "CellVolume_mm3": -cell_volume_strain * np.pi * ((sample_size[1]/2) ** 2) * (sample_size[0]-delta_h_reconsolidation),
             "PorePress_kPa": np.random.uniform(-1, 1, len(time)),
-            "PoreVolume_mm3": pore_volume_strain * np.pi * (19 ** 2) * (sample_size[0]-delta_h_reconsolidation),
+            "PoreVolume_mm3": pore_volume_strain * np.pi * (sample_size[1]/2) * (sample_size[0]-delta_h_reconsolidation),
             "VerticalPress_kPa": cell_press + np.random.uniform(-0.1, 0.1, len(time)),
             "Trajectory": np.full(len(time), 'Consolidation')
         }

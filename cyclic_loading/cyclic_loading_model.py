@@ -1666,6 +1666,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         def wille_number_format(x):
             x = "{:.6f}".format(x)
             s = str(x)
+
             if s == "-0.000000":
                 s = "0.000000"
             return s
@@ -1753,6 +1754,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             "Axial displacement 1": ["0.000000" for _ in range(len(deviator))],
             "Axial displacement 2": ["0.000000" for _ in range(len(deviator))]
         }
+
 
         with open(p, "w") as file:
             file.write(

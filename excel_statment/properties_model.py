@@ -3,7 +3,7 @@ from openpyxl import load_workbook
 import pandas as pd
 import numpy as np
 import os
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from datetime import datetime
 from scipy.interpolate import interp1d, griddata
 import pyexcel as p
@@ -70,7 +70,7 @@ class PhysicalProperties:
                 object.__setattr__(self, key, None)
 
     #@log_this(app_logger, "debug")
-    def defineProperties(self, data_frame, string, identification_column=None) -> None:
+    def defineProperties(self, data_frame, string, identification_column=None, sample_size: Tuple['float', 'float']=None) -> None:
         """Считывание строки свойств"""
         for attr_name in PhysicalPropertyPosition:
             if attr_name in ["laboratory_number", "borehole", "soil_name", "ige", "stratigraphic_index", "new_laboratory_number", "description"]:
@@ -108,7 +108,10 @@ class PhysicalProperties:
         if not self.type_ground:
             self.type_ground = PhysicalProperties.define_type_ground_by_name(self.soil_name)
 
-        self.sample_size = PhysicalProperties.define_sample_size(self.granulometric_10, self.granulometric_5)
+        if sample_size is None:
+            self.sample_size = PhysicalProperties.define_sample_size(self.granulometric_10, self.granulometric_5)
+        else:
+            self.sample_size = sample_size
 
         self.skempton_initial = PhysicalProperties.define_skempton_initial()
 

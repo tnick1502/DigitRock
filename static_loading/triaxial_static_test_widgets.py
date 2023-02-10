@@ -860,10 +860,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
             assert statment.current_test, "Не выбран образец в ведомости"
             file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
 
-            if statment.general_parameters.equipment == "АСИС ГТ.2.0.5 (150х300)":
-                h, d = 300, 150
-            else:
-                d, h = statment[statment.current_test].physical_properties.sample_size
+            d, h = statment[statment.current_test].physical_properties.sample_size
 
             try:
                 if statment.general_parameters.waterfill == "Водонасыщенное состояние":

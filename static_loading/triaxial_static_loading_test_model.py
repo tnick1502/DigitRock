@@ -50,7 +50,7 @@ def dictionary_without_VFS(sigma_3=100, velocity=49, sample_size: Tuple[int, int
                                              np.random.uniform(1, 1))
     # load_stage_cell_volume_strain[0] = 0
     cell_volume_strain = np.hstack((load_stage_cell_volume_strain,
-                                    np.full(len(time_array) + 1, final_volume_strain))) * np.pi * (19 ** 2) * sample_size[0] + \
+                                    np.full(len(time_array) + 1, final_volume_strain))) * np.pi * ((sample_size[1]/2) ** 2) * sample_size[0] + \
                          np.random.uniform(-0.1, 0.1, len(time))
     cell_volume_strain[0] = 0
     vertical_press = cell_press + np.random.uniform(-0.1, 0.1, len(time))
@@ -520,10 +520,8 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
 
     def save_cvi_file(self, file_path, file_name):
-        if statment.general_parameters.equipment == "АСИС ГТ.2.0.5 (150х300)":
-            d, h = 150, 300
-        else:
-            d, h = statment[statment.current_test].physical_properties.sample_size
+
+        d, h = statment[statment.current_test].physical_properties.sample_size
 
         sample_aria = round(((d/10) / 2)**2 * 3.14, 1)
 

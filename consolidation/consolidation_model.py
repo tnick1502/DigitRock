@@ -1277,13 +1277,13 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             f.write(header3 + '\n')
 
             for i in range(len(time)):
-                f.write(';'.join([f'{i + 1}',
-                                  f'{np.round(time[i], 6):.6f}',
-                                  f'{np.round(pressure_array[i], 2):.2f}' if device
-                                  else f'{np.round(pressure_array[i], 4):.4f}',
-                                  f'{round(abs(strain[i]) * 20, prec):.{prec}f}',
-                                  f'{int(stab_end[i])}',
-                                  f'{int(consolidation_array[i])}']) + '\n')
+                f.write(';'.join([f'{i + 1}'.replace(".", ","),
+                                  f'{np.round(time[i], 6):.6f}'.replace(".", ","),
+                                  f'{np.round(pressure_array[i], 2):.2f}'.replace(".", ",") if device
+                                  else f'{np.round(pressure_array[i], 4):.4f}'.replace(".", ","),
+                                  f'{round(abs(strain[i]) * 20, prec):.{prec}f}'.replace(".", ","),
+                                  f'{int(stab_end[i])}'.replace(".", ","),
+                                  f'{int(consolidation_array[i])}'.replace(".", ",")]) + '\n')
         print("{} saved".format(path))
         return path
 
