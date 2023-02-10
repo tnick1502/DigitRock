@@ -204,7 +204,8 @@ class Test:
     mechanical_properties = DataTypeValidation(MechanicalProperties, ConsolidationProperties)
 
     def __init__(self, test_class=None, data_frame=None, i=None, test_mode=None, K0_mode=None, sigma3_lim=None,
-                 identification_column=None, physical_properties_dict=None, mechanical_properties_dict=None):
+                 identification_column=None, physical_properties_dict=None, mechanical_properties_dict=None,
+                 equipment=None):
         if physical_properties_dict and mechanical_properties_dict:
             self.physical_properties = PhysicalProperties()
             for attr in physical_properties_dict:
@@ -224,8 +225,14 @@ class Test:
 
         else:
             self.physical_properties = PhysicalProperties()
+
+            sample_size = None
+            if equipment == "АСИС ГТ.2.0.5 (150х300)":
+                sample_size = (150, 300)
+
             self.physical_properties.defineProperties(data_frame=data_frame, string=i,
-                                                          identification_column=identification_column)
+                                                      identification_column=identification_column,
+                                                      sample_size=sample_size)
             self.mechanical_properties = test_class()
 
             if sigma3_lim:
@@ -290,11 +297,15 @@ class Statment:
         if not hasattr(self.general_parameters, "sigma3_lim"):
             self.general_parameters.sigma3_lim = None
 
+        if not hasattr(self.general_parameters, "equipment"):
+            self.general_parameters.equipment = None
+
         if data_frame is not None:
             for i in range(len(data_frame["Лаб. № пробы"])):
                 self.tests[str_df(data_frame.iat[i, PhysicalPropertyPosition["laboratory_number"][1]])] = \
                     Test(self.test_class, data_frame, i, self.general_parameters.test_mode,
-                         self.general_parameters.K0_mode, self.general_parameters.sigma3_lim, identification_column)
+                         self.general_parameters.K0_mode, self.general_parameters.sigma3_lim, identification_column,
+                         equipment=self.general_parameters.equipment)
         self.original_keys = list(self.tests.keys())
 
     def setGeneralParameters(self, data):

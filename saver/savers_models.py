@@ -327,10 +327,8 @@ class SaverModel:
         send_to_server(self._port, {"maximum": len(statment)})
 
         for i, lab in enumerate(statment):
-            if statment.general_parameters.equipment == "АСИС ГТ.2.0.5 (150х300)":
-                h, d = 300, 150
-            else:
-                d, h = statment[lab].physical_properties.sample_size
+
+            d, h = statment[lab].physical_properties.sample_size
 
             if statment.general_parameters.test_mode == "Трёхосное сжатие (E)":
                 s = TriaxialSaver(E_models[lab], self.path, size=[h, d])

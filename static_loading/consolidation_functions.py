@@ -94,7 +94,7 @@ def intersect(xp1, yp1, xp2, yp2, xp3, yp3, xp4, yp4):
 
 def function_consalidation(Cv=3, volume_strain_90=-np.random.uniform(0.14, 0.2),
                            Ca=False, deviation=0.003, reverse=False, point_time=0.25,
-                           max_time=False, E=np.random.uniform(20000, 50000), sigma_3=100, approximate=False):
+                           max_time=False, E=np.random.uniform(20000, 50000), sigma_3=100, approximate=False, h=76):
     '''Создание кривой консолидации
     Входные параметры:  Cv - коэффициент консолидации,
                         deviation - значение для наложения девиаций,
@@ -112,7 +112,7 @@ def function_consalidation(Cv=3, volume_strain_90=-np.random.uniform(0.14, 0.2),
 
     # Проверка заданного времени консолидации. Если его нет, найдем автоматически, с условием выполнения t100
     if not max_time:
-        max_time = np.random.uniform(((0.848 * 38 * 38) / (4 * Cv)) * 3, (((0.848 * 38 * 38) / (4 * Cv))) * 4)
+        max_time = np.random.uniform(((0.848 * (h/2) * (h/2)) / (4 * Cv)) * 3, (((0.848 * (h/2) * (h/2)) / (4 * Cv))) * 4)
     # else:
     ## Условие выполнения 100% консолидации
     # if max_time < ((0.848 * 38 * 38) / (4 * Cv)) * 2.5:
@@ -121,7 +121,7 @@ def function_consalidation(Cv=3, volume_strain_90=-np.random.uniform(0.14, 0.2),
     # Расчет смещения объемной деформации на этапе приложения нагрузки
     load_stage_strain = -3 * (sigma_3 / E) * np.random.uniform(2, 3)
 
-    xc = math.sqrt((0.848 * 3.8 * 3.8) / (4 * Cv))
+    xc = math.sqrt((0.848 * ((h/2)/10) * ((h/2)/10)) / (4 * Cv))
     len_x = max_time ** 0.5
     x = np.linspace(0, len_x, 1000)
 
@@ -203,7 +203,7 @@ def function_consalidation(Cv=3, volume_strain_90=-np.random.uniform(0.14, 0.2),
     y_time += load_stage_strain
     if approximate:
         try:
-            if max_time > 4*(((0.848 * 3.8 * 3.8) / (4 * Cv))):
+            if max_time > 4*(((0.848 * ((h/2)/10) * ((h/2)/10)) / (4 * Cv))):
                 y_time = -((approximate_sqr_consolidation_more_current(x_time ** 0.5, (-y_time - (-y_time[0]))))) + y_time[0]
             else:
                 y_time = -((approximate_sqr_consolidation(x_time ** 0.5, (-y_time - (-y_time[0]))))) + y_time[0]
@@ -219,7 +219,7 @@ def function_consalidation(Cv=3, volume_strain_90=-np.random.uniform(0.14, 0.2),
 
 def function_consalidation_without_Cv(Cv=3, volume_strain_90=-np.random.uniform(0.14, 0.2),
                            Ca=False, deviation=0.003, reverse=False, point_time=0.25,
-                           max_time=False, E=np.random.uniform(20000, 50000), sigma_3=100):
+                           max_time=False, h=76, E=np.random.uniform(20000, 50000), sigma_3=100):
     '''Создание кривой консолидации
     Входные параметры:  Cv - коэффициент консолидации,
                         deviation - значение для наложения девиаций,
@@ -235,7 +235,7 @@ def function_consalidation_without_Cv(Cv=3, volume_strain_90=-np.random.uniform(
     Cv *= 1.5
     # Проверка заданного времени консолидации. Если его нет, найдем автоматически, с условием выполнения t100
     if not max_time:
-        max_time = np.random.uniform(((0.848 * 38 * 38) / (4 * Cv)) * 3, (((0.848 * 38 * 38) / (4 * Cv))) * 4)
+        max_time = np.random.uniform(((0.848 * (h/2) * (h/2)) / (4 * Cv)) * 3, (((0.848 * (h/2) * (h/2)) / (4 * Cv))) * 4)
     # else:
     ## Условие выполнения 100% консолидации
     # if max_time < ((0.848 * 38 * 38) / (4 * Cv)) * 2.5:
@@ -246,7 +246,7 @@ def function_consalidation_without_Cv(Cv=3, volume_strain_90=-np.random.uniform(
 
     max_time = max_time ** 0.5
 
-    xc = math.sqrt((0.848 * 3.8 * 3.8) / (4 * Cv))
+    xc = math.sqrt((0.848 * ((h/2)/10) * ((h/2)/10)) / (4 * Cv))
     len_x = max_time
     x = np.linspace(0, len_x, 1000)
 
@@ -557,8 +557,9 @@ if __name__ == "__main__":
     0.5
     7.7679012557423475
     0.17770291565322646
-    x1, y1 = function_consalidation_without_Cv(Cv=2, Ca=-0.01765, point_time=1/120, max_time=706,
+    x1, y1 = function_consalidation(Cv=2, Ca=-0.01765, point_time=1/120, max_time=706,
                                     volume_strain_90=-0.17770291565322646, E=96000, sigma_3=50)
+
     #x2, y2 = function_consalidation(Cv=Cv, Ca=-0.01,  point_time=1/2, max_time=t_test,deviation=0.003, approximate=True)
     #x3, y3 = function_consalidation_without_Cv(Cv=Cv, Ca=-0.01, point_time=1,deviation=0.003, max_time=t_test)
 
