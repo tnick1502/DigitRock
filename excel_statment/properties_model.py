@@ -1337,7 +1337,7 @@ class CyclicProperties(MechanicalProperties):
                 self.magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
 
                 self.t = np.round(0.65 * self.acceleration * self.sigma_1 * float(self.rd))
-                self.MSF = np.round((10 ** (2.24) / ((self.magnitude) ** (2.56))), 2)
+                self.MSF = 1  # np.round((10 ** (2.24) / ((self.magnitude) ** (2.56))), 2)
                 self.t *= self.MSF
                 if self.t < 1.0:
                     self.t = 1.0

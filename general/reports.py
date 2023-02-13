@@ -729,7 +729,7 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True, moove=0):
                     Paragraph(tau_text, LeftStyle), "", zap(test_parameter["tau"], 0)],
                     [Paragraph('''<p>K<sub rise="0.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", zap(test_parameter["K0"], 2),
                     "Частота, Гц:", "", str(test_parameter["frequency"]).replace(".", ","), "I, балл:",  "", str(test_parameter["I"]).replace(".", ",") if test_parameter["I"] else "-"],
-                   ["M, ед.:", "", str(test_parameter["M"]).replace(".", ",") if test_parameter["M"] else "-", "MSF, ед.:", "",str(test_parameter["MSF"]).replace(".", ",") if test_parameter["MSF"] else "-", Paragraph('''<p>r<sub rise="2.5" size="6">d</sub>, ед.:</p>''', LeftStyle), "",str(test_parameter["rd"]).replace(".", ","),]], colWidths=19.444444* mm, rowHeights=4 * mm)
+                   ["M, ед.:", "", str(test_parameter["M"]).replace(".", ",") if test_parameter["M"] else "-", "", "",  "", Paragraph('''<p>r<sub rise="2.5" size="6">d</sub>, ед.:</p>''', LeftStyle), "",str(test_parameter["rd"]).replace(".", ","),]], colWidths=19.444444* mm, rowHeights=4 * mm)
 
     elif test_parameter["type"] == "Демпфирование" or test_parameter["type"] == "По заданным параметрам" or test_parameter["type"] == "Динамическая прочность на сдвиг":
         t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],
