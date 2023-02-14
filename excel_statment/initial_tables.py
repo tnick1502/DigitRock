@@ -5,6 +5,7 @@ from PyQt5 import QtGui
 from datetime import datetime
 from singletons import statment
 from loggers.logger import app_logger, log_this
+from general.backup_widget import TreeView
 from excel_statment.params import accreditation
 
 class AlignDelegate(QStyledItemDelegate):
@@ -72,8 +73,10 @@ class ComboBox_Initial_Parameters(QWidget):
         self.open_box_layout = QHBoxLayout()
         self.button_open = QPushButton("Открыть ведомость")#Button(icons + "Открыть журнал.png", 45, 45, 0.7)
         self.button_refresh = QPushButton("Обновить")
+        self.button_backup = QPushButton("Backups")
         self.open_box_layout.addWidget(self.button_open)
-        self.open_box_layout.addWidget(self.button_refresh)
+        #self.open_box_layout.addWidget(self.button_refresh)
+        self.open_box_layout.addWidget(self.button_backup)
         self.text_file_path = QLineEdit()
         self.text_file_path.setDisabled(True)
         self.open_box_layout.addWidget(self.text_file_path)
@@ -81,6 +84,8 @@ class ComboBox_Initial_Parameters(QWidget):
 
         self.parameter_box = QGroupBox("Параметры опыта")
         self.parameter_box_layout = QHBoxLayout()
+
+        self.button_backup.clicked.connect(self.backup_widget)
 
         for key in self.data:
             self.combo_box = QComboBox()
@@ -109,6 +114,10 @@ class ComboBox_Initial_Parameters(QWidget):
             data[key] = obj.currentText()
         return data
 
+    def backup_widget(self):
+        main = TreeView()
+        main.show()
+
 class ComboBox_Initial_ParametersV2(QWidget):
     """Класс отрисовки параметров опыта и открытия ведомости
     Входные параметры:
@@ -130,8 +139,10 @@ class ComboBox_Initial_ParametersV2(QWidget):
         self.open_box_layout_1 = QHBoxLayout()
         self.button_open = QPushButton("Открыть ведомость")#Button(icons + "Открыть журнал.png", 45, 45, 0.7)
         self.button_refresh = QPushButton("Обновить")
+        self.button_backup = QPushButton("Backups")
         self.open_box_layout_1.addWidget(self.button_open)
         self.open_box_layout_1.addWidget(self.button_refresh)
+        self.open_box_layout_1.addWidget(self.button_backup)
         self.open_box_layout.addLayout(self.open_box_layout_1)
         self.text_file_path = QLineEdit()
         self.text_file_path.setDisabled(True)
@@ -140,6 +151,8 @@ class ComboBox_Initial_ParametersV2(QWidget):
 
         self.parameter_box = QGroupBox("Параметры опыта")
         self.parameter_box_layout = QHBoxLayout()
+
+        self.button_backup.clicked.connect(self.backup_widget)
 
         for key in self.data:
             setattr(self, "box_{}".format(key), QGroupBox(self.data[key]["label"]))
@@ -169,6 +182,10 @@ class ComboBox_Initial_ParametersV2(QWidget):
     def _combo_changed(self):
         """Изменение параметров"""
         self.combo_changes_signal.emit()
+
+    def backup_widget(self):
+        self.tw = TreeView()
+        self.tw.show()
 
     def get_data(self):
         """Чтение выбранных параметров"""
