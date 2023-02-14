@@ -302,14 +302,13 @@ def define_G0_threshold_shear_strain(p_ref, E50, c, fi, K0, type_ground, Ip, e) 
 
     K_ground_type = dependence_Eur[type_ground]
 
-    G0 = G0_plaxis * 0.6 + G0 * 0.4
+    G0 = G0_plaxis * 0.5 + G0 * 0.5
 
     G0 *= K_ground_type
     gam07 = define_threshold_shear_strain(E50/1000, G0, p_ref, c, fi, K0, PI)
-    k_1 = np.random.uniform(0.8, 1.2) * np.random.uniform(0.9, 1.1) * np.random.uniform(0.95, 1.05)
-    k_2 = np.random.uniform(0.85, 1.15)
-    G0 *= k_1
-    gam07 *= k_2
+
+    G0 = np.random.normal(loc=G0, scale=3)
+    gam07 = np.random.normal(loc=gam07, scale=2)
 
     return (np.round(G0, 2), np.round(gam07, 2))
 
