@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QFrame, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, QScrollArea, \
-    QTableWidgetItem
+    QTableWidgetItem, QRadioButton, QButtonGroup
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -48,9 +48,9 @@ class DeviatorItemUI(QGroupBox):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
-    def __init__(self, EGE: str = None):
+    def __init__(self, EGE: str = None, parent=None):
         """Определяем основную структуру данных"""
-        super().__init__()
+        super().__init__(parent=parent)
         # Параметры построения для всех графиков
         self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.1, "wspace": 0.12, "hspace": 0.07, "left": 0.07}
         self.setTitle(f"ИГЭ: {EGE}")
@@ -64,8 +64,19 @@ class DeviatorItemUI(QGroupBox):
         self.widgets_line = QHBoxLayout()
 
         self.param_box = QGroupBox("Параметры усреднения")
-        self.param_box_layout = QHBoxLayout()
+        self.param_box_layout = QVBoxLayout()
         self.param_box.setLayout(self.param_box_layout)
+        self.param_radio_button_1 = QRadioButton('Секторальная разбивка')
+        self.param_radio_button_1.param_type = 'sectors'
+        self.param_radio_button_2 = QRadioButton('Полином')
+        self.param_radio_button_1.param_type = 'poly'
+        self.param_radio_button_2.setChecked(True)
+        self.param_button_group = QButtonGroup()
+        self.param_button_group.addButton(self.param_radio_button_1)
+        self.param_button_group.addButton(self.param_radio_button_2)
+        self.param_button_group.buttonClicked.connect(self.radio_button_clicked)
+        self.param_box_layout.addWidget(self.param_radio_button_1, 1)
+        self.param_box_layout.addWidget(self.param_radio_button_2, 2)
 
         self.results_box = QGroupBox("Результаты обработки")
         self.results_box.setFixedHeight(200)
@@ -120,8 +131,16 @@ class DeviatorItemUI(QGroupBox):
             else:
                 self.plot_ax.plot(
                     plot_data[key]["strain"], plot_data[key]["deviator"],
-                    label=key, linewidth=1, linestyle="-")
+                    label=key, linewidth=1, linestyle="-", alpha=0.6)
+
         self.plot_ax.legend()
+
+    def radio_button_clicked(self, obj):
+        if self.param_button_group.id(obj) == -3:
+            model[self.EGE].processing("poly")
+        elif self.param_button_group.id(obj) == -2:
+            model[self.EGE].processing("sectors")
+        self.plot()
 
 class AverageWidget(QGroupBox):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -141,7 +160,7 @@ class AverageWidget(QGroupBox):
         self.layout_wiget = QVBoxLayout()
 
         for EGE in model:
-            setattr(self, f"deviator_{EGE}", DeviatorItemUI(EGE))
+            setattr(self, f"deviator_{EGE}", DeviatorItemUI(EGE, parent=self))
             widget = getattr(self, f"deviator_{EGE}")
             self.layout_wiget.addWidget(widget)
 

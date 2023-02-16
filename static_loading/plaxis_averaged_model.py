@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.interpolate import pchip_interpolate
+import scipy.ndimage as ndimage
 from singletons import E_models, FC_models, statment
 
 class AveragedModel:
@@ -23,7 +25,7 @@ class AveragedModel:
             self.tests[key] = E_models[key].deviator_loading.get_for_average()
         self.processing()
 
-    def processing(self):
+    def processing(self, approximate_type="poly"):
         summary_c = 0
         summary_fi = 0
         summary_poissons_ratio = 0
@@ -50,6 +52,45 @@ class AveragedModel:
         if summary_fi and summary_c:
             self.averaged_c = np.round(summary_c / len(self.tests), 3)
             self.averaged_fi = np.round(summary_fi / len(self.tests), 1)
+
+        self.averaged_strain, self.averaged_deviator = self.approximate_average(type=approximate_type)
+
+    def approximate_average(self, type="poly", param=8):
+        points = []
+        for test in self.tests:
+            for point in zip(self.tests[test]["strain"], self.tests[test]["deviator"]):
+                points.append(point)
+
+        points.sort(key=lambda point: point[0])
+
+        strain = [point[0] for point in points]
+        deviator = [point[1] for point in points]
+
+        if type == "sectors":
+            step = max(strain) / 100
+            step_points = {}
+            for i in range(len(strain)):
+                step_x = strain[i] // step
+                step_key = step_x * step
+                if step_points.get(step_key, None):
+                    step_points[step_key].append(deviator[i])
+                else:
+                    step_points[step_key] = [deviator[i]]
+
+            averange_strain = [0]
+            averange_deviator = [0]
+            for key in step_points.keys():
+                if len(step_points[key]):
+                    averange_strain.append(key)
+                    averange_deviator.append(sum(step_points[key]) / len(step_points[key]))
+
+            return averange_strain, averange_deviator
+
+        elif type == "poly":
+            averange_strain = np.linspace(0, max(strain), 50)
+            averange_deviator = np.polyval(np.polyfit(strain, ndimage.gaussian_filter(deviator, 3, order=0), 8), averange_strain)
+
+            return averange_strain, averange_deviator
 
     def get_results(self):
         return {
