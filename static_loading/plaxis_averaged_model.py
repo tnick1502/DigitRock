@@ -4,8 +4,8 @@ from singletons import E_models, FC_models, statment
 class AveragedModel:
     tests: dict = {}
 
-    averaged_strain: np.array
-    averaged_deviator: np.array
+    averaged_strain: np.array = None
+    averaged_deviator: np.array = None
 
     averaged_E50: float = None
     averaged_qf: float = None
@@ -18,6 +18,7 @@ class AveragedModel:
     averaged_dilatancy_angle: float = None
 
     def __init__(self, keys):
+        self.tests = {}
         for key in keys:
             self.tests[key] = E_models[key].deviator_loading.get_for_average()
         self.processing()
@@ -27,11 +28,15 @@ class AveragedModel:
         summary_fi = 0
         summary_poissons_ratio = 0
         summary_dilatancy_angle = 0
+        zero_dilatancy = 0
 
         for key in self.tests:
             res_E = E_models[key].deviator_loading.get_test_results()
             summary_poissons_ratio += res_E["poissons_ratio"]
-            summary_dilatancy_angle += res_E["dilatancy_angle"][0]
+            if res_E["dilatancy_angle"] is None:
+                zero_dilatancy += 1
+            else:
+                summary_dilatancy_angle += res_E["dilatancy_angle"][0]
 
             try:
                 res_FC = FC_models[key].get_test_results()
@@ -41,7 +46,7 @@ class AveragedModel:
                 pass
 
         self.averaged_poissons_ratio = np.round(summary_poissons_ratio / len(self.tests), 2)
-        self.averaged_dilatancy_angle = np.round(summary_dilatancy_angle / len(self.tests), 1)
+        self.averaged_dilatancy_angle = np.round(summary_dilatancy_angle / (len(self.tests) - zero_dilatancy), 1)
         if summary_fi and summary_c:
             self.averaged_c = np.round(summary_c / len(self.tests), 3)
             self.averaged_fi = np.round(summary_fi / len(self.tests), 1)
@@ -53,6 +58,14 @@ class AveragedModel:
             "averaged_poissons_ratio": self.averaged_poissons_ratio,
             "averaged_dilatancy_angle": self.averaged_dilatancy_angle,
         }
+
+    def get_plot_data(self):
+        res = dict(self.tests)
+        res["averaged"] = {
+            "strain": self.averaged_strain,
+            "deviator": self.averaged_deviator
+        }
+        return res
 
 class AveragedStatment:
     EGES: dict = {}
@@ -69,9 +82,6 @@ class AveragedStatment:
         for EGE in test_dict:
             self.EGES[EGE] = AveragedModel(test_dict[EGE])
 
-        for i in self.EGES:
-            print(self.EGES[i].get_results())
-
     def __iter__(self):
         for key in self.EGES:
             yield key
@@ -85,6 +95,8 @@ class AveragedStatment:
 
     def __len__(self):
         return len(self.EGES)
+
+
 
 
 
