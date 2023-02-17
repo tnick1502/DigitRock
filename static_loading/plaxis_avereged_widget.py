@@ -26,7 +26,7 @@ class ResultTable(TableVertical):
         fill_keys = {
             "averaged_E50": "Модуль деформации E50, кПа",
             "averaged_qf": "Максимальный девиатор qf, кПа",
-            "averaged_Eur": "Модуль повторного нагружения",
+            "averaged_Eur": "Модуль повторного нагружения, МПа",
             "averaged_c": "Сцепление с, МПа",
             "averaged_fi": "Угол внутреннего трения, град",
             "averaged_poissons_ratio": "Коэффициент Пуассона",
@@ -70,7 +70,10 @@ class DeviatorItemUI(QGroupBox):
         self.param_radio_button_1.param_type = 'sectors'
         self.param_radio_button_2 = QRadioButton('Полином')
         self.param_radio_button_1.param_type = 'poly'
-        self.param_radio_button_2.setChecked(True)
+        if model[self.EGE].approximate_type == 'sectors':
+            self.param_radio_button_1.setChecked(True)
+        elif model[self.EGE].approximate_type == 'poly':
+            self.param_radio_button_2.setChecked(True)
         self.param_button_group = QButtonGroup()
         self.param_button_group.addButton(self.param_radio_button_1)
         self.param_button_group.addButton(self.param_radio_button_2)
@@ -134,19 +137,17 @@ class DeviatorItemUI(QGroupBox):
                     label=key, linewidth=1, linestyle="-", alpha=0.6)
 
         self.plot_ax.legend()
+        self.plot_canvas.draw()
 
     def radio_button_clicked(self, obj):
         if self.param_button_group.id(obj) == -3:
-            model[self.EGE].processing("poly")
+            model[self.EGE].set_approximate_type("poly")
         elif self.param_button_group.id(obj) == -2:
-            model[self.EGE].processing("sectors")
+            model[self.EGE].set_approximate_type("sectors")
         self.plot()
 
 class AverageWidget(QGroupBox):
-    """Интерфейс обработчика циклического трехосного нагружения.
-    При создании требуется выбрать модель трехосного нагружения методом set_model(model).
-    Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
-    def __init__(self, EGE: str = None):
+    def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__()
         model.__init__()
@@ -178,7 +179,6 @@ class AverageWidget(QGroupBox):
         for EGE in model:
             widget = getattr(self, f"deviator_{EGE}")
             widget.plot()
-
 
 
 if __name__ == '__main__':

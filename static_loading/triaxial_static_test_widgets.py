@@ -771,7 +771,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
         self.xml_button.clicked.connect(self.xml)
         self.tab_4.advanced_box_layout.insertWidget(3, self.xml_button)
 
-        self.average_button = QPushButton("Усреднение")
+        self.average_button = QPushButton("Усреднение кривых по ИГЭ")
         self.average_button.clicked.connect(self.average)
         self.tab_4.advanced_box_layout.insertWidget(3, self.average_button)
         # self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)

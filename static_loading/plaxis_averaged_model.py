@@ -18,14 +18,16 @@ class AveragedModel:
     averaged_fi: float = None
     averaged_poissons_ratio: float = None
     averaged_dilatancy_angle: float = None
+    approximate_type: str
 
     def __init__(self, keys):
         self.tests = {}
+        self.approximate_type = "poly"
         for key in keys:
             self.tests[key] = E_models[key].deviator_loading.get_for_average()
         self.processing()
 
-    def processing(self, approximate_type="poly"):
+    def processing(self):
         summary_c = 0
         summary_fi = 0
         summary_poissons_ratio = 0
@@ -53,7 +55,7 @@ class AveragedModel:
             self.averaged_c = np.round(summary_c / len(self.tests), 3)
             self.averaged_fi = np.round(summary_fi / len(self.tests), 1)
 
-        self.averaged_strain, self.averaged_deviator = self.approximate_average(type=approximate_type)
+        self.averaged_strain, self.averaged_deviator = self.approximate_average(type=self.approximate_type)
 
     def approximate_average(self, type="poly", param=8):
         points = []
@@ -91,6 +93,10 @@ class AveragedModel:
             averange_deviator = np.polyval(np.polyfit(strain, ndimage.gaussian_filter(deviator, 3, order=0), 8), averange_strain)
 
             return averange_strain, averange_deviator
+
+    def set_approximate_type(self, approximate_type):
+        self.approximate_type = approximate_type
+        self.processing()
 
     def get_results(self):
         return {
