@@ -24,13 +24,11 @@ class ResultTable(TableVertical):
     Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
     def __init__(self):
         fill_keys = {
-            "averaged_E50": "Модуль деформации E50, кПа",
-            "averaged_qf": "Максимальный девиатор qf, кПа",
-            "averaged_Eur": "Модуль повторного нагружения, МПа",
+            "averaged_E50": "Модуль деформации E50, МПа",
+            "averaged_qf": "Максимальный девиатор qf, МПа",
+            #"averaged_Eur": "Модуль повторного нагружения, МПа",
             "averaged_c": "Сцепление с, МПа",
             "averaged_fi": "Угол внутреннего трения, град",
-            "averaged_poissons_ratio": "Коэффициент Пуассона",
-            "averaged_dilatancy_angle": "Угол дилатансии, град",
         }
         super().__init__(fill_keys=fill_keys, size={"size": 100, "size_fixed_index": [1]})
 
@@ -82,7 +80,7 @@ class DeviatorItemUI(QGroupBox):
         self.param_box_layout.addWidget(self.param_radio_button_2, 2)
 
         self.results_box = QGroupBox("Результаты обработки")
-        self.results_box.setFixedHeight(200)
+        self.results_box.setFixedHeight(150)
         self.results_box_layout = QVBoxLayout()
         self.results_box.setLayout(self.results_box_layout)
         self.results_table = ResultTable()
@@ -121,7 +119,8 @@ class DeviatorItemUI(QGroupBox):
         self.plot_ax.clear()
         self.plot_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
         self.plot_ax.set_ylabel("Девиатор напряжений $q$', МПa")
-        self.results_table.set_data(model[self.EGE].get_results())
+        results = model[self.EGE].get_results()
+        self.results_table.set_data(results)
 
         plot_data = model[self.EGE].get_plot_data()
 
@@ -135,6 +134,11 @@ class DeviatorItemUI(QGroupBox):
                 self.plot_ax.plot(
                     plot_data[key]["strain"], plot_data[key]["deviator"],
                     label=key, linewidth=1, linestyle="-", alpha=0.6)
+
+        self.plot_ax.plot(
+            [0, 0.9 * results["averaged_qf"] / results["averaged_E50"]],
+            [0, 0.9 * results["averaged_qf"] * 1000],
+            linewidth=1, linestyle="-", alpha=0.6, color="black")
 
         self.plot_ax.legend()
         self.plot_canvas.draw()

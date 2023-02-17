@@ -16,8 +16,6 @@ class AveragedModel:
 
     averaged_c: float = None
     averaged_fi: float = None
-    averaged_poissons_ratio: float = None
-    averaged_dilatancy_angle: float = None
     approximate_type: str
 
     def __init__(self, keys):
@@ -44,20 +42,23 @@ class AveragedModel:
 
             try:
                 res_FC = FC_models[key].get_test_results()
-                summary_c = res_FC["c"]
-                summary_fi = res_FC["fi"]
-            except:
-                pass
+                summary_c += res_FC["c"]
+                summary_fi += res_FC["fi"]
+            except Exception as err:
+                print(err)
 
         self.averaged_poissons_ratio = np.round(summary_poissons_ratio / len(self.tests), 2)
         self.averaged_dilatancy_angle = np.round(summary_dilatancy_angle / (len(self.tests) - zero_dilatancy), 1)
+
         if summary_fi and summary_c:
             self.averaged_c = np.round(summary_c / len(self.tests), 3)
             self.averaged_fi = np.round(summary_fi / len(self.tests), 1)
 
         self.averaged_strain, self.averaged_deviator = self.approximate_average(type=self.approximate_type)
 
-    def approximate_average(self, type="poly", param=8):
+        self.averaged_E50, self.averaged_qf = AveragedModel.define_E50_qf(self.averaged_strain, self.averaged_deviator)
+
+    def approximate_average(self, type="poly", param=8) -> (np.array, np.array):
         points = []
         for test in self.tests:
             for point in zip(self.tests[test]["strain"], self.tests[test]["deviator"]):
@@ -86,33 +87,51 @@ class AveragedModel:
                     averange_strain.append(key)
                     averange_deviator.append(sum(step_points[key]) / len(step_points[key]))
 
-            return averange_strain, averange_deviator
+            return np.array(averange_strain), np.array(averange_deviator)
 
         elif type == "poly":
             averange_strain = np.linspace(0, max(strain), 50)
             averange_deviator = np.polyval(np.polyfit(strain, ndimage.gaussian_filter(deviator, 3, order=0), 8), averange_strain)
 
-            return averange_strain, averange_deviator
+            return np.array(averange_strain), np.array(averange_deviator)
 
-    def set_approximate_type(self, approximate_type):
+    def set_approximate_type(self, approximate_type) -> None:
         self.approximate_type = approximate_type
         self.processing()
 
-    def get_results(self):
+    def get_results(self) -> dict:
         return {
             "averaged_c": self.averaged_c,
             "averaged_fi": self.averaged_fi,
+            "averaged_E50": self.averaged_E50,
+            "averaged_qf": self.averaged_qf,
             "averaged_poissons_ratio": self.averaged_poissons_ratio,
             "averaged_dilatancy_angle": self.averaged_dilatancy_angle,
         }
 
-    def get_plot_data(self):
+    def get_plot_data(self) -> dict:
         res = dict(self.tests)
         res["averaged"] = {
             "strain": self.averaged_strain,
             "deviator": self.averaged_deviator
         }
         return res
+
+    @staticmethod
+    def define_E50_qf(strain, deviator):
+        """Определение параметров qf и E50"""
+        qf = np.max(deviator)
+        # Найдем область E50
+        i_07qf, = np.where(deviator > qf * 0.7)
+        imax, = np.where(deviator[:i_07qf[0]] > qf / 2)
+        imin, = np.where(deviator[:i_07qf[0]] < qf / 2)
+        imax = imax[0]
+        imin = imin[-1]
+
+        E50 = (qf / 2) / (
+            np.interp(qf / 2, np.array([deviator[imin], deviator[imax]]), np.array([strain[imin], strain[imax]])))
+
+        return np.round(E50/1000, 3), np.round(qf/1000, 3)
 
 class AveragedStatment:
     EGES: dict = {}
