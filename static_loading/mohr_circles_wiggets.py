@@ -1306,7 +1306,8 @@ class StaticSoilTestDialog(QDialog):
                                                                        "volumetric_strain_xc": "Объемн. деформ. в пике",
                                                                        "Eur": "Модуль разгрузки",
                                                                        "amplitude": "Амплитуда девиаций",
-                                                                       "unload_start_y": "Сдвиг разгрузки"})
+                                                                       "unload_start_y": "Сдвиг разгрузки",
+                                                                       "hyp_ratio": "Коэффциент влияния"})
         self.deviator_loading_sliders.setFixedHeight(240)
 
         self.deviator_loading_sliders_unload_start_y_slider = TriaxialStaticLoading_Sliders({"unload_start_y": "Сдвиг разгрузки"})
