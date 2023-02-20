@@ -7,6 +7,7 @@ from pdf_watermark.widget import PDFWatermark
 
 from singletons import statment
 from general.tab_view import TabMixin
+from general import reports
 
 
 class Save_Dir(TabMixin, QWidget):
@@ -24,6 +25,8 @@ class Save_Dir(TabMixin, QWidget):
         self._report_types = report_type
 
         self._result_table_params = result_table_params
+
+        self.full_executors = True
 
         self.create_UI(qr, plaxis_btn)
 
@@ -75,13 +78,17 @@ class Save_Dir(TabMixin, QWidget):
             self.qr = False
 
         self.qr_checkbox.setChecked(self.qr)
-
         self.qr_checkbox.stateChanged.connect(self.qr_changed)
+
+        self.executors_checkbox = QCheckBox("Полный список исполнителей")
+        self.executors_checkbox.setChecked(self.full_executors)
+        self.executors_checkbox.stateChanged.connect(self.executors_changed)
 
 
         self.pdf_watermark_button = QPushButton("Маркировка отчетов")  # Button(icons + "Сохранить.png", 52, 52, 0.7)
         self.pdf_watermark_button.clicked.connect(self.pdf_watermark)
         self.advanced_box_layout.addWidget(self.pdf_watermark_button)
+        self.advanced_box_layout.addWidget(self.executors_checkbox)
 
         if qr:
             self.advanced_box_layout.addWidget(self.qr_checkbox)
@@ -199,6 +206,14 @@ class Save_Dir(TabMixin, QWidget):
             self.qr = True
         else:
             self.qr = False
+
+    def executors_changed(self):
+        if self.executors_checkbox.isChecked():
+            self.full_executors = True
+            reports.full_executors = True
+        else:
+            reports.full_executors = False
+            self.full_executors = False
 
 class ReportType(QGroupBox):
     clicked = pyqtSignal()

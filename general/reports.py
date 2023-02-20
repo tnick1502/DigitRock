@@ -91,6 +91,7 @@ TextDataMainFrame = {
     }
 }
 
+full_executors = True
 
 def strNone(x):
     if x is not None:
@@ -161,7 +162,7 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
     #if Data_customer.accreditation == "ООО":
         #accreditation = "ON"
     #elif Data_customer.accreditation == "ОАО" or Data_customer.accreditation == "АО":
-        #accreditation = "AN"
+        #accreditation = "AN"z
 
     data = Data_customer.end_date
 
@@ -235,6 +236,21 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
     else:
         s = 0
 
+    executors_data_1 = [
+        ["Исполнители:", "Жмылёв Д.А., Старостин П.А., Чалая Т.А.,"],
+        ["", "Михалева О.В.	Горшков Е.С., Доронин С.А."],
+        ["Исполнительный директор / нач. ИЛ:", "Семенова О.В."],
+        ["Научный руководитель ИЛ:", "Академик РАЕН Озмидов О.Р. / к.т.н. Череповский А.В."],
+        ["Главный инженер:", "Жидков И.М."]
+    ]
+    executors_data_2 = [
+        ["Исполнитель:", "Жидков И.М."],
+        ["Генеральный директор ИЛ:", "к.т.н. Череповский А.В."],
+    ]
+
+    global full_executors
+
+    executors_data = executors_data_1 if full_executors else executors_data_2
 
     if qr_code:
         dat3 = [[A[0 + s][0], A[0 + s][1]],
@@ -242,7 +258,7 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
                 [A[1 + s][0], A[1 + s][1]],
                 [A[2 + s][0], A[2 + s][1]],
                 [A[3 + s][0], A[3 + s][1]]]
-        t = Table(dat3, colWidths=68 * mm, rowHeights = 4 * mm)
+        t = Table(executors_data, colWidths=68 * mm, rowHeights = 4 * mm)
         t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
                      ("FONTSIZE", (0, 0), (-1, -1), 7),
                      ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -303,7 +319,7 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
                 [A[1 + s][0], A[1 + s][1]],
                 [A[2 + s][0], A[2 + s][1]],
                 [A[3 + s][0], A[3 + s][1]]]
-        t = Table(dat3, colWidths=100 * mm, rowHeights=4 * mm)
+        t = Table(executors_data, colWidths=100 * mm, rowHeights=4 * mm)
         t.setStyle([("FONTNAME", (0, 0), (-1, -1), 'Times'),
                     ("FONTSIZE", (0, 0), (-1, -1), 8),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -729,7 +745,7 @@ def test_mode_triaxial_cyclic(canvas, ro, test_parameter, tau=True, moove=0):
                     Paragraph(tau_text, LeftStyle), "", zap(test_parameter["tau"], 0)],
                     [Paragraph('''<p>K<sub rise="0.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", zap(test_parameter["K0"], 2),
                     "Частота, Гц:", "", str(test_parameter["frequency"]).replace(".", ","), "I, балл:",  "", str(test_parameter["I"]).replace(".", ",") if test_parameter["I"] else "-"],
-                   ["M, ед.:", "", str(test_parameter["M"]).replace(".", ",") if test_parameter["M"] else "-", "MSF, ед.:", "",str(test_parameter["MSF"]).replace(".", ",") if test_parameter["MSF"] else "-", Paragraph('''<p>r<sub rise="2.5" size="6">d</sub>, ед.:</p>''', LeftStyle), "",str(test_parameter["rd"]).replace(".", ","),]], colWidths=19.444444* mm, rowHeights=4 * mm)
+                   ["M, ед.:", "", str(test_parameter["M"]).replace(".", ",") if test_parameter["M"] else "-", "", "",  "", Paragraph('''<p>r<sub rise="2.5" size="6">d</sub>, ед.:</p>''', LeftStyle), "",str(test_parameter["rd"]).replace(".", ","),]], colWidths=19.444444* mm, rowHeights=4 * mm)
 
     elif test_parameter["type"] == "Демпфирование" or test_parameter["type"] == "По заданным параметрам" or test_parameter["type"] == "Динамическая прочность на сдвиг":
         t = Table([["СВЕДЕНИЯ ОБ ИСПЫТАНИИ"],

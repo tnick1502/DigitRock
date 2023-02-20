@@ -212,7 +212,7 @@ def define_G0_plaxis(p_ref, e, c, fi, type_ground):
     G0_ref = ((2.97 - e) ** 2 / (1 + e)) * 33
 
     # Находим G0 с учетом пересчета глубины
-    G0 = define_E50(G0_ref, c, fi, p_ref, 0.1, 0.3, deviation=0)
+    G0 = define_E50(G0_ref, c, fi, p_ref, 0.1, 0.5, deviation=0)
 
     # Корректируем с учетом типа грунта
     if type_ground == 9:  # Торф, ил
@@ -225,6 +225,7 @@ def define_G0_plaxis(p_ref, e, c, fi, type_ground):
         G0 *= 1.1 - 0.1 * type_ground
     else:
         G0 *= 0.8
+
     return G0
 
 
@@ -301,13 +302,13 @@ def define_G0_threshold_shear_strain(p_ref, E50, c, fi, K0, type_ground, Ip, e) 
 
     K_ground_type = dependence_Eur[type_ground]
 
-    G0 = G0_plaxis * 0.7 + G0 * 0.3
+    G0 = G0_plaxis * 0.6 + G0 * 0.4
 
     G0 *= K_ground_type
     gam07 = define_threshold_shear_strain(E50/1000, G0, p_ref, c, fi, K0, PI)
 
-    G0 *= np.random.uniform(0.85, 1.15)
-    gam07 *= np.random.uniform(0.85, 1.15)
+    G0 = np.random.normal(loc=G0, scale=3)
+    gam07 *= np.random.uniform(0.9, 1.1)
 
     return (np.round(G0, 2), np.round(gam07, 2))
 

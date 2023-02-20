@@ -9,6 +9,7 @@ import threading
 
 from general.general_functions import create_path
 from general.tab_view import TabMixin
+from static_loading.plaxis_avereged_widget import AverageWidget
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from excel_statment.initial_statment_widgets import TriaxialStaticStatment
 from excel_statment.initial_tables import LinePhysicalProperties
@@ -770,6 +771,10 @@ class StatickSoilTestApp(AppMixin, QWidget):
         self.xml_button = QPushButton("Выгнать xml")
         self.xml_button.clicked.connect(self.xml)
         self.tab_4.advanced_box_layout.insertWidget(3, self.xml_button)
+
+        self.average_button = QPushButton("Усреднение кривых по ИГЭ")
+        self.average_button.clicked.connect(self.average)
+        self.tab_4.advanced_box_layout.insertWidget(3, self.average_button)
         # self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
 
         # self.Tab_1.folder[str].connect(self.Tab_2.Save.get_save_folder_name)
@@ -1561,7 +1566,12 @@ class StatickSoilTestApp(AppMixin, QWidget):
             QMessageBox.about(self, "Сообщение", "XML выгнаны")
         except Exception as err:
             print(str(err))
-
+    def average(self):
+        try:
+            self.av = AverageWidget()
+            self.av.show()
+        except Exception as err:
+            print(str(err))
 
 if __name__ == '__main__':
     import sys
