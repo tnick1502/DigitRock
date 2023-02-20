@@ -17,11 +17,14 @@ class AveragedModel:
     averaged_c: float = None
     averaged_fi: float = None
     approximate_type: str
+    approximate_param_poly: int
+    approximate_param_sectors: int
 
     def __init__(self, keys):
         self.tests = {}
         self.approximate_type = "poly"
-        self.approximate_param = 8
+        self.approximate_param_poly = 8
+        self.approximate_param_sectors = 500
         for key in keys:
             self.tests[key] = E_models[key].deviator_loading.get_for_average()
         self.processing()
@@ -56,7 +59,9 @@ class AveragedModel:
             self.averaged_fi = np.round(summary_fi / len(self.tests), 1)
 
         self.averaged_strain, self.averaged_deviator = self.approximate_average(
-            type=self.approximate_type, param=self.approximate_param)
+            type=self.approximate_type,
+            param=self.approximate_param_poly if self.approximate_type == "poly" else self.approximate_param_sectors
+        )
 
         self.averaged_E50, self.averaged_qf = AveragedModel.define_E50_qf(self.averaged_strain, self.averaged_deviator)
 
@@ -112,11 +117,11 @@ class AveragedModel:
 
     def set_approximate_type(self, approximate_type, approximate_param) -> None:
         self.approximate_type = approximate_type
-        self.approximate_param = approximate_param
-        self.processing()
-
-    def set_approximate_param(self, approximate_param) -> None:
-        self.approximate_param = approximate_param
+        if approximate_type == "poly":
+            self.approximate_param_poly = approximate_param
+        elif approximate_type == "sectors":
+            self.approximate_param_sectors = approximate_param
+        print(self.approximate_param_sectors, self.approximate_param_poly)
         self.processing()
 
     def get_results(self) -> dict:

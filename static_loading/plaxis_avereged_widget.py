@@ -197,12 +197,12 @@ class DeviatorItemUI(QGroupBox):
             self.param_radio_button_1.setChecked(True)
             self.param_slider = Sliders({"param": "Параметр аппроксимации"})
             self.param_slider.set_params(
-                {"param": {"value": model[self.EGE].approximate_param, "borders": [50, 500]}})
+                {"param": {"value": model[self.EGE].approximate_param_sectors, "borders": [50, 1000]}})
         elif model[self.EGE].approximate_type == 'poly':
             self.param_radio_button_2.setChecked(True)
             self.param_slider = Sliders({"param": "Параметр аппроксимации"})
             self.param_slider.set_params(
-                {"param": {"value": model[self.EGE].approximate_param, "borders": [3, 15]}})
+                {"param": {"value": model[self.EGE].approximate_param_poly, "borders": [3, 15]}})
 
         self.param_slider.signal[object].connect(self.slider_moove)
         self.param_box_layout.addWidget(self.param_slider)
@@ -274,19 +274,22 @@ class DeviatorItemUI(QGroupBox):
     def radio_button_clicked(self, obj):
         try:
             if self.param_button_group.id(obj) == -3:
-                model[self.EGE].set_approximate_type("poly", 8)
+                model[self.EGE].set_approximate_type("poly", model[self.EGE].approximate_param_poly)
                 self.param_slider.set_params(
-                    {"param": {"value": 8, "borders": [3, 15]}})
+                    {"param": {"value": model[self.EGE].approximate_param_poly, "borders": [3, 15]}})
             elif self.param_button_group.id(obj) == -2:
-                model[self.EGE].set_approximate_type("sectors", 300)
+                model[self.EGE].set_approximate_type("sectors", model[self.EGE].approximate_param_sectors)
                 self.param_slider.set_params(
-                    {"param": {"value": 300, "borders": [50, 500]}})
+                    {"param": {"value": model[self.EGE].approximate_param_sectors, "borders": [50, 1000]}})
         except Exception as err:
             print(err)
         self.plot()
 
     def slider_moove(self, param):
-        model[self.EGE].set_approximate_param(param["param"])
+        if model[self.EGE].approximate_type == "poly":
+            model[self.EGE].set_approximate_type("poly", param["param"])
+        elif model[self.EGE].approximate_type == "sectors":
+            model[self.EGE].set_approximate_type("sectors", param["param"])
         self.plot()
 
 class AverageWidget(QGroupBox):
