@@ -5,7 +5,7 @@ from PyQt5 import QtGui
 from datetime import datetime
 from singletons import statment
 from loggers.logger import app_logger, log_this
-from general.backup_widget import TreeView
+from general.backup_widget import BackupWidget
 from excel_statment.params import accreditation
 
 class AlignDelegate(QStyledItemDelegate):
@@ -115,8 +115,12 @@ class ComboBox_Initial_Parameters(QWidget):
         return data
 
     def backup_widget(self):
-        main = TreeView()
-        main.show()
+        print("jpn")
+        try:
+            self.backup = BackupWidget()
+            self.backup.show()
+        except Exception as err:
+            print(err)
 
 class ComboBox_Initial_ParametersV2(QWidget):
     """Класс отрисовки параметров опыта и открытия ведомости
@@ -184,8 +188,12 @@ class ComboBox_Initial_ParametersV2(QWidget):
         self.combo_changes_signal.emit()
 
     def backup_widget(self):
-        self.tw = TreeView()
-        self.tw.show()
+        try:
+            self.backup = BackupWidget()
+            self.backup.resize(700, 400)
+            self.backup.show()
+        except Exception as err:
+            print(err)
 
     def get_data(self):
         """Чтение выбранных параметров"""

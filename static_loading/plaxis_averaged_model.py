@@ -21,6 +21,7 @@ class AveragedModel:
     def __init__(self, keys):
         self.tests = {}
         self.approximate_type = "poly"
+        self.approximate_param = 8
         for key in keys:
             self.tests[key] = E_models[key].deviator_loading.get_for_average()
         self.processing()
@@ -54,14 +55,27 @@ class AveragedModel:
             self.averaged_c = np.round(summary_c / len(self.tests), 3)
             self.averaged_fi = np.round(summary_fi / len(self.tests), 1)
 
-        self.averaged_strain, self.averaged_deviator = self.approximate_average(type=self.approximate_type)
+        self.averaged_strain, self.averaged_deviator = self.approximate_average(
+            type=self.approximate_type, param=self.approximate_param)
 
         self.averaged_E50, self.averaged_qf = AveragedModel.define_E50_qf(self.averaged_strain, self.averaged_deviator)
 
     def approximate_average(self, type="poly", param=8) -> (np.array, np.array):
         points = []
+
+        max_strain = max([max(self.tests[test]["strain"]) for test in self.tests])
+
         for test in self.tests:
-            for point in zip(self.tests[test]["strain"], self.tests[test]["deviator"]):
+            qf_index = (self.tests[test]["deviator"].argmax())
+            if self.tests[test]["strain"][qf_index] <= max_strain:
+                points_count = int((max_strain - self.tests[test]["strain"][qf_index]) * (1000 / 0.15))
+                strain_for_sum = np.hstack((self.tests[test]["strain"][:qf_index],  np.linspace(self.tests[test]["strain"][qf_index], max_strain, points_count)))
+                deviator_for_sum = np.hstack((self.tests[test]["deviator"][:qf_index], np.full(points_count, np.max(self.tests[test]["deviator"]))))
+            else:
+                strain_for_sum = self.tests[test]["strain"]
+                deviator_for_sum = self.tests[test]["deviator"]
+
+            for point in zip(strain_for_sum, deviator_for_sum):
                 points.append(point)
 
         points.sort(key=lambda point: point[0])
@@ -70,7 +84,7 @@ class AveragedModel:
         deviator = [point[1] for point in points]
 
         if type == "sectors":
-            step = max(strain) / 100
+            step = max(strain) / param
             step_points = {}
             for i in range(len(strain)):
                 step_x = strain[i] // step
@@ -87,16 +101,22 @@ class AveragedModel:
                     averange_strain.append(key)
                     averange_deviator.append(sum(step_points[key]) / len(step_points[key]))
 
-            return np.array(averange_strain), np.array(averange_deviator)
+            return np.array(averange_strain), ndimage.gaussian_filter(np.array(averange_deviator), 3, order=0)
 
         elif type == "poly":
             averange_strain = np.linspace(0, max(strain), 50)
-            averange_deviator = np.polyval(np.polyfit(strain, ndimage.gaussian_filter(deviator, 3, order=0), 8), averange_strain)
+            averange_deviator = np.polyval(np.polyfit(strain, ndimage.gaussian_filter(deviator, 3, order=0), param), averange_strain)
+            averange_deviator[0] = 0
 
             return np.array(averange_strain), np.array(averange_deviator)
 
-    def set_approximate_type(self, approximate_type) -> None:
+    def set_approximate_type(self, approximate_type, approximate_param) -> None:
         self.approximate_type = approximate_type
+        self.approximate_param = approximate_param
+        self.processing()
+
+    def set_approximate_param(self, approximate_param) -> None:
+        self.approximate_param = approximate_param
         self.processing()
 
     def get_results(self) -> dict:

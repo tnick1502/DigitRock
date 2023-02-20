@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QFrame, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, QScrollArea, \
-    QTableWidgetItem, QRadioButton, QButtonGroup
+    QTableWidgetItem, QRadioButton, QButtonGroup, QLabel
+from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -9,6 +10,8 @@ import os
 from excel_statment.initial_tables import TableVertical
 from general.general_functions import read_json_file
 from static_loading.plaxis_averaged_model import AveragedStatment
+from general.general_widgets import Float_Slider
+from configs.styles import style
 
 try:
     plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
@@ -17,6 +20,112 @@ except FileNotFoundError:
 plt.style.use('bmh')
 
 model = AveragedStatment()
+
+class Sliders(QWidget):
+    """Виджет с ползунками для регулирования значений переменных.
+    При перемещении ползунков отправляет 2 сигнала."""
+    signal = pyqtSignal(object)
+
+    def __init__(self, params):
+        """Определяем основную структуру данных"""
+        super().__init__()
+        self._params = params
+
+        self._activate = False
+
+        self._createUI("Настройки аппроксимации", params)
+
+    def _createUI(self, name, params):
+        self.layout = QVBoxLayout(self)
+        setattr(self, "{}_box".format(name), QGroupBox(name))
+        box = getattr(self, "{}_box".format(name))
+        setattr(self, "{}_box_layout".format(name), QVBoxLayout())
+        box_layout = getattr(self, "{}_box_layout".format(name))
+
+        for var in params:
+            if params[var]:
+                # Создадим подпись слайдера
+                label = QLabel(params[var])  # Создааем подпись
+                label.setFixedWidth(150)  # Фиксируем размер подписи
+
+                # Создадим слайдер
+                setattr(self, "{name_var}_slider".format(name_var=var),
+                        Float_Slider(Qt.Horizontal))
+                slider = getattr(self, "{name_var}_slider".format(name_var=var))
+
+                # Создадим строку со значнием
+                setattr(self, "{name_var}_label".format(name_var=var), QLabel())
+                slider_label = getattr(self, "{name_var}_label".format(name_var=var))
+                slider_label.setFixedWidth(40)
+                # slider_label.setStyleSheet(style)
+
+                # Создадтм строку для размещения
+                setattr(self, "{name_widget}_{name_var}_line".format(name_widget=name, name_var=var), QHBoxLayout())
+                line = getattr(self, "{name_widget}_{name_var}_line".format(name_widget=name, name_var=var))
+
+                # СРазместим слайдер и подпись на строке
+                line.addWidget(label)
+                line.addWidget(slider)
+                line.addWidget(slider_label)
+                box_layout.addLayout(line)
+                func = getattr(self, "_sliders_moove".format(name_widget=name, name_var=var))
+                slider.sliderMoved.connect(func)
+                release = getattr(self, "_sliders_released".format(name_widget=name, name_var=var))
+                slider.sliderReleased.connect(release)
+                slider.setStyleSheet(style)
+            else:
+                label = QLabel(params[var])  # Создааем подпись
+                label.setFixedWidth(150)  # Фиксируем размер подписи
+                setattr(self, "{name_widget}_{name_var}_empty".format(name_widget=name,
+                                                                      name_var=var), QHBoxLayout())
+                line = getattr(self, "{name_widget}_{name_var}_empty".format(name_widget=name,
+                                                                             name_var=var))
+                line.addWidget(label)
+                box_layout.addLayout(line)
+
+        box.setLayout(box_layout)
+
+        self.layout.addWidget(box)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+    def _get_slider_params(self, params):
+        """Получение по ключам значения со всех слайдеров"""
+        return_params = {}
+        for key in params:
+            slider = getattr(self, "{}_slider".format(key))
+            return_params[key] = int(round(slider.current_value()))
+        return return_params
+
+    def _set_slider_labels_params(self, params):
+        """Установка по ключам текстовых полей значений слайдеров"""
+        for key in params:
+            label = getattr(self, "{}_label".format(key))
+            label.setText(str(params[key]))
+
+    def _sliders_moove(self):
+        """Обработка перемещения слайдеров деформации"""
+        if self._activate:
+            params = self._get_slider_params(self._params)
+            self._set_slider_labels_params(params)
+
+    def _sliders_released(self):
+        """Обработка окончания перемещения слайдеров деформации"""
+        if self._activate:
+            params = self._get_slider_params(self._params)
+            self._set_slider_labels_params(params)
+            self.signal.emit(params)
+
+    def set_params(self, params):
+        """становка заданых значений на слайдеры"""
+        for var in params:
+            current_slider = getattr(self, "{name_var}_slider".format(name_var=var))
+            if params[var]["value"]:
+                current_slider.set_borders(*params[var]["borders"])
+            current_slider.set_value(params[var]["value"])
+
+        self._activate = True
+
+        self._sliders_moove()
 
 class ResultTable(TableVertical):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -63,21 +172,40 @@ class DeviatorItemUI(QGroupBox):
 
         self.param_box = QGroupBox("Параметры усреднения")
         self.param_box_layout = QVBoxLayout()
+
         self.param_box.setLayout(self.param_box_layout)
+        self.radio_button_layout = QHBoxLayout()
         self.param_radio_button_1 = QRadioButton('Секторальная разбивка')
         self.param_radio_button_1.param_type = 'sectors'
         self.param_radio_button_2 = QRadioButton('Полином')
         self.param_radio_button_1.param_type = 'poly'
-        if model[self.EGE].approximate_type == 'sectors':
-            self.param_radio_button_1.setChecked(True)
-        elif model[self.EGE].approximate_type == 'poly':
-            self.param_radio_button_2.setChecked(True)
+        
         self.param_button_group = QButtonGroup()
         self.param_button_group.addButton(self.param_radio_button_1)
         self.param_button_group.addButton(self.param_radio_button_2)
         self.param_button_group.buttonClicked.connect(self.radio_button_clicked)
-        self.param_box_layout.addWidget(self.param_radio_button_1, 1)
-        self.param_box_layout.addWidget(self.param_radio_button_2, 2)
+        self.radio_button_layout.addWidget(self.param_radio_button_1, 1)
+        self.radio_button_layout.addWidget(self.param_radio_button_2, 2)
+        self.param_box_layout.addLayout(self.radio_button_layout)
+
+        if model[self.EGE].approximate_type == 'sectors':
+            self.param_radio_button_1.setChecked(True)
+        elif model[self.EGE].approximate_type == 'poly':
+            self.param_radio_button_2.setChecked(True)
+
+        if model[self.EGE].approximate_type == 'sectors':
+            self.param_radio_button_1.setChecked(True)
+            self.param_slider = Sliders({"param": "Параметр аппроксимации"})
+            self.param_slider.set_params(
+                {"param": {"value": model[self.EGE].approximate_param, "borders": [50, 500]}})
+        elif model[self.EGE].approximate_type == 'poly':
+            self.param_radio_button_2.setChecked(True)
+            self.param_slider = Sliders({"param": "Параметр аппроксимации"})
+            self.param_slider.set_params(
+                {"param": {"value": model[self.EGE].approximate_param, "borders": [3, 15]}})
+
+        self.param_slider.signal[object].connect(self.slider_moove)
+        self.param_box_layout.addWidget(self.param_slider)
 
         self.results_box = QGroupBox("Результаты обработки")
         self.results_box.setFixedHeight(150)
@@ -144,10 +272,21 @@ class DeviatorItemUI(QGroupBox):
         self.plot_canvas.draw()
 
     def radio_button_clicked(self, obj):
-        if self.param_button_group.id(obj) == -3:
-            model[self.EGE].set_approximate_type("poly")
-        elif self.param_button_group.id(obj) == -2:
-            model[self.EGE].set_approximate_type("sectors")
+        try:
+            if self.param_button_group.id(obj) == -3:
+                model[self.EGE].set_approximate_type("poly", 8)
+                self.param_slider.set_params(
+                    {"param": {"value": 8, "borders": [3, 15]}})
+            elif self.param_button_group.id(obj) == -2:
+                model[self.EGE].set_approximate_type("sectors", 300)
+                self.param_slider.set_params(
+                    {"param": {"value": 300, "borders": [50, 500]}})
+        except Exception as err:
+            print(err)
+        self.plot()
+
+    def slider_moove(self, param):
+        model[self.EGE].set_approximate_param(param["param"])
         self.plot()
 
 class AverageWidget(QGroupBox):
