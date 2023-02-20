@@ -121,7 +121,7 @@ class AveragedModel:
             self.approximate_param_poly = approximate_param
         elif approximate_type == "sectors":
             self.approximate_param_sectors = approximate_param
-        print(self.approximate_param_sectors, self.approximate_param_poly)
+
         self.processing()
 
     def get_results(self) -> dict:
