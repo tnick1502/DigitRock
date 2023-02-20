@@ -373,14 +373,7 @@ def deviation_volume_strain(x, x_given, xc, len_x_dilatacy, deviation=0.0015):
 # Девиаторное нагружение
 def params_gip_exp_tg(x, e50, qf, x50, xc, qocr):
     '''возвращает коэффициенты гиперболы, экспоненты и тангенса'''
-    k = 1.  # k - линейный коэффициент учета влияния функции гиперболы и экспоненты
     kp = np.linspace(0, 1, len(x))  # kp - коэффициент влияния на k, учитывающий переуплотнение qocr
-    # для переуплотнения
-
-    if e50 <= 70000:
-        k = 1. / 68000. * e50 - 1. / 34
-    elif e50 > 70000:
-        k = 1.
 
     for i in range(len(x)):
         kp[i] = 1.
@@ -404,7 +397,7 @@ def params_gip_exp_tg(x, e50, qf, x50, xc, qocr):
         result = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e), full_output=1)
         a1_e, k1_e = result[0]
 
-        bad_progress_count = 0 # если в result[2] находится 4 или 5, то вылезает предупреждение с прохой сходимостью
+        bad_progress_count = 0  # если в result[2] находится 4 или 5, то вылезает предупреждение с прохой сходимостью
         # мы будем делать 50 итераций чтобы попытаться избавиться от этого предупреждения
 
         nach_pr_a1_e = 1
@@ -473,7 +466,7 @@ def params_gip_exp_tg(x, e50, qf, x50, xc, qocr):
         for i in range(len(x)):
             kp[i] = 0.
 
-    return a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, xocr
+    return a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr
 
 
 def hevisaid(x, sdvig, delta_x):
@@ -1128,18 +1121,29 @@ def cos_ocr(x, y,  qf, qocr, xc):
     return cos_par
 
 
-def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
+def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points, hyp_ratio=None):
     qocr = 0  # !!!
     '''кусочная функция: на участкe [0,xc]-сумма функций гиперболы и
     (экспоненты или тангенса) и кусочной функции синуса и парболы
     на участке [xc...]-половина функции Гаусса или параболы'''
+    if hyp_ratio == None:
+        hyp_ratio = 1.  # k - линейный коэффициент учета влияния функции гиперболы и экспоненты
+
+        if e50 <= 70000:
+            hyp_ratio = 0.95 / 68000. * e50 - 1. / 34
+        elif e50 < 2000:
+           hyp_ratio = 0
+        elif e50 > 70000:
+            hyp_ratio = 0.95
+    print(hyp_ratio)
+
     if xc < x50:
         xc = x50 * 1.1  # хс не может быть меньше x50
 
     max_x = xc + 0.6
     x = np.linspace(0, max_x, int((amount_points * max_x / 0.15) / 4))
     y = np.linspace(0, max_x, int((amount_points * max_x / 0.15) / 4))
-    a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, xocr = params_gip_exp_tg(x, e50, qf, x50, xc,
+    a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc,
                                                                         qocr)  # считаем  k1, k, xocr на участке до x50, начальное значение kp
     # считаем предельное значение xc
     for i in range(len(x)):
@@ -1149,35 +1153,35 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
         # в качестве функции используется сумма гиперболы, экспоненты или тангенса
         # и функции синуса и параболы
         xc = 0.15
-        a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+        a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
         for i in range(len(x)):
             xcpr = smoothness_condition(qf, x50)
         if xc <= xcpr:  # проверка на условие гладкости, если условие не соблюдается,
             # передвинуть xс в предельное значение
             xc = xcpr
-            if (xc>0.11) and (xc<0.15):
-                xc=0.15
-            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+            if (xc > 0.11) and (xc < 0.15):
+                xc = 0.15
+            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
         for i in range(len(x)):
-            y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp[i], k, qocr,
+            y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp[i], hyp_ratio, qocr,
                                      xocr) + cos_par(x[i], e50, qf, x50,
                                                      xc, 0)  # формирование функции девиаторного нагружения
         x2 = xc  # x2,qf2 не выводится
         qf2 = qf  # x2,qf2 не выводится
 
     else:
-        a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+        a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
         for i in range(len(x)):
             xcpr = smoothness_condition(qf, x50)  # считаем предельно значение xc
         if xc <= xcpr:
             xc = xcpr
-            if (xc>0.11) and (xc<0.15):
-                xc=0.15
-            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+            if (xc > 0.11) and (xc < 0.15):
+                xc = 0.15
+            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
         if (xc > 0.15):
-            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
             for i in range(len(x)):
-                y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp[i], k, qocr,
+                y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp[i], hyp_ratio, qocr,
                                          xocr) + cos_par(x[i], e50, qf, x50, xc,
                                                          0)  # формирование функции девиаторного нагружения
             x2 = xc  # x2,qf2 не выводится
@@ -1189,13 +1193,13 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
             if qf2 >= qf:  # минимально допустимое расстояние мужду qf2 и qf
                 qf2 = 0.98 * qf
 
-            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
             gip_and_exp_or_tg_cos_par = np.linspace(0, max_x, int((amount_points * max_x / 0.15) / 4))
             for i in range(len(x)):
                 if x[i] < xc:
                     gip_and_exp_or_tg_cos_par[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t,
                                                                      k1_t,
-                                                                     kp[i], k, qocr, xocr) + cos_par(x[i], e50, qf, x50,
+                                                                     kp[i], hyp_ratio, qocr, xocr) + cos_par(x[i], e50, qf, x50,
                                                                                                      xc,
                                                                                                      0)
                 else:
@@ -1208,12 +1212,12 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points):
                 if x[i] <= xc:
                     if maximum < (qf + 0.002 * qf):
                         y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t,
-                                                 kp[i], k, qocr, xocr) + cos_par(x[i], e50, qf, x50, xc, 0)
+                                                 kp[i], hyp_ratio, qocr, xocr) + cos_par(x[i], e50, qf, x50, xc, 0)
                     # если максимум суммарной функции на участке от 0 до хс превышает qf, то уменьшаем
                     # высоту функции синуса и параболы на величину разницы в точке xc
                     elif maximum >= abs(qf + 0.002 * qf):
                         y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t,
-                                                 kp[i], k, qocr, xocr) + cos_par(x[i], e50, qf, x50, xc,
+                                                 kp[i], hyp_ratio, qocr, xocr) + cos_par(x[i], e50, qf, x50, xc,
                                                                                  abs(maximum - qf + 2 * 0.002 * qf))
                     else:
                         y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp[i], k, qocr,
@@ -1522,6 +1526,12 @@ def curve(qf, e50, **kwargs):
     except KeyError:
         kwargs["amplitude"] = (0.1, True)
 
+
+    try:
+        kwargs["hyp_ratio"]
+    except KeyError:
+        kwargs["hyp_ratio"] = None
+
     xc = kwargs.get('xc')
     x2 = kwargs.get('x2')
     qf2 = kwargs.get('qf2')
@@ -1535,6 +1545,7 @@ def curve(qf, e50, **kwargs):
     amplitude = kwargs.get('amplitude')[0]
     free_deviations = kwargs.get('amplitude')[1]
     '''флаг, отвечает за наложение девиаций на контрольные точки'''
+    hyp_ratio = kwargs.get('hyp_ratio')
 
 
     if max_time < 50:
@@ -1583,7 +1594,8 @@ def curve(qf, e50, **kwargs):
         qf2 = qf
     x50 = (qf / 2.) / e50
 
-    x_old, x, y, qf, xc, x2, qf2, e50 = dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points)  # x_old - без участка разгрузки, возвращается для обьемной деформации
+    x_old, x, y, qf, xc, x2, qf2, e50 = dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points,
+                                                    hyp_ratio=hyp_ratio)  # x_old - без участка разгрузки, возвращается для обьемной деформации
     # x - c участком разгрузки или без в зависимости от того передан ли Eur
 
     if qocr > (0.6 * qf):
@@ -1614,7 +1626,7 @@ def curve(qf, e50, **kwargs):
         # index_x50_ocr, = np.where(x >= x50_ocr)
         # x50_ocr = x[index_x50_ocr[0]]
 
-        x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points)
+        x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points, hyp_ratio=hyp_ratio)
 
         y_ocr = y_ocr + cos
 
@@ -1632,7 +1644,7 @@ def curve(qf, e50, **kwargs):
             e50_ocr = (qf / 2 - delta) / x50
             x50_ocr = (qf / 2) / e50_ocr
 
-            x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points)
+            x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par, amount_points, hyp_ratio=hyp_ratio)
             #
             y_ocr = y_ocr + cos
 
@@ -2043,7 +2055,7 @@ def curve(qf, e50, **kwargs):
 
         e50_U = U / x50
         x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50, kwargs.get('xc'), 1.2 * kwargs.get('xc'),
-                                           np.random.uniform(0.3, 0.7)*U, 0, amount_points)
+                                           np.random.uniform(0.3, 0.7)*U, 0, amount_points, hyp_ratio=hyp_ratio)
 
 
         if old_U < 150:

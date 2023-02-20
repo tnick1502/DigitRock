@@ -3,24 +3,10 @@
 # In[ ]:
 
 
-from scipy.optimize import fsolve
-import math
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QGridLayout, QFrame, QSlider, QLabel
-from PyQt5 import QtCore
-from scipy import interpolate
-
-import sys
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-
-import numpy as np
-import math
-from scipy.interpolate import make_interp_spline, BSpline
-from scipy.interpolate import splev, splrep
-
+import copy
 import os
 
+from intersect import intersection
 from scipy.special import comb
 from scipy.optimize import fsolve
 import math
@@ -38,6 +24,10 @@ import numpy as np
 import math
 from scipy.interpolate import make_interp_spline
 from scipy.interpolate import splev, splrep
+from scipy.signal import argrelextrema
+
+
+from general.general_functions import *
 
 
 
@@ -53,155 +43,59 @@ from scipy.interpolate import splev, splrep
 # from consolidation_functions import *
 
 
-def bezier_curve_exp(p1_l1, p2_l1, p1_l2, p2_l2, node1, node2, x_grid):
-    """
-    Требуется модуль: from scipy.optimize import fsolve
-    Функция построения кривой Безье на оссновании двух прямых,
-    задаваемых точками 'point_line' типа [x,y],
-    на узлах node типа [x,y]
-    с построением промежуточного узла в точке пересечения поданных прямых.
-    Функция возвращает значения y=f(x) на сетке по оси Ox.
-
-    Пример:
-    Соединяем две прямые от точки [x_given,y_given] до точки [x[index_x_start[0]], y_start[0]]
-    xgi, = np.where(x > x_given) # некая точка после которой нужно переходить к кривой безье
-    y_Bezier_line = bezier_curve([0,0],[x_given,y_given], #Первая и Вторая точки первой прямой
-                                 [x_given, k * x_given + b], #Первая точка второй прямой (k и b даны)
-                                 [x[index_x_start[0]],y_start[0]], #Вторая точка второй прямой
-                                 [x_given, y_given], #Первый узел (здесь фактически это 2 точка первой прямой)
-                                 [x[index_x_start[0]], y_start[0]], #Второй узел
-                                                                # (здесь фактически это 2 точка второй прямой)
-                                 x[xgi[0]:index_x_start[0]]
-                                 )
-
-    :param p1_l1: Первая точка первой прямой [x,y]
-    :param p2_l1: Вторая точка первой прямой [x,y]
-    :param p1_l2: Первая точка второй прямой [x,y]
-    :param p2_l2: Вторая точка второй прямой [x,y]
-    :param node1: Первый узел [x,y]
-    :param node2: Второй узел [x,y]
-    :param x_grid: Сетка по Ох на которой необходимо посчитать f(x)
-    :return: Значения y=f(x) на сетке x_grid
-    """
-
-    def bernstein_poly(_i, n, t):
-        """
-         Полином Бернштейна стпени n, i - функция t
-        """
-        return comb(n, _i) * (t ** _i) * (1 - t) ** (n - _i)
-
-    def bezier_curve_local(nodes, n_times=1000):
-        """
-        На основании набора узлов возвращает
-        кривую Безье определяемую узлами
-        Точки задаются в виде:
-           [ [1,1],
-             [2,3],
-              [4,5], ..[Xn, Yn] ]
-        nTimes - число точек для вычисления значений
-        """
-
-        n_points = len(nodes)
-        x_points = np.array([p[0] for p in nodes])
-        y_points = np.array([p[1] for p in nodes])
-
-        t = np.linspace(0.0, 1.0, n_times)
-
-        polynomial_array = np.array([bernstein_poly(_i, n_points - 1, t) for _i in range(0, n_points)])
-
-        x_values_l = np.dot(x_points, polynomial_array)
-        y_values_l = np.dot(y_points, polynomial_array)
-        return x_values_l, y_values_l
-
-    def intersect(xp1, yp1, xp2, yp2, xp3, yp3, xp4, yp4):
-        """
-        Функция пересечения двух прямых, заданных точками
-        :param xp1: x точки 1 на прямой 1
-        :param yp1: y точки 1 на прямой 1
-        :param xp2: x точки 2 на прямой 1
-        :param yp2: y точки 2 на прямой 1
-        :param xp3: x точки 1 на прямой 2
-        :param yp3: y точки 1 на прямой 2
-        :param xp4: x точки 2 на прямой 2
-        :param yp4: y точки 2 на прямой 2
-        :return: точка пересечения прямых [x,y]
-        """
-
-        def form_line(_xp1, _yp1, _xp2, _yp2):
-            k = (_yp2 - _yp1) / (_xp2 - _xp1)
-            b = _yp1 - k * _xp1
-            return k, b
-
-        kl1, bl1 = form_line(xp1, yp1, xp2, yp2)
-        kl2, bl2 = form_line(xp3, yp3, xp4, yp4)
-        x_p_inter = (bl1 - bl2) / (kl2 - kl1)
-        y_p_inter = kl1 * x_p_inter + bl1
-        return x_p_inter, y_p_inter
-
-    # Определяем точки пересечения прямых
-    xl1, yl1 = intersect(p1_l1[0], p1_l1[1],
-                         p2_l1[0], p2_l1[1],
-                         p1_l2[0], p1_l2[1],
-                         p2_l2[0], p2_l2[1])
-
-    # Строим кривую Безье
-    x_values, y_values = bezier_curve_local([node1, [xl1, yl1], node2], n_times=len(x_grid))
-
-    # Адаптация кривой под равномерный шаг по х
-    bezier_spline = interpolate.make_interp_spline(x_values, y_values, k=1, bc_type=None)
-    y_values = bezier_spline(x_grid)
-
-    return y_values
-
-
-def deviator_loading_deviation_exp(strain, deviator, fracture_strain):
+def deviator_loading_deviation1(strain, deviator, xc, amplitude):
     # Добавим девиации после 0.6qf для кривой без пика
     qf = max(deviator)
-    deviation_1 = qf / 100
-    deviation_2 = qf / 60
+
+    devition_1 = amplitude * qf
+    devition_2 = amplitude * qf * 0.6
 
     i_60, = np.where(deviator >= 0.51 * qf)
     i_90, = np.where(deviator >= 0.98 * qf)
     i_end, = np.where(strain >= 0.15)
-    i_xc, = np.where(strain >= fracture_strain)
-    if fracture_strain >= 0.14:  # без пика
-        curve = create_deviation_curve(strain[i_60[0]:i_xc[0]], deviation_1 * 2,
-                                       points=np.random.uniform(3, 7), borders="zero_diff",
-                                       low_first_district=1, one_side=True) + create_deviation_curve(
-            strain[i_60[0]:i_xc[0]], deviation_1,
-            points=np.random.uniform(20, 30), borders="zero_diff",
-            low_first_district=1, one_side=True)
-        deviation_array = -np.hstack((np.zeros(i_60[0]),
-                                      -curve,
-                                      np.zeros(len(strain) - i_xc[0])))
+    i_xc, = np.where(strain >= xc)
+    if xc >= 0.14:  # без пика
+        try:
+            curve = create_deviation_curve(strain[i_60[0]:i_xc[0]], devition_1 / 2,
+                                           points=np.random.uniform(6, 15), borders="zero_diff",
+                                           low_first_district=1, one_side=True) + \
+                    create_deviation_curve(strain[i_60[0]:i_xc[0]], devition_1,
+                                           points=np.random.uniform(20, 30), borders="zero_diff",
+                                           low_first_district=1, one_side=True)
+            deviation_array = -np.hstack((np.zeros(i_60[0]),
+                                          curve,
+                                          np.zeros(len(strain) - i_xc[0])))
+        except IndexError:
+            deviation_array = np.zeros(len(strain))
+
     else:
 
         try:
-            i_xc1, = np.where(deviator[i_xc[0]:] <= qf - deviation_2)
-            i_xc_m, = np.where(deviator >= qf - deviation_1 * 2)
-            points_1 = round(fracture_strain * 100)
+            i_xc1, = np.where(deviator[i_xc[0]:] <= qf - devition_2)
+            i_xc_m, = np.where(deviator >= qf - devition_1 * 2)
+            points_1 = round((xc) * 100)
             if points_1 < 3:
                 points_1 = 3
 
-            curve_1 = create_deviation_curve(strain[i_60[0]:i_xc_m[0]], deviation_1 * 1.5,
+            curve_1 = create_deviation_curve(strain[i_60[0]:i_xc_m[0]], devition_1 * 1.5,
                                              points=np.random.uniform(3, 4), val=(1, 0.1), borders="zero_diff",
                                              low_first_district=1) + create_deviation_curve(
-                strain[i_60[0]:i_xc_m[0]], deviation_1 / 2,
+                strain[i_60[0]:i_xc_m[0]], devition_1 / 2,
                 points=np.random.uniform(points_1, points_1 * 3), borders="zero_diff",
                 low_first_district=1)
 
-            points_2 = round((0.15 - fracture_strain) * 100)
+            points_2 = round((0.15 - xc) * 100)
             if points_2 < 3:
                 points_2 = 3
 
-            deviation_2 = ((deviator[i_xc[0]] - deviator[i_end[0]]) / 14) * (points_2 / 10)
+            devition_2 = ((deviator[i_xc[0]] - deviator[i_end[0]]) / 14) * (points_2 / 10)
 
             curve_2 = create_deviation_curve(strain[i_xc[0] + i_xc1[0]:i_end[0]],
-                                             deviation_2, val=(0.1, 1),
+                                             devition_2, val=(0.1, 1),
                                              points=np.random.uniform(points_2, int(points_2 * 3)), borders="zero_diff",
                                              low_first_district=2) + create_deviation_curve(
                 strain[i_xc[0] + i_xc1[0]:i_end[0]],
-                deviation_2 / 3, val=(0.1, 1),
+                devition_2 / 3, val=(0.1, 1),
                 points=np.random.uniform(points_2 * 3, int(points_2 * 5)), borders="zero_diff",
                 low_first_district=2)
             deviation_array = -np.hstack((np.zeros(i_60[0]),
@@ -212,10 +106,10 @@ def deviator_loading_deviation_exp(strain, deviator, fracture_strain):
         except (ValueError, IndexError):
             print("Ошибка девиаций девиатора")
             deviation_array = -np.hstack((np.zeros(i_60[0]),
-                                          create_deviation_curve(strain[i_60[0]:i_90[0]], deviation_1,
+                                          create_deviation_curve(strain[i_60[0]:i_90[0]], devition_1,
                                                                  points=np.random.uniform(3, 6), borders="zero_diff",
                                                                  low_first_district=1),
-                                          create_deviation_curve(strain[i_90[0]:i_end[0]], deviation_2, val=(1, 0.1),
+                                          create_deviation_curve(strain[i_90[0]:i_end[0]], devition_2, val=(1, 0.1),
                                                                  points=np.random.uniform(10, 15), borders="zero_diff",
                                                                  low_first_district=3,
                                                                  one_side=True),
@@ -224,250 +118,747 @@ def deviator_loading_deviation_exp(strain, deviator, fracture_strain):
     return deviation_array
 
 
-def sensor_accuracy_exp(x, y, fracture_strain, noise_level=1.0):
-    """возвразщает зашумеленную функцию без шума в характерных точках"""
+def deviator_loading_deviation(strain, deviator, xc, amplitude):
+    # Добавим девиации после 0.6qf для кривой без пика
+    index_015, = np.where(strain >= 0.15)
+    qf = np.max(deviator[:index_015[0]])
 
-    noise = np.random.uniform(-noise_level, noise_level, len(x))
-    index_qf_half, = np.where(y >= np.max(y) / 2)
-    index_qf, = np.where(y >= np.max(y))
-    if fracture_strain > max(x):  # если хс последня точка в массиве или дальше
-        index_qf, = np.where(x >= max(x))
-    for _i in range(len(y)):  # наложение шума кроме промежутков для характерных точек
-        is_excluded_points = (_i < index_qf_half[0] - 2) or \
-                             ((_i > index_qf_half[0] + 2) and ([_i] < index_qf[0] - 2)) or \
-                             (_i > index_qf[0] + 2)
-        if is_excluded_points:
-            if y[_i] + noise[_i] < np.max(y):
-                y[_i] = y[_i] + noise[_i]
+    devition_1 = amplitude * qf
+    devition_2 = (amplitude / 2) * qf
+    devition_3 = (amplitude / 3) * qf
+    points_1 = np.random.uniform(5, 10)
+    points_2 = np.random.uniform(10, 20)
+    points_3 = np.random.uniform(20, 30)
+
+    try:
+        index_015, = np.where(strain >= 0.17)
+        index_015 = index_015[0]
+    except TypeError:
+        index_015 = -1
+
+    try:
+        strain_for_deviations = strain[:index_015]
+        curve_1 = create_deviation_curve(strain_for_deviations, devition_1,
+                                         points=points_1, borders="zero_diff",
+                                         low_first_district=1, one_side=True)
+        curve_2 = create_deviation_curve(strain_for_deviations, devition_2,
+                                         points=points_2, borders="zero_diff",
+                                         low_first_district=1, one_side=True)
+        curve_3 = create_deviation_curve(strain_for_deviations, devition_3,
+                                         points=points_3, borders="zero_diff",
+                                         low_first_district=1, one_side=True)
+        deviation_array = -(curve_1 + curve_2 + curve_3)
+        deviation_array = np.hstack((deviation_array, np.zeros(len(strain[index_015:]))))
+    except IndexError:
+        deviation_array = np.zeros(len(strain))
+
+
+    except (ValueError, IndexError):
+        print("Ошибка девиаций девиатора")
+        pass
+
+    return deviation_array
+
+
+def deviation_volume_strain1(x, x_given, xc, len_x_dilatacy, deviation=0.0015):
+    index_x_given, = np.where(x >= x_given)
+    n = xc / 0.15
+    index_x_start_dilatacy, = np.where(x >= (xc - len_x_dilatacy * 2))
+    index_x_end_dilatacy, = np.where(x >= (xc + len_x_dilatacy * 2))
+
+    if xc >= 0.14:
+        deviation_vs = np.hstack((np.zeros(index_x_given[0]),
+                                  create_deviation_curve(x[index_x_given[0]:], deviation * 2 * n,
+                                                         points=np.random.uniform(5, 10),
+                                                         val=(0.3, 1), borders='zero diff') + create_deviation_curve(
+                                      x[index_x_given[0]:],
+                                      deviation * 0.7 * n, points=np.random.uniform(15, 30),
+                                      val=(0.3, 1), borders='zero diff')))
+        return deviation_vs
+
+    if xc <= 0.03:
+        deviation_vs = np.hstack((np.zeros(index_x_given[0]),
+                                  create_deviation_curve(x[index_x_given[0]:], deviation * 2 * n,
+                                                         points=np.random.uniform(5, 10),
+                                                         val=(0.3, 1), borders='zero diff') + create_deviation_curve(
+                                      x[index_x_given[0]:],
+                                      deviation * 0.7 * n, points=np.random.uniform(15, 30),
+                                      val=(0.3, 1), borders='zero diff')))
+        return deviation_vs
+
+    try:
+        deviation_vs = np.hstack((np.zeros(index_x_given[0]),
+                                  create_deviation_curve(x[index_x_given[0]:index_x_start_dilatacy[0]],
+                                                         deviation * 2 * n, points=np.random.uniform(5, 10),
+                                                         val=(0.3, 1), borders='zero diff') + create_deviation_curve(
+                                      x[index_x_given[0]:index_x_start_dilatacy[0]],
+                                      deviation * 0.7 * n, points=np.random.uniform(15, 30),
+                                      val=(0.3, 1), borders='zero diff'),
+
+                                  np.zeros(len(x[index_x_start_dilatacy[0]:index_x_end_dilatacy[0] + 1])),
+                                  create_deviation_curve(x[index_x_end_dilatacy[0] + 1:], deviation, val=(0.3, 1),
+                                                         borders='zero diff')))
+        return deviation_vs
+
+    except (ValueError, IndexError):
+        deviation_vs = np.hstack((np.zeros(len(x[:index_x_given[0]])),
+                                  create_deviation_curve(x[index_x_given[0]:index_x_start_dilatacy[0]], deviation / 8,
+                                                         val=(1, 0.3), borders='zero diff'),
+                                  np.zeros(len(x[index_x_start_dilatacy[0]:index_x_end_dilatacy[0] + 1])),
+                                  create_deviation_curve(x[index_x_end_dilatacy[0] + 1:], deviation, val=(0.3, 1),
+                                                         borders='zero diff')))
+        return deviation_vs
+
+
+def deviation_volume_strain(x, x_given, xc, len_x_dilatacy, deviation=0.0015):
+    index_x_given, = np.where(x >= x_given)
+    n = 1
+    index_x_start_dilatacy, = np.where(x >= (xc - len_x_dilatacy * 2))
+    index_x_end_dilatacy, = np.where(x >= (xc + len_x_dilatacy * 2))
+    if xc <= 0.14:
+        def deviation_array(x, i_1, i_2, deviation_val, count_1=20, count_2=50):
+            points_count = (i_2 - i_1)
+            points_1 = int(points_count / count_1)
+            points_2 = int(points_count / count_2)
+
+            if (points_1 >= 3) and (points_2 >= 3):
+                array = deviation_val * create_deviation_curve(x[i_1: i_2], 1, points=points_1, val=(0.3, 1),
+                                                               borders='zero diff') + \
+                        deviation * 0.3 * create_deviation_curve(x[i_1: i_2], 1, points=points_2, val=(0.3, 1),
+                                                                 borders='zero diff')
+            elif (points_1 >= 3) and (points_2 < 3):
+                array = deviation_val * create_deviation_curve(x[i_1: i_2], 1, points=points_1, val=(0.3, 1),
+                                                               borders='zero diff')
             else:
-                # в районе максимума шум меньше первоначального
-                y[_i] = y[_i] - np.random.uniform(0.1, 0.5) * noise_level
-    return y
+                array = np.zeros(i_2 - i_1)
+
+            return array
+
+        try:
+            starn_puasson = np.zeros(index_x_given[0])
+            puasson_start_dilatacy = deviation_array(x, index_x_given[0], index_x_start_dilatacy[0], deviation / 2)
+            start_dilatacy_end_dilatacy = deviation_array(x, index_x_start_dilatacy[0], index_x_end_dilatacy[0],
+                                                          deviation / 10)
+            end_dilatacy_end = deviation_array(x, index_x_end_dilatacy[0], len(x), deviation)
+
+            deviation_vs = np.hstack(
+                (starn_puasson, puasson_start_dilatacy, start_dilatacy_end_dilatacy, end_dilatacy_end))
+        except IndexError:
+            deviation_vs = np.hstack((np.zeros(index_x_given[0]),
+                                      deviation * 2 * n * create_deviation_curve(x[index_x_given[0]:], 1,
+                                                                                 points=np.random.uniform(5, 10),
+                                                                                 val=(0.3, 1), borders='zero diff') +
+                                      deviation * 0.7 * n * create_deviation_curve(
+                                          x[index_x_given[0]:], 1, points=np.random.uniform(15, 30),
+                                          val=(0.3, 1), borders='zero diff')))
+
+        return deviation_vs
+    else:
+        deviation_vs = np.hstack((np.zeros(index_x_given[0]),
+                                  deviation * 2 * n * create_deviation_curve(x[index_x_given[0]:], 1,
+                                                                             points=np.random.uniform(5, 10),
+                                                                             val=(0.3, 1), borders='zero diff') +
+                                  deviation * 0.7 * n * create_deviation_curve(
+                                      x[index_x_given[0]:], 1, points=np.random.uniform(15, 30),
+                                      val=(0.3, 1), borders='zero diff')))
+        return deviation_vs
 
 
-def hevisaid_exp(x, offset, smoothness):
-    """возвращет функцию Хевисайда 0<=y<=1, которая задает коэффициент влияния kp
+# Девиаторное нагружение
+def params_gip_exp_tg(x, e50, qf, x50, xc, qocr):
+    '''возвращает коэффициенты гиперболы, экспоненты и тангенса'''
+    kp = np.linspace(0, 1, len(x))  # kp - коэффициент влияния на k, учитывающий переуплотнение qocr
+    # для переуплотнения
 
-    :param x: точки, в которых вычислять значение
-    :param offset: смещение относительно х=0
-    :param smoothness: гладкость перехода, при smoothness = 0 выраждается в фукнцию Хевисаида
-    """
-    return 1. / (1. + np.exp(-2 * 10 / smoothness * (x - offset)))
+    for i in range(len(x)):
+        kp[i] = 1.
 
+    def equations_e(p_e):
+        a1_e, k1_e = p_e  # коэффициенты экспоненты
+        return -a1_e * (np.exp(-k1_e * x50) - 1) - qf / 2, -a1_e * (np.exp(-k1_e * xc) - 1) - qf
 
-def smoothness_condition_exp(strain_at_50_percent_strength):
-    """возвращает предельное значение fracture_strain при котором возможно
-    построение заданной функции
-
-    :param strain_at_50_percent_strength: деформация в 50% прочности
-    """
-    SMOOTHNESS_OFFSET = 0.6 / 100  # 0.6 возможно является максимальным х на сетке
-    return 2 * strain_at_50_percent_strength + SMOOTHNESS_OFFSET
-
-
-def gaus_exp(x, qf, fracture_strain, residual_strength_strain, residual_strength):
-    """функция Гаусса для участка x>fracture_strain"""
-    gaus_height = qf - residual_strength  # высота функции Гаусса
-    gaus_smoothness = (-1) * np.log(0.1 / gaus_height) / ((residual_strength_strain - fracture_strain) ** 2)
-    # резкость функции Гаусаа (считается из условия равенства заданной точности в точке х50
-    return gaus_height * (np.exp(-gaus_smoothness * ((x - fracture_strain) ** 2))) + residual_strength
-
-
-def parab_exp(x, qf, fracture_strain, residual_strength_strain, residual_strength):
-    """Парабола для участка x>fracture_strain """
-    # k*x^2 + b
-    k_par = -((residual_strength - qf) / (residual_strength_strain - fracture_strain) ** 2)
-    return -k_par * ((x - fracture_strain) ** 2) + qf
-
-
-def exp_for_compare(x, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator):
-    """возвращает координаты y итоговой фукнции по законам гиперболы, экспоненты и тангенса"""
-    # Константы
-    E50_LIMIT = 70000
-    '''Е50 после которого необходимо переходить от эспоненты к тангенсу'''
-    OC_STRAIN_CUT = 0.151
-    '''значение по которому обрезается точка х переуплотнния'''
-    ZERO_OFFSET = 0.000001
-    '''смещение для расчета 0 значений в особенностях'''
-
-    def exponent_error(height_smoothness: list):
-        """возвращает ошибки в коэффициентах, вычисляются в точках qf и qf/2
-
-        :param height_smoothness: list : exp_relative_height, exp_smoothness
-        """
-        _exp_relative_height, _exp_smoothness = height_smoothness  # коэффициенты экспоненты
-        return -1 * _exp_relative_height * (np.exp(-_exp_smoothness * strain_at_50_strength) - 1) - qf / 2, \
-               -1 * _exp_relative_height * (np.exp(-_exp_smoothness * fracture_strain) - 1) - qf
-
-    if E50 > 40000:
-        # начальные приближения для расчета коэффициентов
-        exp_relative_height, exp_smoothness, *_ = fsolve(exponent_error, np.array([1, 1]))
-        initial_exp_relative_height = 1
-        error = exponent_error([exp_relative_height, exp_smoothness])
-
-        # персчет значений при ошибках построения
+    # начальные приближения заданные по участкам
+    if e50 > 40000:
+        a1_e, k1_e = fsolve(equations_e, (1, 1))
+        nach_pr_a1_e = 1
+        error = equations_e([a1_e, k1_e])
         while abs(error[0]) >= 10 or abs(error[1]) >= 10:
-            initial_exp_relative_height += 1
-            exp_relative_height, exp_smoothness, *_ = fsolve(exponent_error, np.array([initial_exp_relative_height, 1]))
-            error = exponent_error([exp_relative_height, exp_smoothness])
+            nach_pr_a1_e += 1
+            a1_e, k1_e = fsolve(equations_e, (nach_pr_a1_e, 1))
+            error = equations_e([a1_e, k1_e])
 
     else:
-        # начальные приближения для расчета коэффициентов
-        initial_exp_relative_height, initial_exp_smoothness = 600, 1
-        _initial = np.array([initial_exp_relative_height, initial_exp_smoothness])
-        exp_relative_height, exp_smoothness, *_ = fsolve(exponent_error, _initial)
+        nach_pr_a1_e, nach_pr_k1_e = 600, 1
+        result = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e), full_output=1)
+        a1_e, k1_e = result[0]
 
-        initial_exp_relative_height = 1
-        error = exponent_error([exp_relative_height, exp_smoothness])
+        bad_progress_count = 0  # если в result[2] находится 4 или 5, то вылезает предупреждение с прохой сходимостью
+        # мы будем делать 50 итераций чтобы попытаться избавиться от этого предупреждения
 
-        # персчет значений при ошибках построения
-        WHILE_COUNT = 0
+        nach_pr_a1_e = 1
+        error = equations_e([a1_e, k1_e])
+        count = 0
+        while (a1_e <= 0) or (k1_e <= 0) or (a1_e == nach_pr_a1_e or k1_e == nach_pr_k1_e) or (
+                a1_e * k1_e < 1000) or (
+                (abs(error[0]) >= 550 or abs(error[1]) >= 550) and
+                count < 50) or (
+                result[2] in (4, 5) and bad_progress_count < 50 and qf < 251):  # если начальное приближение a1_e
+            # или k1_e равно 1 или произведение коээфициентов (приблизительно равно e50)
+            #  меньше 1000, то ищутся другие начальные приближения
+            nach_pr_a1_e += 1
+            result = fsolve(equations_e, (nach_pr_a1_e, nach_pr_k1_e), full_output=1)
+            a1_e, k1_e = result[0]
 
-        # пока
+            if result[2] in (4, 5):
+                bad_progress_count += 1
 
-        def is_negative():
-            return (exp_relative_height <= 0) or (exp_smoothness <= 0)
+            error = equations_e([a1_e, k1_e])
+            if (abs(error[0]) >= 550 or abs(error[1]) >= 550):
+                count += 1
 
-        # пока
+    # коэффициенты гиперболы
+    k1_g = -2 / xc + 1 / x50
+    a1_g = qf * (k1_g * x50 + 1.) / (2. * x50)
 
-        def is_not_changed():
-            return exp_relative_height == initial_exp_relative_height or exp_smoothness == initial_exp_smoothness
+    def equations_t(p_t):
+        a1_t, k1_t = p_t  # коэффициенты тангенса
+        return ((a1_t * ((np.arctan(k1_t * x50)) / (0.5 * np.pi)) - qf / 2),
+                (a1_t * ((np.arctan(k1_t * xc)) / (0.5 * np.pi)) - qf))
 
-        # пока произведение коээфициентов (приблизительно равно E50) меньше 1000
-        def is_lower_1000():
-            return exp_relative_height * exp_smoothness < 1000
+    if e50 > 50000:
+        a1_t, k1_t = fsolve(equations_t, (1, 1))
+    else:
+        a1_t, k1_t = fsolve(equations_t, (600, 1))
 
-        # пока
-        def is_error(_error):
-            """превышение переменной error предела на ошибку EPS"""
-            EPS = 550
-            return abs(_error[0]) >= EPS or abs(_error[1]) >= EPS
+    xocr = 0.  # абцисса точки переуплотнения
+    if (qocr != 0.) & (qocr <= qf / 2.):  # если qocr находится до qf/2, то xocr рассчитывается
+        # из функции гиперболы
+        xocr = qocr / (a1_g - qocr * k1_g)
+        for i in range(len(x)):
+            kp[i] = form_kp(x[i], qf, k, xocr, xc, qocr, x50)
 
-        while is_negative() or is_not_changed() or is_lower_1000() or (is_error(error) and WHILE_COUNT < 50):
-            initial_exp_relative_height += 1
-            _initial = np.array([initial_exp_relative_height, initial_exp_smoothness])
-            exp_relative_height, exp_smoothness, *_ = fsolve(exponent_error, _initial)
-            error = exponent_error([exp_relative_height, exp_smoothness])
-            if is_error(error):
-                WHILE_COUNT += 1
+    elif (qocr != 0.) & (qocr > qf / 2.) & (e50 <= 70000):  # если qocr находится после qf/2 и e50 находится до 70000,
+        # то xocr рассчитывается из функции экспоненты
+        def equations_xocr(xocr):
+            return (-a1_e * (np.exp(-k1_e * xocr) - 1) - qocr)
+
+        xocr = fsolve(equations_xocr, 0)
+        for i in range(len(x)):
+            kp[i] = form_kp(x[i], qf, k, xocr, xc, qocr, x50)
+
+    elif (qocr != 0.) & (qocr > qf / 2.) & (e50 > 70000):  # если qocr находится после qf/2 и e50 находится после 70000,
+        # то xocr рассчитывается из функции тангенса, так как переуплотнение плавнее
+        def equations2(xocr):
+            return (a1_t * ((np.arctan(k1_t * xocr)) / (0.5 * np.pi)) - qocr)
+
+        xocr = fsolve(equations2, 0)
+        for i in range(len(x)):
+            kp[i] = form_kp(x[i], qf, k, xocr, xc, qocr, x50)
+
+    elif qocr > (0.8 * qf):  # ограничение на qocr (если ограничение не выполняется, то
+        # строится сумма функций экспоненты и кусочной функции синуса и параболы для e50<=70000
+        # и тангенса и кусочной функции синуса и параболы для e50>70000
+        for i in range(len(x)):
+            kp[i] = 0.
+
+    return a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr
 
 
-    def dev_load_exp(_x):
-        """считает значения экспоненты на х"""
-        return -exp_relative_height * (np.exp(-exp_smoothness * _x) - 1)
+def hevisaid(x, sdvig, delta_x):
+    ''' возвращет функцию Хевисайда, которая задает коэффициент влияния kp'''
+    return 1. / (1. + np.exp(-2 * 10 / delta_x * (x - sdvig)))
 
 
-    # изначальный расчет возвращаемой фукнции
-    result_y = dev_load_exp(x)
+def gip_and_exp_or_tg(x, e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, k, qocr,
+                      xocr):
+    '''сумма функций гиперболы и экспоненты с учетом коэффициентов влияния'''
 
-    OC_strain = 0.  # абцисса точки переуплотнения
+    ret = ((kp * k) * (a1_g * x / (1 + k1_g * x)) + (
+            (1. - kp * k) * (-a1_e * (np.exp(-k1_e * x) - 1))))  # сумма гиперболы и экспоненты
 
-    return result_y, OC_strain
+    if (qocr > qf / 2.) & (qocr != 0.) & (x > x50) & (e50 <= 70000):
+        ret = ((kp * k) * (a1_g * x / (1 + k1_g * x)) + (
+                (1. - kp * k) * (-a1_e * (np.exp(-k1_e * x) - 1))))  # сумма гиперболы и экспоненты (x>x50)
+
+    elif (qocr > qf / 2.) & (qocr != 0.) & (x > x50) & (e50 > 70000):
+        ret = ((kp * k) * (a1_g * x / (1 + k1_g * x)) + (
+                (1. - kp * k) * (
+                a1_t * ((np.arctan(k1_t * x)) / (0.5 * np.pi)))))  # сумма гиперболы и тангенса (x>x50)
+    elif (qocr > 0.8 * qf) & (qocr != 0.):
+        ret = ((kp * k) * (a1_g * x / (1 + k1_g * x)) + (
+                (1. - kp * k) * (-a1_e * (np.exp(
+            -k1_e * x) - 1))))  # в случае невыполнения ограничения на qocr, строится только экспонента (kp=0)
+
+    if (qocr <= qf / 2.) & (qocr != 0.) & (
+            x <= x50):
+        if x <= xocr:  # сумма функций с учетом коэффициентов влияния до xocr (x<x50)
+            ret = ((1. - kp * k) * (a1_g * x / (1 + k1_g * x)) + (
+                    (kp * k) * (-a1_e * (np.exp(-k1_e * x) - 1))))  # сумма гиперболы и экспоненты
+        else:  # сумма функций с учетом коэффициентов влияния после xocr (x<x50)
+            ret = ((1. - kp * (1 - k)) * (a1_g * x / (1 + k1_g * x)) + (
+                    (kp * (1 - k)) * (-a1_e * (np.exp(-k1_e * x) - 1))))  # сумма гиперболы и экспоненты
+
+    return ret
 
 
-def cos_par_exp_exp(x, E50, qf, strain_at_50_strength, fracture_strain, correction=0):
-    """возвращает функцию косинуса
-     и параболы для участка strain_at_50_strength qf"""
+def cos_par(x, e50, qf, x50, xc, hlow):
+    '''возвращает функцию косинуса
+     и параболы для участка x50 qf'''
 
-    SHIFT = (fracture_strain - strain_at_50_strength) / 2
-    '''смещение: коэффицент учитывающий влияние на высоту функции при различных значениях E50'''
-
-    if E50 < 5340:
+    sm = (xc - x50) / 2  # смещение
+    # коэффицент учитывающий влияние на высоту функции при различных значениях e50
+    if e50 < 5340:
         vl = 0
-    elif (E50 <= 40000) and (E50 >= 5340):
+    elif (e50 <= 40000) and (e50 >= 5340):
         kvl = 1 / 34660
         bvl = -5340 * kvl
-        vl = kvl * E50 + bvl  # 1. / 40000. * E50 - 1. / 8
-    elif E50 > 40000:
+        vl = kvl * e50 + bvl  # 1. / 40000. * e50 - 1. / 8
+    elif e50 > 40000:
         vl = 1.
-    else:
-        vl = None
 
-    height = 0.035 * qf * vl - correction  # высота функции
-    if height < 0:
-        height = 0
+    h = 0.035 * qf * vl - hlow  # высота функции
+    if h < 0:
+        h = 0
 
-    k_of_parab = height / (-fracture_strain + strain_at_50_strength + SHIFT) ** 2
+    k = h / (-xc + x50 + sm) ** 2
 
     # фиромирование функции
-    # if x is greater then strain_at_50_strength : x_gr_x50
-    _i, = np.where(x > strain_at_50_strength)
-    x_low_x50 = x[:_i[0]] if _i.size > 0 else x
-    x_gr_x50 = x[_i[0]:] if _i.size > 0 else np.array([])
+    if x < x50:
+        cos_par = 0
+    elif (x >= x50) and (x <= x50 + sm):
+        cos_par = h * (1 / 2) * (np.cos((1. / sm) * np.pi * (x - x50) - np.pi) + 1)  # косинус
+    elif (x > x50 + sm) and (x < xc):
+        cos_par = -k * (x - x50 - sm) ** 2 + h  # парабола
+    elif x >= xc:
+        cos_par = 0
 
-    # if x is greater then strain_at_50_strength + SHIFT : x_gr_x50sm
-    j, = np.where(x_gr_x50 > strain_at_50_strength + SHIFT)
-    x_gr_x50_low_x50sm = x_gr_x50[:j[0]] if j.size > 0 else x_gr_x50
-    x_gr_x50sm = x_gr_x50[j[0]:] if j.size > 0 else np.array([])
-
-    # if x is greater then fracture_strain : x_gr_xc
-    l, = np.where(x_gr_x50sm > fracture_strain)
-    x_gr_x50sm_low_xc = x_gr_x50sm[:l[0]] if l.size > 0 else x_gr_x50sm
-    x_gr_xc = x_gr_x50sm[l[0]:] if l.size > 0 else np.array([])
-
-    _first_zero_part = np.full(len(x_low_x50), 0)
-    _cos_part = (height * 0.5 * (np.cos((1. / SHIFT) *
-                                        np.pi * (x_gr_x50_low_x50sm - strain_at_50_strength) - np.pi) + 1))
-    _parab_part = (-1) * k_of_parab * (x_gr_x50sm_low_xc - strain_at_50_strength - SHIFT) ** 2 + height
-    _last_zero_part = np.full(len(x_gr_xc), 0)
-
-    return np.hstack((_first_zero_part, _cos_part, _parab_part, _last_zero_part))
+    return cos_par
 
 
-def loop_exp(x, y, Eur, unload_deviator, re_load_deviator, noise_params=None):
-    """Рассчитывает петлю разгрузки -- повторного нагружения
-    :param x: массив значений x
-    :param y: массив значений y
-    :param Eur: recommended: 3*E50
-    :param unload_deviator: девиатор разгрузки
-    :param re_load_deviator: девиатор повторной нагрузки
-    :param noise_params: optional, default None, параметры для моделирования шума list[float, float]
+def gaus(x, qf, xc, x2, qf2):
+    '''функция Гаусса для участка x>xc'''
+    a_gaus = qf - qf2  # высота функции Гаусса
+    k_gaus = (-1) * np.log(0.1 / a_gaus) / ((x2 - xc) ** 2)  # резкость функции Гаусаа
+    # (считается из условия равенства заданной точности в точке х50
+    return a_gaus * (np.exp(-k_gaus * ((x - xc) ** 2))) + qf2
 
-    Returns
-    --------
-    loop_x -- x координаты петли \n
-    loop_y -- y координаты петли \n
-    connection_indexes -- tuple[index_connection_unload[0], index_connection_return_on_load[0])]\n
-    loop_indexes -- tuple[real_unload_index, real_re_load_index, real_return_on_load_index]\n
-    loop_strain_values --tuple[unload_strain, re_load_strain, return_on_load_point_strain]\n
-    """
 
-    # индекс 1 точки
-    index_unload_point, = np.where(y >= unload_deviator)
+def parab(x, qf, xc, x2, qf2):
+    '''функция Гаусса для участка x>xc'''
+    k_par = -((qf2 - qf) / (x2 - xc) ** 2)
+    return -k_par * ((x - xc) ** 2) + qf
 
-    if not np.size(index_unload_point) > 0:
-        unload_deviator = np.max(y)
-        index_unload_point, = np.where(y >= unload_deviator)
 
-    index_unload_point = index_unload_point[0]
+def smoothness_condition(qf, x50):
+    '''возвращает предельное значение xc при котором возможно
+    построение заданной функции'''
+    k_lim = qf / (2 * x50)
+    x_lim = (qf / k_lim)
+
+    x_lim += 0.6 / 100
+
+    return x_lim
+
+
+def form_kp(x: float, qf, k, xocr, xc, qocr, x50):
+    '''вовзращает коэффициент влияния kp'''
+    kp = 1.
+    if qocr > qf / 2.:  # если qsr на участке от qf / 2
+
+        if qocr > (0.8 * qf):  # ограничение на qocr если ограничение не выполняется, то
+            # строится экспоненты
+            kp = 0.
+
+        else:
+            if x <= xocr:  # принудительное зануление отрицательной части функции Хевисайда
+                kp = 0.
+            elif (x > xocr) & (x <= xc):
+                delta = ((abs(xocr - x50)) / (k + 0.000001)) * 10  # ширина Хевисайда
+                kp = 2 * hevisaid(x, xocr, delta) - 1.
+
+    elif (qocr < qf / 2.) & (qocr != 0.):  # если qsr на участке до qf / 2.
+        if x > xocr:
+
+            delta = abs(10 * (x50 - xocr + 0.000001))  # ширина Хевисайда
+            kp = 2 * hevisaid(x, xocr, delta) - 1
+        else:
+            kp = 0.  # принудительное зануление отрицательной части функции Хевисайда
+
+    elif qocr == 0.:  # для нулевого переуплотнения
+        kp = 1.
+
+    elif qocr == qf / 2.:  # для qocr == qf/2.
+        if x <= xocr:  # до xsr строится функция гиперболы
+            kp = 0.
+        if x > xocr:
+            kp = 1.  # после хsr строится функция суммы гиперболы и экспоненты
+            # или тангенса с учетом коэффициентов влияния
+    if (xocr == 0.) & (qocr <= (0.8 * qf)):
+        kp = 1.
+
+    return kp
+
+
+def sensor_accuracy(x, y, qf, x50, xc):
+    '''возвразщает зашумеленную функцию без шума в характерных точках'''
+
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    max_y = np.max(y)
+
+    sh = np.random.uniform(-0.4, 0.4, len(x))
+    index_qf_half, = np.where(y >= max_y / 2)
+    index_qf, = np.where(y >= max_y)
+
+    max_x = np.max(x)
+
+    if xc > max_x:  # если хс последня точка в массиве или дальше
+        index_qf, = np.where(x >= max_x)
+
+    y_res = y + sh
+
+    # пропускаем нужные точки
+    y_res[index_qf_half[0] - 2] = y[index_qf_half[0] - 2]
+    y_res[index_qf_half[0] - 1] = y[index_qf_half[0] - 1]
+    y_res[index_qf_half[0] - 0] = y[index_qf_half[0] - 0]
+    y_res[index_qf_half[0] + 1] = y[index_qf_half[0] + 1]
+    y_res[index_qf_half[0] + 2] = y[index_qf_half[0] + 2]
+
+    y_res[index_qf[0] - 2] = y[index_qf[0] - 2]
+    y_res[index_qf[0] - 1] = y[index_qf[0] - 1]
+    y_res[index_qf[0] - 0] = y[index_qf[0] - 0]
+
+    try:
+        y_res[index_qf[0] + 1] = y[index_qf[0] + 1]
+    except IndexError:
+        pass
+    try:
+        y_res[index_qf[0] + 2] = y[index_qf[0] + 2]
+    except IndexError:
+        pass
+
+    # в районе максимума шум меньше первоначального
+    indexes, = np.where(y_res > max_y)
+    if len(indexes) > 0:
+        for i in indexes:
+            y_res[i] = y[i] - np.random.uniform(0.05, 0.025)
+    # print(indexes, index_qf_half[0], index_qf[0])
+
+    # y_test = copy.deepcopy(y)
+    # for i in range(len(y_test)):  # наложение шума кроме промежутков для характерных точек
+    #     if (i < index_qf_half[0] - 2) or ((i > index_qf_half[0] + 2) and ([i] < index_qf[0] - 2)) or (
+    #             i > index_qf[0] + 2):
+    #         if (y_test[i] + sh[i] < np.max(y_test)):
+    #             y_test[i] = y_test[i] + sh[i]
+    #         else:
+    #             y_test[i] = y_test[i] - np.random.uniform(0.05, 0.025)  # в районе максимума шум меньше первоначального
+    #
+    # for i in range(len(y_test)):
+    #     errr = abs(y_test[i] - y_res[i])
+    #     if errr > 0.05:
+    #         print(i, errr)
+
+    return y_res
+
+
+def interpolated_intercepts(x, y1, y2):
+    """Find the intercepts of two curves, given by the same x data"""
+
+    def intercept(point1, point2, point3, point4):
+        """find the intersection between two lines
+        the first line is defined by the line between point1 and point2
+        the first line is defined by the line between point3 and point4
+        each point is an (x,y) tuple.
+
+        So, for example, you can find the intersection between
+        intercept((0,0), (1,1), (0,1), (1,0)) = (0.5, 0.5)
+
+        Returns: the intercept, in (x,y) format
+        """
+
+        def line(p1, p2):
+            A = (p1[1] - p2[1])
+            B = (p2[0] - p1[0])
+            C = (p1[0] * p2[1] - p2[0] * p1[1])
+            return A, B, -C
+
+        def intersection(L1, L2):
+            D = L1[0] * L2[1] - L1[1] * L2[0]
+            Dx = L1[2] * L2[1] - L1[1] * L2[2]
+            Dy = L1[0] * L2[2] - L1[2] * L2[0]
+
+            x = Dx / D
+            y = Dy / D
+            return x, y
+
+        L1 = line([point1[0], point1[1]], [point2[0], point2[1]])
+        L2 = line([point3[0], point3[1]], [point4[0], point4[1]])
+
+        R = intersection(L1, L2)
+
+        return R
+
+    idxs = np.argwhere(np.diff(np.sign(y1 - y2)) != 0)
+
+    xcs = []
+    ycs = []
+
+    for idx in idxs:
+        xc, yc = intercept((x[idx], y1[idx]), ((x[idx + 1], y1[idx + 1])), ((x[idx], y2[idx])),
+                           ((x[idx + 1], y2[idx + 1])))
+        xcs.append(xc)
+        ycs.append(yc)
+    return np.array(xcs), np.array(ycs)
+
+
+def loop(x, y, Eur, y_rel_p, point2_y):
+    # print(Eur)
+
+    def is_bad_line(y_in_max, x_in_max, __slant, __y_inter, __x_inter):
+        return y_in_max >= __slant * x_in_max + (__y_inter - __slant * __x_inter)
+
+    # Заранее не известно, поместится ли петля на график,
+    # то если успеет ли петля вернуться до максимума девиатора,
+    # поэтому мы будет итеративно строить прямую и уменьшать девиатор появления петли,
+    # если петля не влезла
+    count = 0
+    num_steps = 3000 - 100
+
+    # print(f"y_rel_p BEFORE CORRECTION : {y_rel_p}")
+    while count < num_steps:
+
+        index_015, = np.where(x >= 0.15)
+        ip1, = np.where(y[:index_015[0]] >= y_rel_p)
+        if not np.size(ip1) > 0:
+            # print("нет точки начала разгрузки")
+            y_rel_p = np.max(y[:index_015[0]])
+            ip1, = np.where(y[:index_015[0]] >= y_rel_p)
+
+        # точка появления петли
+        point1_x = x[ip1[0]]
+        point1_y = y[ip1[0]]
+
+        E0 = (y[1] - y[0]) / (x[1] - x[0])  # производная кривой девиаторного нагружения в 0
+        # ограничение на E0 (не больше чем модуль петли разгрузки)
+        if E0 < Eur:
+            E0 = 1.1 * Eur
+
+        # ограничение на угол наклона участка повтороной нагрузки,
+        # чтобы исключить пересечение петли и девиаторной кривой
+        min_E0 = point1_y / point1_x  # максимальный угол наклона петли
+
+        if Eur < 1.1 * min_E0:
+            # print("\nВНИМАНИЕ: Eur изменен!\n")
+            Eur = 1.1 * min_E0
+            E0 = 1.1 * Eur
+
+        # точка самопересечения петли
+        # np.random.uniform(0.8, 0.9)
+        y_inter = np.random.uniform(0.8, 0.9) * (point1_y - point2_y) + point2_y
+        ipxinter, = np.where(x >= point1_x)
+        ipxinter[0] = ipxinter[0] - 1  # берем предыдущую точку, получив тем самым производную вертикально вверх
+        x_inter = x[ipxinter[0]]
+
+        k_inter = (point1_y - y_inter) / (point1_x - x_inter)
+        b_inter = y_inter - k_inter * x_inter
+
+        # нижняя точка петли
+        point2_x = (point2_y - (y_inter - Eur * x_inter)) / Eur
+        ip2x, = np.where(x >= point2_x)
+        point2_x = x[ip2x[0]]  # ???
+        if ip2x[0] >= ipxinter[0]:  # если точка 2 совпадает с точкой один или правее, то меняем точку 2 на предыдущую
+            # print("\nВНИМАНИЕ: Eur изменен!\n")
+            ip2x[0] = ipxinter[0] - 1
+            point2_x = x[ip2x[0]]
+
+        # точка конца петли
+        index_x2, = np.where(y >= np.max(y[:index_015[0]]))
+
+        k3 = 6  # в столько раз производная на выходе из точки 2 больше Eur
+        MIN_k3 = 4  # минимальный наклон, дальше идет шаг по точке начала рагрузки
+        lower_slant = 0.6  # конечную точку будем выбирть правее, так как необходимо обеспечить гладкость
+
+        # чем меньше lower_slant тем положе выход на кривую
+
+        def get_slant(__k3):
+            y_slant = point2_y + (y_inter - point2_y) / 2
+            x_slant = (y_slant - (point2_y - ((__k3 * Eur) * point2_x))) / (__k3 * Eur)
+            return (y_inter - y_slant) / (x_inter - x_slant)
+
+        slant = get_slant(k3)  # наклон из самопересечения в конечную точку
+
+        #  значение в максимуме должно быть меньше
+        #  чем значение прямой из самопересечения петли для этого же икса
+        while is_bad_line(y[index_x2[0]], x[index_x2[0]], lower_slant * slant, y_inter, x_inter):
+            if k3 < MIN_k3:
+                break
+            k3 = k3 - 0.01
+            slant = get_slant(k3)
+
+        if not is_bad_line(y[index_x2[0]], x[index_x2[0]], lower_slant * slant, y_inter, x_inter):
+            break
+
+        y_rel_p = y_rel_p - 1
+
+        # точка разгрузки не может быть ниже точки до которой разгружаемся
+        if y_rel_p <= point2_y + 10:
+            y_rel_p = y_rel_p + 1
+            break
+
+        count = count + 1
+    # КОНЕЦ ЦИКЛА
+
+    # если построение все же плохое, пытаемся построить с наклоном k3 = 1
+    if is_bad_line(y[index_x2[0]], x[index_x2[0]], lower_slant * slant, y_inter, x_inter):
+        if k3 >= round(1.0):
+            k3 = 1.01
+            slant = get_slant(k3)
+
+    # print('k3: ', k3)
+    # print(f"y_rel_p AFTER CORRECTION : {y_rel_p}")
+    # print(count)
+
+    x_inter_array = x[ip1[0]:index_x2[0]]
+    y_inter_array = y[ip1[0]:index_x2[0]]
+    y_loop_inter_array = lower_slant * slant * x_inter_array + (y_inter - lower_slant * slant * x_inter)
+
+    # plt.figure()
+    # plt.plot(x_inter_array, y_inter_array, x_inter_array, y_loop_inter_array)
+    # plt.show()
+
+    rez_x, rez_y = interpolated_intercepts(x_inter_array, y_inter_array, y_loop_inter_array)
+
+    if len(rez_x) < 1:
+        rez_x = np.asarray([[x[index_x2[0]]]])
+
+    i_rez_x, = np.where(x >= rez_x[0][0])
+    rez_x = x[i_rez_x[0]]
+
+    # p3_x_min = (y[index_x2[0]] - (y_inter - slant*x_inter))/slant
+    p3_x_min = rez_x
+
+    # k = (0.3 / (-x[index_x2[0]])) * point1_x + 0.2
+    # din_koef = -3 * 10 ** (-9) * (slant/k3) + k * point1_x ## 0.00095
+    # point3_x = p3_x_min + din_koef
+    point3_x = p3_x_min
+    ip3, = np.where(x >= point3_x)
+    point3_x = x[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
+    if point3_x <= point1_x:
+        ip3[0] = ip1[0] + 1
+        point3_x = x[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
+    point3_y = y[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
+
+    d1_p3 = (y[ip3[0] + 1] - y[ip3[0]]) / (x[ip3[0] + 1] - x[ip3[0]])  # производная
+    # кривой девиаторного нагружения в точке конца петли
+
+    # от начала в точку пересечения
+    x1_l = np.linspace(point1_x, x_inter, int(abs(point1_x - x_inter) / (x[1] - x[0]) + 1))
+    # от точки пересечения в нижюю точку
+    x2_l = np.linspace(x_inter, point2_x, int(abs(point2_x - x_inter) / (x[1] - x[0]) + 1))
+    # от нижней точки до конца петли
+    x3_l = np.linspace(point2_x, x_inter, int(abs(point2_x - x_inter) / (x[1] - x[0]) + 1))
+    # от нижней точки до конца петли
+    x4_l = np.linspace(x_inter, point3_x, int(abs(x_inter - point3_x) / (x[1] - x[0]) + 1))
+
+    y1_l = k_inter * x1_l + b_inter
+
+    # безье второго участка
+    d1_p2 = 0.00000
+
+    b_c = bezier_curve([point2_x, point2_y],
+                       [point2_x - 0.1 * point2_x, d1_p2 * (point2_x - 0.1 * point2_x) + (point2_y - d1_p2 * point2_x)],
+                       [point1_x, point1_y],
+                       [x_inter, y_inter],
+                       [point2_x, point2_y],  # Безье построиться только на возрастающем иксе
+                       [x_inter, y_inter],  # поэтому обращаем сетку и меняем местами узлы
+                       np.flip(x2_l))
+    y2_l = np.flip(b_c)
+    x2_l = x2_l[1:]
+    y2_l = y2_l[1:]
+
+    # третий участок
+    b_c = bezier_curve([point2_x, point2_y],
+                       [point2_x - 0.1 * point2_x,
+                        (k3 * Eur) * (point2_x - 0.1 * point2_x) + (point2_y - (k3 * Eur) * point2_x)],
+                       [x_inter, y_inter],
+                       [x_inter + 0.1 * x_inter, slant * (x_inter + 0.1 * x_inter) + (y_inter - slant * x_inter)],
+                       [point2_x, point2_y],  # Безье построиться только на возрастающем иксе
+                       [x_inter, y_inter],  # поэтому обращаем сетку и меняем местами узлы
+                       x3_l)
+    y3_l = b_c
+    x3_l = x3_l[1:]
+    y3_l = y3_l[1:]
+
+    b_c = bezier_curve([x_inter, y_inter],
+                       [x_inter + 0.1 * x_inter, slant * (x_inter + 0.1 * x_inter) + (y_inter - slant * x_inter)],
+                       [point3_x, point3_y],
+                       [point3_x - 0.1 * point3_x, d1_p3 * (point3_x - 0.1 * point3_x) + (point3_y - d1_p3 * point3_x)],
+                       [x_inter, y_inter],  # Безье построиться только на возрастающем иксе
+                       [point3_x, point3_y],  # поэтому обращаем сетку и меняем местами узлы
+                       x4_l)
+    y4_l = b_c
+    x4_l = x4_l[1:]
+    y4_l = y4_l[1:]
+
+    x3_l = np.hstack((x3_l, x4_l))
+    y3_l = np.hstack((y3_l, y4_l))
+
+    # spl1 = interpolate.make_interp_spline([point2_x, x_inter, point3_x],
+    #                                       [point2_y, y_inter, point3_y], k=3,
+    #                                       bc_type=([(1, k3*Eur)], [(1, d1_p3)]))
+    # y3_l = spl1(x3_l)
+    # x3_l = x3_l[1:]
+    # y3_l = y3_l[1:]
+
+    # plt.figure()
+    # plt.plot(x1_l, y1_l, c='r')
+    # plt.plot(x2_l, y2_l, c='g')
+    # plt.plot(x3_l, y3_l, c='b')
+    # plt.plot(x_inter_array, y_inter_array, x_inter_array, y_loop_inter_array)
+    # plt.plot(x, y, c='black')
+    # # plt.xlim(0, 0.03)
+    # plt.scatter([point1_x,x_inter,point2_x,point3_x, x[i_rez_x[0]]],[point1_y,y_inter,point2_y,point3_y,y[i_rez_x[0]]])
+    # plt.show()
+
+    x1_l = np.hstack((x1_l, x2_l))
+    y1_l = np.hstack((y1_l, y2_l))
+    x2_l = copy.deepcopy(x3_l)
+    y2_l = copy.deepcopy(y3_l)
+
+    # соединяем  участки разгрузки и нагрузки в петлю
+    x_loop = np.hstack((x1_l, x2_l))
+    y_loop = np.hstack((y1_l, y2_l))
+
+    return x_loop, y_loop, point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, x1_l, x2_l, y1_l, y2_l
+
+
+def loop1(x, y, Eur, y_rel_p, point2_y):
+    # ip1, = np.where(np.abs(y-y_rel_p) <= 0.0001)  # ищем нужный индекс в исходном массиве
+    ip1, = np.where(y >= y_rel_p)
+
+    if not np.size(ip1) > 0:
+        y_rel_p = np.max(y)
+        ip1, = np.where(y >= y_rel_p)
 
     # точка появления петли
-    unload_strain = x[index_unload_point]
-    unload_deviator = y[index_unload_point]
+    point1_x = x[ip1[0]]
+    point1_y = y[ip1[0]]
 
     # точка конца петли
-    index_re_load_point, = np.where(y == np.max(y))
-    index_re_load_point = index_re_load_point[-1]
+    index_x2, = np.where(y == np.max(y))
+    k = (0.3 / (-x[index_x2[-1]])) * point1_x + 0.4
+    din_koef = -3 * 10 ** (-9) * Eur + k * point1_x  ## 0.00095
+    point3_x = point1_x + din_koef
+    ip3, = np.where(x >= point3_x)
+    point3_x = x[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
+    if point3_x <= point1_x:
+        ip3[0] = ip1[0] + 1
+        point3_x = x[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
+    point3_y = y[ip3[0]]  # задаем последнюю точку в общем массиве кривой девиаторного нагружения
 
-    k = (0.3 / (-x[index_re_load_point])) * unload_strain + 0.4
-    dynamic_ratio = -3 * 10 ** (-9) * Eur + k * unload_strain  # 0.00095
-
-    # Точка возврата на кривую
-    return_on_load_point_strain = unload_strain + dynamic_ratio
-    assert return_on_load_point_strain < x.max(), "Ошибка построения петли при заданном Eur"
-    index_return_on_load, = np.where(x >= return_on_load_point_strain)
-    index_return_on_load = index_return_on_load[0]
-    # задаем последнюю точку в общем массиве кривой девиаторного нагружения
-    return_on_load_point_strain = x[index_return_on_load]
-    if return_on_load_point_strain <= unload_strain:
-        index_return_on_load = index_unload_point + 1
-        return_on_load_point_strain = x[index_return_on_load]
-    return_on_load_deviator = y[index_return_on_load]
-
-    D1_return_on_load = (y[index_return_on_load + 1] - y[index_return_on_load]) / \
-                        (x[index_return_on_load + 1] - x[index_return_on_load])
-    '''производная кривой девиаторного нагружения в точке конца петли'''
-
+    d1_p3 = (y[ip3[0] + 1] - y[ip3[0]]) / (x[ip3[0] + 1] - x[ip3[0]])  # производная
+    # кривой девиаторного нагружения в точке конца петли
     E0 = (y[1] - y[0]) / (x[1] - x[0])  # производная кривой девиаторного нагружения в 0
     # ограничение на E0 (не больше чем модуль петли разгрузки)
     if E0 < Eur:
@@ -475,435 +866,288 @@ def loop_exp(x, y, Eur, unload_deviator, re_load_deviator, noise_params=None):
 
     # ограничение на угол наклона участка повтороной нагрузки,
     # чтобы исключить пересечение петли и девиаторной кривой
-    min_E0 = unload_deviator / unload_strain  # максимальный угол наклона петли
+    min_E0 = point1_y / point1_x  # максимальный угол наклона петли
 
-    # коррекция Eur
     if Eur < 1.1 * min_E0:
         # print("\nВНИМАНИЕ: Eur изменен!\n")
         Eur = 1.1 * min_E0
         E0 = 1.1 * Eur
 
-    # вычисляется из оординаты и угла наклона петли
-    re_load_strain = (re_load_deviator - unload_deviator + Eur * unload_strain) / Eur
-    index_re_load, = np.where(x >= re_load_strain)
-    index_re_load = index_re_load[0]
-    re_load_strain = x[index_re_load]
+    point2_x = (point2_y - point1_y + Eur * point1_x) / Eur  # вычисляется из оординаты
+    # и угла наклона петли
+    ip2x, = np.where(x >= point2_x)
+    point2_x = x[ip2x[0]]  # ???
 
-    # если точка 2 совпадает с точкой один или правее, то меняем точку 2 на предыдущую
-    if index_re_load >= index_unload_point:
+    if ip2x[0] >= ip1[0]:  # если точка 2 совпадает с точкой один или правее, то меняем точку 2 на предыдущую
         # print("\nВНИМАНИЕ: Eur изменен!\n")
-        index_re_load = index_unload_point - 1
-        re_load_strain = x[index_re_load]
+        ip2x[0] = ip1[0] - 1
+        point2_x = x[ip2x[0]]
 
     # участок разгрузки
-    unload_part_x = np.linspace(unload_strain, re_load_strain,
-                                int(abs(re_load_strain - unload_strain) / (x[1] - x[0]) + 1))
+    x1_l = np.linspace(point1_x, point2_x, int(abs(point2_x - point1_x) / (x[1] - x[0]) + 1))
     # участок повторной нагрузки
-    reload_part_x = np.linspace(re_load_strain, return_on_load_point_strain,
-                                int(abs(return_on_load_point_strain - re_load_strain) / (x[1] - x[0]) + 1))
+    x2_l = np.linspace(point2_x, point3_x, int(abs(point3_x - point2_x) / (x[1] - x[0]) + 1))
 
-    # 0.8 * Eur + 60000  # производная в точке начала разгрузки (близка к бесконечности) #???
-    dynamic_D1 = 2 * Eur
+    din_pr = 2 * Eur  ## 0.8 * Eur + 60000  # производная в точке начала разгрузки (близка к бесконечности) #???
 
-    # формируем разгрузку
-    spline_unload = interpolate.make_interp_spline([re_load_strain, unload_strain],
-                                                   [re_load_deviator, unload_deviator], k=3,
-                                                   bc_type=([(2, 0)], [(1, dynamic_D1)]))
-    unload_part_y = spline_unload(unload_part_x)  # участок разгрузки
+    spl1 = interpolate.make_interp_spline([point2_x, point1_x],
+                                          [point2_y, point1_y], k=3,
+                                          bc_type=([(2, 0)], [(1, din_pr)]))
+    y1_l = spl1(x1_l)  # участок разгрузки
 
-    # формируем повторное нагружение
-    point_1_l1 = [re_load_strain - 0.2 * re_load_strain,
-                  E0 * (re_load_strain - 0.2 * re_load_strain) +
-                  (re_load_deviator - E0 * re_load_strain)]
-    point_2_l1 = [re_load_strain, re_load_deviator]
-    point_1_l2 = [return_on_load_point_strain, return_on_load_deviator]
-    point_2_l2 = [return_on_load_point_strain - 0.1 * return_on_load_point_strain,
-                  D1_return_on_load * (return_on_load_point_strain - 0.1 * return_on_load_point_strain) +
-                  (return_on_load_deviator - D1_return_on_load * return_on_load_point_strain)]
+    crosspoint_y = point1_y * 0.97  # точка пересечения участка разгрузки и повторной нагрузки
+    icp, = np.where(crosspoint_y >= y1_l)
+    # crosspoint_x = x1_l[icp[0]]  # точка пересечения участка разгрузки и повторной нагрузки
 
-    _bezier_curve = bezier_curve_exp(point_1_l1, point_2_l1, point_1_l2, point_2_l2,
-                                     [re_load_strain, re_load_deviator],
-                                     [return_on_load_point_strain, return_on_load_deviator],
-                                     reload_part_x)
-    reload_part_y = _bezier_curve
+    '''
+    spl2 = interpolate.make_interp_spline([point2_x, crosspoint_x, point3_x],
+                                          [point2_y, crosspoint_y, point3_y], k=3,
+                                          bc_type=([(1, E0)], [(1, d1_p3)]))  # участок повторной нагрузки
+    y2_l = spl2(x2_l)
+    '''
+
+    b_c = bezier_curve([point2_x - 0.2 * point2_x, E0 * (point2_x - 0.2 * point2_x) + (point2_y - E0 * point2_x)],
+                       [point2_x, point2_y],
+                       [point3_x, point3_y],
+                       [point3_x - 0.1 * point3_x, d1_p3 * (point3_x - 0.1 * point3_x) + (point3_y - d1_p3 * point3_x)],
+                       [point2_x, point2_y],
+                       [point3_x, point3_y],
+                       x2_l)
+    y2_l = b_c
 
     # устраняем повторяющуюся точку 2
-    reload_part_x = reload_part_x[1:]
-    reload_part_y = reload_part_y[1:]
+    x2_l = x2_l[1:]
+    y2_l = y2_l[1:]
 
     # соединяем  участки разгрузки и нагрузки в петлю
-    loop_x = np.hstack((unload_part_x, reload_part_x))
+    x_loop = np.hstack((x1_l, x2_l))
+    y_loop = np.hstack((y1_l, y2_l))
 
-    # определяем индексы, по которым будет петля будет "крепиться" к исходной кривой
-    index_connection_unload, = np.where(x >= unload_strain)
-    index_connection_return_on_load, = np.where(x >= return_on_load_point_strain)
-
-    if noise_params:
-        unload_part_y = unload_part_y + np.random.uniform(-noise_params[0], noise_params[0], len(unload_part_y))
-        reload_part_y = reload_part_y + np.random.uniform(-noise_params[0], noise_params[0], len(reload_part_y))
-        unload_part_y = discrete_array(unload_part_y, noise_params[1])
-        reload_part_y = discrete_array(reload_part_y, noise_params[1])
-
-    loop_y = np.hstack((unload_part_y, reload_part_y))
-
-    real_unload_index = index_connection_unload[0] + 1
-    # первая точка петли на самом деле принадлежит исходной кривой
-    real_re_load_index = index_connection_unload[0] + len(unload_part_y)
-    # -1 + 1 = 0 т.к. самая нижняя точка петли принадлежит разгрузке
-    real_return_on_load_index = index_connection_unload[0] + len(loop_x) - 2
-    # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
-
-    # Для присоединения петли к исходной кривой
-    connection_indexes = (index_connection_unload[0], index_connection_return_on_load[0])
-    #
-    loop_indexes = (real_unload_index, real_re_load_index, real_return_on_load_index)
-    #
-    # Для работы фукнции объемной деформации
-    loop_strain_values = (unload_strain, re_load_strain, return_on_load_point_strain)
-    #
-
-    return loop_x, loop_y, connection_indexes, loop_indexes, loop_strain_values
+    return x_loop, y_loop, point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, x1_l, x2_l, y1_l, y2_l
 
 
-def dev_loading_exp(qf, E50, **kwargs):
-    """
-    Кусочная функция: на участке [0,fracture_strain]-сумма функций гиперболы и
+def cos_ocr(x, y, qf, qocr, xc):
+    '''возвращает функцию косинуса
+     и параболы для участка x50 qf'''
+
+    index_xocr, = np.where(y > qocr)
+    xocr = x[index_xocr[0]]
+    proiz_ocr = (y[index_xocr[0] + 1] - y[index_xocr[0]]) / \
+                (x[index_xocr[0] + 1] - x[index_xocr[0]])
+
+    count = 0
+    while proiz_ocr <= 0 and count < 10:
+        proiz_ocr = (y[index_xocr[0] + 1 + count] - y[index_xocr[0]]) / (
+                    x[index_xocr[0] + 1 + count] - x[index_xocr[0]])
+        count += 1
+
+    # print(f"deviator loading functions : cos_ocr : proiz_ocr = {proiz_ocr}")
+
+    if proiz_ocr < 20000:
+        vl_h = 0.3
+    elif (proiz_ocr >= 20000) and (proiz_ocr <= 80000):
+        kvl = 0.7 / 60000
+        bvl = 0.3 - 20000 * kvl
+        vl_h = kvl * proiz_ocr + bvl  # 1. / 40000. * e50 - 1. / 8
+    elif proiz_ocr > 80000:
+        vl_h = 1
+
+    max_y_initial = max(y)
+
+    index_max = np.argmax(y)
+
+    h = 0.2 * qf * vl_h  # высота функции
+
+    if h > 0.8 * qocr:
+        h = 0.8 * qocr
+
+    sm = xocr
+
+    k = h / (sm) ** 2
+
+    index_2xocr, = np.where(x >= xc)
+    if len(index_2xocr):
+        index_2xocr = index_2xocr[0]
+    else:
+        index_2xocr = -1
+
+    index_xocr, = np.where(x >= xocr)
+
+    cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
+                         h * (1 / 2) * (np.cos(
+                             (1. / (xc - sm)) * np.pi * (x[index_xocr[0]:index_2xocr] + (xc - 2 * sm)) - np.pi) + 1),
+                         np.zeros(len(x[index_2xocr:]))))
+
+    # proiz_ocr = [(y[i]+cos_par[i] - y[i+1]-cos_par[i + 1])/ (x[i] - x[i + 1]) for i in range(len(x)-1)]
+    # plt.plot(x[:-1], proiz_ocr)
+
+    extremums = argrelextrema(y + cos_par, np.greater)
+
+    if len(extremums) < 1 or len(extremums[0]) < 1:
+        extremums = [[0]]
+
+    y_ocr = y + cos_par
+
+    count = 0
+    while ((max(y + cos_par) > max_y_initial) or (
+            (extremums[0][0] < index_max) and y_ocr[extremums[0][0]] > 0.9 * max_y_initial)) and count < 200:
+
+        if max(y + cos_par) > max_y_initial:
+            xc = xc - 0.0001
+            if xc >= sm:
+                index_2xocr, = np.where(x >= xc)
+                index_xocr, = np.where(x >= xocr)
+
+                cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
+                                     h * (1 / 2) * (np.cos((1. / (xc - sm)) * np.pi * (
+                                             x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
+                                     np.zeros(len(x[index_2xocr[0]:]))))
+        #
+        y_ocr = y + cos_par
+        delta = 0.01 * h
+
+        if (extremums[0][0] < index_max) and y_ocr[extremums[0][0]] > 0.95 * max_y_initial:
+            h = h - delta
+            k = h / (sm) ** 2
+            index_2xocr, = np.where(x >= xc)
+            index_xocr, = np.where(x >= xocr)
+
+            cos_par = np.hstack((-k * (x[:index_xocr[0]] - sm) ** 2 + h,
+                                 h * (1 / 2) * (np.cos((1. / (xc - sm)) * np.pi * (
+                                         x[index_xocr[0]:index_2xocr[0]] + (xc - 2 * sm)) - np.pi) + 1),
+                                 np.zeros(len(x[index_2xocr[0]:]))))
+            extremums = argrelextrema(y + cos_par, np.greater)
+        #
+        y_ocr = y + cos_par
+        count = count + 1
+        # print(f"cos_ocr : COUNT : {count}")
+
+    return cos_par
+
+
+def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points, k):
+    qocr = 0  # !!!
+    '''кусочная функция: на участкe [0,xc]-сумма функций гиперболы и
     (экспоненты или тангенса) и кусочной функции синуса и парболы
-    на участке [fracture_strain...]-половина функции Гаусса или параболы
+    на участке [xc...]-половина функции Гаусса или параболы'''
+    if k==None:
+        k = 1.  # k - линейный коэффициент учета влияния функции гиперболы и экспоненты
 
-    :param qf: double
-        qf
-    :param E50: double
-        E50
-    :param kwargs: optional:
-        fracture_strain;
-        residual_strength_strain;
-        residual_strength;
-        OC_deviator;
-        gaus_or_par;
-        amount_points;
-        Eur, default None, True для петли;
-        unload_deviator;
-        re_load_deviator;
-        noise_off, default None, True для отключения шумов и "ступеней";
-    :return: strain_required_grid - х координаты полученной кривой;
-        deviator_required_grid - у координаты полученной кривой;
-        [[strain_at_50_strength, qf / 2], [OC_strain, OC_deviator], [fracture_strain, qf],
-         [residual_strength_strain, residual_strength]] - расчетные параметры;
-        loop_strain_values if Eur, tuple - strain координаты точек петли;
-        loop_indexes if Eur, tuple - индексы самой петли, точки кривой не включены
-    """
+        if e50 <= 70000:
+            k = 0.95 / 68000. * e50 - 1. / 34
+        elif e50 > 70000:
+            k = 0.95
+        if xc < x50:
+            xc = x50 * 1.1  # хс не может быть меньше x50
 
-    # Константы
-    STRAIN_LIMIT = 0.15
-    STRAIN_CALC_LIMIT = 0.6
-    NOISE_LEVEL = 1.0
-    DISCRETE_ARRAY_LEVEL = 0.5
-    DISCRETE_ARRAY_LOOP_LEVEL = 2 * DISCRETE_ARRAY_LEVEL
-    #
-    _0002_QF = 0.002 * qf
+    max_x = xc + 0.6
+    x = np.linspace(0, max_x, int((amount_points * max_x / 0.15) / 4))
+    y = np.linspace(0, max_x, int((amount_points * max_x / 0.15) / 4))
+    a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc,
+                                                                        qocr)  # считаем  k1, k, xocr на участке до x50, начальное значение kp
+    # считаем предельное значение xc
+    for i in range(len(x)):
+        xcpr = smoothness_condition(qf, x50)
 
-    # Параметры
-    try:
-        kwargs["fracture_strain"]
-    except KeyError:
-        kwargs["fracture_strain"] = STRAIN_LIMIT
-
-    try:
-        kwargs["residual_strength_strain"]
-    except KeyError:
-        kwargs["residual_strength_strain"] = STRAIN_LIMIT
-
-    try:
-        kwargs["residual_strength"]
-    except KeyError:
-        kwargs["residual_strength"] = qf
-
-    try:
-        kwargs["OC_deviator"]
-    except KeyError:
-        kwargs["OC_deviator"] = 0
-
-    try:
-        kwargs["gaus_or_par"]
-    except KeyError:
-        kwargs["gaus_or_par"] = 0
-
-    try:
-        kwargs["amount_points"]
-    except KeyError:
-        kwargs["amount_points"] = 700
-
-    try:
-        kwargs["Eur"]
-    except KeyError:
-        kwargs["Eur"] = None
-
-    try:
-        kwargs["unload_deviator"]
-    except KeyError:
-        kwargs["unload_deviator"] = 0.8 * qf
-
-    try:
-        kwargs["re_load_deviator"]
-    except KeyError:
-        kwargs["re_load_deviator"] = 10
-
-    try:
-        kwargs["noise_off"]
-    except KeyError:
-        kwargs["noise_off"] = None
-
-    #
-    fracture_strain = kwargs.get('fracture_strain')
-    residual_strength_strain = kwargs.get('residual_strength_strain')
-    residual_strength = kwargs.get('residual_strength')
-    OC_deviator = kwargs.get('OC_deviator')
-    gaus_or_par = kwargs.get('gaus_or_par')  # 0 - гаус, 1 - парабола
-    amount_points = kwargs.get('amount_points')
-    Eur = kwargs.get('Eur')
-    unload_deviator = kwargs.get('unload_deviator')
-    re_load_deviator = kwargs.get('re_load_deviator')
-    noise_off = kwargs.get("noise_off")
-
-    if noise_off:
-        NOISE_LEVEL = None
-        DISCRETE_ARRAY_LEVEL = None
-        DISCRETE_ARRAY_LOOP_LEVEL = None
-    # расчёт ведется с числом точек amount_points на длине STRAIN_CALC_LIMIT
-    AMOUNT_POINTS_ON_CALC = int((amount_points * STRAIN_CALC_LIMIT / STRAIN_LIMIT) / (STRAIN_CALC_LIMIT / STRAIN_LIMIT))
-    # значения будут возвращаться с числом точек amount_points но на длине STRAIN_LIMIT
-    AMOUNT_POINTS_ON_RETURN = int(AMOUNT_POINTS_ON_CALC * (STRAIN_CALC_LIMIT / STRAIN_LIMIT))
-
-    # Ограничения
-    if unload_deviator > qf:
-        unload_deviator = qf
-    if unload_deviator < 20.0:
-        unload_deviator = 20.0
-    if fracture_strain > 0.11:
-        fracture_strain = 0.15
-    if residual_strength >= qf:
-        residual_strength = qf
-    strain_at_50_strength = (qf / 2.) / E50
-    if fracture_strain < strain_at_50_strength:
-        fracture_strain = strain_at_50_strength * 1.1  # хс не может быть меньше strain_at_50_strength
-
-    # Сетки
-    strain = np.linspace(0, STRAIN_CALC_LIMIT, AMOUNT_POINTS_ON_CALC)
-
-    # Начало построения фукнции
-
-    # считаем предельное значение fracture_strain
-    fracture_strain_limit = smoothness_condition_exp(strain_at_50_strength)
-
-    if strain_at_50_strength >= fracture_strain:
-        # если strain_at_50_strength > fracture_strain, fracture_strain сдвигается в 0.15,
-        # х2,residual_strength перестает учитываться,
-        # в качестве функции используется сумма гиперболы, экспоненты или тангенса и функции синуса и параболы
-
-        fracture_strain = STRAIN_LIMIT
-        #
-        deviator, OC_strain = exp_for_compare(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-        #
-
-        if fracture_strain <= fracture_strain_limit:
-            # проверка на условие гладкости, если условие не соблюдается
+    if (x50 >= xc):  # если x50>xc, xc сдвигается в 0.15, х2,qf2 перестает учитываться,
+        # в качестве функции используется сумма гиперболы, экспоненты или тангенса
+        # и функции синуса и параболы
+        xc = 0.15
+        a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+        for i in range(len(x)):
+            xcpr = smoothness_condition(qf, x50)
+        if xc <= xcpr:  # проверка на условие гладкости, если условие не соблюдается,
             # передвинуть xс в предельное значение
-            fracture_strain = fracture_strain_limit
-            if (fracture_strain > 0.11) and (fracture_strain < STRAIN_LIMIT):
-                fracture_strain = STRAIN_LIMIT
-            #
-            deviator, OC_strain = exp_for_compare(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-            deviator += cos_par_exp_exp(strain, E50, qf, strain_at_50_strength, fracture_strain)
-            #
-
-        # residual_strength_strain,residual_strength не выводится
-        residual_strength_strain = fracture_strain
-        residual_strength = qf
+            xc = xcpr
+            if (xc > 0.11) and (xc < 0.15):
+                xc = 0.15
+            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+        for i in range(len(x)):
+            y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp[i], k, qocr,
+                                     xocr) + cos_par(x[i], e50, qf, x50,
+                                                     xc, 0)  # формирование функции девиаторного нагружения
+        x2 = xc  # x2,qf2 не выводится
+        qf2 = qf  # x2,qf2 не выводится
 
     else:
-        #
-        deviator, OC_strain = exp_for_compare(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-        #
-        if fracture_strain <= fracture_strain_limit:
-            fracture_strain = fracture_strain_limit
-
-            if (fracture_strain > 0.11) and (fracture_strain < STRAIN_LIMIT):
-                fracture_strain = STRAIN_LIMIT
-            #
-            deviator, OC_strain = exp_for_compare(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-            #
-
-        if fracture_strain > STRAIN_LIMIT:
-            #
-            deviator, OC_strain = exp_for_compare(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-            deviator += cos_par_exp_exp(strain, E50, qf, strain_at_50_strength, fracture_strain)
-            #
-            # residual_strength_strain,residual_strength не выводится
-            residual_strength_strain = fracture_strain
-            residual_strength = qf
+        a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+        for i in range(len(x)):
+            xcpr = smoothness_condition(qf, x50)  # считаем предельно значение xc
+        if xc <= xcpr:
+            xc = xcpr
+            if (xc > 0.11) and (xc < 0.15):
+                xc = 0.15
+            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+        if (xc > 0.15):
+            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+            for i in range(len(x)):
+                y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp[i], k, qocr,
+                                         xocr) + cos_par(x[i], e50, qf, x50, xc,
+                                                         0)  # формирование функции девиаторного нагружения
+            x2 = xc  # x2,qf2 не выводится
+            qf2 = qf  # x2,qf2 не выводится
 
         else:
-            # минимально допустимое расстояния между хс и х2
-            if fracture_strain >= 0.8 * residual_strength_strain:
-                residual_strength_strain = 1.2 * fracture_strain
-            # минимально допустимое расстояние мужду residual_strength и qf
-            if residual_strength >= qf:
-                residual_strength = 0.98 * qf
+            if xc >= 0.8 * x2:  # минимально допустимое расстояния между хс и х2
+                x2 = 1.2 * xc
+            if qf2 >= qf:  # минимально допустимое расстояние мужду qf2 и qf
+                qf2 = 0.98 * qf
 
-            # Примеряем положение кривой - оно не должно быть выше qf
-            _i, = np.where(strain >= fracture_strain)  # >= намеренно
-            _i = _i[0]
-            _gip_exp_tg, *_ = exp_for_compare(strain[:_i], E50, qf, strain_at_50_strength,
-                                              fracture_strain, OC_deviator)
-            _cos_par = cos_par_exp_exp(strain[:_i], E50, qf, strain_at_50_strength, fracture_strain)
-            maximum = max(np.hstack((_gip_exp_tg + _cos_par, np.full(len(strain[_i:]), 0.0)))
-                          if _i.size > 0 else np.full(len(strain), 0.0))
-
-            is_max_lower_qf = maximum < (qf + _0002_QF)
-
-            _i, = np.where(strain > fracture_strain)  # > намеренно
-            if is_max_lower_qf:
-                correction = 0
-            else:
-                # если максимум суммарной функции на участке от 0 до хс превышает qf, то уменьшаем
-                # высоту функции синуса и параболы на величину разницы в точке fracture_strain
-                correction = abs(maximum - qf + 2 * _0002_QF)
-
-            if _i.size > 0:
-                _i = _i[0]
-                _gip_exp_tg, *_ = exp_for_compare(strain[:_i], E50, qf, strain_at_50_strength,
-                                                  fracture_strain, OC_deviator)
-                _cos_par = cos_par_exp_exp(strain[:_i], E50, qf, strain_at_50_strength,
-                                           fracture_strain, correction)
-                if gaus_or_par == 1:
-                    _gaus_or_par = parab_exp(strain[_i:], qf, fracture_strain, residual_strength_strain,
-                                             residual_strength)
+            a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp, xocr = params_gip_exp_tg(x, e50, qf, x50, xc, qocr)
+            gip_and_exp_or_tg_cos_par = np.linspace(0, max_x, int((amount_points * max_x / 0.15) / 4))
+            for i in range(len(x)):
+                if x[i] < xc:
+                    gip_and_exp_or_tg_cos_par[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t,
+                                                                     k1_t,
+                                                                     kp[i], k, qocr, xocr) + cos_par(x[i], e50, qf, x50,
+                                                                                                     xc,
+                                                                                                     0)
                 else:
-                    _gaus_or_par = gaus_exp(strain[_i:], qf, fracture_strain, residual_strength_strain,
-                                            residual_strength)
-                deviator = np.hstack((_gip_exp_tg + _cos_par, _gaus_or_par))
+                    gip_and_exp_or_tg_cos_par[i] = 0.
 
-            else:
-                deviator = (strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)[0] \
-                           + cos_par_exp_exp(strain, E50, qf, strain_at_50_strength, fracture_strain, correction)
+            maximum = max(gip_and_exp_or_tg_cos_par)
 
-    if OC_deviator > (0.8 * qf):  # не выводить точку OC_strain, OC_deviator
-        OC_strain = fracture_strain
-        OC_deviator = qf
+            for i in range(len(x)):
 
-    # переход к нужной сетке (strain_required_grid необходимо обрезать по х = STRAIN_LIMIT чтобы получить amount_points
-    strain_required_grid = np.linspace(strain.min(initial=None), strain.max(initial=None), AMOUNT_POINTS_ON_RETURN)
-    # интерполяция  для сглаживания в пике
-    spl = make_interp_spline(strain, deviator, k=5)
-    deviator_required_grid = spl(strain_required_grid)
-
-    loop_indexes = None
-
-    def noise(result):
-        """На кладывает девиации, шум и дискретизацию в соответствии с NOISE_LEVEL и DISCRETE_ARRAY_LEVEL"""
-        if not noise_off:
-            result += deviator_loading_deviation_exp(strain_required_grid, result, fracture_strain)
-            result = sensor_accuracy_exp(strain_required_grid, result, fracture_strain, noise_level=NOISE_LEVEL)
-            result = discrete_array(result, DISCRETE_ARRAY_LEVEL)
-        return result
-
-    if Eur:
-        x_loop, y_loop, connection_to_curve_indexes, loop_indexes, loop_strain_values = \
-            loop_exp(strain_required_grid, deviator_required_grid, Eur, unload_deviator, re_load_deviator,
-                     [NOISE_LEVEL, DISCRETE_ARRAY_LOOP_LEVEL] if not noise_off else None)
-
-        #
-        # deviator_required_grid = noise(deviator_required_grid)
-
-        deviator_required_grid = np.hstack((deviator_required_grid[:connection_to_curve_indexes[0]], y_loop,
-                                            deviator_required_grid[connection_to_curve_indexes[1] + 1:]))
-        strain_required_grid = np.hstack((strain_required_grid[:connection_to_curve_indexes[0]], x_loop,
-                                          strain_required_grid[connection_to_curve_indexes[1] + 1:]))
-        # Первая точка кривой всегда в нуле
-        deviator_required_grid[0] = 0.
-    else:
-        # deviator_required_grid = noise(deviator_required_grid)
-        # Первая точка кривой всегда в нуле
-        deviator_required_grid[0] = 0.
-
-    # наложение хода штока и обрезка функций
-    # rod_move_result = initial_free_rod_move(strain_required_grid,
-    #                                         deviator_required_grid,
-    #                                         strain_cut=STRAIN_LIMIT,
-    #                                         noise=(NOISE_LEVEL, DISCRETE_ARRAY_LEVEL) if not noise_off else None)
-    # strain_required_grid = rod_move_result[0]
-    # deviator_required_grid = rod_move_result[1]
-    # len_rod_move = rod_move_result[2]
-    loop_indexes_with_rod = None if not Eur else (loop_indexes[i] + len_rod_move for i in range(len(loop_indexes)))
-
-    return strain_required_grid, deviator_required_grid
+                if x[i] <= xc:
+                    if maximum < (qf + 0.002 * qf):
+                        y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t,
+                                                 kp[i], k, qocr, xocr) + cos_par(x[i], e50, qf, x50, xc, 0)
+                    # если максимум суммарной функции на участке от 0 до хс превышает qf, то уменьшаем
+                    # высоту функции синуса и параболы на величину разницы в точке xc
+                    elif maximum >= abs(qf + 0.002 * qf):
+                        y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t,
+                                                 kp[i], k, qocr, xocr) + cos_par(x[i], e50, qf, x50, xc,
+                                                                                 abs(maximum - qf + 2 * 0.002 * qf))
+                    else:
+                        y[i] = gip_and_exp_or_tg(x[i], e50, x50, qf, a1_g, k1_g, a1_e, k1_e, a1_t, k1_t, kp[i], k, qocr,
+                                                 xocr)
 
 
-def initial_free_rod_move(strain, deviator, strain_cut=0.151, noise=None):
-    """
-    Обрезает strain и deviator по strain_cut и
-    возвращает strain, deviator с присоединенным ходом штока и длину хода штока (в точках)
+                elif (x[i] > xc) & (gaus_or_par == 0):
+                    y[i] = gaus(x[i], qf, xc, x2, qf2)
+                elif (x[i] > xc) & (gaus_or_par == 1):
+                    y[i] = parab(x[i], qf, xc, x2, qf2)
 
-    :param strain:
-    :param deviator:
-    :param strain_cut: optional, default = 0.151, значение, по которому обрезаются массивы
-    :param noise: optional, default None, параметры для моделирования шума tuple[float, float]
+    if qocr > (0.8 * qf):  # не выводить точку xocr, qocr
+        xocr = xc
+        qocr = qf
+    xnew = np.linspace(x.min(), x.max(), int(amount_points * max_x / 0.15))  # интерполяция  для сглаживания в пике
+    spl = make_interp_spline(x, y, k=5)
+    y_smooth = spl(xnew)
 
-    Returns
-    -------
-    strain -- cut strain with rod \n
-    deviator -- cut deviator with rod \n
-    len_rod_move -- len of rod in points: len(strain_start)
-    """
-    _i, = np.where(strain > strain_cut)
-    assert _i.size > 0, "Ошибка обрезки, strain_cut не может быть больше max(strain)"
-    strain = strain[:_i[0]]
-    deviator = deviator[:_i[0]]
+    xold = xnew  # масиив х без учета петли (для обьемной деформации)
 
-    strain_last_point = np.random.uniform(0.005, 0.01) - (strain[-1] - strain[-2])
-    '''положительная последняя точка х для метрвого хода штока'''
-
-    strain_start = np.linspace(0, strain_last_point, int(strain_last_point / (strain[-1] - strain[-2])) + 1)
-    '''положительный масив х для метрвого хода штока'''
-
-    SLANT = np.random.uniform(20, 30)
-    '''наклон функции экспоненты'''
-    AMPLITUDE = np.random.uniform(15, 25)
-    '''высота функции экспоненты'''
-
-    # определяем абциссу метрвого хода штока
-    deviator_start = exponent(strain_start, AMPLITUDE, SLANT)
-    # смещение массива x для метрвого хода штока кривой девиаторного нагружения в отрицальную область
-    strain_start -= strain_start[-1] + (strain[-1] - strain[-2])
-    # смещение массива y для метрвого хода штока кривой девиаторного нагружения в отрицальную область
-    deviator_start -= deviator_start[-1]
-
-    if noise:
-        assert len(noise) == 2, "noise должен содерждать значение для шума и значение для уровня ступеней"
-        deviator_start = deviator_start + np.random.uniform(-noise[0], noise[0], len(deviator_start))
-        deviator_start = discrete_array(deviator_start, noise[1])  # наложение ступенчватого шума на мертвый ход штока
-
-    strain = np.hstack((strain_start, strain))  # добавление начального участка в функцию девиаторного нагружения
-    strain += abs(strain[0])  # смещение начала кривой девиаторного нагруружения в 0
-
-    deviator = np.hstack((deviator_start, deviator))  # добавление начального участка в функцию девиаторного нагружения
-    deviator += abs(deviator[0])  # смещение начала кривой девиаторного нагружения в 0
-    deviator[0] = 0.  # искусственное зануление первой точки
-
-    len_rod_move = len(strain_start)
-
-    return strain, deviator, len_rod_move
+    return xold, xnew, y_smooth, qf, xc, x2, qf2, e50
 
 
-
-
-
-
-
-
-
-#------------------------------------------------------------------------------------------------------------------------
+# Обьемная деформация
+def spline(x_for_part, y_for_part, x_for_inter, a, b, k=3):
+    '''x_for_part, y_for_part - координаты точек интерполяци;
+    a, b - значения производной на концах; k-степень сплайна'''
+    spl = interpolate.make_interp_spline(x_for_part, y_for_part, k,
+                                         bc_type=([(1, a)], [(1, b)]))
+    return spl(x_for_inter)
 
 
 def bezier_curve(p1_l1, p2_l1, p1_l2, p2_l2, node1, node2, x_grid):
@@ -937,11 +1181,11 @@ def bezier_curve(p1_l1, p2_l1, p1_l2, p2_l2, node1, node2, x_grid):
     :return: Значения y=f(x) на сетке x_grid
     """
 
-    def bernstein_poly(_i, n, t):
+    def bernstein_poly(i, n, t):
         """
          Полином Бернштейна стпени n, i - функция t
         """
-        return comb(n, _i) * (t ** _i) * (1 - t) ** (n - _i)
+        return comb(n, i) * (t ** i) * (1 - t) ** (n - i)
 
     def bezier_curve_local(nodes, n_times=1000):
         """
@@ -960,7 +1204,7 @@ def bezier_curve(p1_l1, p2_l1, p1_l2, p2_l2, node1, node2, x_grid):
 
         t = np.linspace(0.0, 1.0, n_times)
 
-        polynomial_array = np.array([bernstein_poly(_i, n_points - 1, t) for _i in range(0, n_points)])
+        polynomial_array = np.array([bernstein_poly(i, n_points - 1, t) for i in range(0, n_points)])
 
         x_values_l = np.dot(x_points, polynomial_array)
         y_values_l = np.dot(y_points, polynomial_array)
@@ -980,13 +1224,13 @@ def bezier_curve(p1_l1, p2_l1, p1_l2, p2_l2, node1, node2, x_grid):
         :return: точка пересечения прямых [x,y]
         """
 
-        def form_line(_xp1, _yp1, _xp2, _yp2):
-            k = (_yp2 - _yp1) / (_xp2 - _xp1)
-            b = _yp1 - k * _xp1
+        def line(xp1, yp1, xp2, yp2):
+            k = (yp2 - yp1) / (xp2 - xp1)
+            b = yp1 - k * xp1
             return k, b
 
-        kl1, bl1 = form_line(xp1, yp1, xp2, yp2)
-        kl2, bl2 = form_line(xp3, yp3, xp4, yp4)
+        kl1, bl1 = line(xp1, yp1, xp2, yp2)
+        kl2, bl2 = line(xp3, yp3, xp4, yp4)
         x_p_inter = (bl1 - bl2) / (kl2 - kl1)
         y_p_inter = kl1 * x_p_inter + bl1
         return x_p_inter, y_p_inter
@@ -1007,644 +1251,144 @@ def bezier_curve(p1_l1, p2_l1, p1_l2, p2_l2, node1, node2, x_grid):
     return y_values
 
 
-def deviator_loading_deviation(strain, deviator, fracture_strain):
-    # Добавим девиации после 0.6qf для кривой без пика
-    qf = max(deviator)
-    deviation_1 = qf / 100
-    deviation_2 = qf / 60
-
-    i_60, = np.where(deviator >= 0.51 * qf)
-    i_90, = np.where(deviator >= 0.98 * qf)
-    i_end, = np.where(strain >= 0.15)
-    i_xc, = np.where(strain >= fracture_strain)
-    if fracture_strain >= 0.14:  # без пика
-        curve = create_deviation_curve(strain[i_60[0]:i_xc[0]], deviation_1 * 2,
-                                       points=np.random.uniform(3, 7), borders="zero_diff",
-                                       low_first_district=1, one_side=True) + create_deviation_curve(
-            strain[i_60[0]:i_xc[0]], deviation_1,
-            points=np.random.uniform(20, 30), borders="zero_diff",
-            low_first_district=1, one_side=True)
-        deviation_array = -np.hstack((np.zeros(i_60[0]),
-                                      -curve,
-                                      np.zeros(len(strain) - i_xc[0])))
-    else:
-
-        try:
-            i_xc1, = np.where(deviator[i_xc[0]:] <= qf - deviation_2)
-            i_xc_m, = np.where(deviator >= qf - deviation_1 * 2)
-            points_1 = round(fracture_strain * 100)
-            if points_1 < 3:
-                points_1 = 3
-
-            curve_1 = create_deviation_curve(strain[i_60[0]:i_xc_m[0]], deviation_1 * 1.5,
-                                             points=np.random.uniform(3, 4), val=(1, 0.1), borders="zero_diff",
-                                             low_first_district=1) + create_deviation_curve(
-                strain[i_60[0]:i_xc_m[0]], deviation_1 / 2,
-                points=np.random.uniform(points_1, points_1 * 3), borders="zero_diff",
-                low_first_district=1)
-
-            points_2 = round((0.15 - fracture_strain) * 100)
-            if points_2 < 3:
-                points_2 = 3
-
-            deviation_2 = ((deviator[i_xc[0]] - deviator[i_end[0]]) / 14) * (points_2 / 10)
-
-            curve_2 = create_deviation_curve(strain[i_xc[0] + i_xc1[0]:i_end[0]],
-                                             deviation_2, val=(0.1, 1),
-                                             points=np.random.uniform(points_2, int(points_2 * 3)), borders="zero_diff",
-                                             low_first_district=2) + create_deviation_curve(
-                strain[i_xc[0] + i_xc1[0]:i_end[0]],
-                deviation_2 / 3, val=(0.1, 1),
-                points=np.random.uniform(points_2 * 3, int(points_2 * 5)), borders="zero_diff",
-                low_first_district=2)
-            deviation_array = -np.hstack((np.zeros(i_60[0]),
-                                          curve_1, np.zeros(i_xc[0] - i_xc_m[0]),
-                                          np.zeros(i_xc1[0]),
-                                          curve_2,
-                                          np.zeros(len(strain) - i_end[0])))
-        except (ValueError, IndexError):
-            print("Ошибка девиаций девиатора")
-            deviation_array = -np.hstack((np.zeros(i_60[0]),
-                                          create_deviation_curve(strain[i_60[0]:i_90[0]], deviation_1,
-                                                                 points=np.random.uniform(3, 6), borders="zero_diff",
-                                                                 low_first_district=1),
-                                          create_deviation_curve(strain[i_90[0]:i_end[0]], deviation_2, val=(1, 0.1),
-                                                                 points=np.random.uniform(10, 15), borders="zero_diff",
-                                                                 low_first_district=3,
-                                                                 one_side=True),
-                                          np.zeros(len(strain) - i_end[0])))
-
-    return deviation_array
-
-
-def sensor_accuracy(x, y, fracture_strain, noise_level=1.0):
-    """возвразщает зашумеленную функцию без шума в характерных точках"""
-
-    noise = np.random.uniform(-noise_level, noise_level, len(x))
-    index_qf_half, = np.where(y >= np.max(y) / 2)
-    index_qf, = np.where(y >= np.max(y))
-    if fracture_strain > max(x):  # если хс последня точка в массиве или дальше
-        index_qf, = np.where(x >= max(x))
-    for _i in range(len(y)):  # наложение шума кроме промежутков для характерных точек
-        is_excluded_points = (_i < index_qf_half[0] - 2) or \
-                             ((_i > index_qf_half[0] + 2) and ([_i] < index_qf[0] - 2)) or \
-                             (_i > index_qf[0] + 2)
-        if is_excluded_points:
-            if y[_i] + noise[_i] < np.max(y):
-                y[_i] = y[_i] + noise[_i]
-            else:
-                # в районе максимума шум меньше первоначального
-                y[_i] = y[_i] - np.random.uniform(0.1, 0.5) * noise_level
-    return y
-
-
-def hevisaid(x, offset, smoothness):
-    """возвращет функцию Хевисайда 0<=y<=1, которая задает коэффициент влияния kp
-
-    :param x: точки, в которых вычислять значение
-    :param offset: смещение относительно х=0
-    :param smoothness: гладкость перехода, при smoothness = 0 выраждается в фукнцию Хевисаида
+def volumetric_deformation(x, x_given, m_given, xc, v_d2, x_end, angle_of_dilatancy,
+                           angle_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x, point2_x, point3_x):
     """
-    return 1. / (1. + np.exp(-2 * 10 / smoothness * (x - offset)))
+        Функция построения обьемной деформации соединением сплайна и двух кривых Безьею
 
-
-def smoothness_condition(strain_at_50_percent_strength):
-    """возвращает предельное значение fracture_strain при котором возможно
-    построение заданной функции
-
-    :param strain_at_50_percent_strength: деформация в 50% прочности
-    """
-    SMOOTHNESS_OFFSET = 0.6 / 100  # 0.6 возможно является максимальным х на сетке
-    return 2 * strain_at_50_percent_strength + SMOOTHNESS_OFFSET
-
-
-def gaus(x, qf, fracture_strain, residual_strength_strain, residual_strength):
-    """функция Гаусса для участка x>fracture_strain"""
-    gaus_height = qf - residual_strength  # высота функции Гаусса
-    gaus_smoothness = (-1) * np.log(0.1 / gaus_height) / ((residual_strength_strain - fracture_strain) ** 2)
-    # резкость функции Гаусаа (считается из условия равенства заданной точности в точке х50
-    return gaus_height * (np.exp(-gaus_smoothness * ((x - fracture_strain) ** 2))) + residual_strength
-
-
-def parab(x, qf, fracture_strain, residual_strength_strain, residual_strength):
-    """Парабола для участка x>fracture_strain """
-    # k*x^2 + b
-    k_par = -((residual_strength - qf) / (residual_strength_strain - fracture_strain) ** 2)
-    return -k_par * ((x - fracture_strain) ** 2) + qf
-
-
-def gip_exp_tg(x, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator):
-    """возвращает координаты y итоговой фукнции по законам гиперболы, экспоненты и тангенса"""
-    # Константы
-    E50_LIMIT = 70000
-    '''Е50 после которого необходимо переходить от эспоненты к тангенсу'''
-    OC_STRAIN_CUT = 0.151
-    '''значение по которому обрезается точка х переуплотнния'''
-    ZERO_OFFSET = 0.000001
-    '''смещение для расчета 0 значений в особенностях'''
-
-    influence_ratio_hyperbole_or_exp = 1.
-    '''influence_ratio_hyperbole_or_exp - линейный коэффициент учета влияния функции гиперболы и экспоненты'''
-
-    OC_influence_ratio = np.full(len(x), 1)
-    '''OC_influence_ratio - коэффициент влияния на influence_ratio_hyperbole_or_exp,
-     учитывающий переуплотнение OC_deviator для переуплотнения'''
-
-    if E50 <= E50_LIMIT:
-        influence_ratio_hyperbole_or_exp = 1. / 68000. * E50 - 1. / 34
-    elif E50 > E50_LIMIT:
-        influence_ratio_hyperbole_or_exp = 1.
-
-    def exponent_error(height_smoothness: list):
-        """возвращает ошибки в коэффициентах, вычисляются в точках qf и qf/2
-
-        :param height_smoothness: list : exp_relative_height, exp_smoothness
+        :param x_given: точка в которой задан коэффициент Пуассона
+        :m_given: коэффициент Пуассона
+        :xc: точка разрушения
+        :v_d2: значение обьемной деформации в последней точке
+        :x_end: последняя точка массива х для кривой обьемной деформаци
+        :angle_of_dilatancy: угол дилатансии от 0 до 40 градусов
+        :angle_end: угол наклона последнего линейного участка от 0 до 30 градусов
+        :len_x_dilatacy: длина линенйного участка дилатансии
+        :v_d_xc: значение обьемной деформации в точке хс
+        :len_line_end: длина последнего линейного участка
         """
-        _exp_relative_height, _exp_smoothness = height_smoothness  # коэффициенты экспоненты
-        return -1 * _exp_relative_height * (np.exp(-_exp_smoothness * strain_at_50_strength) - 1) - qf / 2, \
-               -1 * _exp_relative_height * (np.exp(-_exp_smoothness * fracture_strain) - 1) - qf
 
-    def tan_error(half_height_smoothness):
-        """возвращает ошибки в коэффициентах арктангенса, вычисляются в точках qf и qf/2"""
-        _tan_half_height, _tan_smoothness = half_height_smoothness  # коэффициенты тангенса
-        return (_tan_half_height * ((np.arctan(_tan_smoothness * strain_at_50_strength)) / (0.5 * np.pi)) - qf / 2,
-                _tan_half_height * ((np.arctan(_tan_smoothness * fracture_strain)) / (0.5 * np.pi)) - qf)
+    v_d_given = -x_given * (1 - 2 * m_given)  # коэффициент Пуассона пересчитанный в обьемную деформацию
 
-    if E50 > 40000:
-        # начальные приближения для расчета коэффициентов
-        exp_relative_height, exp_smoothness, *_ = fsolve(exponent_error, np.array([1, 1]))
-        initial_exp_relative_height = 1
-        error = exponent_error([exp_relative_height, exp_smoothness])
+    if angle_of_dilatancy >= 0:
+        index_x_start_dilatacy, = np.where(x >= (xc - len_x_dilatacy / 2))  # индекс начала линейного участка дилатансии
+        index_x_end_dilatacy, = np.where(x >= (xc + len_x_dilatacy / 2))  # индекс конца линейного участка дилатансии
+        # линейный участок (xc находится в середине линейного участка)
+        x_dilatancy = np.linspace(x[index_x_start_dilatacy[0]], x[index_x_end_dilatacy[0]],
+                                  int(abs(x[index_x_end_dilatacy[0]] - x[index_x_start_dilatacy[0]]) / (
+                                          x[-1] - x[-2]) + 1))
+        b_dilatancy = v_d_xc - angle_of_dilatancy * xc
+        v_d_dilatancy = angle_of_dilatancy * x_dilatancy + b_dilatancy
+        # сплайн участка от 0 до xc используется только для участка от 0 до x_given
+        spl_before_dilatancy = interpolate.make_interp_spline([0, x_given, x[index_x_start_dilatacy[0]]],
+                                                              [0, v_d_given, v_d_dilatancy[0]], k=3,
+                                                              bc_type=([(2, 0)], [(1, angle_of_dilatancy)]))
+        v_d_before_dilatacy = spl_before_dilatancy(x[:index_x_start_dilatacy[0]])
 
-        # персчет значений при ошибках построения
-        while abs(error[0]) >= 10 or abs(error[1]) >= 10:
-            initial_exp_relative_height += 1
-            exp_relative_height, exp_smoothness, *_ = fsolve(exponent_error, np.array([initial_exp_relative_height, 1]))
-            error = exponent_error([exp_relative_height, exp_smoothness])
+        index_x_line_end_start, = np.where(x >= (x_end - len_line_end))  # индекс начала последнего линейного участка
+        # линейный участок (x_end находится в начале линейного участка)
+        x_line_end = np.linspace(x[index_x_line_end_start[0]], (x[-1]),
+                                 int(abs(x[index_x_line_end_start[0]] - (x[-1])) / (x[-1] - x[-2]) + 1))
+        b_end = (v_d2 - angle_end * x_end) * np.random.uniform(0.3, 0.8)
+        v_d_line_end = angle_end * x_line_end + b_end
 
+        # функция Безье для учатска до хc
+        xgi, = np.where(x > x_given)
+        y_Bezier_line = bezier_curve([0, 0], [x_given, v_d_given],  # Первая и Вторая точки первой прямой
+                                     [x_given, angle_of_dilatancy * x_given + b_dilatancy],
+                                     # Первая точка второй прямой
+                                     [x[index_x_start_dilatacy[0]], v_d_dilatancy[0]],  # Вторая точка второй прямой
+                                     [x_given, v_d_given],  # Первый узел (здесь фактически это 2 точка первой прямой)
+                                     [x[index_x_start_dilatacy[0]], v_d_dilatancy[0]],  # Второй узел
+                                     # (здесь фактически это 2 точка второй прямой)
+                                     x[xgi[0]:index_x_start_dilatacy[0]]
+                                     )
+        # функция Безье для учатска после хc
+        y_Bezier_line_1 = bezier_curve([x_dilatancy[0], v_d_dilatancy[0]],  # Первая точка второй прямой
+                                       [x_dilatancy[-1], v_d_dilatancy[-1]],  # Первая и Вторая точки первой прямой
+                                       [x_line_end[0], v_d_line_end[0]],  # Первая точка второй прямой
+                                       [x_line_end[-1], v_d_line_end[-1]],  # Вторая точка второй прямой
+                                       [x_dilatancy[-1], v_d_dilatancy[-1]],
+                                       # Первый узел (здесь фактически это 2 точка первой прямой)
+                                       [x_line_end[0], v_d_line_end[0]],  # Второй узел
+                                       # (здесь фактически это 2 точка второй прямой)
+                                       x[index_x_end_dilatacy[0] + 1:index_x_line_end_start[0]]
+                                       )
+        # замена сплайна на участке x_given, xc кривыми Безье
+        for i in range(len(y_Bezier_line)):
+            v_d_before_dilatacy[i + xgi[0]] = y_Bezier_line[i]
+        v_d = np.hstack((v_d_before_dilatacy, v_d_dilatancy, y_Bezier_line_1, v_d_line_end))
+    # в случае отрицательных углов дилатансии строится экпонента
     else:
-        # начальные приближения для расчета коэффициентов
-        initial_exp_relative_height, initial_exp_smoothness = 600, 1
-        _initial = np.array([initial_exp_relative_height, initial_exp_smoothness])
-        exp_relative_height, exp_smoothness, *_ = fsolve(exponent_error, _initial)
-
-        initial_exp_relative_height = 1
-        error = exponent_error([exp_relative_height, exp_smoothness])
-
-        # персчет значений при ошибках построения
-        WHILE_COUNT = 0
-
-        # пока
-
-        def is_negative():
-            return (exp_relative_height <= 0) or (exp_smoothness <= 0)
-
-        # пока
-
-        def is_not_changed():
-            return exp_relative_height == initial_exp_relative_height or exp_smoothness == initial_exp_smoothness
-
-        # пока произведение коээфициентов (приблизительно равно E50) меньше 1000
-        def is_lower_1000():
-            return exp_relative_height * exp_smoothness < 1000
-
-        # пока
-        def is_error(_error):
-            """превышение переменной error предела на ошибку EPS"""
-            EPS = 550
-            return abs(_error[0]) >= EPS or abs(_error[1]) >= EPS
-
-        while is_negative() or is_not_changed() or is_lower_1000() or (is_error(error) and WHILE_COUNT < 50):
-            initial_exp_relative_height += 1
-            _initial = np.array([initial_exp_relative_height, initial_exp_smoothness])
-            exp_relative_height, exp_smoothness, *_ = fsolve(exponent_error, _initial)
-            error = exponent_error([exp_relative_height, exp_smoothness])
-            if is_error(error):
-                WHILE_COUNT += 1
-
-    # коэффициенты гиперболы
-    hyp_x_offset = -2 / fracture_strain + 1 / strain_at_50_strength
-    hyp_y_offset = qf * (hyp_x_offset * strain_at_50_strength + 1.) / (2. * strain_at_50_strength)
-
-    def dev_load_hyp(_x):
-        """считает значения гиперболы на х, коэффициенты созависимы"""
-        return hyp_y_offset * _x / (1 + hyp_x_offset * _x)
-
-    def dev_load_exp(_x):
-        """считает значения экспоненты на х"""
-        return -exp_relative_height * (np.exp(-exp_smoothness * _x) - 1)
-
-    if E50 > 50000:
-        tan_half_height, tan_smoothness, *_ = fsolve(tan_error, np.array([1, 1]))
-    else:
-        tan_half_height, tan_smoothness, *_ = fsolve(tan_error, np.array([600, 1]))
-
-    # изначальный расчет возвращаемой фукнции
-    result_y = (OC_influence_ratio * influence_ratio_hyperbole_or_exp) * dev_load_hyp(x) + \
-               (1. - OC_influence_ratio * influence_ratio_hyperbole_or_exp) * dev_load_exp(x)
-
-    OC_strain = 0.  # абцисса точки переуплотнения
-
-    if (OC_deviator != 0) & (OC_deviator <= qf / 2):
-        # если OC_deviator находится до qf/2, то OC_strain рассчитывается из функции гиперболы
-        OC_strain = OC_deviator / (hyp_y_offset - OC_deviator * hyp_x_offset)
-
-        _i, = np.where(x > OC_strain)
-        if _i.size >= 1:
-            _i = _i[0]
-
-            _hevisaid_smoothness = abs(10 * (strain_at_50_strength - OC_strain + ZERO_OFFSET))
-            _hevisaid_part = 2 * hevisaid(x[_i:], OC_strain, _hevisaid_smoothness) - 1
-            OC_influence_ratio = np.hstack((np.full(len(x[:_i]), 0.0), _hevisaid_part))
-
-            if OC_deviator == qf / 2:
-                OC_influence_ratio = np.hstack((np.full(len(x[:_i]), 0.0), np.full(len(x[_i:]), 1.0)))
-
-            j, = np.where(x > strain_at_50_strength)
-            if j.size >= 1:
-                j = j[0]
-                hyp_part = (1 - OC_influence_ratio[:_i] * influence_ratio_hyperbole_or_exp) * dev_load_hyp(x[:_i])
-                exp_part = (OC_influence_ratio[:_i] * influence_ratio_hyperbole_or_exp) * dev_load_exp(x[:_i])
-                before_i_part = hyp_part + exp_part
-
-                hyp_part = (1 - OC_influence_ratio[_i:j] * (1 - influence_ratio_hyperbole_or_exp)) * dev_load_hyp(
-                    x[_i:j])
-                exp_part = (OC_influence_ratio[_i:j] * (1 - influence_ratio_hyperbole_or_exp)) * dev_load_exp(x[_i:j])
-                middle_part = hyp_part + exp_part
-
-                hyp_part = (OC_influence_ratio[j:] * influence_ratio_hyperbole_or_exp) * dev_load_hyp(x[j:])
-                exp_part = (1. - OC_influence_ratio[j:] * influence_ratio_hyperbole_or_exp) * dev_load_exp(x[j:])
-                after_j_part = hyp_part + exp_part
-
-                result_y = np.hstack((before_i_part, middle_part, after_j_part))
-
-            else:
-
-                hyp_part = (1. - OC_influence_ratio[:_i] * influence_ratio_hyperbole_or_exp) * dev_load_hyp(x[:_i])
-                exp_part = (OC_influence_ratio[:_i] * influence_ratio_hyperbole_or_exp) * dev_load_exp(x[:_i])
-                before_i_part = hyp_part + exp_part
-                hyp_part = (1. - OC_influence_ratio[_i:] * (1 - influence_ratio_hyperbole_or_exp)) * dev_load_hyp(
-                    x[_i:])
-                exp_part = (OC_influence_ratio[_i:] * (1 - influence_ratio_hyperbole_or_exp)) * dev_load_exp(x[_i:])
-                after_i_part = hyp_part + exp_part
-                result_y = np.hstack((before_i_part, after_i_part))
-        else:
-            OC_influence_ratio = np.full(len(x), 0.0)
-            hyp_part = (OC_influence_ratio * influence_ratio_hyperbole_or_exp) * dev_load_hyp(x)
-            exp_part = (1. - OC_influence_ratio * influence_ratio_hyperbole_or_exp) * dev_load_exp(x)
-            result_y = hyp_part + exp_part
-
-    # если OC_deviator находится после qf/2 и E50 находится до E50_LIMIT
-    # то OC_strain рассчитывается из функции экспоненты
-    elif (OC_deviator != 0.) & (OC_deviator > qf / 2.) & (E50 <= E50_LIMIT):
-
-        def oc_strain_exp_error(xocr_calc):
-            """возвращает ошибку вычисления OC_strain в точке переуплотнения через фукнцию экспоненты"""
-            return -exp_relative_height * (np.exp(-exp_smoothness * xocr_calc) - 1) - OC_deviator
-
-        OC_strain, *_ = fsolve(oc_strain_exp_error, np.array(0))
-
-        # обрезка точки переуплотнения, чтобы избежать ошибок в расчетах
-        if OC_strain > OC_STRAIN_CUT:
-            OC_strain = OC_STRAIN_CUT
-
-        if OC_deviator > (0.8 * qf):
-            OC_influence_ratio = np.full(len(x), 0.0)
-        else:
-            _i, = np.where(x > OC_strain)
-            assert _i.size > 0, "Нет точек х после OC_strain ?"
-            _i = _i[0]
-            j, = np.where(x > fracture_strain)
-            if j.size < 1:
-                _hevisaid_smoothness = ((abs(OC_strain - strain_at_50_strength)) /
-                                        (influence_ratio_hyperbole_or_exp + ZERO_OFFSET)) * 10
-                _hevisaid_part = 2 * hevisaid(x[_i:], OC_strain, _hevisaid_smoothness) - 1
-                OC_influence_ratio = np.hstack((np.full(len(x[:_i]), 0.0), _hevisaid_part))
-
-            else:
-                j = j[0]
-                _hevisaid_smoothness = ((abs(OC_strain - strain_at_50_strength)) /
-                                        (influence_ratio_hyperbole_or_exp + ZERO_OFFSET)) * 10
-                _hevisaid_part = 2 * hevisaid(x[_i:j], OC_strain, _hevisaid_smoothness) - 1
-                OC_influence_ratio = np.hstack((np.full(len(x[:_i]), 0.0), _hevisaid_part, np.full(len(x[j:]), 1.0)))
-
-        result_y = ((OC_influence_ratio * influence_ratio_hyperbole_or_exp) * dev_load_hyp(x) +
-                    (1. - OC_influence_ratio * influence_ratio_hyperbole_or_exp) * dev_load_exp(x))
-
-    # если OC_deviator находится после qf/2 и E50 находится после E50_LIMIT,
-    # то OC_strain рассчитывается из функции тангенса, так как переуплотнение плавнее
-    elif (OC_deviator != 0.) & (OC_deviator > qf / 2.) & (E50 > E50_LIMIT):
-
-        def oc_strain_tan_error(_OC_strain):
-            """возвращает ошибку вычисления OC_strain в точке переуплотнения через фукнцию тангенса"""
-            return tan_half_height * ((np.arctan(tan_smoothness * _OC_strain)) / (0.5 * np.pi)) - OC_deviator
-
-        OC_strain, *_ = fsolve(oc_strain_tan_error, np.array(0))
-
-        # обрезка точки переуплотнения, чтобы избежать ошибок в расчетах
-        if OC_strain > OC_STRAIN_CUT:
-            OC_strain = OC_STRAIN_CUT
-
-        if OC_deviator > (0.8 * qf):
-            OC_influence_ratio = np.full(len(x), 0.0)
-        else:
-            _i, = np.where(x > OC_strain)
-            assert _i.size > 0, "Нет точек х после OC_strain ?"
-            _i = _i[0]
-            _j, = np.where(x > fracture_strain)
-            if _j.size < 1:
-                _hevisaid_smoothness = ((abs(OC_strain - strain_at_50_strength)) /
-                                        (influence_ratio_hyperbole_or_exp + ZERO_OFFSET)) * 10
-                _hevisaid_part = 2 * hevisaid(x[_i:], OC_strain, _hevisaid_smoothness) - 1
-                OC_influence_ratio = np.hstack((np.full(len(x[:_i]), 0.0), _hevisaid_part))
-            else:
-                _j = _j[0]
-                _hevisaid_smoothness = ((abs(OC_strain - strain_at_50_strength)) /
-                                        (influence_ratio_hyperbole_or_exp + ZERO_OFFSET)) * 10
-                _hevisaid_part = 2 * hevisaid(x[_i:_j], OC_strain, _hevisaid_smoothness) - 1
-                OC_influence_ratio = np.hstack((np.full(len(x[:_i]), 0.0), _hevisaid_part, np.full(len(x[_j:]), 1.0)))
-
-        j, = np.where(x > strain_at_50_strength)
-        assert j.size > 0, "Нет точек х больше strain_at_50_strength ?"
-        j = j[0]
-        hyp_part = (OC_influence_ratio[:j] * influence_ratio_hyperbole_or_exp) * dev_load_hyp(x[:j])
-        exp_part = (1. - OC_influence_ratio[:j] * influence_ratio_hyperbole_or_exp) * dev_load_exp(x[:j])
-        before_j_part = hyp_part + exp_part
-        hyp_part = (OC_influence_ratio[j:] * influence_ratio_hyperbole_or_exp) * dev_load_hyp(x[j:])
-        tan_part = (1. - OC_influence_ratio[j:] * influence_ratio_hyperbole_or_exp) * \
-                   (tan_half_height * ((np.arctan(tan_smoothness * x[j:])) / (0.5 * np.pi)))
-        after_j_part = hyp_part + tan_part
-        result_y = np.hstack((before_j_part, after_j_part))
-
-    # ограничение на OC_deviator (если ограничение не выполняется, то
-    # строится сумма функций экспоненты и кусочной функции синуса и параболы для E50<=E50_LIMIT и
-    # тангенса и кусочной функции синуса и параболы для E50>E50_LIMIT
-    elif OC_deviator > (0.8 * qf):
-        OC_influence_ratio = np.full(len(x), 0)
-        result_y = ((OC_influence_ratio * influence_ratio_hyperbole_or_exp) * dev_load_hyp(x) +
-                    (1. - OC_influence_ratio * influence_ratio_hyperbole_or_exp) * dev_load_exp(x))
-
-    return result_y, OC_strain
-
-
-def cos_par(x, E50, qf, strain_at_50_strength, fracture_strain, correction=0):
-    """возвращает функцию косинуса
-     и параболы для участка strain_at_50_strength qf"""
-
-    SHIFT = (fracture_strain - strain_at_50_strength) / 2
-    '''смещение: коэффицент учитывающий влияние на высоту функции при различных значениях E50'''
-
-    if E50 < 5340:
-        vl = 0
-    elif (E50 <= 40000) and (E50 >= 5340):
-        kvl = 1 / 34660
-        bvl = -5340 * kvl
-        vl = kvl * E50 + bvl  # 1. / 40000. * E50 - 1. / 8
-    elif E50 > 40000:
-        vl = 1.
-    else:
-        vl = None
-
-    height = 0.035 * qf * vl - correction  # высота функции
-    if height < 0:
-        height = 0
-
-    k_of_parab = height / (-fracture_strain + strain_at_50_strength + SHIFT) ** 2
-
-    # фиромирование функции
-    # if x is greater then strain_at_50_strength : x_gr_x50
-    _i, = np.where(x > strain_at_50_strength)
-    x_low_x50 = x[:_i[0]] if _i.size > 0 else x
-    x_gr_x50 = x[_i[0]:] if _i.size > 0 else np.array([])
-
-    # if x is greater then strain_at_50_strength + SHIFT : x_gr_x50sm
-    j, = np.where(x_gr_x50 > strain_at_50_strength + SHIFT)
-    x_gr_x50_low_x50sm = x_gr_x50[:j[0]] if j.size > 0 else x_gr_x50
-    x_gr_x50sm = x_gr_x50[j[0]:] if j.size > 0 else np.array([])
-
-    # if x is greater then fracture_strain : x_gr_xc
-    l, = np.where(x_gr_x50sm > fracture_strain)
-    x_gr_x50sm_low_xc = x_gr_x50sm[:l[0]] if l.size > 0 else x_gr_x50sm
-    x_gr_xc = x_gr_x50sm[l[0]:] if l.size > 0 else np.array([])
-
-    _first_zero_part = np.full(len(x_low_x50), 0)
-    _cos_part = (height * 0.5 * (np.cos((1. / SHIFT) *
-                                        np.pi * (x_gr_x50_low_x50sm - strain_at_50_strength) - np.pi) + 1))
-    _parab_part = (-1) * k_of_parab * (x_gr_x50sm_low_xc - strain_at_50_strength - SHIFT) ** 2 + height
-    _last_zero_part = np.full(len(x_gr_xc), 0)
-
-    return np.hstack((_first_zero_part, _cos_part, _parab_part, _last_zero_part))
-
-
-def loop(x, y, Eur, unload_deviator, re_load_deviator, noise_params=None):
-    """Рассчитывает петлю разгрузки -- повторного нагружения
-    :param x: массив значений x
-    :param y: массив значений y
-    :param Eur: recommended: 3*E50
-    :param unload_deviator: девиатор разгрузки
-    :param re_load_deviator: девиатор повторной нагрузки
-    :param noise_params: optional, default None, параметры для моделирования шума list[float, float]
-
-    Returns
-    --------
-    loop_x -- x координаты петли \n
-    loop_y -- y координаты петли \n
-    connection_indexes -- tuple[index_connection_unload[0], index_connection_return_on_load[0])]\n
-    loop_indexes -- tuple[real_unload_index, real_re_load_index, real_return_on_load_index]\n
-    loop_strain_values --tuple[unload_strain, re_load_strain, return_on_load_point_strain]\n
-    """
-
-    # индекс 1 точки
-    index_unload_point, = np.where(y >= unload_deviator)
-
-    if not np.size(index_unload_point) > 0:
-        unload_deviator = np.max(y)
-        index_unload_point, = np.where(y >= unload_deviator)
-
-    index_unload_point = index_unload_point[0]
-
-    # точка появления петли
-    unload_strain = x[index_unload_point]
-    unload_deviator = y[index_unload_point]
-
-    # точка конца петли
-    index_re_load_point, = np.where(y == np.max(y))
-    index_re_load_point = index_re_load_point[-1]
-
-    k = (0.3 / (-x[index_re_load_point])) * unload_strain + 0.4
-    dynamic_ratio = -3 * 10 ** (-9) * Eur + k * unload_strain  # 0.00095
-
-    # Точка возврата на кривую
-    return_on_load_point_strain = unload_strain + dynamic_ratio
-    assert return_on_load_point_strain < x.max(), "Ошибка построения петли при заданном Eur"
-    index_return_on_load, = np.where(x >= return_on_load_point_strain)
-    index_return_on_load = index_return_on_load[0]
-    # задаем последнюю точку в общем массиве кривой девиаторного нагружения
-    return_on_load_point_strain = x[index_return_on_load]
-    if return_on_load_point_strain <= unload_strain:
-        index_return_on_load = index_unload_point + 1
-        return_on_load_point_strain = x[index_return_on_load]
-    return_on_load_deviator = y[index_return_on_load]
-
-    D1_return_on_load = (y[index_return_on_load + 1] - y[index_return_on_load]) / \
-                        (x[index_return_on_load + 1] - x[index_return_on_load])
-    '''производная кривой девиаторного нагружения в точке конца петли'''
-
-    E0 = (y[1] - y[0]) / (x[1] - x[0])  # производная кривой девиаторного нагружения в 0
-    # ограничение на E0 (не больше чем модуль петли разгрузки)
-    if E0 < Eur:
-        E0 = 1.1 * Eur
-
-    # ограничение на угол наклона участка повтороной нагрузки,
-    # чтобы исключить пересечение петли и девиаторной кривой
-    min_E0 = unload_deviator / unload_strain  # максимальный угол наклона петли
-
-    # коррекция Eur
-    if Eur < 1.1 * min_E0:
-        # print("\nВНИМАНИЕ: Eur изменен!\n")
-        Eur = 1.1 * min_E0
-        E0 = 1.1 * Eur
-
-    # вычисляется из оординаты и угла наклона петли
-    re_load_strain = (re_load_deviator - unload_deviator + Eur * unload_strain) / Eur
-    index_re_load, = np.where(x >= re_load_strain)
-    index_re_load = index_re_load[0]
-    re_load_strain = x[index_re_load]
-
-    # если точка 2 совпадает с точкой один или правее, то меняем точку 2 на предыдущую
-    if index_re_load >= index_unload_point:
-        # print("\nВНИМАНИЕ: Eur изменен!\n")
-        index_re_load = index_unload_point - 1
-        re_load_strain = x[index_re_load]
-
-    # участок разгрузки
-    unload_part_x = np.linspace(unload_strain, re_load_strain,
-                                int(abs(re_load_strain - unload_strain) / (x[1] - x[0]) + 1))
-    # участок повторной нагрузки
-    reload_part_x = np.linspace(re_load_strain, return_on_load_point_strain,
-                                int(abs(return_on_load_point_strain - re_load_strain) / (x[1] - x[0]) + 1))
-
-    # 0.8 * Eur + 60000  # производная в точке начала разгрузки (близка к бесконечности) #???
-    dynamic_D1 = 2 * Eur
-
-    # формируем разгрузку
-    spline_unload = interpolate.make_interp_spline([re_load_strain, unload_strain],
-                                                   [re_load_deviator, unload_deviator], k=3,
-                                                   bc_type=([(2, 0)], [(1, dynamic_D1)]))
-    unload_part_y = spline_unload(unload_part_x)  # участок разгрузки
-
-    # формируем повторное нагружение
-    point_1_l1 = [re_load_strain - 0.2 * re_load_strain,
-                  E0 * (re_load_strain - 0.2 * re_load_strain) +
-                  (re_load_deviator - E0 * re_load_strain)]
-    point_2_l1 = [re_load_strain, re_load_deviator]
-    point_1_l2 = [return_on_load_point_strain, return_on_load_deviator]
-    point_2_l2 = [return_on_load_point_strain - 0.1 * return_on_load_point_strain,
-                  D1_return_on_load * (return_on_load_point_strain - 0.1 * return_on_load_point_strain) +
-                  (return_on_load_deviator - D1_return_on_load * return_on_load_point_strain)]
-
-    _bezier_curve = bezier_curve(point_1_l1, point_2_l1, point_1_l2, point_2_l2,
-                                 [re_load_strain, re_load_deviator],
-                                 [return_on_load_point_strain, return_on_load_deviator],
-                                 reload_part_x)
-    reload_part_y = _bezier_curve
-
-    # устраняем повторяющуюся точку 2
-    reload_part_x = reload_part_x[1:]
-    reload_part_y = reload_part_y[1:]
-
-    # соединяем  участки разгрузки и нагрузки в петлю
-    loop_x = np.hstack((unload_part_x, reload_part_x))
-
-    # определяем индексы, по которым будет петля будет "крепиться" к исходной кривой
-    index_connection_unload, = np.where(x >= unload_strain)
-    index_connection_return_on_load, = np.where(x >= return_on_load_point_strain)
-
-    if noise_params:
-        unload_part_y = unload_part_y + np.random.uniform(-noise_params[0], noise_params[0], len(unload_part_y))
-        reload_part_y = reload_part_y + np.random.uniform(-noise_params[0], noise_params[0], len(reload_part_y))
-        unload_part_y = discrete_array(unload_part_y, noise_params[1])
-        reload_part_y = discrete_array(reload_part_y, noise_params[1])
-
-    loop_y = np.hstack((unload_part_y, reload_part_y))
-
-    real_unload_index = index_connection_unload[0] + 1
-    # первая точка петли на самом деле принадлежит исходной кривой
-    real_re_load_index = index_connection_unload[0] + len(unload_part_y)
-    # -1 + 1 = 0 т.к. самая нижняя точка петли принадлежит разгрузке
-    real_return_on_load_index = index_connection_unload[0] + len(loop_x) - 2
-    # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
-
-    # Для присоединения петли к исходной кривой
-    connection_indexes = (index_connection_unload[0], index_connection_return_on_load[0])
-    #
-    loop_indexes = (real_unload_index, real_re_load_index, real_return_on_load_index)
-    #
-    # Для работы фукнции объемной деформации
-    loop_strain_values = (unload_strain, re_load_strain, return_on_load_point_strain)
-    #
-
-    return loop_x, loop_y, connection_indexes, loop_indexes, loop_strain_values
-
-
-def dev_loading(qf, E50, **kwargs):
-    """
-    Кусочная функция: на участке [0,fracture_strain]-сумма функций гиперболы и
-    (экспоненты или тангенса) и кусочной функции синуса и парболы
-    на участке [fracture_strain...]-половина функции Гаусса или параболы
-
-    :param qf: double
-        qf
-    :param E50: double
-        E50
-    :param kwargs: optional:
-        fracture_strain;
-        residual_strength_strain;
-        residual_strength;
-        OC_deviator;
-        gaus_or_par;
-        amount_points;
-        Eur, default None, True для петли;
-        unload_deviator;
-        re_load_deviator;
-        noise_off, default None, True для отключения шумов и "ступеней";
-    :return: strain_required_grid - х координаты полученной кривой;
-        deviator_required_grid - у координаты полученной кривой;
-        [[strain_at_50_strength, qf / 2], [OC_strain, OC_deviator], [fracture_strain, qf],
-         [residual_strength_strain, residual_strength]] - расчетные параметры;
-        loop_strain_values if Eur, tuple - strain координаты точек петли;
-        loop_indexes if Eur, tuple - индексы самой петли, точки кривой не включены
-    """
-
-    # Константы
-    STRAIN_LIMIT = 0.15
-    STRAIN_CALC_LIMIT = 0.6
-    NOISE_LEVEL = 1.0
-    DISCRETE_ARRAY_LEVEL = 0.5
-    DISCRETE_ARRAY_LOOP_LEVEL = 2 * DISCRETE_ARRAY_LEVEL
-    #
-    _0002_QF = 0.002 * qf
-
-    # Параметры
+        k1_e = np.random.uniform(10, 30)
+
+        def equations_e(a1_e):
+            # коэффициенты экспоненты
+            return a1_e * (np.exp(-k1_e * x_given) - 1) - v_d_given
+
+        a1_e = fsolve(equations_e, (-abs(v_d_given)))
+        v_d = a1_e * (np.exp(-k1_e * x) - 1)
+
+    if Eur:
+        # если подается Eur то строится участок соответсвующий петле разгрузке на кривой девиаторного нагружения
+        ip1, = np.where(x >= point1_x)
+        point1_y = v_d[ip1[0]]
+        ip2, = np.where(x >= point2_x)
+        point2_y = 1.1 * point1_y
+        ip3, = np.where(x >= point3_x)
+        point3_y = v_d[ip3[0]]
+        d1_p3 = (v_d[ip3[0] + 1] - v_d[ip3[0]]) / (x[ip3[0] + 1] - x[ip3[0]])
+        x1_l = np.linspace(point1_x, point2_x,
+                           int(abs(point2_x - point1_x) / (x[1] - x[0]) + 1))  # участок соответствующей разгрузке
+        x2_l = np.linspace(point2_x, point3_x,
+                           int(abs(point3_x - point2_x) / (
+                                   x[1] - x[0]) + 1))  # участок соответствующей повторной нагрузке
+        # прямая соответсвующая участку разгрузки
+        k12 = (point1_y - point2_y) / (point1_x - point2_x)
+        b12 = point1_y - k12 * point1_x
+        y1_l = k12 * x1_l + b12
+
+        # сплайн соответствующий повтороной нагрузке
+        spl2 = interpolate.make_interp_spline([point2_x, point3_x],
+                                              [point2_y, (point3_y - abs(point2_y - point1_y))], k=3,
+                                              bc_type=([(2, 0)], [
+                                                  (1, d1_p3)]))  # точка 3 сдвинута из-за сдвига кривой после точки 2
+        y2_l = spl2(x2_l)
+        y2_l = y2_l[1:]  # учет повторяющейся точки
+        y_loop = np.hstack((y1_l, y2_l))  # изгиб соответсвующий петле
+
+        # поиск начала и конца петли для совпадения шага
+        ip1_y, = np.where(x >= point1_x)
+        ip3_y, = np.where(x >= point3_x)
+
+        v_d = np.hstack(
+            (v_d[:ip1_y[0]], y_loop, v_d[ip3_y[0] + 1:] - abs(
+                point2_y - point1_y)))  # кривая с петлей, часть кривой после точки 2, сдвинута вниз
+        # на расстояние abs(point2_y-point1_y)
+
+    return v_d, v_d_given
+
+
+def curve(qf, e50, **kwargs):
     try:
-        kwargs["fracture_strain"]
+        kwargs["xc"]
     except KeyError:
-        kwargs["fracture_strain"] = STRAIN_LIMIT
+        kwargs["xc"] = 0.15
 
     try:
-        kwargs["residual_strength_strain"]
+        kwargs["x2"]
     except KeyError:
-        kwargs["residual_strength_strain"] = STRAIN_LIMIT
+        kwargs["x2"] = 0.15
 
     try:
-        kwargs["residual_strength"]
+        kwargs["qf2"]
     except KeyError:
-        kwargs["residual_strength"] = qf
+        kwargs["qf2"] = qf
 
     try:
-        kwargs["OC_deviator"]
+        kwargs["qocr"]
     except KeyError:
-        kwargs["OC_deviator"] = 0
+        kwargs["qocr"] = 0
 
     try:
         kwargs["gaus_or_par"]
@@ -1652,1067 +1396,625 @@ def dev_loading(qf, E50, **kwargs):
         kwargs["gaus_or_par"] = 0
 
     try:
-        kwargs["amount_points"]
+        kwargs["max_time"]
     except KeyError:
-        kwargs["amount_points"] = 700
+        kwargs["max_time"] = 500
 
     try:
         kwargs["Eur"]
     except KeyError:
-        kwargs["Eur"] = None
+        kwargs["Eur"] = False
 
     try:
-        kwargs["unload_deviator"]
+        kwargs["y_rel_p"]
     except KeyError:
-        kwargs["unload_deviator"] = 0.8 * qf
+        kwargs["y_rel_p"] = 0.8 * qf
 
     try:
-        kwargs["re_load_deviator"]
+        kwargs["point2_y"]
     except KeyError:
-        kwargs["re_load_deviator"] = 10
+        kwargs["point2_y"] = 10
 
     try:
-        kwargs["noise_off"]
+        kwargs["U"]
     except KeyError:
-        kwargs["noise_off"] = None
+        kwargs["U"] = None
 
-    #
-    fracture_strain = kwargs.get('fracture_strain')
-    residual_strength_strain = kwargs.get('residual_strength_strain')
-    residual_strength = kwargs.get('residual_strength')
-    OC_deviator = kwargs.get('OC_deviator')
+    try:
+        kwargs["amplitude"]
+    except KeyError:
+        kwargs["amplitude"] = (0.1, True)
+
+    try:
+        kwargs["hyp_ratio"]
+    except KeyError:
+        kwargs["hyp_ratio"] = None
+
+    xc = kwargs.get('xc')
+    x2 = kwargs.get('x2')
+    qf2 = kwargs.get('qf2')
+    qocr = kwargs.get('qocr')
     gaus_or_par = kwargs.get('gaus_or_par')  # 0 - гаус, 1 - парабола
-    amount_points = kwargs.get('amount_points')
+    max_time = kwargs.get('max_time')
     Eur = kwargs.get('Eur')
-    unload_deviator = kwargs.get('unload_deviator')
-    re_load_deviator = kwargs.get('re_load_deviator')
-    noise_off = kwargs.get("noise_off")
+    y_rel_p = kwargs.get('y_rel_p')
+    point2_y = kwargs.get('point2_y')
+    U = kwargs.get('U')
+    amplitude = kwargs.get('amplitude')[0]
+    free_deviations = kwargs.get('amplitude')[1]
+    '''флаг, отвечает за наложение девиаций на контрольные точки'''
+    hyp_ratio = kwargs.get('hyp_ratio')
 
-    if noise_off:
-        NOISE_LEVEL = None
-        DISCRETE_ARRAY_LEVEL = None
-        DISCRETE_ARRAY_LOOP_LEVEL = None
-    # расчёт ведется с числом точек amount_points на длине STRAIN_CALC_LIMIT
-    AMOUNT_POINTS_ON_CALC = int((amount_points * STRAIN_CALC_LIMIT / STRAIN_LIMIT) / (STRAIN_CALC_LIMIT / STRAIN_LIMIT))
-    # значения будут возвращаться с числом точек amount_points но на длине STRAIN_LIMIT
-    AMOUNT_POINTS_ON_RETURN = int(AMOUNT_POINTS_ON_CALC * (STRAIN_CALC_LIMIT / STRAIN_LIMIT))
-
-    # Ограничения
-    if unload_deviator > qf:
-        unload_deviator = qf
-    if unload_deviator < 20.0:
-        unload_deviator = 20.0
-    if fracture_strain > 0.11:
-        fracture_strain = 0.15
-    if residual_strength >= qf:
-        residual_strength = qf
-    strain_at_50_strength = (qf / 2.) / E50
-    if fracture_strain < strain_at_50_strength:
-        fracture_strain = strain_at_50_strength * 1.1  # хс не может быть меньше strain_at_50_strength
-
-    # Сетки
-    strain = np.linspace(0, STRAIN_CALC_LIMIT, AMOUNT_POINTS_ON_CALC)
-
-    # Начало построения фукнции
-
-    # считаем предельное значение fracture_strain
-    fracture_strain_limit = smoothness_condition(strain_at_50_strength)
-
-    if strain_at_50_strength >= fracture_strain:
-        # если strain_at_50_strength > fracture_strain, fracture_strain сдвигается в 0.15,
-        # х2,residual_strength перестает учитываться,
-        # в качестве функции используется сумма гиперболы, экспоненты или тангенса и функции синуса и параболы
-
-        fracture_strain = STRAIN_LIMIT
-        #
-        deviator, OC_strain = gip_exp_tg(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-        #
-
-        if fracture_strain <= fracture_strain_limit:
-            # проверка на условие гладкости, если условие не соблюдается
-            # передвинуть xс в предельное значение
-            fracture_strain = fracture_strain_limit
-            if (fracture_strain > 0.11) and (fracture_strain < STRAIN_LIMIT):
-                fracture_strain = STRAIN_LIMIT
-            #
-            deviator, OC_strain = gip_exp_tg(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-            deviator += cos_par(strain, E50, qf, strain_at_50_strength, fracture_strain)
-            #
-
-        # residual_strength_strain,residual_strength не выводится
-        residual_strength_strain = fracture_strain
-        residual_strength = qf
-
+    if max_time < 50:
+        max_time = 50
+    if max_time <= 499:
+        amount_points = max_time * 20
+        amount_points_for_stock = np.random.uniform(1, 3) * 20
+    elif max_time > 499 and max_time <= 2999:
+        amount_points = max_time * 2
+        amount_points_for_stock = np.random.uniform(5, 10) * 2
     else:
-        #
-        deviator, OC_strain = gip_exp_tg(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-        #
-        if fracture_strain <= fracture_strain_limit:
-            fracture_strain = fracture_strain_limit
+        amount_points = max_time / 3
+        amount_points_for_stock = np.random.uniform(15, 20) / 3
+    if Eur:
+        amount_points = amount_points * 10
 
-            if (fracture_strain > 0.11) and (fracture_strain < STRAIN_LIMIT):
-                fracture_strain = STRAIN_LIMIT
-            #
-            deviator, OC_strain = gip_exp_tg(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-            #
-
-        if fracture_strain > STRAIN_LIMIT:
-            #
-            deviator, OC_strain = gip_exp_tg(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-            deviator += cos_par(strain, E50, qf, strain_at_50_strength, fracture_strain)
-            #
-            # residual_strength_strain,residual_strength не выводится
-            residual_strength_strain = fracture_strain
-            residual_strength = qf
-
+    qf_old = qf
+    if qf < 150:
+        k_low_qf = 250 / qf
+        if Eur:
+            qf = qf * k_low_qf
+            e50 = e50 * k_low_qf
+            qf2 = qf2 * k_low_qf
+            Eur = Eur * k_low_qf
+            # amount_points = amount_points * 6
+            y_rel_p = y_rel_p * k_low_qf
+            point2_y = point2_y * k_low_qf
         else:
-            # минимально допустимое расстояния между хс и х2
-            if fracture_strain >= 0.8 * residual_strength_strain:
-                residual_strength_strain = 1.2 * fracture_strain
-            # минимально допустимое расстояние мужду residual_strength и qf
-            if residual_strength >= qf:
-                residual_strength = 0.98 * qf
+            qf = qf * k_low_qf
+            e50 = e50 * k_low_qf
+            qf2 = qf2 * k_low_qf
 
-            # Примеряем положение кривой - оно не должно быть выше qf
-            _i, = np.where(strain >= fracture_strain)  # >= намеренно
-            _i = _i[0]
-            _gip_exp_tg, *_ = gip_exp_tg(strain[:_i], E50, qf, strain_at_50_strength,
-                                         fracture_strain, OC_deviator)
-            _cos_par = cos_par(strain[:_i], E50, qf, strain_at_50_strength, fracture_strain)
-            maximum = max(np.hstack((_gip_exp_tg + _cos_par, np.full(len(strain[_i:]), 0.0)))
-                          if _i.size > 0 else np.full(len(strain), 0.0))
+    if y_rel_p > qf:
+        y_rel_p = qf
+    if y_rel_p < 20.0:
+        y_rel_p = 20.0
 
-            is_max_lower_qf = maximum < (qf + _0002_QF)
+    if xc > 0.111:
+        xc = 0.15
 
-            _i, = np.where(strain > fracture_strain)  # > намеренно
-            if is_max_lower_qf:
-                correction = 0
-            else:
-                # если максимум суммарной функции на участке от 0 до хс превышает qf, то уменьшаем
-                # высоту функции синуса и параболы на величину разницы в точке fracture_strain
-                correction = abs(maximum - qf + 2 * _0002_QF)
+    # ограничение на qf2
+    if qf2 >= qf:
+        qf2 = qf
+    x50 = (qf / 2.) / e50
 
-            if _i.size > 0:
-                _i = _i[0]
-                _gip_exp_tg, *_ = gip_exp_tg(strain[:_i], E50, qf, strain_at_50_strength,
-                                             fracture_strain, OC_deviator)
-                _cos_par = cos_par(strain[:_i], E50, qf, strain_at_50_strength,
-                                   fracture_strain, correction)
-                if gaus_or_par == 1:
-                    _gaus_or_par = parab(strain[_i:], qf, fracture_strain, residual_strength_strain,
-                                         residual_strength)
-                else:
-                    _gaus_or_par = gaus(strain[_i:], qf, fracture_strain, residual_strength_strain,
-                                        residual_strength)
-                deviator = np.hstack((_gip_exp_tg + _cos_par, _gaus_or_par))
+    x_old, x, y, qf, xc, x2, qf2, e50 = dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par,
+                                                    amount_points, hyp_ratio)  # x_old - без участка разгрузки, возвращается для обьемной деформации
+    # x - c участком разгрузки или без в зависимости от того передан ли Eur
 
-            else:
-                deviator = (strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)[0] \
-                           + cos_par(strain, E50, qf, strain_at_50_strength, fracture_strain, correction)
+    if qocr > (0.6 * qf):
+        qocr = 0.6 * qf
 
-    if OC_deviator > (0.8 * qf):  # не выводить точку OC_strain, OC_deviator
-        OC_strain = fracture_strain
-        OC_deviator = qf
+    cos = cos_ocr(x, y, qf, qocr, xc)
 
-    # переход к нужной сетке (strain_required_grid необходимо обрезать по х = STRAIN_LIMIT чтобы получить amount_points
-    strain_required_grid = np.linspace(strain.min(initial=None), strain.max(initial=None), AMOUNT_POINTS_ON_RETURN)
-    # интерполяция  для сглаживания в пике
-    spl = make_interp_spline(strain, deviator, k=5)
-    deviator_required_grid = spl(strain_required_grid)
+    index_xocr, = np.where(y >= qocr)
+    xocr = x[index_xocr[0]]
 
-    loop_indexes = None
+    y_ocr = y + cos
 
-    def noise(result):
-        """На кладывает девиации, шум и дискретизацию в соответствии с NOISE_LEVEL и DISCRETE_ARRAY_LEVEL"""
-        if not noise_off:
-            result += deviator_loading_deviation(strain_required_grid, result, fracture_strain)
-            result = sensor_accuracy(strain_required_grid, result, fracture_strain, noise_level=NOISE_LEVEL)
-            result = discrete_array(result, DISCRETE_ARRAY_LEVEL)
-        return result
+    index_qf2ocr, = np.where(y_ocr >= qf / 2)
+
+    x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
+                         [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
+
+    index_x50, = np.where(x >= x50)
+
+    is_OCR = False
+    if cos[index_x50[0]] > 0:
+        is_OCR = True
+        a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
+        delta = abs(a - qf / 2)
+
+        e50_ocr = (qf / 2 - delta) / x50
+        x50_ocr = (qf / 2) / e50_ocr
+        # index_x50_ocr, = np.where(x >= x50_ocr)
+        # x50_ocr = x[index_x50_ocr[0]]
+
+        x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par,
+                                                                amount_points, hyp_ratio)
+
+        y_ocr = y_ocr + cos
+
+        a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
+        n = 0
+
+        while abs((a / x50 - (qf / 2) / x50)) > 50 and n < 30:
+            a = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]], [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
+
+            n = n + 1
+            delta_ocr = (a - qf / 2)
+
+            delta = delta + delta_ocr
+
+            e50_ocr = (qf / 2 - delta) / x50
+            x50_ocr = (qf / 2) / e50_ocr
+
+            x_old, x, y_ocr, qf, xc, x2, qf2, e50_ocr = dev_loading(qf, e50_ocr, x50_ocr, xc, x2, qf2, gaus_or_par,
+                                                                    amount_points, hyp_ratio)
+            #
+            y_ocr = y_ocr + cos
+
+        y = copy.deepcopy(y_ocr)
+
+    # ПОСТРОЕНИЕ И ОПТИМИЗАЦИЯ ПЕТЛИ РАЗГРУЗКИ
+    def define_eur(strain, deviator, reload):
+        if len(reload) > 0 and reload != [0, 0, 0]:
+            try:
+                x, y = intersection(strain[reload[0]:reload[1]], deviator[reload[0]:reload[1]],
+                                    strain[reload[1]:reload[2]], deviator[reload[1]:reload[2]])
+                if len(x) < 1:
+                    return None
+                Eur = round(((y[0] - deviator[reload[1]]) / (x[0] - strain[reload[1]])), 1)
+                return Eur
+            except ValueError:
+                return None
+        return None
+
+    # МАСШТАБ
+    if qf_old < 150:
+        y = y / k_low_qf
+
+        if Eur:
+            qf = qf / k_low_qf
+            Eur = Eur / k_low_qf
+            y_rel_p = y_rel_p / k_low_qf
+            point2_y = point2_y / k_low_qf
+            e50 = e50 / k_low_qf
+        else:
+            qf = qf / k_low_qf
+            e50 = e50 / k_low_qf
+
+    # МАСШТАБ ИЗ-ЗА ДЕВИАЦИЙ - ВОЗВРАЩАЕТ Е50 И QF В НУЖНОЕ МЕСТО
+    count = 0
+    y_no_noise = copy.deepcopy(y)
+    x_no_noise = copy.deepcopy(x)
+    count_limit = 10
+    while count < count_limit:
+
+        if not free_deviations:
+            # y += deviator_loading_deviation1(x, y, xc, amplitude=amplitude)
+            break
+
+        # y += deviator_loading_deviation(x, y, xc, amplitude=amplitude)
+
+        if not Eur:
+            pass
+            # y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
+            # y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
+
+        #
+        if not Eur and is_OCR:
+            y_ocr = copy.deepcopy(y)
+            index_qf2ocr, = np.where(y_ocr >= qf / 2)
+            x_qf2ocr = np.interp(qf / 2, [y_ocr[index_qf2ocr[0] - 1], y_ocr[index_qf2ocr[0]]],
+                                 [x[index_qf2ocr[0] - 1], x[index_qf2ocr[0]]])
+            delta = x50 / x_qf2ocr
+
+            x = x * delta
+            index_x50, = np.where(x >= x50)
+            y_qf2ocr = np.interp(x50, [x[index_x50[0] - 1], x[index_x50[0]]],
+                                 [y_ocr[index_x50[0] - 1], y_ocr[index_x50[0]]])
+            k = y_qf2ocr / (qf / 2)
+            y_ocr = y_ocr / k
+            y = copy.deepcopy(y_ocr)
+
+        y_round = np.round(y, 3)
+        index_x2, = np.where(np.round(x, 6) >= 0.15)
+
+        qf2_max = np.max(y_round[:index_x2[0]])
+
+        delta = (qf) / qf2_max
+        y = y * delta
+        y_round = np.round(y, 3)
+        x_round = np.round(x, 6)
+        qf_max = np.max(np.round(y_round[:index_x2[0]], 3))
+
+        i_07qf, = np.where(y_round[:index_x2[0]] > qf_max * 0.7)
+        imax, = np.where(y_round[:i_07qf[0]] > qf_max / 2)
+        imin, = np.where(y_round[:i_07qf[0]] < qf_max / 2)
+        imax = imax[0]
+        imin = imin[-1]
+        x_qf2 = np.interp(qf_max / 2, [y_round[imin], y_round[imax]], [x_round[imin], x_round[imax]])
+        delta = x50 / x_qf2
+        x = x * delta
+
+        index_x2, = np.where(np.round(x, 6) >= 0.15)
+
+        if len(index_x2) == 0:
+            y = copy.deepcopy(y_no_noise)
+            x = copy.deepcopy(x_no_noise)
+            break
+
+        from static_loading.deviator_loading_model import ModelTriaxialDeviatorLoading
+        RES_E50 = ModelTriaxialDeviatorLoading.define_E50_qf(x[:index_x2[0]], y[:index_x2[0]])
+
+        if round(abs(RES_E50[0] - e50) / 1000, 1) < 0.4:
+            break
+
+        count = count + 1
+        if count < count_limit:
+            y = copy.deepcopy(y_no_noise)
+            x = copy.deepcopy(x_no_noise)
+
+    # ОПТИМИЗАЦИЯ ПЕТЛИ
+    y_for_loop = copy.deepcopy(y)
+
+    x_loop, y_loop, \
+    point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, \
+    x1_l, x2_l, y1_l, y2_l = loop(x, y_for_loop, Eur, y_rel_p, point2_y)
+
+    index_point1_x, = np.where(x >= point1_x)
+    index_point3_x, = np.where(x >= point3_x)
 
     if Eur:
-        x_loop, y_loop, connection_to_curve_indexes, loop_indexes, loop_strain_values = \
-            loop(strain_required_grid, deviator_required_grid, Eur, unload_deviator, re_load_deviator,
-                 [NOISE_LEVEL, DISCRETE_ARRAY_LOOP_LEVEL] if not noise_off else None)
-
-        #
-        # deviator_required_grid = noise(deviator_required_grid)
-
-        deviator_required_grid = np.hstack((deviator_required_grid[:connection_to_curve_indexes[0]], y_loop,
-                                            deviator_required_grid[connection_to_curve_indexes[1] + 1:]))
-        strain_required_grid = np.hstack((strain_required_grid[:connection_to_curve_indexes[0]], x_loop,
-                                          strain_required_grid[connection_to_curve_indexes[1] + 1:]))
-        # Первая точка кривой всегда в нуле
-        deviator_required_grid[0] = 0.
-    else:
-        # deviator_required_grid = noise(deviator_required_grid)
-        # Первая точка кривой всегда в нуле
-        deviator_required_grid[0] = 0.
-
-    # наложение хода штока и обрезка функций
-    # rod_move_result = initial_free_rod_move(strain_required_grid,
-    #                                         deviator_required_grid,
-    #                                         strain_cut=STRAIN_LIMIT,
-    #                                         noise=(NOISE_LEVEL, DISCRETE_ARRAY_LEVEL) if not noise_off else None)
-    # strain_required_grid = rod_move_result[0]
-    # deviator_required_grid = rod_move_result[1]
-    # len_rod_move = rod_move_result[2]
-    loop_indexes_with_rod = None if not Eur else (loop_indexes[i] + len_rod_move for i in range(len(loop_indexes)))
-
-    return strain_required_grid, deviator_required_grid, [[strain_at_50_strength, qf / 2], [fracture_strain, qf], [residual_strength_strain, residual_strength]]
-
-
-def initial_free_rod_move(strain, deviator, strain_cut=0.151, noise=None):
-    """
-    Обрезает strain и deviator по strain_cut и
-    возвращает strain, deviator с присоединенным ходом штока и длину хода штока (в точках)
-
-    :param strain:
-    :param deviator:
-    :param strain_cut: optional, default = 0.151, значение, по которому обрезаются массивы
-    :param noise: optional, default None, параметры для моделирования шума tuple[float, float]
-
-    Returns
-    -------
-    strain -- cut strain with rod \n
-    deviator -- cut deviator with rod \n
-    len_rod_move -- len of rod in points: len(strain_start)
-    """
-    _i, = np.where(strain > strain_cut)
-    assert _i.size > 0, "Ошибка обрезки, strain_cut не может быть больше max(strain)"
-    strain = strain[:_i[0]]
-    deviator = deviator[:_i[0]]
-
-    strain_last_point = np.random.uniform(0.005, 0.01) - (strain[-1] - strain[-2])
-    '''положительная последняя точка х для метрвого хода штока'''
-
-    strain_start = np.linspace(0, strain_last_point, int(strain_last_point / (strain[-1] - strain[-2])) + 1)
-    '''положительный масив х для метрвого хода штока'''
-
-    SLANT = np.random.uniform(20, 30)
-    '''наклон функции экспоненты'''
-    AMPLITUDE = np.random.uniform(15, 25)
-    '''высота функции экспоненты'''
-
-    # определяем абциссу метрвого хода штока
-    deviator_start = exponent(strain_start, AMPLITUDE, SLANT)
-    # смещение массива x для метрвого хода штока кривой девиаторного нагружения в отрицальную область
-    strain_start -= strain_start[-1] + (strain[-1] - strain[-2])
-    # смещение массива y для метрвого хода штока кривой девиаторного нагружения в отрицальную область
-    deviator_start -= deviator_start[-1]
-
-    if noise:
-        assert len(noise) == 2, "noise должен содерждать значение для шума и значение для уровня ступеней"
-        deviator_start = deviator_start + np.random.uniform(-noise[0], noise[0], len(deviator_start))
-        deviator_start = discrete_array(deviator_start, noise[1])  # наложение ступенчватого шума на мертвый ход штока
-
-    strain = np.hstack((strain_start, strain))  # добавление начального участка в функцию девиаторного нагружения
-    strain += abs(strain[0])  # смещение начала кривой девиаторного нагруружения в 0
-
-    deviator = np.hstack((deviator_start, deviator))  # добавление начального участка в функцию девиаторного нагружения
-    deviator += abs(deviator[0])  # смещение начала кривой девиаторного нагружения в 0
-    deviator[0] = 0.  # искусственное зануление первой точки
-
-    len_rod_move = len(strain_start)
-
-    return strain, deviator, len_rod_move
-
-
-
-
-
-
-
-
-
-#------------------------------------------------------------------------------------------------------------------------
-
-
-def bezier_curve_gip(p1_l1, p2_l1, p1_l2, p2_l2, node1, node2, x_grid):
-    """
-    Требуется модуль: from scipy.optimize import fsolve
-    Функция построения кривой Безье на оссновании двух прямых,
-    задаваемых точками 'point_line' типа [x,y],
-    на узлах node типа [x,y]
-    с построением промежуточного узла в точке пересечения поданных прямых.
-    Функция возвращает значения y=f(x) на сетке по оси Ox.
-
-    Пример:
-    Соединяем две прямые от точки [x_given,y_given] до точки [x[index_x_start[0]], y_start[0]]
-    xgi, = np.where(x > x_given) # некая точка после которой нужно переходить к кривой безье
-    y_Bezier_line = bezier_curve([0,0],[x_given,y_given], #Первая и Вторая точки первой прямой
-                                 [x_given, k * x_given + b], #Первая точка второй прямой (k и b даны)
-                                 [x[index_x_start[0]],y_start[0]], #Вторая точка второй прямой
-                                 [x_given, y_given], #Первый узел (здесь фактически это 2 точка первой прямой)
-                                 [x[index_x_start[0]], y_start[0]], #Второй узел
-                                                                # (здесь фактически это 2 точка второй прямой)
-                                 x[xgi[0]:index_x_start[0]]
-                                 )
-
-    :param p1_l1: Первая точка первой прямой [x,y]
-    :param p2_l1: Вторая точка первой прямой [x,y]
-    :param p1_l2: Первая точка второй прямой [x,y]
-    :param p2_l2: Вторая точка второй прямой [x,y]
-    :param node1: Первый узел [x,y]
-    :param node2: Второй узел [x,y]
-    :param x_grid: Сетка по Ох на которой необходимо посчитать f(x)
-    :return: Значения y=f(x) на сетке x_grid
-    """
-
-    def bernstein_poly(_i, n, t):
-        """
-         Полином Бернштейна стпени n, i - функция t
-        """
-        return comb(n, _i) * (t ** _i) * (1 - t) ** (n - _i)
-
-    def bezier_curve_local(nodes, n_times=1000):
-        """
-        На основании набора узлов возвращает
-        кривую Безье определяемую узлами
-        Точки задаются в виде:
-           [ [1,1],
-             [2,3],
-              [4,5], ..[Xn, Yn] ]
-        nTimes - число точек для вычисления значений
-        """
-
-        n_points = len(nodes)
-        x_points = np.array([p[0] for p in nodes])
-        y_points = np.array([p[1] for p in nodes])
-
-        t = np.linspace(0.0, 1.0, n_times)
-
-        polynomial_array = np.array([bernstein_poly(_i, n_points - 1, t) for _i in range(0, n_points)])
-
-        x_values_l = np.dot(x_points, polynomial_array)
-        y_values_l = np.dot(y_points, polynomial_array)
-        return x_values_l, y_values_l
-
-    def intersect(xp1, yp1, xp2, yp2, xp3, yp3, xp4, yp4):
-        """
-        Функция пересечения двух прямых, заданных точками
-        :param xp1: x точки 1 на прямой 1
-        :param yp1: y точки 1 на прямой 1
-        :param xp2: x точки 2 на прямой 1
-        :param yp2: y точки 2 на прямой 1
-        :param xp3: x точки 1 на прямой 2
-        :param yp3: y точки 1 на прямой 2
-        :param xp4: x точки 2 на прямой 2
-        :param yp4: y точки 2 на прямой 2
-        :return: точка пересечения прямых [x,y]
-        """
-
-        def form_line(_xp1, _yp1, _xp2, _yp2):
-            k = (_yp2 - _yp1) / (_xp2 - _xp1)
-            b = _yp1 - k * _xp1
-            return k, b
-
-        kl1, bl1 = form_line(xp1, yp1, xp2, yp2)
-        kl2, bl2 = form_line(xp3, yp3, xp4, yp4)
-        x_p_inter = (bl1 - bl2) / (kl2 - kl1)
-        y_p_inter = kl1 * x_p_inter + bl1
-        return x_p_inter, y_p_inter
-
-    # Определяем точки пересечения прямых
-    xl1, yl1 = intersect(p1_l1[0], p1_l1[1],
-                         p2_l1[0], p2_l1[1],
-                         p1_l2[0], p1_l2[1],
-                         p2_l2[0], p2_l2[1])
-
-    # Строим кривую Безье
-    x_values, y_values = bezier_curve_local([node1, [xl1, yl1], node2], n_times=len(x_grid))
-
-    # Адаптация кривой под равномерный шаг по х
-    bezier_spline = interpolate.make_interp_spline(x_values, y_values, k=1, bc_type=None)
-    y_values = bezier_spline(x_grid)
-
-    return y_values
-
-
-def deviator_loading_deviation_gip(strain, deviator, fracture_strain):
-    # Добавим девиации после 0.6qf для кривой без пика
-    qf = max(deviator)
-    deviation_1 = qf / 100
-    deviation_2 = qf / 60
-
-    i_60, = np.where(deviator >= 0.51 * qf)
-    i_90, = np.where(deviator >= 0.98 * qf)
-    i_end, = np.where(strain >= 0.15)
-    i_xc, = np.where(strain >= fracture_strain)
-    if fracture_strain >= 0.14:  # без пика
-        curve = create_deviation_curve(strain[i_60[0]:i_xc[0]], deviation_1 * 2,
-                                       points=np.random.uniform(3, 7), borders="zero_diff",
-                                       low_first_district=1, one_side=True) + create_deviation_curve(
-            strain[i_60[0]:i_xc[0]], deviation_1,
-            points=np.random.uniform(20, 30), borders="zero_diff",
-            low_first_district=1, one_side=True)
-        deviation_array = -np.hstack((np.zeros(i_60[0]),
-                                      -curve,
-                                      np.zeros(len(strain) - i_xc[0])))
-    else:
-
-        try:
-            i_xc1, = np.where(deviator[i_xc[0]:] <= qf - deviation_2)
-            i_xc_m, = np.where(deviator >= qf - deviation_1 * 2)
-            points_1 = round(fracture_strain * 100)
-            if points_1 < 3:
-                points_1 = 3
-
-            curve_1 = create_deviation_curve(strain[i_60[0]:i_xc_m[0]], deviation_1 * 1.5,
-                                             points=np.random.uniform(3, 4), val=(1, 0.1), borders="zero_diff",
-                                             low_first_district=1) + create_deviation_curve(
-                strain[i_60[0]:i_xc_m[0]], deviation_1 / 2,
-                points=np.random.uniform(points_1, points_1 * 3), borders="zero_diff",
-                low_first_district=1)
-
-            points_2 = round((0.15 - fracture_strain) * 100)
-            if points_2 < 3:
-                points_2 = 3
-
-            deviation_2 = ((deviator[i_xc[0]] - deviator[i_end[0]]) / 14) * (points_2 / 10)
-
-            curve_2 = create_deviation_curve(strain[i_xc[0] + i_xc1[0]:i_end[0]],
-                                             deviation_2, val=(0.1, 1),
-                                             points=np.random.uniform(points_2, int(points_2 * 3)), borders="zero_diff",
-                                             low_first_district=2) + create_deviation_curve(
-                strain[i_xc[0] + i_xc1[0]:i_end[0]],
-                deviation_2 / 3, val=(0.1, 1),
-                points=np.random.uniform(points_2 * 3, int(points_2 * 5)), borders="zero_diff",
-                low_first_district=2)
-            deviation_array = -np.hstack((np.zeros(i_60[0]),
-                                          curve_1, np.zeros(i_xc[0] - i_xc_m[0]),
-                                          np.zeros(i_xc1[0]),
-                                          curve_2,
-                                          np.zeros(len(strain) - i_end[0])))
-        except (ValueError, IndexError):
-            print("Ошибка девиаций девиатора")
-            deviation_array = -np.hstack((np.zeros(i_60[0]),
-                                          create_deviation_curve(strain[i_60[0]:i_90[0]], deviation_1,
-                                                                 points=np.random.uniform(3, 6), borders="zero_diff",
-                                                                 low_first_district=1),
-                                          create_deviation_curve(strain[i_90[0]:i_end[0]], deviation_2, val=(1, 0.1),
-                                                                 points=np.random.uniform(10, 15), borders="zero_diff",
-                                                                 low_first_district=3,
-                                                                 one_side=True),
-                                          np.zeros(len(strain) - i_end[0])))
-
-    return deviation_array
-
-
-def sensor_accuracy_gip(x, y, fracture_strain, noise_level=1.0):
-    """возвразщает зашумеленную функцию без шума в характерных точках"""
-
-    noise = np.random.uniform(-noise_level, noise_level, len(x))
-    index_qf_half, = np.where(y >= np.max(y) / 2)
-    index_qf, = np.where(y >= np.max(y))
-    if fracture_strain > max(x):  # если хс последня точка в массиве или дальше
-        index_qf, = np.where(x >= max(x))
-    for _i in range(len(y)):  # наложение шума кроме промежутков для характерных точек
-        is_excluded_points = (_i < index_qf_half[0] - 2) or \
-                             ((_i > index_qf_half[0] + 2) and ([_i] < index_qf[0] - 2)) or \
-                             (_i > index_qf[0] + 2)
-        if is_excluded_points:
-            if y[_i] + noise[_i] < np.max(y):
-                y[_i] = y[_i] + noise[_i]
-            else:
-                # в районе максимума шум меньше первоначального
-                y[_i] = y[_i] - np.random.uniform(0.1, 0.5) * noise_level
-    return y
-
-
-def hevisaid_gip(x, offset, smoothness):
-    """возвращет функцию Хевисайда 0<=y<=1, которая задает коэффициент влияния kp
-
-    :param x: точки, в которых вычислять значение
-    :param offset: смещение относительно х=0
-    :param smoothness: гладкость перехода, при smoothness = 0 выраждается в фукнцию Хевисаида
-    """
-    return 1. / (1. + np.exp(-2 * 10 / smoothness * (x - offset)))
-
-
-def smoothness_condition_gip(strain_at_50_percent_strength):
-    """возвращает предельное значение fracture_strain при котором возможно
-    построение заданной функции
-
-    :param strain_at_50_percent_strength: деформация в 50% прочности
-    """
-    SMOOTHNESS_OFFSET = 0.6 / 100  # 0.6 возможно является максимальным х на сетке
-    return 2 * strain_at_50_percent_strength + SMOOTHNESS_OFFSET
-
-
-def gaus_gip(x, qf, fracture_strain, residual_strength_strain, residual_strength):
-    """функция Гаусса для участка x>fracture_strain"""
-    gaus_height = qf - residual_strength  # высота функции Гаусса
-    gaus_smoothness = (-1) * np.log(0.1 / gaus_height) / ((residual_strength_strain - fracture_strain) ** 2)
-    # резкость функции Гаусаа (считается из условия равенства заданной точности в точке х50
-    return gaus_height * (np.exp(-gaus_smoothness * ((x - fracture_strain) ** 2))) + residual_strength
-
-
-def parab_gip(x, qf, fracture_strain, residual_strength_strain, residual_strength):
-    """Парабола для участка x>fracture_strain """
-    # k*x^2 + b
-    k_par = -((residual_strength - qf) / (residual_strength_strain - fracture_strain) ** 2)
-    return -k_par * ((x - fracture_strain) ** 2) + qf
-
-
-def gip_for_compare(x, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator):
-    """возвращает координаты y итоговой фукнции по законам гиперболы, экспоненты и тангенса"""
-    # Константы
-    E50_LIMIT = 70000
-    '''Е50 после которого необходимо переходить от эспоненты к тангенсу'''
-    OC_STRAIN_CUT = 0.151
-    '''значение по которому обрезается точка х переуплотнния'''
-    ZERO_OFFSET = 0.000001
-    '''смещение для расчета 0 значений в особенностях'''
-
-
-    # коэффициенты гиперболы
-    hyp_x_offset = -2 / fracture_strain + 1 / strain_at_50_strength
-    hyp_y_offset = qf * (hyp_x_offset * strain_at_50_strength + 1.) / (2. * strain_at_50_strength)
-
-    def dev_load_hyp(_x):
-        """считает значения гиперболы на х, коэффициенты созависимы"""
-        return hyp_y_offset * _x / (1 + hyp_x_offset * _x)
-
-
-    result_y = dev_load_hyp(x)
-    OC_strain = 0
-
-    return result_y, OC_strain
-
-
-def cos_par_exp_gip(x, E50, qf, strain_at_50_strength, fracture_strain, correction=0):
-    """возвращает функцию косинуса
-     и параболы для участка strain_at_50_strength qf"""
-
-    SHIFT = (fracture_strain - strain_at_50_strength) / 2
-    '''смещение: коэффицент учитывающий влияние на высоту функции при различных значениях E50'''
-
-    if E50 < 5340:
-        vl = 0
-    elif (E50 <= 40000) and (E50 >= 5340):
-        kvl = 1 / 34660
-        bvl = -5340 * kvl
-        vl = kvl * E50 + bvl  # 1. / 40000. * E50 - 1. / 8
-    elif E50 > 40000:
-        vl = 1.
-    else:
-        vl = None
-
-    height = 0.035 * qf * vl - correction  # высота функции
-    if height < 0:
-        height = 0
-
-    k_of_parab = height / (-fracture_strain + strain_at_50_strength + SHIFT) ** 2
-
-    # фиромирование функции
-    # if x is greater then strain_at_50_strength : x_gr_x50
-    _i, = np.where(x > strain_at_50_strength)
-    x_low_x50 = x[:_i[0]] if _i.size > 0 else x
-    x_gr_x50 = x[_i[0]:] if _i.size > 0 else np.array([])
-
-    # if x is greater then strain_at_50_strength + SHIFT : x_gr_x50sm
-    j, = np.where(x_gr_x50 > strain_at_50_strength + SHIFT)
-    x_gr_x50_low_x50sm = x_gr_x50[:j[0]] if j.size > 0 else x_gr_x50
-    x_gr_x50sm = x_gr_x50[j[0]:] if j.size > 0 else np.array([])
-
-    # if x is greater then fracture_strain : x_gr_xc
-    l, = np.where(x_gr_x50sm > fracture_strain)
-    x_gr_x50sm_low_xc = x_gr_x50sm[:l[0]] if l.size > 0 else x_gr_x50sm
-    x_gr_xc = x_gr_x50sm[l[0]:] if l.size > 0 else np.array([])
-
-    _first_zero_part = np.full(len(x_low_x50), 0)
-    _cos_part = (height * 0.5 * (np.cos((1. / SHIFT) *
-                                        np.pi * (x_gr_x50_low_x50sm - strain_at_50_strength) - np.pi) + 1))
-    _parab_part = (-1) * k_of_parab * (x_gr_x50sm_low_xc - strain_at_50_strength - SHIFT) ** 2 + height
-    _last_zero_part = np.full(len(x_gr_xc), 0)
-
-    return np.hstack((_first_zero_part, _cos_part, _parab_part, _last_zero_part))
-
-
-def loop_gip(x, y, Eur, unload_deviator, re_load_deviator, noise_params=None):
-    """Рассчитывает петлю разгрузки -- повторного нагружения
-    :param x: массив значений x
-    :param y: массив значений y
-    :param Eur: recommended: 3*E50
-    :param unload_deviator: девиатор разгрузки
-    :param re_load_deviator: девиатор повторной нагрузки
-    :param noise_params: optional, default None, параметры для моделирования шума list[float, float]
-
-    Returns
-    --------
-    loop_x -- x координаты петли \n
-    loop_y -- y координаты петли \n
-    connection_indexes -- tuple[index_connection_unload[0], index_connection_return_on_load[0])]\n
-    loop_indexes -- tuple[real_unload_index, real_re_load_index, real_return_on_load_index]\n
-    loop_strain_values --tuple[unload_strain, re_load_strain, return_on_load_point_strain]\n
-    """
-
-    # индекс 1 точки
-    index_unload_point, = np.where(y >= unload_deviator)
-
-    if not np.size(index_unload_point) > 0:
-        unload_deviator = np.max(y)
-        index_unload_point, = np.where(y >= unload_deviator)
-
-    index_unload_point = index_unload_point[0]
-
-    # точка появления петли
-    unload_strain = x[index_unload_point]
-    unload_deviator = y[index_unload_point]
-
-    # точка конца петли
-    index_re_load_point, = np.where(y == np.max(y))
-    index_re_load_point = index_re_load_point[-1]
-
-    k = (0.3 / (-x[index_re_load_point])) * unload_strain + 0.4
-    dynamic_ratio = -3 * 10 ** (-9) * Eur + k * unload_strain  # 0.00095
-
-    # Точка возврата на кривую
-    return_on_load_point_strain = unload_strain + dynamic_ratio
-    assert return_on_load_point_strain < x.max(), "Ошибка построения петли при заданном Eur"
-    index_return_on_load, = np.where(x >= return_on_load_point_strain)
-    index_return_on_load = index_return_on_load[0]
-    # задаем последнюю точку в общем массиве кривой девиаторного нагружения
-    return_on_load_point_strain = x[index_return_on_load]
-    if return_on_load_point_strain <= unload_strain:
-        index_return_on_load = index_unload_point + 1
-        return_on_load_point_strain = x[index_return_on_load]
-    return_on_load_deviator = y[index_return_on_load]
-
-    D1_return_on_load = (y[index_return_on_load + 1] - y[index_return_on_load]) / \
-                        (x[index_return_on_load + 1] - x[index_return_on_load])
-    '''производная кривой девиаторного нагружения в точке конца петли'''
-
-    E0 = (y[1] - y[0]) / (x[1] - x[0])  # производная кривой девиаторного нагружения в 0
-    # ограничение на E0 (не больше чем модуль петли разгрузки)
-    if E0 < Eur:
-        E0 = 1.1 * Eur
-
-    # ограничение на угол наклона участка повтороной нагрузки,
-    # чтобы исключить пересечение петли и девиаторной кривой
-    min_E0 = unload_deviator / unload_strain  # максимальный угол наклона петли
-
-    # коррекция Eur
-    if Eur < 1.1 * min_E0:
-        # print("\nВНИМАНИЕ: Eur изменен!\n")
-        Eur = 1.1 * min_E0
-        E0 = 1.1 * Eur
-
-    # вычисляется из оординаты и угла наклона петли
-    re_load_strain = (re_load_deviator - unload_deviator + Eur * unload_strain) / Eur
-    index_re_load, = np.where(x >= re_load_strain)
-    index_re_load = index_re_load[0]
-    re_load_strain = x[index_re_load]
-
-    # если точка 2 совпадает с точкой один или правее, то меняем точку 2 на предыдущую
-    if index_re_load >= index_unload_point:
-        # print("\nВНИМАНИЕ: Eur изменен!\n")
-        index_re_load = index_unload_point - 1
-        re_load_strain = x[index_re_load]
-
-    # участок разгрузки
-    unload_part_x = np.linspace(unload_strain, re_load_strain,
-                                int(abs(re_load_strain - unload_strain) / (x[1] - x[0]) + 1))
-    # участок повторной нагрузки
-    reload_part_x = np.linspace(re_load_strain, return_on_load_point_strain,
-                                int(abs(return_on_load_point_strain - re_load_strain) / (x[1] - x[0]) + 1))
-
-    # 0.8 * Eur + 60000  # производная в точке начала разгрузки (близка к бесконечности) #???
-    dynamic_D1 = 2 * Eur
-
-    # формируем разгрузку
-    spline_unload = interpolate.make_interp_spline([re_load_strain, unload_strain],
-                                                   [re_load_deviator, unload_deviator], k=3,
-                                                   bc_type=([(2, 0)], [(1, dynamic_D1)]))
-    unload_part_y = spline_unload(unload_part_x)  # участок разгрузки
-
-    # формируем повторное нагружение
-    point_1_l1 = [re_load_strain - 0.2 * re_load_strain,
-                  E0 * (re_load_strain - 0.2 * re_load_strain) +
-                  (re_load_deviator - E0 * re_load_strain)]
-    point_2_l1 = [re_load_strain, re_load_deviator]
-    point_1_l2 = [return_on_load_point_strain, return_on_load_deviator]
-    point_2_l2 = [return_on_load_point_strain - 0.1 * return_on_load_point_strain,
-                  D1_return_on_load * (return_on_load_point_strain - 0.1 * return_on_load_point_strain) +
-                  (return_on_load_deviator - D1_return_on_load * return_on_load_point_strain)]
-
-    _bezier_curve = bezier_curve_gip(point_1_l1, point_2_l1, point_1_l2, point_2_l2,
-                                     [re_load_strain, re_load_deviator],
-                                     [return_on_load_point_strain, return_on_load_deviator],
-                                     reload_part_x)
-    reload_part_y = _bezier_curve
-
-    # устраняем повторяющуюся точку 2
-    reload_part_x = reload_part_x[1:]
-    reload_part_y = reload_part_y[1:]
-
-    # соединяем  участки разгрузки и нагрузки в петлю
-    loop_x = np.hstack((unload_part_x, reload_part_x))
-
-    # определяем индексы, по которым будет петля будет "крепиться" к исходной кривой
-    index_connection_unload, = np.where(x >= unload_strain)
-    index_connection_return_on_load, = np.where(x >= return_on_load_point_strain)
-
-    if noise_params:
-        unload_part_y = unload_part_y + np.random.uniform(-noise_params[0], noise_params[0], len(unload_part_y))
-        reload_part_y = reload_part_y + np.random.uniform(-noise_params[0], noise_params[0], len(reload_part_y))
-        unload_part_y = discrete_array(unload_part_y, noise_params[1])
-        reload_part_y = discrete_array(reload_part_y, noise_params[1])
-
-    loop_y = np.hstack((unload_part_y, reload_part_y))
-
-    real_unload_index = index_connection_unload[0] + 1
-    # первая точка петли на самом деле принадлежит исходной кривой
-    real_re_load_index = index_connection_unload[0] + len(unload_part_y)
-    # -1 + 1 = 0 т.к. самая нижняя точка петли принадлежит разгрузке
-    real_return_on_load_index = index_connection_unload[0] + len(loop_x) - 2
-    # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
-
-    # Для присоединения петли к исходной кривой
-    connection_indexes = (index_connection_unload[0], index_connection_return_on_load[0])
-    #
-    loop_indexes = (real_unload_index, real_re_load_index, real_return_on_load_index)
-    #
-    # Для работы фукнции объемной деформации
-    loop_strain_values = (unload_strain, re_load_strain, return_on_load_point_strain)
-    #
-
-    return loop_x, loop_y, connection_indexes, loop_indexes, loop_strain_values
-
-
-def dev_loading_gip(qf, E50, **kwargs):
-    """
-    Кусочная функция: на участке [0,fracture_strain]-сумма функций гиперболы и
-    (экспоненты или тангенса) и кусочной функции синуса и парболы
-    на участке [fracture_strain...]-половина функции Гаусса или параболы
-
-    :param qf: double
-        qf
-    :param E50: double
-        E50
-    :param kwargs: optional:
-        fracture_strain;
-        residual_strength_strain;
-        residual_strength;
-        OC_deviator;
-        gaus_or_par;
-        amount_points;
-        Eur, default None, True для петли;
-        unload_deviator;
-        re_load_deviator;
-        noise_off, default None, True для отключения шумов и "ступеней";
-    :return: strain_required_grid - х координаты полученной кривой;
-        deviator_required_grid - у координаты полученной кривой;
-        [[strain_at_50_strength, qf / 2], [OC_strain, OC_deviator], [fracture_strain, qf],
-         [residual_strength_strain, residual_strength]] - расчетные параметры;
-        loop_strain_values if Eur, tuple - strain координаты точек петли;
-        loop_indexes if Eur, tuple - индексы самой петли, точки кривой не включены
-    """
-
-    # Константы
-    STRAIN_LIMIT = 0.15
-    STRAIN_CALC_LIMIT = 0.6
-    NOISE_LEVEL = 1.0
-    DISCRETE_ARRAY_LEVEL = 0.5
-    DISCRETE_ARRAY_LOOP_LEVEL = 2 * DISCRETE_ARRAY_LEVEL
-    #
-    _0002_QF = 0.002 * qf
-
-    # Параметры
-    try:
-        kwargs["fracture_strain"]
-    except KeyError:
-        kwargs["fracture_strain"] = STRAIN_LIMIT
-
-    try:
-        kwargs["residual_strength_strain"]
-    except KeyError:
-        kwargs["residual_strength_strain"] = STRAIN_LIMIT
-
-    try:
-        kwargs["residual_strength"]
-    except KeyError:
-        kwargs["residual_strength"] = qf
-
-    try:
-        kwargs["OC_deviator"]
-    except KeyError:
-        kwargs["OC_deviator"] = 0
-
-    try:
-        kwargs["gaus_or_par"]
-    except KeyError:
-        kwargs["gaus_or_par"] = 0
-
-    try:
-        kwargs["amount_points"]
-    except KeyError:
-        kwargs["amount_points"] = 700
-
-    try:
-        kwargs["Eur"]
-    except KeyError:
-        kwargs["Eur"] = None
-
-    try:
-        kwargs["unload_deviator"]
-    except KeyError:
-        kwargs["unload_deviator"] = 0.8 * qf
-
-    try:
-        kwargs["re_load_deviator"]
-    except KeyError:
-        kwargs["re_load_deviator"] = 10
-
-    try:
-        kwargs["noise_off"]
-    except KeyError:
-        kwargs["noise_off"] = None
-
-    #
-    fracture_strain = kwargs.get('fracture_strain')
-    residual_strength_strain = kwargs.get('residual_strength_strain')
-    residual_strength = kwargs.get('residual_strength')
-    OC_deviator = kwargs.get('OC_deviator')
-    gaus_or_par = kwargs.get('gaus_or_par')  # 0 - гаус, 1 - парабола
-    amount_points = kwargs.get('amount_points')
-    Eur = kwargs.get('Eur')
-    unload_deviator = kwargs.get('unload_deviator')
-    re_load_deviator = kwargs.get('re_load_deviator')
-    noise_off = kwargs.get("noise_off")
-
-    if noise_off:
-        NOISE_LEVEL = None
-        DISCRETE_ARRAY_LEVEL = None
-        DISCRETE_ARRAY_LOOP_LEVEL = None
-    # расчёт ведется с числом точек amount_points на длине STRAIN_CALC_LIMIT
-    AMOUNT_POINTS_ON_CALC = int((amount_points * STRAIN_CALC_LIMIT / STRAIN_LIMIT) / (STRAIN_CALC_LIMIT / STRAIN_LIMIT))
-    # значения будут возвращаться с числом точек amount_points но на длине STRAIN_LIMIT
-    AMOUNT_POINTS_ON_RETURN = int(AMOUNT_POINTS_ON_CALC * (STRAIN_CALC_LIMIT / STRAIN_LIMIT))
-
-    # Ограничения
-    if unload_deviator > qf:
-        unload_deviator = qf
-    if unload_deviator < 20.0:
-        unload_deviator = 20.0
-    if fracture_strain > 0.11:
-        fracture_strain = 0.15
-    if residual_strength >= qf:
-        residual_strength = qf
-    strain_at_50_strength = (qf / 2.) / E50
-    if fracture_strain < strain_at_50_strength:
-        fracture_strain = strain_at_50_strength * 1.1  # хс не может быть меньше strain_at_50_strength
-
-    # Сетки
-    strain = np.linspace(0, STRAIN_CALC_LIMIT, AMOUNT_POINTS_ON_CALC)
-
-    # Начало построения фукнции
-
-    # считаем предельное значение fracture_strain
-    fracture_strain_limit = smoothness_condition_gip(strain_at_50_strength)
-
-    if strain_at_50_strength >= fracture_strain:
-        # если strain_at_50_strength > fracture_strain, fracture_strain сдвигается в 0.15,
-        # х2,residual_strength перестает учитываться,
-        # в качестве функции используется сумма гиперболы, экспоненты или тангенса и функции синуса и параболы
-
-        fracture_strain = STRAIN_LIMIT
-        #
-        deviator, OC_strain = gip_for_compare(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-        #
-
-        if fracture_strain <= fracture_strain_limit:
-            # проверка на условие гладкости, если условие не соблюдается
-            # передвинуть xс в предельное значение
-            fracture_strain = fracture_strain_limit
-            if (fracture_strain > 0.11) and (fracture_strain < STRAIN_LIMIT):
-                fracture_strain = STRAIN_LIMIT
-            #
-            deviator, OC_strain = gip_for_compare(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-            deviator += cos_par_exp_gip(strain, E50, qf, strain_at_50_strength, fracture_strain)
-            #
-
-        # residual_strength_strain,residual_strength не выводится
-        residual_strength_strain = fracture_strain
-        residual_strength = qf
-
-    else:
-        #
-        deviator, OC_strain = gip_for_compare(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-        #
-        if fracture_strain <= fracture_strain_limit:
-            fracture_strain = fracture_strain_limit
-
-            if (fracture_strain > 0.11) and (fracture_strain < STRAIN_LIMIT):
-                fracture_strain = STRAIN_LIMIT
-            #
-            deviator, OC_strain = gip_for_compare(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-            #
-
-        if fracture_strain > STRAIN_LIMIT:
-            #
-            deviator, OC_strain = gip_for_compare(strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)
-            deviator += cos_par_exp_gip(strain, E50, qf, strain_at_50_strength, fracture_strain)
-            #
-            # residual_strength_strain,residual_strength не выводится
-            residual_strength_strain = fracture_strain
-            residual_strength = qf
-
-        else:
-            # минимально допустимое расстояния между хс и х2
-            if fracture_strain >= 0.8 * residual_strength_strain:
-                residual_strength_strain = 1.2 * fracture_strain
-            # минимально допустимое расстояние мужду residual_strength и qf
-            if residual_strength >= qf:
-                residual_strength = 0.98 * qf
-
-            # Примеряем положение кривой - оно не должно быть выше qf
-            _i, = np.where(strain >= fracture_strain)  # >= намеренно
-            _i = _i[0]
-            _gip_exp_tg, *_ = gip_for_compare(strain[:_i], E50, qf, strain_at_50_strength,
-                                              fracture_strain, OC_deviator)
-            _cos_par = cos_par_exp_gip(strain[:_i], E50, qf, strain_at_50_strength, fracture_strain)
-            maximum = max(np.hstack((_gip_exp_tg + _cos_par, np.full(len(strain[_i:]), 0.0)))
-                          if _i.size > 0 else np.full(len(strain), 0.0))
-
-            is_max_lower_qf = maximum < (qf + _0002_QF)
-
-            _i, = np.where(strain > fracture_strain)  # > намеренно
-            if is_max_lower_qf:
-                correction = 0
-            else:
-                # если максимум суммарной функции на участке от 0 до хс превышает qf, то уменьшаем
-                # высоту функции синуса и параболы на величину разницы в точке fracture_strain
-                correction = abs(maximum - qf + 2 * _0002_QF)
-
-            if _i.size > 0:
-                _i = _i[0]
-                _gip_exp_tg, *_ = gip_for_compare(strain[:_i], E50, qf, strain_at_50_strength,
-                                                  fracture_strain, OC_deviator)
-                _cos_par = cos_par_exp_gip(strain[:_i], E50, qf, strain_at_50_strength,
-                                           fracture_strain, correction)
-                if gaus_or_par == 1:
-                    _gaus_or_par = parab_gip(strain[_i:], qf, fracture_strain, residual_strength_strain,
-                                             residual_strength)
-                else:
-                    _gaus_or_par = gaus_gip(strain[_i:], qf, fracture_strain, residual_strength_strain,
-                                            residual_strength)
-                deviator = np.hstack((_gip_exp_tg + _cos_par, _gaus_or_par))
-
-            else:
-                deviator = (strain, E50, qf, strain_at_50_strength, fracture_strain, OC_deviator)[0] \
-                           + cos_par_exp_gip(strain, E50, qf, strain_at_50_strength, fracture_strain, correction)
-
-    if OC_deviator > (0.8 * qf):  # не выводить точку OC_strain, OC_deviator
-        OC_strain = fracture_strain
-        OC_deviator = qf
-
-    # переход к нужной сетке (strain_required_grid необходимо обрезать по х = STRAIN_LIMIT чтобы получить amount_points
-    strain_required_grid = np.linspace(strain.min(initial=None), strain.max(initial=None), AMOUNT_POINTS_ON_RETURN)
-    # интерполяция  для сглаживания в пике
-    spl = make_interp_spline(strain, deviator, k=5)
-    deviator_required_grid = spl(strain_required_grid)
-
-    loop_indexes = None
-
-    def noise(result):
-        """На кладывает девиации, шум и дискретизацию в соответствии с NOISE_LEVEL и DISCRETE_ARRAY_LEVEL"""
-        if not noise_off:
-            result += deviator_loading_deviation_gip(strain_required_grid, result, fracture_strain)
-            result = sensor_accuracy_gip(strain_required_grid, result, fracture_strain, noise_level=NOISE_LEVEL)
-            result = discrete_array(result, DISCRETE_ARRAY_LEVEL)
-        return result
+        pass
+        # y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
+        # y = discrete_array(y, 0.5)  # ступеньки на кривой без петли
+
+    # y1_l = y1_l + np.random.uniform(-0.4, 0.4, len(y1_l))  # шум на петле
+    # y2_l = y2_l + np.random.uniform(-0.4, 0.4, len(y2_l))  # шум на петле
+    # y1_l = discrete_array(y1_l, 1)  # ступени на петле
+    # y2_l = discrete_array(y2_l, 1)  # ступени на петле
+
+    y_loop = np.hstack((y1_l, y2_l))  # петля
 
     if Eur:
-        x_loop, y_loop, connection_to_curve_indexes, loop_indexes, loop_strain_values = \
-            loop_gip(strain_required_grid, deviator_required_grid, Eur, unload_deviator, re_load_deviator,
-                     [NOISE_LEVEL, DISCRETE_ARRAY_LOOP_LEVEL] if not noise_off else None)
+        y = np.hstack((y[:index_point1_x[0]], y_loop, y[index_point3_x[0] + 1:]))  # кривая с петлей
+        x = np.hstack((x[:index_point1_x[0]], x_loop, x[index_point3_x[0] + 1:]))  # кривая с петлей
 
-        #
-        # deviator_required_grid = noise(deviator_required_grid)
+    point1_x_index = index_point1_x[0] + 1  # первая точка петли на самом деле принадлежит исходной кривой
+    point2_x_index = index_point1_x[0] + len(y1_l)  # -1 + 1 = 0 т.к. самая нижняя точка петли принадлежит разгрузке
+    point3_x_index = index_point1_x[0] + len(
+        x_loop) - 2  # -1 - 1 = -2 т.к. последняя точка петли так же на самом деле принадлежит кривой
+    y[0] = 0.
 
-        deviator_required_grid = np.hstack((deviator_required_grid[:connection_to_curve_indexes[0]], y_loop,
-                                            deviator_required_grid[connection_to_curve_indexes[1] + 1:]))
-        strain_required_grid = np.hstack((strain_required_grid[:connection_to_curve_indexes[0]], x_loop,
-                                          strain_required_grid[connection_to_curve_indexes[1] + 1:]))
-        # Первая точка кривой всегда в нуле
-        deviator_required_grid[0] = 0.
-    else:
-        # deviator_required_grid = noise(deviator_required_grid)
-        # Первая точка кривой всегда в нуле
-        deviator_required_grid[0] = 0.
+    # # ограничение на хс (не меньше чем x_given)
+    # if xc <= 0.025:
+    #     xc = np.random.uniform(0.025, 0.03)
+    # # Точки нужно задавать на сетке:
+    # index_xc, = np.where(x_old >= xc)
+    # xc = x_old[index_xc[0]]
+    #
+    # # x_given определяется на 20 процентах нагружения
+    # index_02qf, = np.where(y >= 0.5 * qf)
+    # x_given = x_old[index_02qf[0]]
+    # x_end = 0.15  # последняя точка обьемной деформации
+    # # обрезаем массив до x_end
+    # index_xend, = np.where(x_old >= x_end)
+    # x_end = x_old[index_xend[0]]
+    #
+    # len_x_dilatacy = (x_old[-1] - x_old[-2]) * 10  # длина линейного участка дилатансии
+    # len_line_end = (x_old[-1] - x_old[-2]) * 2  # длина последнего линейного участка
+    #
+    # """
+    #         Функция построения обьемной деформации соединением сплайна и двух кривых Безьею
+    #
+    #         :param x_given: точка в которой задан коэффициент Пуассона
+    #         :m_given: коэффициент Пуассона
+    #         :xc: точка разрушения
+    #         :v_d2: значение обьемной деформации в последней точке
+    #         :x_end: последняя точка массива х для кривой обьемной деформаци
+    #         :angle_of_dilatancy: угол дилатансии от 0 до 40 градусов
+    #         :angle_end: угол наклона последнего линейного участка от 0 до 30 градусов
+    #         :len_x_dilatacy: длина линенйного участка дилатансии
+    #         :v_d_xc: значение обьемной деформации в точке хс
+    #         :len_line_end: длина последнего линейного участка
+    #         """
+    # # коэффициент Пуассона
+    # try:
+    #     kwargs["m_given"]
+    # except KeyError:
+    #     kwargs["m_given"] = 0.15
+    # # значение обьемной деформации в точке хс
+    # try:
+    #     kwargs["v_d_xc"]
+    # except KeyError:
+    #     kwargs["v_d_xc"] = np.random.uniform(-0.0003, -0.00005)  # max = 0.005 # np.random.uniform(-0.003, 0.0001)
+    # # угол дилатансии
+    # try:
+    #     kwargs["angle_of_dilatacy"] = np.tan(kwargs["angle_of_dilatacy"] * np.pi / 180)
+    # except KeyError:
+    #     kwargs["angle_of_dilatacy"] = np.tan(30 * np.pi / 180)  # np.random.uniform(0.015, 0.03)
+    #
+    # is_no_peak = xc >= 0.15
+    # if is_no_peak:
+    #     # print(is_no_peak)
+    #     xc = np.random.uniform(0.2, 0.3)
+    #     # old: xc =  x_old[-1] - len_x_dilatacy - 5 * (x_old[-1] - x_old[-2]) - len_line_end
+    # # для отрицательного угла дилатансии
+    # if kwargs["angle_of_dilatacy"] < 0:
+    #     xc = np.random.uniform(0.2, 0.3)
+    #     kwargs["angle_of_dilatacy"] = np.tan(30 * np.pi / 180)
+    #
+    # if xc > x_end - len_x_dilatacy / 2 - 5 * (x_old[-1] - x_old[-2]):  # если xc>чем точка начала
+    #     # последнего линейного участка -5 шагов, то сдвигаем х_end за область 0.15
+    #     x_end = x_end + abs(x_end - len_x_dilatacy / 2 - 5 * (x_old[-1] - x_old[-2]) - xc)
+    #
+    # # Прямая из х_given в хс
+    # if kwargs["v_d_xc"] < (-x_given * (1 - 2 * kwargs["m_given"])) / x_given * (xc - len_x_dilatacy / 2) * 0.8:
+    #     local = (-x_given * (1 - 2 * kwargs["m_given"])) / x_given * (xc - len_x_dilatacy / 2) * 0.8
+    #     kwargs["v_d_xc"] = local + abs(local) * 0.2
+    #
+    # # Ограничение на "угол" дилатансии, связанное с положеним точки хс и x_given
+    # # при положительных v_d_xc и малых значениях "угла" дилатансии
+    # if kwargs["angle_of_dilatacy"] < (kwargs["v_d_xc"] - (-x_given * (1 - 2 * kwargs["m_given"]))) / (
+    #         xc - x_given) * 1.2:
+    #     local = (kwargs["angle_of_dilatacy"] / 1.2 * (xc - x_given) + (-x_given * (1 - 2 * kwargs["m_given"])))
+    #
+    #     # print('ВНИМАНИЕ! (2) v_d_xc ИЗМЕНЕН C ', kwargs["v_d_xc"], ' НА ', local - abs(local) * 0.2)
+    #     # для получения бОльших значений v_d_xc необходимо увеличить угол angle_of_dilatacy
+    #     kwargs["v_d_xc"] = local - abs(local) * 0.2
+    #
+    #     # Вариант ограничения на угол angle_of_dilatacy:
+    #     # kwargs["angle_of_dilatacy"] = (v_d_xc - (-x_given*(1-2*kwargs["m_given"]))) / (xc - x_given)
+    #     # print('ВНИМАНИЕ! angle_of_dilatacy ИЗМЕНЕН')
+    #
+    # try:
+    #     kwargs["angle_of_end"] = np.tan(kwargs["angle_of_end"] * np.pi / 180)
+    # except KeyError:
+    #     kwargs["angle_of_end"] = np.tan(1 * np.pi / 180)  # np.random.uniform(0.015, 0.03)
+    #
+    # # TODO: возможно скорректировать условие на угол
+    # # угол наклона последнего линейного участка
+    # if kwargs["angle_of_end"] > 2 / 3 * kwargs["angle_of_dilatacy"]:
+    #     kwargs["angle_of_end"] = 2 / 3 * kwargs["angle_of_dilatacy"]
+    #     # print('ВНИМАНИЕ! angle_of_end ИЗМЕНЕН')
+    #     # print(kwargs["angle_of_end"])
+    #
+    # v_d_xc = kwargs["v_d_xc"]
+    # # if kwargs["angle_of_dilatacy"]<= 0:
+    # #     v_d_xc = 0 #np.random.uniform(-0.0015, 0.0015) - np.random.uniform(0.0025, 0.0015)
+    # # else:
+    # #     v_d_xc = 0 #np.random.uniform(-0.0015, -0.0015) - (0.0025 - kwargs["angle_of_dilatacy"]*0.0001)
+    #
+    # # КОЭФ. b ПРЯМОЙ ИЗ ХС
+    # b_dilatancy = v_d_xc - kwargs["angle_of_dilatacy"] * xc
+    # # y В ТОЧКЕ (xc + len_x_dilatacy / 2)
+    # v_d_dilatancy_end = kwargs["angle_of_dilatacy"] * (xc + len_x_dilatacy / 2) + b_dilatancy
+    # # b = kx1 - y1; y2 = kx2 + b
+    # y_end_lim = kwargs["angle_of_end"] * (x_end - (xc + len_x_dilatacy / 2)) + v_d_dilatancy_end
+    # ang = np.tan(kwargs["angle_of_end"]) * 180 / np.pi
+    # try:
+    #     kwargs["v_d2"]
+    # except:
+    #     kwargs["v_d2"] = (((kwargs["angle_of_dilatacy"] -
+    #                         abs(kwargs["angle_of_dilatacy"] - kwargs["angle_of_end"]) * np.random.uniform(0.2, 0.6))
+    #                        * (x_end - len_line_end) + b_dilatancy))
+    #     # np.random.uniform(-0.006, 0.001)  #
+    # if kwargs["v_d2"] <= y_end_lim:  # ТОЧКА НЕ НИЖЕ ЧЕМ ПРЕДЕЛЬНОЕ ЗНАЧЕНИЕ
+    #     local = (kwargs["angle_of_dilatacy"] * (x_end - len_line_end) + b_dilatancy)
+    #     h = abs(local - y_end_lim)
+    #     if y_end_lim > 1 * 10 ** (-4):
+    #         # print('(1)')
+    #         # kwargs["v_d2"] = y_end_lim * 1.5
+    #         kwargs["v_d2"] = y_end_lim + abs(h) * 0.2
+    #     elif y_end_lim < -1 * 10 ** (-4):
+    #         # print('(2)')
+    #         # kwargs["v_d2"] = y_end_lim / 1.5
+    #         kwargs["v_d2"] = y_end_lim + abs(h) * 0.2
+    #     elif abs(y_end_lim) <= 1 * 10 ** (-4):
+    #         # print('(3)')
+    #         kwargs["v_d2"] = (2 * abs(v_d_dilatancy_end - v_d_xc) + abs(
+    #             y_end_lim)) * 1.2  # abs(-x_given*(1-2*kwargs["m_given"]))*0.1
+    #     # print('ВНИМАНИЕ! v_d2 ИЗМЕНЕН НИЖНИЙ ПРЕДЕЛ')
+    #     # print('y_end_lim=', y_end_lim)
+    #     # print('v_d2=', kwargs["v_d2"])
+    # # if abs(v_d_dilatancy_end) >= (kwargs["angle_of_dilatacy"] * (x_end - 20*len_line_end) + b_dilatancy):
+    # #     smooth_param = v_d_dilatancy_end-abs(v_d_dilatancy_end)*
+    # # else:
+    # #     smooth_param = 20
+    #
+    # # Ограничение на положение точки v_d2 (координата y) в x_end
+    # # смещение формируется за счет "уменьшения" угла дилатансии"
+    # # угол дилатансии не может быть "уменьшен" так, чтобы стать меньше angle_of_end
+    # # следовательно, "уменьшение" происходит пропорционально их разнице
+    # # чем Больше последняя константа, тем Больше уменьшение
+    # angle_of_dilatacy_max_limit_param = abs(kwargs["angle_of_dilatacy"] - kwargs["angle_of_end"]) * 0.2
+    #
+    # if (kwargs["v_d2"]) >= (((kwargs["angle_of_dilatacy"] - angle_of_dilatacy_max_limit_param)
+    #                          * (x_end - len_line_end) + b_dilatancy)):
+    #
+    #     kwargs["v_d2"] = (((kwargs["angle_of_dilatacy"] - angle_of_dilatacy_max_limit_param)
+    #                        * (x_end - len_line_end) + b_dilatancy))
+    #
+    #     # print('dil=', kwargs["angle_of_dilatacy"] * 0.6)
+    #     # print('end=', kwargs["angle_of_end"])
+    #     # local = (kwargs["angle_of_dilatacy"] * (x_end - len_line_end) + b_dilatancy)
+    #     # h = abs(local - y_end_lim)
+    #     # kwargs["v_d2"] = local - abs(h) * 0.2
+    #     if kwargs["v_d2"] <= v_d_dilatancy_end:
+    #         kwargs["v_d2"] = (kwargs["angle_of_dilatacy"] * (x_end - len_line_end) + b_dilatancy)
+    #     # print('ВНИМАНИЕ! v_d2 ИЗМЕНЕН ВЕРХНИЙ ПРЕДЕЛ')
+    #     # np.random.uniform(0, 0.015)  # np.random.uniform(0.015, 0.03)
+    #
+    # # print(kwargs["v_d2"])
+    # # print(v_d_dilatancy_end)
+    #
+    # m_given = kwargs.get('m_given')
+    # v_d2 = kwargs.get('v_d2')
+    # angle_of_dilatacy = kwargs.get('angle_of_dilatacy')
+    # angle_of_end = kwargs.get('angle_of_end')
+    #
+    # # x_vertex = np.random.uniform(x_given + 0.3 * (xc - x_given),
+    # #                              x_given + 0.7 * (xc - x_given))  # абцисса вершины обьемной деформации
+    #
+    # # y1, v_d_given = volumetric_deformation(x_old, x_given, m_given, xc + np.random.uniform(0.005, 0.01), v_d2, x_end, angle_of_dilatacy,
+    # #                                        angle_of_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x, point2_x,
+    # #                                        point3_x)
+    #
+    # y1, v_d_given = volumetric_deformation(x_old, x_given, m_given, xc, v_d2, x_end, angle_of_dilatacy,
+    #                                        angle_of_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x, point2_x,
+    #                                        point3_x)
+    index_x2, = np.where(x >= 0.15)
+    # y1 = y1[:index_x2[0]]
+    x = x[:index_x2[0]]
+    y = y[:index_x2[0]]
 
-    # наложение хода штока и обрезка функций
-    # rod_move_result = initial_free_rod_move(strain_required_grid,
-    #                                         deviator_required_grid,
-    #                                         strain_cut=STRAIN_LIMIT,
-    #                                         noise=(NOISE_LEVEL, DISCRETE_ARRAY_LEVEL) if not noise_off else None)
-    # strain_required_grid = rod_move_result[0]
-    # deviator_required_grid = rod_move_result[1]
-    # len_rod_move = rod_move_result[2]
-    loop_indexes_with_rod = None if not Eur else (loop_indexes[i] + len_rod_move for i in range(len(loop_indexes)))
+    # формирование начального участка функции девиаторного нагружения
+    # y_bias = np.random.uniform(0.005, 0.015)  # смещение y
+    # y1_bias = np.random.uniform(0.001, 0.002)
+    # y2, v_d_given2 = volumetric_deformation(x_old, x_given, m_given, xc, v_d2, x_end, angle_of_dilatacy,
+    #                                         angle_of_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x, point2_x,
+    #                                         point3_x)
+    # y2 = y2[:index_x2[0]]
+    # if not Eur:
+    #     try:
+    #         y1 += deviation_volume_strain(x, x_given, x[np.argmax(y)], 0.008, 0.001)
+    #         y2 += deviation_volume_strain(x, x_given, 0.15, 0.005, 0.002)
+    #     except:
+    #         pass
 
-    return strain_required_grid, deviator_required_grid
+    # random_param = np.random.uniform(-0.0001, 0.0001, len(y1))
+    # y1 += random_param
+    # y2 += random_param
 
+    # y1_proiz = (y1[1] - y1[0]) / (x[1] - x[0])
 
-def initial_free_rod_move_gip(strain, deviator, strain_cut=0.151, noise=None):
-    """
-    Обрезает strain и deviator по strain_cut и
-    возвращает strain, deviator с присоединенным ходом штока и длину хода штока (в точках)
+    # x_last_point = np.random.uniform(0.005, 0.01) - (
+    #         x[-1] - x[-2])  # положительная последняя точка х для метрвого хода штока
+    # x_start = np.linspace(0, x_last_point,
+    #                       int(x_last_point / (
+    #                                   x_last_point / amount_points_for_stock) + 1))  # положительный масив х для метрвого хода штока
+    # slant = np.random.uniform(20, 30)  # наклон функции экспоненты
+    # amplitude = np.random.uniform(15, 25)  # высота функции экспоненты
+    # y_start = exponent(x_start, amplitude, slant)  # абциссы метрвого хода штока
+    # x_start -= x_start[
+    #                -1] + (x[-1] - x[
+    #     -2])  # смещение массива x для метрвого хода штока кривой девиаторного нагружения в отрицальную область
+    # y_start -= y_start[
+    #     -1]  # смещение массива y для метрвого хода штока кривой девиаторного нагружения в отрицальную область
+    # y_start = y_start + np.random.uniform(-0.4, 0.4, len(y_start))
+    # y_start = discrete_array(y_start, 0.5)  # наложение ступенчватого шума на мертвый ход штока
+    # x = np.hstack((x_start, x))  # добавление начального участка в функцию девиаторного нагружения
+    #
+    # x += abs(x[0])  # смещение начала кривой девиаторного нагруружения в 0
+    #
+    # y = np.hstack((y_start, y))  # добавление начального участка в функцию девиаторного нагружения
+    # y += abs(y[0])  # смещение начала кривой девиаторного нагружения в 0
+    # y[0] = 0.  # искусственное зануление первой точки
+    #
+    # y1_start = spline([x_start[0], 0], [0, y1_bias], x_start, 0, y1_proiz,
+    #                   k=3)  # метрвый ход штока кривой обьемной деформации
+    # y1 = np.hstack((y1_start, y1 + y1_bias))  # добавление мертвого хода штока в функцию обьемной деформации
+    # y2 = np.hstack((y1_start, y2 + y1_bias))
 
-    :param strain:
-    :param deviator:
-    :param strain_cut: optional, default = 0.151, значение, по которому обрезаются массивы
-    :param noise: optional, default None, параметры для моделирования шума tuple[float, float]
+    # y1[0] = 0.  # искусственное зануление первой точки
+    # y2[0] = 0.
 
-    Returns
-    -------
-    strain -- cut strain with rod \n
-    deviator -- cut deviator with rod \n
-    len_rod_move -- len of rod in points: len(strain_start)
-    """
-    _i, = np.where(strain > strain_cut)
-    assert _i.size > 0, "Ошибка обрезки, strain_cut не может быть больше max(strain)"
-    strain = strain[:_i[0]]
-    deviator = deviator[:_i[0]]
+    # random_param = np.random.uniform(-0.0001, 0.0001, len(y1))
+    # y1 = y1 + random_param
+    # y1 = discrete_array(y1, 0.0001)  # дискретизация по уровню функции обьемной деформации
+    # y2 = y2 + random_param
+    # y2 = discrete_array(y2, 0.0001)  # дискретизация по уровню функции обьемной деформации
 
-    strain_last_point = np.random.uniform(0.005, 0.01) - (strain[-1] - strain[-2])
-    '''положительная последняя точка х для метрвого хода штока'''
+    # if xc < 0.15:
+    #     y[-1] = qf2 + abs(y_start[0])
 
-    strain_start = np.linspace(0, strain_last_point, int(strain_last_point / (strain[-1] - strain[-2])) + 1)
-    '''положительный масив х для метрвого хода штока'''
+    # if Eur:
+    #     # для записи в файл
+    #     point1_x_index = point1_x_index + len(x_start)
+    #     point2_x_index = point2_x_index + len(x_start)
+    #     point3_x_index = point3_x_index + len(x_start)
+    #
+    #     # + 1 для последней разгрузки потому что точка принадлежит кривой как и в петле
+    #     indexs_loop = [point1_x_index, point2_x_index, point3_x_index]
+    # else:
+    #     indexs_loop = [0, 0, 0]
+    #
+    # if max_time <= 499:
+    #     time = [i / 20 for i in range(len(x))]
+    # elif max_time > 499 and max_time <= 2999:
+    #     time = [i / 2 for i in range(len(x))]
+    # else:
+    #     time = [i * 3 for i in range(len(x))]
+    #
+    # if U:
+    #     # print('u', U)
+    #     old_U = U
+    #     if U < 150:
+    #         k_low_u = 250 / U
+    #         U = U * k_low_u
+    #
+    #     e50_U = U / x50
+    #     x_old, x_U, y_U, *__ = dev_loading(U, e50_U, x50, kwargs.get('xc'), 1.2 * kwargs.get('xc'),
+    #                                        np.random.uniform(0.3, 0.7) * U, 0, amount_points, hyp_ratio)
+    #
+    #     if old_U < 150:
+    #         y_U = y_U * k_low_u
+    #         U = U * k_low_u
+    #
+    #     index_x2, = np.where(x_U >= 0.15)
+    #     x_U = x_U[:index_x2[0]]
+    #     y_U = y_U[:index_x2[0]]
+    #
+    #     # x_last_point = np.random.uniform(0.005, 0.01) - (x_U[-1] - x_U[-2])
+    #     x_start = np.linspace(0, x_last_point, int(x_last_point / (x_U[-1] - x_U[-2])) + 1)
+    #     slant = np.random.uniform(20, 30)
+    #     # amplitude = np.random.uniform(15, 25)
+    #     amplitude *= np.random.uniform(1, 2)
+    #     y_start = exponent(x_start, amplitude, slant)
+    #     x_start -= x_start[-1] + (x_U[-1] - x_U[-2])
+    #     y_start -= y_start[-1]
+    #     y_start = y_start + np.random.uniform(-0.4, 0.4, len(y_start))
+    #     y_start = discrete_array(y_start, 0.5)
+    #     x_U = np.hstack((x_start, x_U))
+    #
+    #     x_U += abs(x_U[0])
+    #
+    #     y_U = np.hstack((y_start, y_U))
+    #     y_U += abs(y_U[0])
+    #     y_U[0] = 0.
+    #
+    #     y1_U, v_d_given = volumetric_deformation(x_old, x_given, m_given, xc, v_d2, x_end, angle_of_dilatacy,
+    #                                              angle_of_end, len_x_dilatacy, v_d_xc, len_line_end, Eur, point1_x,
+    #                                              point2_x,
+    #                                              point3_x)
+    #     y1_U = y1_U[:index_x2[0]]
+    #     y1_proiz_U = (y1_U[1] - y1_U[0]) / (x_U[1] - x_U[0])
+    #     y1_start = spline([x_start[0], 0], [0, y1_bias], x_start, 0, y1_proiz_U,
+    #                       k=3)  # метрвый ход штока кривой обьемной деформации
+    #     y1_U = np.hstack((y1_start, y1_U + y1_bias))  # добавление мертвого хода штока в функцию обьемной деформации
+    #     y1_U[0] = 0.  # искусственное зануление первой точки
+    #     y2_U = y1_U
+    #
+    #     """u = exponent(x[len(x_start):np.argmax(y)] - x[len(x_start)], U, np.random.uniform(8, 10)) + amplitude
+    #     y_start = np.linspace(0, amplitude, len(x_start))
+    #     u *= (np.max(u)/(U+amplitude))
+    #     shape = np.random.uniform(0.005, 0.01)
+    #     fall = np.random.uniform(0.05, 0.1) * U
+    #     i, = np.where(x > x[np.argmax(y)] + shape)
+    #     u_fall = step_sin(mirrow_element(x[np.argmax(y): i[0]], (x[np.argmax(y)] + x[i[0]])/2), fall/2, (x[np.argmax(y)] + x[i[0]])/2, shape) + U + amplitude - fall/2
+    #     y_U = np.hstack((
+    #         y_start,
+    #         u,
+    #         u_fall,
+    #         np.full(len(y) - len(u) - len(y_start) - len(u_fall), u_fall[-1])
+    #     ))
+    #     y_U += abs(y_U[0])
+    #     y_U[0] = 0.
+    #     y_U += create_deviation_curve(x, 10, points=np.random.uniform(5, 8), low_first_district=1)
+    #     y_U += np.random.uniform(-3, 3, len(y_U))
+    #     y_U[0] = 0.
+    #     y_U *= ((U + amplitude )/ np.max(y_U))
+    #     y_U[0] = 0.
+    #     discrete_array(y_start, 0.5)
+    #     y_U[len(x_start)] = amplitude
+    #     y_U[len(x_start) + 1] = amplitude
+    #     y_U[len(x_start) - 1] = amplitude"""
+    #
+    #     return x_U, y_U, y1_U, y2_U, indexs_loop, time, len(x_start)
 
-    SLANT = np.random.uniform(20, 30)
-    '''наклон функции экспоненты'''
-    AMPLITUDE = np.random.uniform(15, 25)
-    '''высота функции экспоненты'''
-
-    # определяем абциссу метрвого хода штока
-    deviator_start = exponent(strain_start, AMPLITUDE, SLANT)
-    # смещение массива x для метрвого хода штока кривой девиаторного нагружения в отрицальную область
-    strain_start -= strain_start[-1] + (strain[-1] - strain[-2])
-    # смещение массива y для метрвого хода штока кривой девиаторного нагружения в отрицальную область
-    deviator_start -= deviator_start[-1]
-
-    if noise:
-        assert len(noise) == 2, "noise должен содерждать значение для шума и значение для уровня ступеней"
-        deviator_start = deviator_start + np.random.uniform(-noise[0], noise[0], len(deviator_start))
-        deviator_start = discrete_array(deviator_start, noise[1])  # наложение ступенчватого шума на мертвый ход штока
-
-    strain = np.hstack((strain_start, strain))  # добавление начального участка в функцию девиаторного нагружения
-    strain += abs(strain[0])  # смещение начала кривой девиаторного нагруружения в 0
-
-    deviator = np.hstack((deviator_start, deviator))  # добавление начального участка в функцию девиаторного нагружения
-    deviator += abs(deviator[0])  # смещение начала кривой девиаторного нагружения в 0
-    deviator[0] = 0.  # искусственное зануление первой точки
-
-    len_rod_move = len(strain_start)
-
-    return strain, deviator, len_rod_move
-
-
-
+    return x, y, [[x50, qf / 2], [xc, qf], [x2, qf2]]
 
 
 
@@ -2740,19 +2042,17 @@ class Main(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.params = {"qf": 650, "e50": 3119, "qf2": 560, "xc": 0.07, "xc2": 0.115}
+        self.params = {"qf": 650, "e50": 3119, "qf2": 560, "xc": 0.07, "xc2": 0.115, "hyp_ratio": 0.5}
 
         self.createIU()
 
-        x, y, points = dev_loading(self.params["qf"], self.params["e50"], fracture_strain=self.params["xc"],
-                             residual_strength_strain=self.params["xc2"], residual_strength=self.params["qf2"])
-        x1, y1 = dev_loading_exp(self.params["qf"], self.params["e50"], fracture_strain=self.params["xc"],
-                             residual_strength_strain=self.params["xc2"], residual_strength=self.params["qf2"])
-        x2, y2 = dev_loading_gip(self.params["qf"], self.params["e50"], fracture_strain=self.params["xc"],
-                                 residual_strength_strain=self.params["xc2"], residual_strength=self.params["qf2"])
+        x, y, points = curve(self.params["qf"], self.params["e50"], xc=self.params["xc"],
+                             x2=self.params["xc2"], qf2=self.params["qf2"], hyp_ratio=self.params["hyp_ratio"])
+        print(x[-1], y[-1])
+
         i, = np.where(x > 0.151)
 
-        self.canvas.plot(x[:i[0]], y[:i[0]], x1[:i[0]], y1[:i[0]], x2[:i[0]], y2[:i[0]], self.params, points)
+        self.canvas.plot(x, y, self.params, points)
 
 
     def createIU(self):
@@ -2786,6 +2086,13 @@ class Main(QWidget):
         self.xc2_slider.setTickInterval(1)
         self.xc2_slider.sliderMoved.connect(self.plot)
 
+        self.hyp_ratio_slider = QSlider(QtCore.Qt.Horizontal)
+        self.hyp_ratio_slider.setMinimum(0)
+        self.hyp_ratio_slider.setMaximum(1000)
+        self.hyp_ratio_slider.setValue(self.params["hyp_ratio"] * 1000)
+        self.hyp_ratio_slider.setTickInterval(1)
+        self.hyp_ratio_slider.sliderMoved.connect(self.plot)
+
         self.qf2_slider = QSlider(QtCore.Qt.Horizontal)
         self.qf2_slider.setMinimum(200)
         self.qf2_slider.setMaximum(1400)
@@ -2812,7 +2119,11 @@ class Main(QWidget):
         self.layout.addWidget(self.xc2_slider, 4, 1)
 
 
-        self.layout.addWidget(self.canvas, 5, 0, -1, -1)
+        self.layout.addWidget(QLabel("hyp_ratio"), 5, 0)
+        self.layout.addWidget(self.hyp_ratio_slider, 5, 1)
+
+
+        self.layout.addWidget(self.canvas, 6, 0, -1, -1)
 
         self.setLayout(self.layout)
 
@@ -2822,15 +2133,12 @@ class Main(QWidget):
         # self.qf2_slider.setMaximum(self.params["qf"]*0.99)
         self.canvas.clear()
 
-        x, y, points =  dev_loading(self.params["qf"], self.params["e50"], fracture_strain=self.params["xc"],
-                             residual_strength_strain=self.params["xc2"], residual_strength=self.params["qf2"])
-        x1, y1 = dev_loading_exp(self.params["qf"], self.params["e50"], fracture_strain=self.params["xc"],
-                             residual_strength_strain=self.params["xc2"], residual_strength=self.params["qf2"])
-        x2, y2 = dev_loading_gip(self.params["qf"], self.params["e50"], fracture_strain=self.params["xc"],
-                                 residual_strength_strain=self.params["xc2"], residual_strength=self.params["qf2"])
+        x, y, points = curve(self.params["qf"], self.params["e50"], xc=self.params["xc"],
+                             x2=self.params["xc2"], qf2=self.params["qf2"], hyp_ratio=self.params["hyp_ratio"])
+
         i, = np.where(x > 0.151)
 
-        self.canvas.plot(x[:i[0]], y[:i[0]], x1[:i[0]], y1[:i[0]], x2[:i[0]], y2[:i[0]], self.params, points)
+        self.canvas.plot(x, y, self.params, points)
 
     def get_params(self):
         self.params["qf"] = float(self.qf_slider.value())
@@ -2838,6 +2146,9 @@ class Main(QWidget):
         self.params["qf2"] = float(self.qf2_slider.value())
         self.params["xc"] = float(self.xc_slider.value()) / 1000
         self.params["xc2"] = float(self.xc2_slider.value()) / 1000
+        self.params["hyp_ratio"] = float(self.hyp_ratio_slider.value()) / 1000
+
+
 
 
 
@@ -2875,21 +2186,20 @@ class Canvas(QFrame):  # получает на входе размер окна.
         self.ax1.set_xlabel("Вертикальная деформация, д.е.", fontfamily='Times New Roman', fontsize=11)
         self.ax1.set_ylabel("Девиатор, кПа", fontfamily='Times New Roman', fontsize=11)
 
-    def plot(self, x, y, x1, y1, x2, y2,  params, points=False):
+    def plot(self, x, y,  params, points=False):
 
-        self.ax1.plot(x, y, label = 'средняя')
-        self.ax1.plot( x1, y1, label = 'экспонента')
-        self.ax1.plot(x2, y2, label = 'гипербола')
-
+        self.ax1.plot(x, y)
         self.ax1.plot([], [], color="white", label="$q_f$ = " + str(params["qf"]))
         self.ax1.plot([], [], color="white", label="$E_{50}$ = " + str(params["e50"]))
         self.ax1.plot([], [], color="white", label="$q_f2$ = " + str(params["qf2"]))
         self.ax1.plot([], [], color="white", label="$x_c$ = " + str(params["xc"]))
         self.ax1.plot([], [], color="white", label="$x_c$2 = " + str(params["xc2"]))
+        self.ax1.plot([], [], color="white", label="hyp_ratio = " + str(params["hyp_ratio"]))
+
 
         if points:
             for i in range(len(points)):
-                if points[i][0] < 0.151:
+                if points[i][0] < 0.149:
                     self.ax1.scatter(*points[i])
 
         self.ax1.legend()

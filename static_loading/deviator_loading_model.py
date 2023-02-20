@@ -793,7 +793,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                       "volumetric_strain_xc": None,
                                       "Eur": None,
                                       "amplitude": None,
-                                      "free_deviations": None})
+                                      "free_deviations": None,
+                                      "hyp_ratio": None})
 
         self.pre_defined_kr_fgs = None
 
@@ -910,7 +911,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
                   "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]},
                   "Eur": Eur,
-                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]}
+                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]},
+                  "hyp_ratio": {"value": self._draw_params.hyp_ratio, "borders": [0.000001, 1]}
                   }
         return params
 
@@ -934,6 +936,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.volumetric_strain_xc = params["volumetric_strain_xc"]
         self._draw_params.Eur = params["Eur"]
         self._draw_params.amplitude = params["amplitude"]
+        self._draw_params.hyp_ratio = params["hyp_ratio"]
 
         # if unload_start_y - self.loop_height > 10:
         #     self.unloading_borders = (unload_start_y, unload_start_y - self.loop_height)
@@ -967,6 +970,16 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(self._draw_params.dilatancy)) /
                              (1 - np.sin(np.deg2rad(self._draw_params.dilatancy)))))
 
+        if self._draw_params.hyp_ratio == None:
+            self._draw_params.hyp_ratio = 1.  # k - линейный коэффициент учета влияния функции гиперболы и экспоненты
+
+            if self._test_params.E50 <= 70000 and self._test_params.E50 >= 20000:
+                self._draw_params.hyp_ratio = 0.95 / 68000. * self._test_params.E50 - 0.95 / 34
+            elif self._test_params.E50 < 2000:
+                self._draw_params.hyp_ratio = 0
+            elif self._test_params.E50 > 70000:
+                self._draw_params.hyp_ratio = 0.95
+
         if self._test_params.Eur:
             self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
             self._test_data.cell_volume_strain, self._test_data.reload_points, self._test_data.time, begin = curve(self._test_params.qf, self._test_params.E50, xc=self._draw_params.fail_strain,
@@ -982,7 +995,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                 y_rel_p=self.unloading_borders[0],
                                                                 point2_y=self.unloading_borders[1],
                                                                 v_d_xc=-self._draw_params.volumetric_strain_xc,
-                                                                U=self._test_params.u)
+                                                                U=self._test_params.u,
+                                                                hyp_ratio=self._draw_params.hyp_ratio)
         else:
             self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
             self._test_data.cell_volume_strain, self._test_data.reload_points, self._test_data.time, begin = curve(
@@ -995,7 +1009,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                  max_time=max_time,
                 angle_of_dilatacy=dilatancy,
                 v_d_xc=-self._draw_params.volumetric_strain_xc,
-                U=None)
+                U=None,
+                hyp_ratio=self._draw_params.hyp_ratio)
 
         self._test_data.deviator = np.round(self._test_data.deviator, 3)
         self._test_data.strain = np.round(

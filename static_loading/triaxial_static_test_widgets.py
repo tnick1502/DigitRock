@@ -491,7 +491,8 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
                                                                        "dilatancy": "Угол дилатансии",
                                                                        "volumetric_strain_xc": "Объемн. деформ. в пике",
                                                                        "Eur": "Модуль разгрузки",
-                                                                       "amplitude": "Амплитуда девиаций"
+                                                                       "amplitude": "Амплитуда девиаций",
+                                                                       "hyp_ratio": "Коэффициент влияния"
                                                                        })
 
         self.deviator_loading_sliders.setFixedHeight(240)
