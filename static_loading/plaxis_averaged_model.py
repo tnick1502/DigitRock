@@ -23,7 +23,7 @@ class AveragedModel:
     def __init__(self, keys):
         self.tests = {}
         self.approximate_type = "poly"
-        self.approximate_param_poly = 8
+        self.approximate_param_poly = 6
         self.approximate_param_sectors = 500
         for key in keys:
             self.tests[key] = E_models[key].deviator_loading.get_for_average()
@@ -71,11 +71,11 @@ class AveragedModel:
         max_strain = max([max(self.tests[test]["strain"]) for test in self.tests])
 
         for test in self.tests:
-            qf_index = (self.tests[test]["deviator"].argmax())
-            if self.tests[test]["strain"][qf_index] <= max_strain:
-                points_count = int((max_strain - self.tests[test]["strain"][qf_index]) * (1000 / 0.15))
-                strain_for_sum = np.hstack((self.tests[test]["strain"][:qf_index],  np.linspace(self.tests[test]["strain"][qf_index], max_strain, points_count)))
-                deviator_for_sum = np.hstack((self.tests[test]["deviator"][:qf_index], np.full(points_count, np.max(self.tests[test]["deviator"]))))
+            #qf_index = (self.tests[test]["deviator"].argmax())
+            if self.tests[test]["strain"][-1] <= max_strain:
+                points_count = int((max_strain - self.tests[test]["strain"][-1]) * (1000 / 0.15))
+                strain_for_sum = np.hstack((self.tests[test]["strain"],  np.linspace(self.tests[test]["strain"][-1], max_strain, points_count)))
+                deviator_for_sum = np.hstack((self.tests[test]["deviator"], np.full(points_count, np.max(self.tests[test]["deviator"][-1]))))
             else:
                 strain_for_sum = self.tests[test]["strain"]
                 deviator_for_sum = self.tests[test]["deviator"]
@@ -106,7 +106,10 @@ class AveragedModel:
                     averange_strain.append(key)
                     averange_deviator.append(sum(step_points[key]) / len(step_points[key]))
 
-            return np.array(averange_strain), ndimage.gaussian_filter(np.array(averange_deviator), 3, order=0)
+            averange_deviator = ndimage.gaussian_filter(np.array(averange_deviator), 3, order=0)
+            averange_deviator[0] = 0
+
+            return np.array(averange_strain), np.array(averange_deviator)
 
         elif type == "poly":
             averange_strain = np.linspace(0, max(strain), 50)
