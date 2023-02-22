@@ -679,7 +679,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                   "residual_strength": {"value": self._draw_params.residual_strength,
                                         "borders": [self._test_params.tau_max*0.5, self._test_params.tau_max]},
                   "qocr": {"value": self._draw_params.qocr, "borders": [0, self._test_params.tau_max]},
-                  "poisson": {"value": self._draw_params.poisson, "borders": [0.25, 0.45]},
+                  "poisson": {"value": self._draw_params.poisson, "borders": [0.1, 0.45]},
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [-20, 25]},
                   "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]}}
         return params

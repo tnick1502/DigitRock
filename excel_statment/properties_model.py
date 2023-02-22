@@ -1939,7 +1939,7 @@ class ShearProperties(MechanicalProperties):
                 physical_properties.Ir,
                 physical_properties.granulometric_10,
                 physical_properties.granulometric_5,
-                physical_properties.granulometric_2)
+                physical_properties.granulometric_2)*0.6
 
             self.m = MechanicalProperties.define_m(physical_properties.e, physical_properties.Il)
 
@@ -1977,6 +1977,67 @@ class ShearProperties(MechanicalProperties):
                     ShearProperties.define_reference_pressure_array_calculated_by_referense_pressure(self.sigma)
                 self.pressure_array["calculated_by_pressure"] = [ShearProperties.round_sigma(val) for
                                                       val in self.pressure_array["calculated_by_pressure"]]
+
+    @staticmethod
+    def define_poissons_ratio(Rc: float, Ip: float, Il: float, Ir: float, size_10: float, size_5: float,
+                              size_2: float) -> float:
+
+        round_ratio = 2  # число знаков после запятой
+
+        check_size = lambda size: size if size else 0
+        # Скала
+        if Rc:
+            if (Rc > 0) and (Rc <= 50):
+                return np.round(np.random.uniform(0.22, 0.28), round_ratio)
+            elif (Rc > 50) and (Rc <= 150):
+                return np.round(np.random.uniform(0.18, 0.25), round_ratio)
+            elif (Rc > 150):
+                return np.round(np.random.uniform(0.18, 0.25), round_ratio)
+
+        # Крупнообломочный
+        if (check_size(size_10) + check_size(size_5) + check_size(size_2)) > 50:
+            return np.round(np.random.uniform(0.18, 0.27), round_ratio)
+
+        # Торф
+        if Ir:
+            if (Ir >= 50):
+                return np.round(np.random.uniform(0.35, 0.4), round_ratio)
+
+        # Пески
+        if Ip == None:
+            return np.round(np.random.uniform(0.25, 0.35), round_ratio)
+        # Глины, суглинки
+        if Ip:
+            if not Il:  # проверка на заполненность
+                Il = 0.5
+
+            if Ip >= 17:
+                if Il <= 0:
+                    return np.round(np.random.uniform(0.2, 0.3), round_ratio)
+                elif (Il > 0) and (Il <= 0.25):
+                    return np.round(np.random.uniform(0.3, 0.38), round_ratio)
+                elif (Il > 0.25) and (Il <= 0.75):
+                    return np.round(np.random.uniform(0.35, 0.42), round_ratio)
+                elif Il > 0.75:
+                    return np.round(np.random.uniform(0.4, 0.47), round_ratio)
+            elif (Ip >= 7) and (Ip < 17):
+                if Il <= 0:
+                    return np.round(np.random.uniform(0.22, 0.32), round_ratio)
+                elif (Il > 0) and (Il <= 0.25):
+                    return np.round(np.random.uniform(0.28, 0.35), round_ratio)
+                elif (Il > 0.25) and (Il <= 0.75):
+                    return np.round(np.random.uniform(0.33, 0.4), round_ratio)
+                elif Il > 0.75:
+                    return np.round(np.random.uniform(0.38, 0.47), round_ratio)
+            elif (Ip >= 1) and (Ip < 7):
+                if Il <= 0:
+                    return np.round(np.random.uniform(0.21, 0.26), round_ratio)
+                elif (Il > 0) and (Il <= 0.75):
+                    return np.round(np.random.uniform(0.25, 0.32), round_ratio)
+                elif Il > 0.75:
+                    return np.round(np.random.uniform(0.3, 0.36), round_ratio)
+            else:
+                return np.round(np.random.uniform(0.25, 0.35), round_ratio)
 
     @staticmethod
     def define_sigma(depth: float) -> float:
