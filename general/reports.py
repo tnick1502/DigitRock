@@ -587,6 +587,62 @@ def sample_identifier_table(canvas, Data_customer, Data_phiz, Lab, name, lname =
 
     return (moove-3)*4
 
+def ege_identifier_table(canvas, data_customer, EGE, name, p_ref, K0, lname = "-СР"):  # Верхняя таблица данных
+
+    moove = int(len(data_customer.object_name)/115) + 1
+    if moove <= 3:
+        moove = 3
+
+    objectStyle = LeftStyle
+    if moove >= 6:
+        moove = moove -1
+        objectStyle = LeftStyle_min
+
+    t = Table([[name[0], "", "", "", "", "", "", "", "", ""],
+               [name[1]],
+               ["Протокол №", "", str_for_excel(EGE + "/" + data_customer.object_number + lname), "", "", "", "", "", "", ""],
+               ['Заказчик:', Paragraph(data_customer.customer, LeftStyle)],
+               ['Объект:', Paragraph(data_customer.object_name, objectStyle)], *[[""] for _ in range(moove)],
+               ["ИГЭ/РГЭ:", "", "", Paragraph(strNone(EGE), LeftStyle)],
+               [Paragraph('''<p>Референтное давление p<sub rise="2.5" size="6">ref</sub>, МПа:</p>''', LeftStyle), "", "", zap(p_ref, 3)],
+               [Paragraph('''<p>K<sub rise="0.5" size="6">0</sub>, д.е.:</p>''', LeftStyle), "", "", zap(K0, 2)],
+               ], colWidths=17.5 * mm, rowHeights=4 * mm)
+
+    t.setStyle([("FONTNAME", (0, 0), (-1, 1), 'TimesDj'),
+                 ("FONTNAME", (0, 2), (-1, -1), 'Times'),
+                 ("FONTSIZE", (0, 0), (-1, -1), 8),
+                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                 ("ALIGN", (0, 0), (-1, 1), "CENTER"),
+                 ("ALIGN", (0, 2), (-1, -1), "LEFT"),
+                 #("LEFTPADDING", (0, 0), (0, 0), 62 * mm),
+                 #("LEFTPADDING", (1, 0), (1, 0), 3 * mm),
+                 ('SPAN', (0, 0), (-1, 0)),
+                 ('SPAN', (0, 1), (-1, 1)),
+
+                 ('SPAN', (0, 2), (1, 2)), ('SPAN', (2, 2), (-1, 2)),
+                 ('SPAN', (1, 3), (-1, 3)),
+                 ('SPAN', (0, 4), (0, 4+moove)), ('SPAN', (1, 4), (-1, 4+moove)),
+                 ('SPAN', (0, 5+moove), (2, 5+moove)), ('SPAN', (3, 5+moove), (-1, 5+moove)),
+                 ('SPAN', (0, 6+moove), (2, 6+moove)), ('SPAN', (3, 6+moove), (-1, 6+moove)),
+                 ('SPAN', (0, 7 + moove), (2, 7 + moove)), ('SPAN', (3, 7 + moove), (-1, 7 + moove)),
+                 ("BACKGROUND", (0, 2), (1, 2), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 3), (0, 3), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 4), (0, 4), HexColor(0xebebeb)),
+
+                 ("BACKGROUND", (0, 5+moove), (2, 5+moove), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 6+moove), (2, 6+moove), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 7+moove), (0, 7+moove), HexColor(0xebebeb)),
+                 #("BACKGROUND", (0, 2), (1, 2), HexColor(0xd9d9d9)),
+                 #('SPAN', (0, 2), (1, 2)),
+                 ('BOX', (0, 2), (-1, -1), 0.3 * mm, "black"),
+                 ('INNERGRID', (0, 2), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, (221 - (moove - 3)*4) * mm)
+
+    return (moove-3)*4
+
+
 
 
 def parameter_table(canvas, Data_phiz, Lab, moove=0):  # Таблица характеристик
@@ -3219,6 +3275,64 @@ def result_table_CF_KN_vs(canvas, Res, pick, scale = 0.8, moove=0):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, ((24-((r - 30)*4)) - table_move*6-moove) * mm)
 
+def result_table_averaged(canvas, EGE, data, y_cordinate=50):
+
+    a = svg2rlg(data["pick"])
+    a.scale(0.8, 0.8)
+    renderPDF.draw(a, canvas, 25 * mm, (y_cordinate + 17) * mm)
+
+    tableData = [[f"РЕЗУЛЬТАТЫ УСРЕДНЕНИЯ КРИВЫХ ПО ИГЭ {EGE}", "", "", "", "", ""]]
+    r = 28
+    for i in range(r):
+        tableData.append([""])
+
+    tableData.append(
+        [Paragraph('''<p>Средний модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle),
+            "", "", "", zap(data["averaged_E50"], 2), ""])
+    tableData.append(
+        [Paragraph('''<p>Средний девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle),
+            "", "", "", zap(data["averaged_qf"], 2), ""])
+    tableData.append(
+        [Paragraph('''<p>Среднее эффективное сцепление с', МПа:</p>''', LeftStyle),
+            "", "", "", zap(data["averaged_c"], 3), ""])
+    tableData.append(
+        [Paragraph('''<p>Средний эффективный угол внутреннего трения φ', град:</p>''', LeftStyle),
+            "", "", "", zap(data["averaged_fi"], 1), ""])
+
+    style = [('SPAN', (0, 0), (-1, 0)),
+             ('SPAN', (0, 1), (-1, r)),
+
+             ('SPAN', (0, -1), (3, -1)),
+             ('SPAN', (-2, -1), (-1, -1)),
+             ('SPAN', (0, -2), (3, -2)),
+             ('SPAN', (-2, -2), (-1, -2)),
+             ('SPAN', (0, -3), (3, -3)),
+             ('SPAN', (-2, -3), (-1, -3)),
+             ('SPAN', (0, -4), (3, -4)),
+             ('SPAN', (-2, -4), (-1, -4)),
+
+             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+
+             ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+             ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+             ("FONTSIZE", (0, 0), (-1, -1), 8),
+             # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+             ("ALIGN", (0, 0), (-1, r), "CENTER"),
+             ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+             ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+             ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+    t = Table(tableData, colWidths=175 / 6 * mm, rowHeights=4 * mm)
+    t.setStyle(style)
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, y_cordinate * mm)
+
+
 
 def result_table_statment_cyclic(canvas, Data):
     def result_table_shear(canvas, Res, pick, scale=0.8):
@@ -3512,6 +3626,34 @@ def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
     test_mode_rc(canvas, Data_phiz.r, test_parameter, moove=moove)
     result_table_rc(canvas, res, picks, moove=moove)
 
+
+    canvas.showPage()
+
+    canvas.save()
+
+def report_averaged(file_name, data_customer, path, data, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    canvas = Canvas(file_name, pagesize=A4)
+    code = SaveCode(version)
+    name = [
+        "УУСРЕДНЕНИЕ КРИВЫХ ДЕВИАТОРНОГО НАГРУЖЕНИЯ ПО ИГЭ",
+        "МЕТОДОМ АППРОКСИМАЦИИ ПОЛНОМОМ N-СТЕПЕНИ"
+    ]
+
+    page_number = 0
+    pages_count = len(data)
+
+    for EGE, report_data in data.items():
+        if page_number != 0:
+            canvas.showPage()
+        moove = ege_identifier_table(canvas, data_customer, EGE, name, p_ref=data[EGE]["averaged_p_ref"]/1000, K0=data[EGE]["averaged_K0"])
+        main_frame(canvas, path, data_customer, code, f"{page_number + 1}/{pages_count}", qr_code=qr_code)
+        result_table_averaged(canvas, EGE, report_data, y_cordinate=80-moove)
+        page_number += 1
 
     canvas.showPage()
 

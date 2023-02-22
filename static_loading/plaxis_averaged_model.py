@@ -1,5 +1,6 @@
 import numpy as np
-from scipy.interpolate import pchip_interpolate
+import pickle
+import os
 import scipy.ndimage as ndimage
 from singletons import E_models, FC_models, statment
 
@@ -16,6 +17,9 @@ class AveragedModel:
 
     averaged_c: float = None
     averaged_fi: float = None
+    averaged_p_ref: float = None
+    averaged_K0: float = None
+
     approximate_type: str
     approximate_param_poly: int
     approximate_param_sectors: int
@@ -50,6 +54,9 @@ class AveragedModel:
                 summary_fi += res_FC["fi"]
             except Exception as err:
                 print(err)
+
+        self.averaged_K0 = statment[list(self.tests.keys())[0]].mechanical_properties.K0
+        self.averaged_p_ref = statment[list(self.tests.keys())[0]].mechanical_properties.sigma_3
 
         self.averaged_poissons_ratio = np.round(summary_poissons_ratio / len(self.tests), 2)
         self.averaged_dilatancy_angle = np.round(summary_dilatancy_angle / (len(self.tests) - zero_dilatancy), 1)
@@ -133,6 +140,8 @@ class AveragedModel:
             "averaged_fi": self.averaged_fi,
             "averaged_E50": self.averaged_E50,
             "averaged_qf": self.averaged_qf,
+            "averaged_K0": self.averaged_K0,
+            "averaged_p_ref": self.averaged_p_ref,
             "averaged_poissons_ratio": self.averaged_poissons_ratio,
             "averaged_dilatancy_angle": self.averaged_dilatancy_angle,
         }
@@ -144,6 +153,13 @@ class AveragedModel:
             "deviator": self.averaged_deviator
         }
         return res
+
+    def save_plaxis_log(self, path):
+        with open(path, "w") as file:
+            for i in range(len(self.averaged_strain)):
+                strain = float('{:.6f}'.format(-np.round(self.averaged_strain[i], 6)))
+                deviator = float('{:.3f}'.format(np.round(self.averaged_deviator[i], 3)))
+                file.write(f"{strain}\t{deviator}\n")
 
     @staticmethod
     def define_E50_qf(strain, deviator):
@@ -160,6 +176,7 @@ class AveragedModel:
             np.interp(qf / 2, np.array([deviator[imin], deviator[imax]]), np.array([strain[imin], strain[imax]])))
 
         return np.round(E50/1000, 3), np.round(qf/1000, 3)
+
 
 class AveragedStatment:
     EGES: dict = {}
@@ -190,6 +207,26 @@ class AveragedStatment:
     def __len__(self):
         return len(self.EGES)
 
+    def dump(self, path):
+        with open(path, "wb") as file:
+            pickle.dump(
+                {
+                    "EGES": self.EGES
+                },
+                file
+            )
+
+    def load(self, path):
+        with open(path, 'rb') as f:
+            data = pickle.load(f)
+            self.EGES = data["EGES"]
+
+    def save_plaxis(self, dir):
+        if not os.path.isdir(dir):
+            os.mkdir(dir)
+
+        for EGE in self.EGES:
+            self.EGES[EGE].save_plaxis_log(os.path.join(dir, f"{EGE}.txt"))
 
 
 

@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QFrame, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, QScrollArea, \
-    QTableWidgetItem, QRadioButton, QButtonGroup, QLabel
+    QTableWidgetItem, QRadioButton, QButtonGroup, QLabel, QPushButton, QMessageBox
 from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -12,6 +12,10 @@ from general.general_functions import read_json_file
 from static_loading.plaxis_averaged_model import AveragedStatment
 from general.general_widgets import Float_Slider
 from configs.styles import style
+from singletons import statment
+from general.reports import report_averaged
+from version_control.configs import actual_version
+from io import BytesIO
 
 try:
     plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
@@ -292,11 +296,22 @@ class DeviatorItemUI(QGroupBox):
             model[self.EGE].set_approximate_type("sectors", param["param"])
         self.plot()
 
+    def save_canvas(self):
+        """Сохранение графиков для передачи в отчет"""
+        path = BytesIO()
+        size = self.plot_figure.get_size_inches()
+        self.plot_figure.set_size_inches([6.7, 4.2])
+        self.plot_figure.savefig(path, format='svg', transparent=True)
+        path.seek(0)
+        self.plot_figure.set_size_inches(size)
+        self.plot_canvas.draw()
+
+        return path
+
 class AverageWidget(QGroupBox):
     def __init__(self):
-        """Определяем основную структуру данных"""
         super().__init__()
-        model.__init__()
+        self.load_model()
         self._create_UI()
         self.plot()
         self.setMinimumHeight(800)
@@ -310,6 +325,10 @@ class AverageWidget(QGroupBox):
             setattr(self, f"deviator_{EGE}", DeviatorItemUI(EGE, parent=self))
             widget = getattr(self, f"deviator_{EGE}")
             self.layout_wiget.addWidget(widget)
+
+        self.save_button = QPushButton("Сохранить")
+        self.save_button.clicked.connect(self.save_report)
+        self.layout_wiget.addWidget(self.save_button)
 
         self.wiget = QWidget()
         self.wiget.setLayout(self.layout_wiget)
@@ -325,6 +344,52 @@ class AverageWidget(QGroupBox):
         for EGE in model:
             widget = getattr(self, f"deviator_{EGE}")
             widget.plot()
+
+    def load_model(self):
+        model_file = self._model_file()
+
+        if os.path.exists(model_file):
+            model.load(model_file)
+        else:
+            model.__init__()
+
+    def save_model(self):
+        model_file = self._model_file()
+        model.dump(model_file)
+
+    def _model_file(self):
+        if statment.general_data.shipment_number:
+            shipment_number = f" - {statment.general_data.shipment_number}"
+        else:
+            shipment_number = ""
+
+        return os.path.join(statment.save_dir.save_directory, "plaxisAvereged" + shipment_number + ".pickle")
+
+    def save_report(self):
+        try:
+            file_name = statment.save_dir.directory + "/" + "Отчет по усреднению девиаторных нагружений.pdf"
+
+            data = {key: model[key].get_results() for key in model}
+
+            for EGE in data:
+                widget = getattr(self, f"deviator_{EGE}")
+                data[EGE]["pick"] = widget.save_canvas()
+
+            report_averaged(
+                file_name=file_name,
+                data_customer=statment.general_data,
+                path=os.getcwd() + "/project_data/",
+                data=data,
+                version=actual_version,
+                qr_code=None)
+
+            self.save_model()
+            model.save_plaxis(os.path.join(statment.save_dir.directory, "plaxis_averaged_curves"))
+
+            QMessageBox.about(self, "Сообщение", f"Отчет успешно сохранен: {file_name}")
+        except Exception as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+
 
 
 if __name__ == '__main__':
