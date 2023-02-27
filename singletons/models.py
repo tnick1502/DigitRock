@@ -6,61 +6,108 @@ import os
 from version_control.configs import actual_version
 __version__ = actual_version
 
-instances = {}
-
-def singleton(aClass):
-    instance = None
-    def onCall(*args, **kwargs):
-        nonlocal instance
-        if instance == None:
-            instance = aClass(*args, **kwargs)
-        return instance
-    return onCall
+from threading import Lock, Thread
 
 
-class Models:
-    tests = DataTypeValidation(dict)
-    model_class = None
+class SingletonMeta(type):
+    _instances = {}
+    _lock: Lock = Lock()
+
+    def __call__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls not in cls._instances:
+                instance = super().__call__(*args, **kwargs)
+                cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class Model(metaclass=SingletonMeta):
+    keys: dict = {}
+    data: dict = {}
+    handler: dict = {}
+    data_class = None
+    handler_class = None
+    version = None
 
     def __init__(self):
-        self.tests = {}
-        self.model_class = None
+        self.data = {}
+        self.handler = {}
+        self.data_class = None
+        self.handler_class = None
         self.version = "{:.2f}".format(__version__)
 
-    def setModelType(self, model):
-        self.model_class = model
+    def setDataClass(self, data_class, handler_class):
+        self.data_class = data_class
+        self.handler_class = handler_class
 
     def generateTests(self, generate=True):
-        for test_name in statment:
+        for key in statment:
             try:
-                statment.current_test = test_name
-                self.tests[test_name] = self.model_class()
+                statment.current_test = key
+                self.data[key] = self.data_class()
+                self.handler[key] = self.handler_class()
                 if generate:
-                    self.tests[test_name].set_test_params()
+                    self.handler[key].set_test_params()
             except:
-                app_logger.exception(f"Ошибка моделирования опыта {test_name}")
+                app_logger.exception(f"Ошибка моделирования опыта {key}")
                 break
 
-    def dump(self, path):
-        with open(path, "wb") as file:
+    def dump(self, dir: str, key: str):
+        data_dir, handler_dir = Model.create_save_dir(dir)
+
+        data_path = os.path.join(data_dir, f"data {key}.pickle")
+        handler_path = os.path.join(handler_dir, f"handler {key}.pickle")
+
+        with open(data_path, "wb") as file:
             pickle.dump(
                 {
-                    "tests": self.tests,
+                    "data": self.data[key],
                     "version": self.version
                 },
                 file
             )
 
-    def load(self, path):
-        with open(path, 'rb') as f:
-            data = pickle.load(f)
-            assert data.get("version", None), \
-                f"Несовпадение версии модели и программы. Программа: {self.version}, модель: неизвестно"
-            assert self.version == data["version"], \
-                f"Несовпадение версии модели и программы. Программа: {self.version}, модель: {data['version']}"
-            assert data.get("tests", None), \
-                f"Несовпадение версии модели и программы. Программа: {self.version}, модель: неизвестно"
-            self.tests = data["tests"]
+        with open(handler_path, "wb") as file:
+            pickle.dump(
+                {
+                    "data": self.handler[key],
+                    "version": self.version
+                },
+                file
+            )
+
+    def load(self, dir):
+        data_dir, handler_dir = Model.create_save_dir(dir)
+
+        load_data_keys = []
+        load_handler_keys = []
+
+        for key in statment:
+            statment.current_test = key
+
+            data_path = os.path.join(data_dir, f"data {key}.pickle")
+            handler_path = os.path.join(handler_dir, f"handler {key}.pickle")
+            if os.path.exists(data_path):
+                with open(data_path, 'rb') as f:
+                    data = pickle.load(f)
+                    self.data[key] = data["data"]
+                load_data_keys.append(key)
+            else:
+                self.data[key] = self.data_class()
+
+            if os.path.exists(handler_path):
+                with open(handler_path, 'rb') as f:
+                    data = pickle.load(f)
+                    assert data.get("version", None), \
+                        f"Несовпадение версии модели и программы. Программа: {self.version}, модель: неизвестно"
+                    assert self.version == data["version"], \
+                        f"Несовпадение версии модели и программы. Программа: {self.version}, модель: {data['version']}"
+                    self.handler[key] = data["data"]
+                load_handler_keys.append(key)
+            else:
+                self.handler[key] = self.handler_class()
+                self.handler[key].set_test_params()
+        return load_data_keys, load_handler_keys
 
     def __iter__(self):
         for key in self.tests:
@@ -69,87 +116,28 @@ class Models:
     def __getitem__(self, key):
         if key is None:
             raise KeyError(f"No test with key None")
-        elif not key in list(self.tests.keys()):
+        elif not key in list(self.handler.keys()):
             raise KeyError(f"No test with key {key}")
-        return self.tests[key]
+        return self.handler[key]
 
     def __len__(self):
-        return len(self.tests)
+        return len(self.data)
 
+    @staticmethod
+    def create_save_dir(dir):
+        data_dir = os.path.join(dir, "data_models")
+        handler_dir = os.path.join(dir, "handler_models")
+        for dir in [data_dir, handler_dir]:
+            if not os.path.isdir(dir):
+                os.mkdir(dir)
+        return data_dir, handler_dir
 
-@singleton
-class ModelsE(Models):
-    pass
-
-@singleton
-class ModelsEur(Models):
-    pass
-
-@singleton
-class ModelsFC(Models):
-    pass
-
-@singleton
-class ModelsVibrationFC(Models):
-    pass
-
-@singleton
-class ModelsVibrationCreep(Models):
-    pass
-
-@singleton
-class ModelsRC(Models):
-    pass
-
-@singleton
-class ModelsCyclic(Models):
-    pass
-
-@singleton
-class ModelsConsolidation(Models):
-    pass
-
-@singleton
-class ModelsShear(Models):
-    pass
-
-@singleton
-class ModelsShearDilatancy(Models):
-    pass
-
-@singleton
-class ModelsK0(Models):
-    pass
-
-@singleton
-class ModelsRayleighDamping(Models):
-    pass
+for model_name in ["FC_models", "E_models", "VC_models", "Cyclic_models", "Consolidation_models", "RC_models",
+                   "Shear_models", "Shear_Dilatancy_models", "VibrationFC_models", "RayleighDamping_models",
+                   "K0_models"]:
+    class_for_gen = type(model_name, (Model, ), {})
+    locals()[model_name] = class_for_gen()
 
 statment = Statment()
-
-E_models = ModelsE()
-
-Eur_models = ModelsEur()
-
-FC_models = ModelsFC()
-
-VC_models = ModelsVibrationCreep()
-
-Cyclic_models = ModelsCyclic()
-
-RC_models = ModelsRC()
-
-Consolidation_models = ModelsConsolidation()
-
-Shear_models = ModelsShear()
-
-Shear_Dilatancy_models = ModelsShearDilatancy()
-
-VibrationFC_models = ModelsVibrationFC()
-
-K0_models = ModelsK0()
-
-RayleighDamping_models = ModelsRayleighDamping()
-
 
 

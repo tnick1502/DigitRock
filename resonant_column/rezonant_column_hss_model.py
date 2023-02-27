@@ -33,7 +33,7 @@ from general.general_functions import AttrDict
 from resonant_column.rezonant_column_function import define_G0_threshold_shear_strain
 from general.general_functions import read_json_file
 from loggers.logger import app_logger
-from singletons import statment
+from singletons import statment, RC_models
 
 try:
     plt.rcParams.update(read_json_file(os.getcwd() + "/configs/rcParams.json"))
@@ -44,6 +44,23 @@ except FileNotFoundError:
         pass
 
 plt.style.use('bmh')
+
+
+class TestData:
+    shear_strain: list = None
+    G_array: list = None
+    frequency: list = None
+    resonant_curves: list = None
+
+    def __init__(self):
+        self.shear_strain = None
+        self.G_array = None
+        self.frequency = None
+        self.resonant_curves = None
+
+    def set_data(self, data):
+        for key in TestData.__dict__:
+            object.__setattr__(self, key, data[key])
 
 
 class ModelRezonantColumn:
@@ -58,13 +75,6 @@ class ModelRezonantColumn:
 
     def __init__(self):
         """Определяем основную структуру данных"""
-        # Структура дынных
-        self._test_data = AttrDict({
-            "shear_strain": None,
-            "G_array": None,
-            "frequency": None,
-            "resonant_curves": None})
-
         # Положение для выделения опыта из общего массива
         self._test_cut_position = AttrDict({"left": None,
                                             "right": None})
@@ -74,13 +84,10 @@ class ModelRezonantColumn:
 
     def set_test_data(self, test_data):
         """Получение и обработка массивов данных, считанных с файла прибора"""
-        self._test_data.shear_strain = test_data["shear_strain"]
-        self._test_data.G_array = test_data["G0_array"]
-        self._test_data.frequency = test_data["frequency"]
-        self._test_data.resonant_curves = test_data["resonant_curves"]
+        RC_models.data[statment.current_test].set_data(test_data)
 
         self._test_cut_position.left = 0
-        self._test_cut_position.right = len(self._test_data.G_array)
+        self._test_cut_position.right = len(RC_models.data[statment.current_test].G_array)
 
         self._test_processing()
 
@@ -108,12 +115,12 @@ class ModelRezonantColumn:
 
     def get_plot_data(self):
         """Возвращает данные для построения"""
-        if self._test_data.G_array is None:
+        if RC_models.data[statment.current_test].G_array is None:
             return None
         else:
-            shear_strain_approximate = np.linspace(self._test_data.shear_strain[self._test_cut_position.left:
+            shear_strain_approximate = np.linspace(RC_models.data[statment.current_test].shear_strain[self._test_cut_position.left:
                                                                                 self._test_cut_position.right][0],
-                                                   self._test_data.shear_strain[self._test_cut_position.left
+                                                   RC_models.data[statment.current_test].shear_strain[self._test_cut_position.left
                                                                                 :self._test_cut_position.right][-1],
                                                    300)
 
@@ -123,14 +130,14 @@ class ModelRezonantColumn:
                                                                                      self._test_result.threshold_shear_strain / 10000)),
                                                                 self._test_result.G0)
             return {
-                "G": self._test_data.G_array[self._test_cut_position.left: self._test_cut_position.right],
-                "shear_strain": self._test_data.shear_strain[
+                "G": RC_models.data[statment.current_test].G_array[self._test_cut_position.left: self._test_cut_position.right],
+                "shear_strain": RC_models.data[statment.current_test].shear_strain[
                                 self._test_cut_position.left: self._test_cut_position.right],
                 "G_approximate": G_approximate,
                 "shear_strain_approximate": shear_strain_approximate,
-                "frequency": self._test_data.frequency[self._test_cut_position.left:
+                "frequency": RC_models.data[statment.current_test].frequency[self._test_cut_position.left:
                                                        self._test_cut_position.right],
-                "resonant_curves": self._test_data.resonant_curves[self._test_cut_position.left:
+                "resonant_curves": RC_models.data[statment.current_test].resonant_curves[self._test_cut_position.left:
                                                                    self._test_cut_position.right]
             }
 
@@ -177,8 +184,8 @@ class ModelRezonantColumn:
         try:
             self._test_result.G0, self._test_result.threshold_shear_strain = \
                 ModelRezonantColumn.approximate_Hardin_Drnevick(
-                    self._test_data.shear_strain[self._test_cut_position.left: self._test_cut_position.right],
-                    self._test_data.G_array[self._test_cut_position.left: self._test_cut_position.right])
+                    RC_models.data[statment.current_test].shear_strain[self._test_cut_position.left: self._test_cut_position.right],
+                    RC_models.data[statment.current_test].G_array[self._test_cut_position.left: self._test_cut_position.right])
         except:
             app_logger.exception("Ошибка обработки данных РК")
             pass
@@ -338,22 +345,22 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         self._test_params.G0 *= self._draw_params.G0_ratio
         self._test_params.threshold_shear_strain *= self._draw_params.threshold_shear_strain_ratio
 
-        self._test_data.G_array, self._test_data.shear_strain = \
+        RC_models.data[statment.current_test].G_array, RC_models.data[statment.current_test].shear_strain = \
             ModelRezonantColumnSoilTest.generate_G_array(self._test_params.G0, self._test_params.threshold_shear_strain)
 
-        self._test_data.frequency, self._test_data.resonant_curves = \
-            ModelRezonantColumnSoilTest.generate_resonant_curves(self._test_data.shear_strain, self._test_data.G_array,
+        RC_models.data[statment.current_test].frequency, RC_models.data[statment.current_test].resonant_curves = \
+            ModelRezonantColumnSoilTest.generate_resonant_curves(RC_models.data[statment.current_test].shear_strain, RC_models.data[statment.current_test].G_array,
                                                                  frequency_step=self._draw_params.frequency_step,
                                                                  ro=self._test_params.physical.r * 1000)
-        # print(len(self._test_data.G_array), len(self._test_data.frequency[0]))
-        # print([len(i) for i in self._test_data.frequency])
+        # print(len(RC_models.data[statment.current_test].G_array), len(RC_models.data[statment.current_test].frequency[0]))
+        # print([len(i) for i in RC_models.data[statment.current_test].frequency])
         self._test_processing()
 
     def save_log_file(self, director):
-        G = self._test_data.G_array
-        points = self._test_data.shear_strain
-        Chastota = self._test_data.frequency[0]
-        A = self._test_data.resonant_curves
+        G = RC_models.data[statment.current_test].G_array
+        points = RC_models.data[statment.current_test].shear_strain
+        Chastota = RC_models.data[statment.current_test].frequency[0]
+        A = RC_models.data[statment.current_test].resonant_curves
 
         p = os.path.join(director, "RCCT_ModulusTable.txt")
         p2 = os.path.join(director, "RCCT.txt")

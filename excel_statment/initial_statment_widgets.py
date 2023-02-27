@@ -18,7 +18,7 @@ from excel_statment.properties_model import PhysicalProperties, MechanicalProper
 from loggers.logger import app_logger, log_this
 from singletons import statment, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, Shear_models, Shear_Dilatancy_models, VibrationFC_models, RayleighDamping_models, K0_models
 
-from resonant_column.rezonant_column_hss_model import ModelRezonantColumnSoilTest
+from resonant_column.rezonant_column_hss_model import ModelRezonantColumnSoilTest, TestData
 from consolidation.consolidation_model import ModelTriaxialConsolidationSoilTest
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTest
 from rayleigh_damping.rayleigh_damping_model import ModelRayleighDampingSoilTest
@@ -225,24 +225,27 @@ class InitialStatment(QWidget):
                           statment.general_data.shipment_number, sheet="Лист1", color="FF6961")
         statment.save_dir.set_directory(self.path, statment_name.split(".")[0] + waterfill, statment.general_data.shipment_number)
 
-    def load_models(self, models_name, models, models_type):
+    def load_models(self, models_name, models, data_class, handler_class):
         if statment.general_data.shipment_number:
             shipment_number = f" - {statment.general_data.shipment_number}"
         else:
             shipment_number = ""
 
         model_file = os.path.join(statment.save_dir.save_directory, models_name.split(".")[0] + shipment_number + ".pickle")
-        models.setModelType(models_type)
-        if os.path.exists(model_file):
+        models.setDataClass(data_class, handler_class)
+
+        data_dir = os.path.join(statment.save_dir.save_directory, "data_models")
+
+        if os.path.exists(data_dir):
             try:
-                models.load(model_file)
-                app_logger.info(f"Загружен файл модели {models_name.split('.')[0] + shipment_number + '.pickle'}")
+                models.load(statment.save_dir.save_directory)
+                app_logger.info(f"Загружен файл модели")
             except AssertionError as err:
                 QMessageBox.critical(self, "Ошибка", str(err), QMessageBox.Ok)
                 raise
         else:
             models.generateTests(generate=self.generate)
-            models.dump(model_file)
+            #models.dump(model_file)
             app_logger.info(f"Сгенерирован сохраненен новый файл модели {models_name.split('.')[0] + shipment_number + '.pickle'}")
 
     @log_this(app_logger, "debug")
@@ -322,9 +325,14 @@ class RezonantColumnStatment(InitialStatment):
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
                     self.table_physical_properties.set_data()
+                    try:
 
-                    self.load_models(models_name="rc_models.pickle",
-                                     models=RC_models, models_type=ModelRezonantColumnSoilTest)
+                        self.load_models(models_name="rc_models.pickle",
+                                         models=RC_models,
+                                         data_class=TestData,
+                                         handler_class=ModelRezonantColumnSoilTest)
+                    except Exception as err:
+                        print(err)
 
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
