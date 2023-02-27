@@ -2178,13 +2178,16 @@ class ShearProperties(MechanicalProperties):
             if Il < 0:
                 Il = 0
             if Il > 0.75:
-                Il = 0.75
+                Il = 1
                 # return (tau_max / 0.15) * np.random.uniform(4.0, 5.0) / 1000
 
             if type_ground == 6:
                 if 0 <= Il <= 0.75:
                     return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85]),
                                      np.array([32, 24, 16, 10, 7]))
+                elif Il > 0.75:
+                    return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85]),
+                                     np.array([3, 2.5, 2,  1.5,  1.2]))
             if type_ground == 7:
                 if 0 <= Il <= 0.25:
                     return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85, 0.95]),
@@ -2195,6 +2198,9 @@ class ShearProperties(MechanicalProperties):
                 elif 0.5 < Il <= 0.75:
                     return np.interp(e, np.array([0.65, 0.75, 0.85, 0.95, 1.05]),
                                      np.array([17, 12, 8, 6, 5]))
+                elif Il > 0.75:
+                    return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85]),
+                                     np.array([3, 2.5, 2,  1.5,  1.2]))
             if type_ground == 8:
                 if 0 <= Il <= 0.25:
                     return np.interp(e, np.array([0.55, 0.65, 0.75, 0.85, 0.95, 1.05]),
@@ -2205,6 +2211,9 @@ class ShearProperties(MechanicalProperties):
                 elif 0.5 < Il <= 0.75:
                     return np.interp(e, np.array([0.75, 0.85, 0.95, 1.05]),
                                      np.array([15, 12, 9, 7]))
+                elif Il > 0.75:
+                    return np.interp(e, np.array([0.45, 0.55, 0.65, 0.75, 0.85]),
+                                     np.array([3.5, 3, 2.1,  1.6,  1.3]))
 
         def define_E50_for_peat(Il, Ir, e):
 

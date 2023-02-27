@@ -1135,7 +1135,6 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, gaus_or_par, amount_points, hyp_ratio
            hyp_ratio = 0
         elif e50 > 70000:
             hyp_ratio = 0.95
-    print(hyp_ratio)
 
     if xc < x50:
         xc = x50 * 1.1  # хс не может быть меньше x50
