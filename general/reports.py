@@ -3640,7 +3640,7 @@ def report_averaged(file_name, data_customer, path, data, version = 1.1, qr_code
     canvas = Canvas(file_name, pagesize=A4)
     code = SaveCode(version)
     name = [
-        "УУСРЕДНЕНИЕ КРИВЫХ ДЕВИАТОРНОГО НАГРУЖЕНИЯ ПО ИГЭ",
+        "УСРЕДНЕНИЕ КРИВЫХ ДЕВИАТОРНОГО НАГРУЖЕНИЯ ПО ИГЭ",
         "МЕТОДОМ АППРОКСИМАЦИИ ПОЛНОМОМ N-СТЕПЕНИ"
     ]
 
@@ -3650,8 +3650,10 @@ def report_averaged(file_name, data_customer, path, data, version = 1.1, qr_code
     for EGE, report_data in data.items():
         if page_number != 0:
             canvas.showPage()
-        moove = ege_identifier_table(canvas, data_customer, EGE, name, p_ref=data[EGE]["averaged_p_ref"]/1000, K0=data[EGE]["averaged_K0"])
         main_frame(canvas, path, data_customer, code, f"{page_number + 1}/{pages_count}", qr_code=qr_code)
+        moove = ege_identifier_table(
+            canvas, data_customer, EGE, name, p_ref=data[EGE]["averaged_p_ref"] / 1000, K0=data[EGE]["averaged_K0"]
+        )
         result_table_averaged(canvas, EGE, report_data, y_cordinate=80-moove)
         page_number += 1
 
