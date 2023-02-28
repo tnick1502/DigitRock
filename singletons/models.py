@@ -112,7 +112,7 @@ class Model(metaclass=SingletonMeta):
         return load_data_keys, load_handler_keys
 
     def __iter__(self):
-        for key in self.tests:
+        for key in self.handler:
             yield key
 
     def __getitem__(self, key):
