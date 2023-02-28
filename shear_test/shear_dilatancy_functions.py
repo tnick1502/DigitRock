@@ -1638,42 +1638,41 @@ def dictionary_deviator_loading(strain, tau, vertical_strain, sigma, velocity):
 
 
 if __name__ == '__main__':
-    vol_test()
-    # versions = {
-    #     "Triaxial_Dynamic_Soil_Test": 1.71,
-    #     "Triaxial_Dynamic_Processing": 1.71,
-    #     "Resonance_Column_Siol_Test": 1.1,
-    #     "Resonance_Column_Processing": 1.1
-    # }
-    # from matplotlib import rcParams
-    #
-    # rcParams['font.family'] = 'Times New Roman'
-    # rcParams['font.size'] = '12'
-    # rcParams['axes.edgecolor'] = 'black'
-    # # plt.grid(axis='both', linewidth='0.6')
-    # # plt.xlabel("Относительная вертикальная деформация $ε_1$, д.е")
-    # # plt.ylabel("Девиатор q, кПа")
-    # #    x1, y1, x_log1, y_0_xca1, point_time1 = function_consalidation(Cv=0.379, point_time=1, reverse=1, last_point=250)
-    #
-    # # {'E50': 29710.0, 'sigma_3': 186.4, 'sigma_1': 981.1, 'c': 0.001, 'fi': 42.8, 'qf': 794.7, 'K0': 0.5,
-    # #  'Cv': 1.906625504418318, 'Ca': 0.006335165735463461, 'poisson': 0.34, 'build_press': 500.0, 'pit_depth': 7.0,
-    # #  'Eur': 61121, 'dilatancy': 10.55, 'OCR': 1, 'm': 0.64, 'lab_number': '7а-1',
-    # #  'data_phiz': {'borehole': '7а', 'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73,
-    # #                'r': '-', 'rd': '-', 'n': '-', 'e': 0.5, 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-',
-    # #                'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0,
-    # #                '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-',
-    # #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
-    # # (596.48, 382.8)
-    #
-    # x, y, y1, y2, indexs_loop, a = curve_shear_dilatancy(500, 25886.414460418484, xc=0.049434126090814004, x2=0.14443569063527106, qf2=250.83346917699112, qocr=0, m_given=0.29,
-    #                                                     amount_points=580, angle_of_dilatacy=-0.5, v_d_xc=-0.005636079818141735)
-    #
-    #
-    # plt.figure()
-    # plt.plot(x, y)
-    # plt.figure()
-    # plt.plot(x, y1)
-    # plt.show()
+    versions = {
+        "Triaxial_Dynamic_Soil_Test": 1.71,
+        "Triaxial_Dynamic_Processing": 1.71,
+        "Resonance_Column_Siol_Test": 1.1,
+        "Resonance_Column_Processing": 1.1
+    }
+    from matplotlib import rcParams
+
+    rcParams['font.family'] = 'Times New Roman'
+    rcParams['font.size'] = '12'
+    rcParams['axes.edgecolor'] = 'black'
+    # plt.grid(axis='both', linewidth='0.6')
+    # plt.xlabel("Относительная вертикальная деформация $ε_1$, д.е")
+    # plt.ylabel("Девиатор q, кПа")
+    #    x1, y1, x_log1, y_0_xca1, point_time1 = function_consalidation(Cv=0.379, point_time=1, reverse=1, last_point=250)
+
+    # {'E50': 29710.0, 'sigma_3': 186.4, 'sigma_1': 981.1, 'c': 0.001, 'fi': 42.8, 'qf': 794.7, 'K0': 0.5,
+    #  'Cv': 1.906625504418318, 'Ca': 0.006335165735463461, 'poisson': 0.34, 'build_press': 500.0, 'pit_depth': 7.0,
+    #  'Eur': 61121, 'dilatancy': 10.55, 'OCR': 1, 'm': 0.64, 'lab_number': '7а-1',
+    #  'data_phiz': {'borehole': '7а', 'depth': 19.0, 'name': 'Песок крупный неоднородный', 'ige': '-', 'rs': 2.73,
+    #                'r': '-', 'rd': '-', 'n': '-', 'e': 0.5, 'W': 12.8, 'Sr': '-', 'Wl': '-', 'Wp': '-', 'Ip': '-',
+    #                'Il': '-', 'Ir': '-', 'str_index': '-', 'gw_depth': '-', 'build_press': 500.0, 'pit_depth': 7.0,
+    #                '10': '-', '5': '-', '2': 6.8, '1': 39.2, '05': 28.0, '025': 9.2, '01': 6.1, '005': 10.7, '001': '-',
+    #                '0002': '-', '0000': '-', 'Nop': 7, 'flag': False}, 'test_type': 'Трёхосное сжатие с разгрузкой'}
+    # (596.48, 382.8)
+
+    x, y, y1, y2, indexs_loop, a = curve_shear_dilatancy(500, 25886.414460418484, xc=0.049434126090814004, x2=0.14443569063527106, qf2=250.83346917699112, qocr=0, m_given=0.29,
+                                                        amount_points=580, angle_of_dilatacy=-0.5, v_d_xc=-0.005636079818141735)
+
+
+    plt.figure()
+    plt.plot(x, y)
+    plt.figure()
+    plt.plot(x, y1)
+    plt.show()
     #
     #
     # x = x[i[0]:] - x[i[0]]
