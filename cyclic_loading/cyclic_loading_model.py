@@ -45,7 +45,18 @@ from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
 
 from loggers.logger import app_logger
-from singletons import statment
+from singletons import statment, Cyclic_models
+
+class TriaxialCyclicTestData:
+    def __init__(self):
+        self.time: np.array = None
+        self.cycles: np.array = None
+        self.cell_pressure: np.array = None
+        self.setpoint: np.array = None
+        self.strain: np.array = None
+        self.deviator: np.array = None
+        self.PPR: np.array = None
+        self.mean_effective_stress: np.array = None
 
 class ModelTriaxialCyclicLoading:
     """Модель обработки циклического нагружения
@@ -60,19 +71,9 @@ class ModelTriaxialCyclicLoading:
 
         - Метод get_plot_data подготавливает данные для построения. Метод plotter позволяет построить графики с помощью
         matplotlib"""
-
     def __init__(self):
         """Определяем основную структуру данных"""
         # Структура дынных
-        self._test_data = AttrDict({"time": None,
-                                    "cycles": None,
-                                    "cell_pressure": None,
-                                    "setpoint": None,
-                                    "strain": None,
-                                    "deviator": None,
-                                    "PPR": None,
-                                    "mean_effective_stress": None})
-
         self._test_params = AttrDict({"frequency": None,
                                       "points_in_cycle": None})
 
@@ -88,15 +89,15 @@ class ModelTriaxialCyclicLoading:
 
     def set_test_data(self, test_data):
         """Получение и обработка массивов данных, считанных с файла прибора"""
-        self._test_data.cycles = test_data["cycles"]
-        self._test_data.time = test_data["time"]
+        Cyclic_models.data[statment.current_test].cycles = test_data["cycles"]
+        Cyclic_models.data[statment.current_test].time = test_data["time"]
         self._test_params.frequency = test_data["frequency"]
         self._test_params.points_in_cycle = test_data["points"]
-        self._test_data.deviator = test_data["deviator"]
-        self._test_data.PPR = test_data["PPR"]
-        self._test_data.strain = test_data["strain"]
-        self._test_data.mean_effective_stress = test_data["mean_effective_stress"]
-        self._test_data.cell_pressure = test_data["cell_pressure"]
+        Cyclic_models.data[statment.current_test].deviator = test_data["deviator"]
+        Cyclic_models.data[statment.current_test].PPR = test_data["PPR"]
+        Cyclic_models.data[statment.current_test].strain = test_data["strain"]
+        Cyclic_models.data[statment.current_test].mean_effective_stress = test_data["mean_effective_stress"]
+        Cyclic_models.data[statment.current_test].cell_pressure = test_data["cell_pressure"]
 
         self._test_processing()
 
@@ -106,7 +107,7 @@ class ModelTriaxialCyclicLoading:
     def set_frequency(self, frequency):
         """Изменение частоты опыта"""
         self._test_params.frequency = frequency
-        self._test_data.cycles = self._test_data.time * self._test_params.frequency
+        Cyclic_models.data[statment.current_test].cycles = Cyclic_models.data[statment.current_test].time * self._test_params.frequency
 
     def get_test_results(self):
         """Получение результатов обработки опыта"""
@@ -114,34 +115,34 @@ class ModelTriaxialCyclicLoading:
 
     def get_plot_data(self):
         """Возвращает данные для построения"""
-        if self._test_data.strain is None:
+        if Cyclic_models.data[statment.current_test].strain is None:
             return None
         else:
             strain_lim = []
-            if np.min(self._test_data.strain) < 0:
-                strain_lim.append(np.min(self._test_data.strain) - 0.005)
+            if np.min(Cyclic_models.data[statment.current_test].strain) < 0:
+                strain_lim.append(np.min(Cyclic_models.data[statment.current_test].strain) - 0.005)
             else:
                 strain_lim.append(-0.005)
-            if np.max(self._test_data.strain) > 0.0475:
-                strain_lim.append(np.max(self._test_data.strain) + 0.0025)
+            if np.max(Cyclic_models.data[statment.current_test].strain) > 0.0475:
+                strain_lim.append(np.max(Cyclic_models.data[statment.current_test].strain) + 0.0025)
             else:
                 strain_lim.append(0.05)
 
             PPR_lim = []
-            if np.min(self._test_data.PPR) < 0:
-                PPR_lim.append(np.min(self._test_data.PPR) - 0.1)
+            if np.min(Cyclic_models.data[statment.current_test].PPR) < 0:
+                PPR_lim.append(np.min(Cyclic_models.data[statment.current_test].PPR) - 0.1)
             else:
                 PPR_lim.append(-0.1)
-            if np.max(self._test_data.PPR) > 0.95:
-                PPR_lim.append(np.max(self._test_data.PPR) + 0.05)
+            if np.max(Cyclic_models.data[statment.current_test].PPR) > 0.95:
+                PPR_lim.append(np.max(Cyclic_models.data[statment.current_test].PPR) + 0.05)
             else:
                 PPR_lim.append(1)
 
-            return {"cycles": self._test_data.cycles,
-                    "deviator": self._test_data.deviator,
-                    "strain": self._test_data.strain,
-                    "PPR": self._test_data.PPR,
-                    "mean_effective_stress": self._test_data.mean_effective_stress,
+            return {"cycles": Cyclic_models.data[statment.current_test].cycles,
+                    "deviator": Cyclic_models.data[statment.current_test].deviator,
+                    "strain": Cyclic_models.data[statment.current_test].strain,
+                    "PPR": Cyclic_models.data[statment.current_test].PPR,
+                    "mean_effective_stress": Cyclic_models.data[statment.current_test].mean_effective_stress,
                     "strain_lim": strain_lim,
                     "PPR_lim": PPR_lim,
                     "damping_deviator": self._damping_deviator,
@@ -185,13 +186,13 @@ class ModelTriaxialCyclicLoading:
             try:
                 xlims = ax_stresses.get_xlim()
                 ylims = ax_stresses.get_ylim()
-                ax_stresses.plot(self._test_data.mean_effective_stress, self.critical_line, label="CSL",
+                ax_stresses.plot(Cyclic_models.data[statment.current_test].mean_effective_stress, self.critical_line, label="CSL",
                                  **plotter_params["dotted_line"])
 
-                i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator / 2,
+                i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(Cyclic_models.data[statment.current_test].deviator / 2,
                                                                            self.critical_line, **plotter_params["dotted_line"])
                 if i:
-                    ax_stresses.scatter(self._test_data.mean_effective_stress[i], self._test_data.deviator[i] / 2,
+                    ax_stresses.scatter(Cyclic_models.data[statment.current_test].mean_effective_stress[i], Cyclic_models.data[statment.current_test].deviator[i] / 2,
                                         zorder=5, s=40, **plotter_params["dotted_line"])
 
                 ax_stresses.legend()
@@ -210,26 +211,26 @@ class ModelTriaxialCyclicLoading:
 
     def _test_processing(self):
         """Обработка опыта"""
-        self._test_result.max_PPR = round(np.max(self._test_data.PPR), 3)
-        self._test_result.max_strain = round(np.max(self._test_data.strain), 3)
+        self._test_result.max_PPR = round(np.max(Cyclic_models.data[statment.current_test].PPR), 3)
+        self._test_result.max_strain = round(np.max(Cyclic_models.data[statment.current_test].strain), 3)
 
         if statment.general_parameters.test_mode == "Динамическая прочность на сдвиг":
             self._test_result.fail_cycle_criterion_strain = ModelTriaxialCyclicLoading.define_fail_cycle(
-                self._test_data.cycles,
-                (self._test_data.strain >= 0.10))
+                Cyclic_models.data[statment.current_test].cycles,
+                (Cyclic_models.data[statment.current_test].strain >= 0.10))
             self._test_result.fail_cycle_criterion_stress = ModelTriaxialCyclicLoading.define_fail_cycle(
-                self._test_data.cycles,
-                (self._test_data.mean_effective_stress <= 0))
+                Cyclic_models.data[statment.current_test].cycles,
+                (Cyclic_models.data[statment.current_test].mean_effective_stress <= 0))
             self._test_result.fail_cycle_criterion_PPR = ModelTriaxialCyclicLoading.define_fail_cycle(
-                self._test_data.cycles,
-                (self._test_data.PPR >= 0.95))
+                Cyclic_models.data[statment.current_test].cycles,
+                (Cyclic_models.data[statment.current_test].PPR >= 0.95))
         else:
-            self._test_result.fail_cycle_criterion_strain = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                              (self._test_data.strain >= 0.05))
-            self._test_result.fail_cycle_criterion_stress = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                              (self._test_data.mean_effective_stress <= 0))
-            self._test_result.fail_cycle_criterion_PPR = ModelTriaxialCyclicLoading.define_fail_cycle(self._test_data.cycles,
-                                                                           (self._test_data.PPR >= 1))
+            self._test_result.fail_cycle_criterion_strain = ModelTriaxialCyclicLoading.define_fail_cycle(Cyclic_models.data[statment.current_test].cycles,
+                                                                              (Cyclic_models.data[statment.current_test].strain >= 0.05))
+            self._test_result.fail_cycle_criterion_stress = ModelTriaxialCyclicLoading.define_fail_cycle(Cyclic_models.data[statment.current_test].cycles,
+                                                                              (Cyclic_models.data[statment.current_test].mean_effective_stress <= 0))
+            self._test_result.fail_cycle_criterion_PPR = ModelTriaxialCyclicLoading.define_fail_cycle(Cyclic_models.data[statment.current_test].cycles,
+                                                                           (Cyclic_models.data[statment.current_test].PPR >= 1))
 
         self._test_result.fail_cycle = min([i for i in [self._test_result.fail_cycle_criterion_strain,
                                                         self._test_result.fail_cycle_criterion_stress,
@@ -241,12 +242,12 @@ class ModelTriaxialCyclicLoading:
         try:
             self._test_result.damping_ratio, self._damping_strain, self._damping_deviator = \
                 ModelTriaxialCyclicLoading.define_damping_ratio(
-                self._test_data.strain, self._test_data.deviator, remove_plastic_strains=False)
+                Cyclic_models.data[statment.current_test].strain, Cyclic_models.data[statment.current_test].deviator, remove_plastic_strains=False)
             self._test_result.damping_ratio = np.round(self._test_result.damping_ratio, 2)
         except:
             pass
 
-        #plt.plot(self._test_data.strain, self._test_data.deviator)
+        #plt.plot(Cyclic_models.data[statment.current_test].strain, Cyclic_models.data[statment.current_test].deviator)
         #plt.fill(strain, deviator, color="tomato", alpha=0.5, zorder=5)
         #plt.show()
 
@@ -835,11 +836,11 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_processing()
 
     def get_data_for_vibration_creep(self):
-        #print("data from math model", len(self._test_data.time), len(self._test_data.deviator))
+        #print("data from math model", len(Cyclic_models.data[statment.current_test].time), len(Cyclic_models.data[statment.current_test].deviator))
         return {
-            "strain": self._test_data.strain,
-            "deviator": self._test_data.deviator,
-            "time": self._test_data.time,
+            "strain": Cyclic_models.data[statment.current_test].strain,
+            "deviator": Cyclic_models.data[statment.current_test].deviator,
+            "time": Cyclic_models.data[statment.current_test].time,
             "frequency": self._test_params.frequency,
             "start_dynamic": len(self._load_stage.deviator)
         }
@@ -924,7 +925,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
         self._modeling_PPR()
         Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
-                self._test_params.c, self._test_params.fi, 1 / self._test_data.PPR[-1], self._test_params.sigma_3,
+                self._test_params.c, self._test_params.fi, 1 / Cyclic_models.data[statment.current_test].PPR[-1], self._test_params.sigma_3,
                 self._test_params.sigma_1, self._test_params.t, self._test_params.cycles_count,
                 self._test_params.physical.e, self._test_params.physical.Il)
 
@@ -959,13 +960,13 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.K0 = params["K0"]
 
     def generate_log_file(self, file_path, post_name=None):
-        ModelTriaxialCyclicLoadingSoilTest.generate_willie_log_file(file_path, self._test_data.deviator,
-                                                                    self._test_data.PPR, self._test_data.strain,
+        ModelTriaxialCyclicLoadingSoilTest.generate_willie_log_file(file_path, Cyclic_models.data[statment.current_test].deviator,
+                                                                    Cyclic_models.data[statment.current_test].PPR, Cyclic_models.data[statment.current_test].strain,
                                                                     self._test_params.frequency,
                                                                     self._test_params.cycles_count,
                                                                     self._test_params.points_in_cycle,
-                                                                    self._test_data.setpoint,
-                                                                    self._test_data.cell_pressure,
+                                                                    Cyclic_models.data[statment.current_test].setpoint,
+                                                                    Cyclic_models.data[statment.current_test].cell_pressure,
                                                                     self._test_params.reconsolidation_time,
                                                                     post_name)
         #print(self.get_processing_parameters())
@@ -1042,29 +1043,29 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         """Функция моделирования девиаторного нагружения"""
         # Массив setpoint - идеальная кривая, к которой стремится пид-регулятор
         if self._cosine:
-            self._test_data.setpoint = ModelTriaxialCyclicLoadingSoilTest.create_deviator_array(self._test_data.cycles[len(self._load_stage.deviator):] - self._test_data.cycles[len(self._load_stage.deviator)],
+            Cyclic_models.data[statment.current_test].setpoint = ModelTriaxialCyclicLoadingSoilTest.create_deviator_array(Cyclic_models.data[statment.current_test].cycles[len(self._load_stage.deviator):] - Cyclic_models.data[statment.current_test].cycles[len(self._load_stage.deviator)],
                                                                                                 2 * self._test_params.t,
                                                                                                 self._test_params.deviator_start_value,
                                                                                                 fail_cycle=self._test_params.n_fail,
                                                                                                 points=self._test_params.points_in_cycle)
-            self._test_data.setpoint = np.hstack((self._load_stage.deviator + self._test_params.deviator_start_value,
-                                                self._test_data.setpoint +
+            Cyclic_models.data[statment.current_test].setpoint = np.hstack((self._load_stage.deviator + self._test_params.deviator_start_value,
+                                                Cyclic_models.data[statment.current_test].setpoint +
                                                 self._test_params.qf/2))
 
 
         else:
-            self._test_data.setpoint = ModelTriaxialCyclicLoadingSoilTest.create_deviator_array(self._test_data.cycles,
+            Cyclic_models.data[statment.current_test].setpoint = ModelTriaxialCyclicLoadingSoilTest.create_deviator_array(Cyclic_models.data[statment.current_test].cycles,
                                                                                                 2 * self._test_params.t,
                                                                                                 self._test_params.deviator_start_value,
                                                                                                 fail_cycle=self._test_params.n_fail,
                                                                                                 points=self._test_params.points_in_cycle)
 
         # Создадим массив девиаторного нагружения
-        self._test_data.deviator = self._test_data.setpoint + np.random.uniform(-self._draw_params.deviator_deviation,
+        Cyclic_models.data[statment.current_test].deviator = Cyclic_models.data[statment.current_test].setpoint + np.random.uniform(-self._draw_params.deviator_deviation,
                                                                                     self._draw_params.deviator_deviation,
                                                                                     self._test_params.len_cycles)
 
-        #self._test_data.deviator = ndimage.gaussian_filter(self._test_data.deviator, self._draw_params.deviator_filter,
+        #Cyclic_models.data[statment.current_test].deviator = ndimage.gaussian_filter(Cyclic_models.data[statment.current_test].deviator, self._draw_params.deviator_filter,
                                                          #order=0)
 
     def _modeling_strain(self):
@@ -1078,63 +1079,63 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
          циклов"""
         # Создадим массив моделя E. Он отвечает за рост амплитуды
         if self._cosine:
-            E_module = ModelTriaxialCyclicLoadingSoilTest.create_E_module_array(self._test_data.cycles[len(self._load_stage.strain):] - self._test_data.cycles[len(self._load_stage.strain)],
+            E_module = ModelTriaxialCyclicLoadingSoilTest.create_E_module_array(Cyclic_models.data[statment.current_test].cycles[len(self._load_stage.strain):] - Cyclic_models.data[statment.current_test].cycles[len(self._load_stage.strain)],
                                                                                 self._draw_params.strain_E0,
                                                                                 (-0.3 * self._draw_params.PPR_max) + 1,
                                                                                 fail_cycle=self._test_params.n_fail,
                                                                                 reverse=self._test_params.reverse,
                                                                                 rise_after_fail=self._draw_params.strain_rise_after_fail)
             # Создадим массив вертикальной деформации
-            self._test_data.strain = ModelTriaxialCyclicLoadingSoilTest.create_strain_array(
-                self._test_data.cycles[len(self._load_stage.strain):] - self._test_data.cycles[len(self._load_stage.strain)],
+            Cyclic_models.data[statment.current_test].strain = ModelTriaxialCyclicLoadingSoilTest.create_strain_array(
+                Cyclic_models.data[statment.current_test].cycles[len(self._load_stage.strain):] - Cyclic_models.data[statment.current_test].cycles[len(self._load_stage.strain)],
                 2 * self._test_params.t, E_module, self._draw_params.strain_max, self._draw_params.strain_slant,
                 phase_shift=self._draw_params.strain_phase_offset -0.5*np.pi, stabilization=self._draw_params.strain_stabilization)
-            self._test_data.strain -= self._test_data.strain[0]
-            self._test_data.strain = np.hstack((self._load_stage.strain,
-                                                self._test_data.strain + np.max(self._load_stage.strain)))
+            Cyclic_models.data[statment.current_test].strain -= Cyclic_models.data[statment.current_test].strain[0]
+            Cyclic_models.data[statment.current_test].strain = np.hstack((self._load_stage.strain,
+                                                Cyclic_models.data[statment.current_test].strain + np.max(self._load_stage.strain)))
 
-            self._test_data.strain += np.random.uniform(-self._draw_params.strain_deviation,
+            Cyclic_models.data[statment.current_test].strain += np.random.uniform(-self._draw_params.strain_deviation,
                                                         self._draw_params.strain_deviation,
                                                         self._test_params.len_cycles) + \
-                                      create_deviation_curve(self._test_data.cycles,
+                                      create_deviation_curve(Cyclic_models.data[statment.current_test].cycles,
                                                              self._draw_params.strain_max / 150, (1, 0.1),
                                                              points=self._test_params.cycles_count) + \
-                                      create_deviation_curve(self._test_data.cycles,
+                                      create_deviation_curve(Cyclic_models.data[statment.current_test].cycles,
                                                              self._draw_params.strain_max / 80, (1, 0.1),
                                                              np.random.uniform(8, 15))
 
         else:
             E_module = ModelTriaxialCyclicLoadingSoilTest.create_E_module_array(
-                self._test_data.cycles,
+                Cyclic_models.data[statment.current_test].cycles,
                 self._draw_params.strain_E0,
                 (-0.3 * self._draw_params.PPR_max) + 1,
                 fail_cycle=self._test_params.n_fail,
                 reverse=self._test_params.reverse,
                 rise_after_fail=self._draw_params.strain_rise_after_fail)
             # Создадим массив вертикальной деформации
-            self._test_data.strain = ModelTriaxialCyclicLoadingSoilTest.create_strain_array(
-                self._test_data.cycles,
+            Cyclic_models.data[statment.current_test].strain = ModelTriaxialCyclicLoadingSoilTest.create_strain_array(
+                Cyclic_models.data[statment.current_test].cycles,
                 2 * self._test_params.t,
                 E_module,
                 self._draw_params.strain_max,
                 self._draw_params.strain_slant,
                 phase_shift=self._draw_params.strain_phase_offset, stabilization=self._draw_params.strain_stabilization)
-            self._test_data.strain += np.random.uniform(-self._draw_params.strain_deviation,
+            Cyclic_models.data[statment.current_test].strain += np.random.uniform(-self._draw_params.strain_deviation,
                                                         self._draw_params.strain_deviation,
                                                         self._test_params.len_cycles) + \
-                                      create_deviation_curve(self._test_data.cycles,
+                                      create_deviation_curve(Cyclic_models.data[statment.current_test].cycles,
                                                              self._draw_params.strain_max / 40, (1, 0.1),
                                                              points=self._test_params.cycles_count) + \
-                                      create_deviation_curve(self._test_data.cycles,
+                                      create_deviation_curve(Cyclic_models.data[statment.current_test].cycles,
                                                              self._draw_params.strain_max / 25, (1, 0.1),
                                                              np.random.uniform(8, 15))
 
-        #self._test_data.strain = np.hstack((self._load_stage.strain, self._test_data.strain)) [len(self._load_stage.time):]
+        #Cyclic_models.data[statment.current_test].strain = np.hstack((self._load_stage.strain, Cyclic_models.data[statment.current_test].strain)) [len(self._load_stage.time):]
         # Накладываем погрешности на вертикальную деформацию
         self._test_result.E_values = (E_module[0], E_module[-1])
-        self._test_data.strain = ndimage.gaussian_filter(self._test_data.strain, self._draw_params.strain_filter,
+        Cyclic_models.data[statment.current_test].strain = ndimage.gaussian_filter(Cyclic_models.data[statment.current_test].strain, self._draw_params.strain_filter,
                                                          order=0)
-        self._test_data.strain[0] = 0
+        Cyclic_models.data[statment.current_test].strain[0] = 0
 
     def _modeling_PPR(self):
         """Функция моделирования PPR
@@ -1144,11 +1145,11 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         наклона"""
         if self._cosine:
             PPR = ModelTriaxialCyclicLoadingSoilTest.create_PPR_array(
-                self._test_data.cycles[len(self._load_stage.deviator):] -
-                self._test_data.cycles[len(self._load_stage.deviator)],
+                Cyclic_models.data[statment.current_test].cycles[len(self._load_stage.deviator):] -
+                Cyclic_models.data[statment.current_test].cycles[len(self._load_stage.deviator)],
                 self._test_params.t,
                 self._draw_params.PPR_skempton,
-                self._test_data.cell_pressure[len(self._load_stage.deviator):], self._draw_params.PPR_max,
+                Cyclic_models.data[statment.current_test].cell_pressure[len(self._load_stage.deviator):], self._draw_params.PPR_max,
                 self._draw_params.PPR_slant,
                 self._draw_params.PPR_phase_offset + 0.5*np.pi,
                 self._draw_params.PPR_deviation,
@@ -1158,13 +1159,13 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                 self._test_params.n_fail,
                 self._draw_params.PPR_rise_after_fail)
 
-            self._test_data.PPR = np.hstack((np.random.uniform(-0.003, 0.003, len(self._load_stage.deviator)), PPR))
+            Cyclic_models.data[statment.current_test].PPR = np.hstack((np.random.uniform(-0.003, 0.003, len(self._load_stage.deviator)), PPR))
 
         else:
-            self._test_data.PPR = ModelTriaxialCyclicLoadingSoilTest.create_PPR_array(
-                self._test_data.cycles, self._test_params.t,
+            Cyclic_models.data[statment.current_test].PPR = ModelTriaxialCyclicLoadingSoilTest.create_PPR_array(
+                Cyclic_models.data[statment.current_test].cycles, self._test_params.t,
                 self._draw_params.PPR_skempton,
-                self._test_data.cell_pressure, self._draw_params.PPR_max,
+                Cyclic_models.data[statment.current_test].cell_pressure, self._draw_params.PPR_max,
                 self._draw_params.PPR_slant,
                 self._draw_params.PPR_phase_offset, self._draw_params.PPR_deviation,
                 ModelTriaxialCyclicLoadingSoilTest.check_revers(self._test_params.sigma_1,
@@ -1172,18 +1173,18 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                 2 * self._test_params.t), self._test_params.n_fail,
                 self._draw_params.PPR_rise_after_fail)
 
-        self._test_data.PPR[0] = 0
+        Cyclic_models.data[statment.current_test].PPR[0] = 0
 
-        self._test_data.mean_effective_stress = np.array(
-            ((self._test_data.cell_pressure * (1 - self._test_data.PPR)) * 3 + self._test_data.deviator) / 3)
+        Cyclic_models.data[statment.current_test].mean_effective_stress = np.array(
+            ((Cyclic_models.data[statment.current_test].cell_pressure * (1 - Cyclic_models.data[statment.current_test].PPR)) * 3 + Cyclic_models.data[statment.current_test].deviator) / 3)
 
-        self._test_data.mean_effective_stress = (self._test_data.deviator + 3 * self._test_data.cell_pressure * (1 - self._test_data.PPR))/3
+        Cyclic_models.data[statment.current_test].mean_effective_stress = (Cyclic_models.data[statment.current_test].deviator + 3 * Cyclic_models.data[statment.current_test].cell_pressure * (1 - Cyclic_models.data[statment.current_test].PPR))/3
 
     def _test_modeling(self, Ms=None):
         """Функция моделирования опыта"""
-        self._test_data.cycles = np.linspace(0, self._test_params.cycles_count,
+        Cyclic_models.data[statment.current_test].cycles = np.linspace(0, self._test_params.cycles_count,
                                              self._test_params.points_in_cycle * self._test_params.cycles_count + 1)
-        #self._test_data.time = self._test_data.cycles / self._test_params.frequency
+        #Cyclic_models.data[statment.current_test].time = Cyclic_models.data[statment.current_test].cycles / self._test_params.frequency
         # Этап нагружения
         if self._cosine:
             self._load_stage.time, self._load_stage.strain, self._load_stage.deviator = ModelTriaxialCyclicLoadingSoilTest.dev_loading(
@@ -1191,25 +1192,25 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                 self._test_params.E, self._test_params.qf/2, frequency=self._test_params.frequency)
             np.array(self._load_stage.time)
             #self._load_stage.deviator += self._test_params.deviator_start_value
-            self._test_data.cycles = np.hstack((np.array(self._load_stage.time)*self._test_params.frequency,
-                                                self._test_data.cycles + self._load_stage.time[-1]*self._test_params.frequency))
+            Cyclic_models.data[statment.current_test].cycles = np.hstack((np.array(self._load_stage.time)*self._test_params.frequency,
+                                                Cyclic_models.data[statment.current_test].cycles + self._load_stage.time[-1]*self._test_params.frequency))
 
-        self._test_data.time = self._test_data.cycles/self._test_params.frequency
-
-
-        self._test_params.len_cycles = len(self._test_data.cycles)
+        Cyclic_models.data[statment.current_test].time = Cyclic_models.data[statment.current_test].cycles/self._test_params.frequency
 
 
-        #self._test_data.cell_pressure = ModelTriaxialCyclicLoadingSoilTest.create_cell_press_willie_array(self._test_params.sigma_3, self._test_data.cycles,
+        self._test_params.len_cycles = len(Cyclic_models.data[statment.current_test].cycles)
+
+
+        #Cyclic_models.data[statment.current_test].cell_pressure = ModelTriaxialCyclicLoadingSoilTest.create_cell_press_willie_array(self._test_params.sigma_3, Cyclic_models.data[statment.current_test].cycles,
                                                                 #self._test_params.frequency)
 
-        self._test_data.cell_pressure = np.full(len(self._test_data.cycles), self._test_params.sigma_3)
+        Cyclic_models.data[statment.current_test].cell_pressure = np.full(len(Cyclic_models.data[statment.current_test].cycles), self._test_params.sigma_3)
         self._modeling_deviator()
         self._modeling_PPR()
 
         if not Ms:
             Ms = ModelTriaxialCyclicLoadingSoilTest.define_Ms(
-                self._test_params.c, self._test_params.fi, 1 / self._test_data.PPR[-1], self._test_params.sigma_3,
+                self._test_params.c, self._test_params.fi, 1 / Cyclic_models.data[statment.current_test].PPR[-1], self._test_params.sigma_3,
                 self._test_params.sigma_1, self._test_params.t, self._test_params.cycles_count,
                 self._test_params.physical.e, self._test_params.physical.Il)
 
@@ -1226,14 +1227,14 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._modeling_strain()
 
         if self._test_params.Kd:
-            strain_cyclic = self._test_data.strain[len(self._load_stage.strain):]
+            strain_cyclic = Cyclic_models.data[statment.current_test].strain[len(self._load_stage.strain):]
             strain_cyclic -= strain_cyclic[0]
             strain_cyclic *= (((self._load_stage.strain[-1] / self._test_params.Kd) - self._load_stage.strain[-1])/np.max(strain_cyclic))
-            self._test_data.strain = np.hstack((self._load_stage.strain, strain_cyclic + self._load_stage.strain[-1]))
+            Cyclic_models.data[statment.current_test].strain = np.hstack((self._load_stage.strain, strain_cyclic + self._load_stage.strain[-1]))
 
-            #self._test_data.strain *= ((self._load_stage.strain[-1] * self._test_params.Kd)/np.max(self._test_data.strain - self._load_stage.strain[-1])) - self._load_stage.strain[-1]
+            #Cyclic_models.data[statment.current_test].strain *= ((self._load_stage.strain[-1] * self._test_params.Kd)/np.max(Cyclic_models.data[statment.current_test].strain - self._load_stage.strain[-1])) - self._load_stage.strain[-1]
 
-        """i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator/2, self.critical_line)
+        """i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(Cyclic_models.data[statment.current_test].deviator/2, self.critical_line)
         if Msf:
             if self._test_params.Kd:
                 if self._test_params.Kd >= 0.9:
@@ -1259,7 +1260,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         c = self._test_params.c * 1000
         fi = np.deg2rad(self._test_params.fi)
         k = (6 * np.sin(fi) / (3 - np.sin(fi)))
-        self.critical_line = c + 0.5 * k * self._test_data.mean_effective_stress
+        self.critical_line = c + 0.5 * k * Cyclic_models.data[statment.current_test].mean_effective_stress
 
     @property
     def test_duration(self):

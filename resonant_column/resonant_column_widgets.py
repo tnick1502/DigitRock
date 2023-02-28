@@ -614,8 +614,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
             if dialog.exec() == QDialog.Accepted:
                 dialog.get_data()
                 RC_models.generateTests()
-                RC_models.dump(os.path.join(statment.save_dir.save_directory,
-                                            f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
+                RC_models.dump_all(statment.save_dir.save_directory)
                 #statment.dump(''.join(os.path.split(self.tab_2.save_widget.directory)[:-1]),
                               #name="Резонансная колонка.pickle")
                 app_logger.info("Новые параметры ведомости и модели сохранены")
@@ -674,9 +673,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
                 RC_models.dump(statment.save_dir.save_directory, statment.current_test)
             except Exception as err:
                 print(err)
-
             control()
-
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

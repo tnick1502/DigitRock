@@ -51,7 +51,7 @@ class Model(metaclass=SingletonMeta):
                 break
 
     def dump(self, dir: str, key: str):
-        data_dir, handler_dir = Model.create_save_dir(dir)
+        data_dir, handler_dir = Model.create_save_dir(dir, statment.general_parameters.test_mode)
 
         data_path = os.path.join(data_dir, f"data {key}.pickle")
         handler_path = os.path.join(handler_dir, f"handler {key}.pickle")
@@ -74,8 +74,12 @@ class Model(metaclass=SingletonMeta):
                 file
             )
 
+    def dump_all(self, dir: str, model_name: str):
+        for key in self.data:
+            self.dump(dir, model_name, key)
+
     def load(self, dir):
-        data_dir, handler_dir = Model.create_save_dir(dir)
+        data_dir, handler_dir = Model.create_save_dir(dir, statment.general_parameters.test_mode)
 
         load_data_keys = []
         load_handler_keys = []
@@ -122,9 +126,14 @@ class Model(metaclass=SingletonMeta):
         return len(self.data)
 
     @staticmethod
-    def create_save_dir(dir):
-        data_dir = os.path.join(dir, "data_models")
-        handler_dir = os.path.join(dir, "handler_models")
+    def create_save_dir(dir, model_name):
+        if statment.general_data.shipment_number:
+            shipment_number = f" - {statment.general_data.shipment_number}"
+        else:
+            shipment_number = ""
+
+        data_dir = os.path.join(dir, "data_models " + model_name + shipment_number)
+        handler_dir = os.path.join(dir, "handler_models " + model_name + shipment_number)
         for dir in [data_dir, handler_dir]:
             if not os.path.isdir(dir):
                 os.mkdir(dir)

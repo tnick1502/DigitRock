@@ -205,7 +205,7 @@ class CyclicSoilTestWidget(TabMixin, QWidget):
 
     def set_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
-        strain_params, ppr_params, cycles_count_params = Cyclic_models[statment.current_test].get_draw_params()
+        strain_params, ppr_params, cycles_count_params = Cyclic_models.handler[statment.current_test].get_draw_params()
         self.test_widget.sliders_widget.set_sliders_params(strain_params, ppr_params, cycles_count_params)
         self._plot()
 
@@ -594,10 +594,10 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         self.tab_2.popOut.connect(self.removeTab)
 
         self.tab_3 = Save_Dir(result_table_params={
-            "Макс. PPR": lambda lab: Cyclic_models[lab].get_test_results()['max_PPR'],
-            "Макс. деформ.": lambda lab: Cyclic_models[lab].get_test_results()['max_strain'],
-            "Цикл разрушения": lambda lab: Cyclic_models[lab].get_test_results()['fail_cycle'],
-            "Заключение": lambda lab: Cyclic_models[lab].get_test_results()['conclusion'],
+            "Макс. PPR": lambda lab: Cyclic_models.handler[lab].get_test_results()['max_PPR'],
+            "Макс. деформ.": lambda lab: Cyclic_models.handler[lab].get_test_results()['max_strain'],
+            "Цикл разрушения": lambda lab: Cyclic_models.handler[lab].get_test_results()['fail_cycle'],
+            "Заключение": lambda lab: Cyclic_models.handler[lab].get_test_results()['conclusion'],
         },  qr={"state": True})
 
         self.tab_3.popIn.connect(self.addTab)
@@ -665,8 +665,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
 
             if dialog.exec() == QDialog.Accepted:
                 Cyclic_models.generateTests()
-                Cyclic_models.dump(os.path.join(statment.save_dir.save_directory,
-                                                f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
+                Cyclic_models.dump_all(statment.save_dir.save_directory)
                 app_logger.info("Новые параметры ведомости и модели сохранены")
 
     def save_report(self):
@@ -717,7 +716,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                               'Oborudovanie': "Камера трехосного сжатия динамическая ГТ 2.3.20, Wille Geotechnik 13-HG/020:001",
                               'h': 100, 'd': 50}
 
-            test_result = Cyclic_models[statment.current_test].get_test_results()
+            test_result = Cyclic_models.handler[statment.current_test].get_test_results()
 
             results = {'PPRmax': test_result['max_PPR'],
                        'EPSmax': test_result['max_strain'],
@@ -833,7 +832,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                                        self.tab_2.test_widget.save_canvas(), "{:.2f}".format(__version__), qr_code=qr)
 
 
-            Cyclic_models[statment.current_test].generate_log_file(save)
+            Cyclic_models.handler[statment.current_test].generate_log_file(save)
 
             shutil.copy(file_name, statment.save_dir.report_directory + "/" + file_name[len(file_name) -
                                                                                  file_name[::-1].index("/"):])
@@ -881,8 +880,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
-            Cyclic_models.dump(os.path.join(statment.save_dir.save_directory,
-                                            f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
+            Cyclic_models.dump(statment.save_dir.save_directory, statment.current_test)
             #statment.dump(''.join(os.path.split(self.tab_3.directory)[:-1]),
                           #ame=statment.general_parameters.test_mode + ".pickle")
 

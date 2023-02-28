@@ -20,7 +20,7 @@ from singletons import statment, E_models, FC_models, VC_models, RC_models, Cycl
 
 from resonant_column.rezonant_column_hss_model import ModelRezonantColumnSoilTest, TestData
 from consolidation.consolidation_model import ModelTriaxialConsolidationSoilTest
-from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTest
+from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoadingSoilTest, TriaxialCyclicTestData
 from rayleigh_damping.rayleigh_damping_model import ModelRayleighDampingSoilTest
 from static_loading.triaxial_static_loading_test_model import ModelTriaxialStaticLoadSoilTest
 from static_loading.mohr_circles_test_model import ModelMohrCirclesSoilTest
@@ -645,7 +645,9 @@ class CyclicStatment(InitialStatment):
                 else:
                     self.table_physical_properties.set_data()
                     self.load_models(models_name="cyclic_models.pickle",
-                                     models=Cyclic_models, models_type=ModelTriaxialCyclicLoadingSoilTest)
+                                     models=Cyclic_models,
+                                     data_class=TriaxialCyclicTestData,
+                                     handler_class=ModelTriaxialCyclicLoadingSoilTest)
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
 

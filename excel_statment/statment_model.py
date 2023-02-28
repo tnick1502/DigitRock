@@ -364,7 +364,7 @@ class Statment:
         for model, model_name in zip(models, models_names):
             model_path = os.path.join(backup_date_path, self.general_parameters.test_mode)
             create_path(model_path)
-            model.dump(os.path.join(model_path, model_name))
+            model.dump_all(model_path)
 
     @staticmethod
     def createDataFrame(excel_path) -> pd.DataFrame:
