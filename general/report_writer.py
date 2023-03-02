@@ -44,9 +44,12 @@ class ReportXlsxSaver:
                 Фукнция для печати - set_data_row_mode
             В этом случае данные заполняеются построчно, названий столцов нет, они должны быть заданы в шаблоне
     """
-    def __init__(self, template_filename: str = None, num_page_rows: int = 55):
+    def __init__(self, template_filename: str = None, num_page_rows: int = 55, less_participants: bool = False):
         self.__TEMPLATE_PATH: str = r"general/xls_statment_base_template.xlsx"
         '''относительный путь до шаблона'''
+        if less_participants:
+            self.__TEMPLATE_PATH: str = r"general/xls_statment_base_template_less_participants.xlsx"
+            '''относительный путь до шаблона'''
 
         self.__template_mode: bool = False
         '''режим, при котором выбран конкретный шаблон,
@@ -458,7 +461,8 @@ class ReportXlsxSaver:
         _page = 0
 
         for ind, row in enumerate(data):
-            if ind > self.page_size_rows - 10 - (self.pos_of("first_row") + self.page_slant) + (_page * self.page_size_rows):
+            if ind > self.page_size_rows - 10 - (self.pos_of("first_row") + self.page_slant) + \
+                    (_page * (self.page_size_rows - 10 - (self.pos_of("first_row") + self.page_slant))):
                 _page += 1
                 _result.append([])
 

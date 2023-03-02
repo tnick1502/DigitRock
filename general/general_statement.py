@@ -465,6 +465,9 @@ class StatementGenerator(QDialog):
 
                             # Здесь необходимо для других шаблонов прописать соответсвующие им файлы
 
+                            if self.StatementStructure.less_participants_btn.isChecked():
+                                template_filename = f"{template_filename.split('.xlsx')[0]}_less_participants.xlsx"
+
 
                             writer = ReportXlsxSaver(template_filename=template_filename,
                                                      num_page_rows=num_page_rows)
@@ -481,7 +484,7 @@ class StatementGenerator(QDialog):
                                                      doc_num=unique_number(length=7, postfix="-СВД"))
                             writer.save(f"{save_file_pass}/{save_file_name.replace('.pdf','.xlsx')}")
                         else:
-                            writer = ReportXlsxSaver()
+                            writer = ReportXlsxSaver(less_participants=self.StatementStructure.less_participants_btn.isChecked())
 
                             formatted_tests_data, additional = writer.form_tests_data_dict_mode(titles, data)
 
@@ -556,7 +559,8 @@ class StatementGenerator(QDialog):
                             save_report(titles, data, scales, data_report, customer_data_info, customer_data,
                                         statement_title, save_file_pass, unique_number(length=7, postfix="-СВД"),
                                         save_file_name, accred1={'accreditation': self.accreditation,
-                                                                'accreditation_key': self.accreditation_key})
+                                                                'accreditation_key': self.accreditation_key},
+                                        less_participants=self.StatementStructure.less_participants_btn.isChecked())
                             QMessageBox.about(self, "Сообщение", "Успешно сохранено")
                     except PermissionError:
                         QMessageBox.critical(self, "Ошибка", "Закройте файл для записи", QMessageBox.Ok)
@@ -1021,6 +1025,11 @@ class StatementStructure(QWidget):
         self.sort_btn.setFixedHeight(30)
         self.sort_btn.setFixedWidth(150)
         self.end_line.addWidget(self.sort_btn)
+
+        self.less_participants_btn = QCheckBox("Меньше исполнителей")
+        self.less_participants_btn.setFixedHeight(30)
+        self.less_participants_btn.setFixedWidth(150)
+        self.end_line.addWidget(self.less_participants_btn)
 
         self.end_line.addStretch(-1)
         self.parameter_box_layout.addLayout(self.end_line)
