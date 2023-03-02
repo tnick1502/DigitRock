@@ -1081,9 +1081,10 @@ def save_report(titles1, data1, scales1, data_report1, customer_data_info1,
     if less_participants:
         participants = [
             ["Исполнитель:", "Жидков И.М."],
-            ["", ""],
+            [" ", " "],
+            [" ", " "],
             ["Научный руководитель ИЛ:", "к.т.н. Череповский А.В."],
-            ["", ""]
+            [" ", " "]
         ]
     objectData = AttrDict({
         'accred': accred,
