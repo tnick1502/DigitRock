@@ -458,7 +458,8 @@ class ReportXlsxSaver:
         _page = 0
 
         for ind, row in enumerate(data):
-            if ind > self.page_size_rows - 10 - (self.pos_of("first_row") + self.page_slant) + (_page * self.page_size_rows):
+            if ind > self.page_size_rows - 10 - (self.pos_of("first_row") + self.page_slant) +\
+                    (_page * (self.page_size_rows - 10 - (self.pos_of("first_row") + self.page_slant))):
                 _page += 1
                 _result.append([])
 
