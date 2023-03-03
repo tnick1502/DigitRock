@@ -410,14 +410,14 @@ class StatementGenerator(QDialog):
                 # Сами данные (подробнее см. Report.py)
                 customer_data = [self.customer[i] + "                  " for i in ["customer", "object_name"]]
 
-                statement_title += f" №{self.customer['object_number']}СВД"
+                statement_title += f" №{self.customer['object_number']}/СВД{self.shipment}"
 
                 try:
                     if save_file_pass:
                         accred1 = {'accreditation': self.accreditation,
                                    'accreditation_key': self.accreditation_key}
                         if accred1 is None:
-                            accred1 = {'acrreditation': 'AO', 'acrreditation_key': 'новая'}
+                            accred1 = {'': 'AO', 'acrredrmitation_key': 'новая'}
                         if accred1:
                             accred = [accreditation[accred1['accreditation']][accred1['accreditation_key']][0],
                                       accreditation[accred1['accreditation']][accred1['accreditation_key']][1]]
@@ -552,7 +552,7 @@ class StatementGenerator(QDialog):
                     # Сами данные (подробнее см. Report.py)
                     customer_data = [self.customer[i] + "                  " for i in ["customer", "object_name"]]
 
-                    statement_title += f" №{self.customer['object_number']}СВД"
+                    statement_title += f" №{self.customer['object_number']}/СВД{self.shipment}"
 
                     try:
                         if save_file_pass:
