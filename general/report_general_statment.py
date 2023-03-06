@@ -935,7 +935,7 @@ def testStampReport(objectData, examData):
 def save_report(titles1, data1, scales1, data_report1, customer_data_info1,
                 customer_data1, heading_title1, path_save1,
                 code_report="", save_file_name = 'Файл_Отчёт.pdf',
-                accred1=None):
+                accred1=None, less_participants=False):
     # глобальные переменные
     # Шапка у информации о заказчиках и их объектах
     if accred1 is None:
@@ -1076,8 +1076,16 @@ def save_report(titles1, data1, scales1, data_report1, customer_data_info1,
          "Жмылёв Д.А., Старостин П.А., Чалая Т.А., Михалева О.В., Горшков Е.С., Доронин С.А."],
         ["Исполнительный директор / нач. ИЛ:", "Семенова О.В."],
         ["Научный руководитель ИЛ:", "Академик РАЕН Озмидов О.Р. / к.т.н. Череповский А.В."],
-        ["Главный инженер:", "Жидков И.М."]
+        ["Технический директор:", "Жидков И.М."]
     ]
+    if less_participants:
+        participants = [
+            ["Исполнитель:", "Жидков И.М."],
+            [" ", " "],
+            [" ", " "],
+            ["Научный руководитель ИЛ:", "к.т.н. Череповский А.В."],
+            [" ", " "]
+        ]
     objectData = AttrDict({
         'accred': accred,
         'participants': participants,
