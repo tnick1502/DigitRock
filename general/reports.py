@@ -245,7 +245,10 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
     ]
     executors_data_2 = [
         ["Исполнитель:", "Жидков И.М."],
+        ["", ""],
+        ["", ""],
         ["Генеральный директор ИЛ:", "к.т.н. Череповский А.В."],
+        ["", ""],
     ]
 
     global full_executors
