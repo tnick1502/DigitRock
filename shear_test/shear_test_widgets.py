@@ -570,8 +570,42 @@ class ShearSoilTestApp(AppMixin, QWidget):
             else:
                 qr = None
 
+            shear_type_code = ""
+            moisture = ""
+            if moisture_type == self.tab_1.test_parameters["optional"]["vars"][1]:
+                moisture = "п"
+            elif moisture_type == self.tab_1.test_parameters["optional"]["vars"][2]:
+                moisture = "в"
+
+            if ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR:
+                '''Cрез не природное и не водонасыщенное'''
+                shear_type_code = "С"+moisture
+            elif ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_NATURAL:
+                '''Срез природное'''
+                shear_type_code = "С"+moisture
+            elif ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_SATURATED:
+                '''Срез водонасыщенное'''
+                shear_type_code = "С"+moisture
+            elif ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_DD:
+                '''Срез плашка по плашке'''
+                shear_type_code = "СПП"+moisture
+            elif ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_DD_NATURAL:
+                '''Срез плашка по плашке природный'''
+                shear_type_code = "СПП"+moisture
+            elif ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_DD_SATURATED:
+                '''Срез плашка по плашке водонасыщенный'''
+                shear_type_code = "СПП"+moisture
+            elif ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_NN:
+                '''Срез НН'''
+                shear_type_code = "НН"+moisture
+            elif ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_DILATANCY:
+                '''Срез дилатансия'''
+                shear_type_code = "СД"+moisture
+
+
+
             if ShearStatment.is_dilatancy_type(_test_mode):
-                name = file_path_name + " " + statment.general_data.object_number + " ДС" + ".pdf"
+                name = file_path_name + " " + statment.general_data.object_number + f" {shear_type_code}" + ".pdf"
 
                 Shear_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
@@ -586,12 +620,12 @@ class ShearSoilTestApp(AppMixin, QWidget):
                 report_Shear_Dilatancy(save + "/" + name, data_customer,
                                        statment[statment.current_test].physical_properties, statment.current_test,
                                        os.getcwd() + "/project_data/", test_parameter, test_result,
-                                       (*self.tab_2.deviator_loading.save_canvas(), None), "{:.2f}".format(__version__), qr_code=qr)
+                                       (*self.tab_2.deviator_loading.save_canvas(), None), "{:.2f}".format(__version__), qr_code=qr, name=shear_type_code)
 
                 shutil.copy(save + "/" + name,  statment.save_dir.report_directory + "/" + name)
 
             elif not ShearStatment.is_dilatancy_type(_test_mode):
-                name = file_path_name + " " + statment.general_data.object_number + " Сп" + ".pdf"
+                name = file_path_name + " " + statment.general_data.object_number + f" {shear_type_code}" + ".pdf"
                 Shear_models[statment.current_test].save_log_files(save, nonzero_vertical_def=self.vertical_def_btn.isChecked())
                 Shear_models[statment.current_test].save_cvi_file(save,
                                                                   statment.save_dir.cvi_directory +
@@ -612,7 +646,8 @@ class ShearSoilTestApp(AppMixin, QWidget):
                 report_Shear(save + "/" + name, data_customer,
                              statment[statment.current_test].physical_properties, statment.current_test,
                              os.getcwd() + "/project_data/", test_parameter, test_result,
-                             (*self.tab_3.save_canvas(), *self.tab_3.save_canvas()), "{:.2f}".format(__version__), qr_code=qr)
+                             (*self.tab_3.save_canvas(), *self.tab_3.save_canvas()), "{:.2f}".format(__version__),
+                             qr_code=qr, name=shear_type_code)
 
                 shutil.copy(save + "/" + name, statment.save_dir.report_directory + "/" + name)
 
