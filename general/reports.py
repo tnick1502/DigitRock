@@ -4827,7 +4827,8 @@ def StatmentReport(name, Data, path):  # p1 - папка сохранения о
     canvas.save()
 
 
-def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1,
+                           qr_code=None, name="ДС"):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -4835,8 +4836,6 @@ def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     res["description"] = Data_phiz.description
 
-
-    name = "ДС"
 
     canvas = Canvas(Name, pagesize=A4)
 
@@ -4860,7 +4859,8 @@ def report_Shear_Dilatancy(Name, Data_customer, Data_phiz, Lab, path, test_param
     canvas.save()
 
 
-def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1,
+                 qr_code=None, name="Сп"):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
@@ -4868,7 +4868,6 @@ def report_Shear(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
 
     res["description"] = Data_phiz.description
 
-    name = "Сп"
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
