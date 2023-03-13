@@ -288,15 +288,17 @@ class MechanicalProperties:
 
     @log_this(app_logger, "debug")
     def defineProperties(self, physical_properties, data_frame: pd.DataFrame, string: int,
-                         test_mode=None, K0_mode=None, sigma3_lim=None) -> None:
+                         test_mode=None, K0_mode=None, sigma3_lim=None, phi_mode=None) -> None:
         """Считывание строки свойств"""
         custom_check = True
         if test_mode == "Трёхосное сжатие КН" or test_mode == "Вибропрочность":
-            self.c, self.fi, self.E50, self.u = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
+            self.c, self.fi, self.E50, self.u = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string,
+                                                                                   phi_mode=phi_mode)
             if self.u != None:
                 self.u *= 1000
         else:
-            self.c, self.fi, self.E50 = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string)
+            self.c, self.fi, self.E50 = MechanicalProperties.define_c_fi_E(data_frame, test_mode, string,
+                                                                           phi_mode=phi_mode)
             if test_mode == "Трёхосное сжатие (F, C) res":
                 self.c_res = float_df(data_frame.iat[string, MechanicalPropertyPosition["c_res"][1]])
                 self.fi_res = float_df(data_frame.iat[string, MechanicalPropertyPosition["fi_res"][1]])
@@ -680,9 +682,27 @@ class MechanicalProperties:
         return dict_K0[K0_mode]
 
     @staticmethod
-    def define_c_fi_E(data_frame: pd.DataFrame, test_mode: str, string: int) -> float:
-        """Функция определения K0"""
-        return [float_df(data_frame.iat[string, column]) for column in c_fi_E_PropertyPosition[test_mode][1]]
+    def define_c_fi_E(data_frame: pd.DataFrame, test_mode: str, string: int, phi_mode: str = None) -> float:
+        """Функция определения FI C E"""
+        values = [float_df(data_frame.iat[string, column]) for column in c_fi_E_PropertyPosition[test_mode][1]]
+        '''c fi E50 u?'''
+
+        if not phi_mode or values[1] is None:
+            return values
+
+        rnd = np.round(np.random.uniform(-0.5, 0.5), 1)
+
+        if phi_mode == "Автоматически":
+            if values[1] % 1 == 0:
+                values[1] += rnd
+
+        if phi_mode == "PHI по ведомости":
+            pass
+
+        if phi_mode == "PHI с рандомом":
+            values[1] += rnd
+
+        return values
 
     @staticmethod
     def define_sigma_3(K0: float, depth: float) -> float:
@@ -1876,14 +1896,14 @@ class ShearProperties(MechanicalProperties):
             if isinstance(getattr(ShearProperties, key), DataTypeValidation):
                 object.__setattr__(self, key, None)
 
-    def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode) -> None:
+    def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode, phi_mode=None) -> None:
 
         is_dilatancy = ShearProperties.is_dilatancy_type(test_mode)
 
         if not is_dilatancy:
-            self.c, self.fi = ShearProperties.define_c_fi_E(data_frame, test_mode, string)
+            self.c, self.fi = ShearProperties.define_c_fi_E(data_frame, test_mode, string, phi_mode=phi_mode)
         elif is_dilatancy:
-            self.c, self.fi, dilatancy_angle = ShearProperties.define_c_fi_E(data_frame, test_mode, string)
+            self.c, self.fi, dilatancy_angle = ShearProperties.define_c_fi_E(data_frame, test_mode, string, phi_mode=phi_mode)
             self.dilatancy_angle = dilatancy_angle if dilatancy_angle else MechanicalProperties.define_dilatancy(
                 physical_properties.type_ground, physical_properties.e, physical_properties.Il, physical_properties.Ip) * np.random.uniform(0.9, 1.1)
 
