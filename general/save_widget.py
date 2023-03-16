@@ -98,6 +98,10 @@ class Save_Dir(TabMixin, QWidget):
             self.plaxis_btn.setChecked(False)
             self.advanced_box_layout.addWidget(self.plaxis_btn)
 
+        self.roundFI_btn = QCheckBox("округлять PHI до целых")
+        self.roundFI_btn.setChecked(False)
+        self.advanced_box_layout.addWidget(self.roundFI_btn)
+
         self.advanced_box_layout.addStretch(-1)
 
         self.savebox_layout.addLayout(self.savebox_layout_line_1)

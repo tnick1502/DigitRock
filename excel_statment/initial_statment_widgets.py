@@ -395,6 +395,14 @@ class TriaxialStaticStatment(InitialStatment):
                     "Не менее 50 кПа",
                     "Не менее 100 кПа"
                 ]
+            },
+            "phi_mode": {
+                "label": "Тип определения PHI",
+                "vars": [
+                    "Автоматически",
+                    "PHI по ведомости",
+                    "PHI с рандомом"
+                ]
             }
         }
 
@@ -848,6 +856,14 @@ class ShearStatment(InitialStatment):
                     "Не выбрано",
                     "Природное",
                     "Водонасыщенное"]
+            },
+            "phi_mode": {
+                "label": "Тип определения PHI",
+                "vars": [
+                    "Автоматически",
+                    "PHI по ведомости",
+                    "PHI с рандомом"
+                ]
             }
             }
 
@@ -983,7 +999,7 @@ class ShearStatment(InitialStatment):
         combo_params = self.open_line.get_data()
         test = True
         for key in self.test_parameters:
-            if key == "optional":
+            if key in ["optional", "phi_mode"]:
                 continue
             if combo_params[key] == self.test_parameters[key]["vars"][0]:
                 test = False

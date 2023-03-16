@@ -15,7 +15,7 @@ from excel_statment.initial_statment_widgets import ShearStatment
 from excel_statment.position_configs import c_fi_E_PropertyPosition
 from general.save_widget import Save_Dir
 from excel_statment.functions import set_cell_data
-from general.reports import report_consolidation, report_FCE, report_Shear, report_Shear_Dilatancy
+from general.reports import report_consolidation, report_FCE, report_Shear, report_Shear_Dilatancy, zap
 from shear_test.shear_dilatancy_widgets_UI import ModelShearItemUI, ModelShearFileOpenUI, ModelShearDilatancyUI
 from general.general_widgets import Slider
 from configs.styles import style
@@ -642,6 +642,9 @@ class ShearSoilTestApp(AppMixin, QWidget):
 
                 test_result["c"], test_result["fi"] = Shear_models[statment.current_test].get_test_results()["c"], \
                                                       Shear_models[statment.current_test].get_test_results()["fi"]
+
+                if self.tab_4.roundFI_btn.isChecked():
+                    test_result["fi"] = zap(test_result["fi"], 0)
 
                 report_Shear(save + "/" + name, data_customer,
                              statment[statment.current_test].physical_properties, statment.current_test,
