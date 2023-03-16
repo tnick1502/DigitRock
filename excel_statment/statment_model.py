@@ -236,12 +236,25 @@ class Test:
             self.mechanical_properties = test_class()
 
             if sigma3_lim:
-                self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame, string=i,
-                                                            test_mode=test_mode, K0_mode=K0_mode, sigma3_lim=sigma3_lim,
-                                                            phi_mode=phi_mode)
+                if phi_mode:
+                    self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
+                                                                string=i,
+                                                                test_mode=test_mode, K0_mode=K0_mode,
+                                                                sigma3_lim=sigma3_lim,
+                                                                phi_mode=phi_mode)
+                else:
+                    self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
+                                                                string=i,
+                                                                test_mode=test_mode, K0_mode=K0_mode,
+                                                                sigma3_lim=sigma3_lim)
             else:
-                self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame, string=i,
-                                                            test_mode=test_mode, K0_mode=K0_mode, phi_mode=phi_mode)
+                if phi_mode:
+                    self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
+                                                                string=i,
+                                                                test_mode=test_mode, K0_mode=K0_mode, phi_mode=phi_mode)
+                else:
+                    self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame, string=i,
+                                                            test_mode=test_mode, K0_mode=K0_mode)
 
     def get_json(self):
         return {
