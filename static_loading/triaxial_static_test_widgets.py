@@ -6,6 +6,7 @@ from PyQt5.QtGui import QPalette, QBrush
 import matplotlib.pyplot as plt
 import shutil
 import threading
+import numpy as np
 
 from general.general_functions import create_path
 from general.tab_view import TabMixin
@@ -670,6 +671,10 @@ class StatickProcessingApp(QWidget):
                 test_result["sigma_3_mohr"], test_result["sigma_1_mohr"] = self.tab_3._model.get_sigma_3_1()
                 test_result["c"], test_result["fi"] = self.tab_3._model.get_test_results()["c"], \
                                                       self.tab_3._model.get_test_results()["fi"]
+
+                if self.tab_4.roundFI_btn.isChecked():
+                    test_result["fi"] = zap(test_result["fi"], 0)
+
                 # Name = "Отчет " + self.tab_1.get_lab_number().replace("*", "") + "-КМ" + ".pdf"
                 Name = self.tab_1.get_lab_number().replace("*", "") + \
                        " " + data_customer["object_number"] + " ТД" + ".pdf"
@@ -1099,6 +1104,9 @@ class StatickSoilTestApp(AppMixin, QWidget):
                     FC_models[statment.current_test].get_test_results()["fi"], \
                     FC_models[statment.current_test].get_test_results()["m"]
 
+                if self.tab_4.roundFI_btn.isChecked():
+                    test_result["fi"] = zap(test_result["fi"], 0)
+
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 data = {
@@ -1205,6 +1213,9 @@ class StatickSoilTestApp(AppMixin, QWidget):
                     FC_models[statment.current_test].get_test_results()["fi"], \
                     FC_models[statment.current_test].get_test_results()["m"]
 
+                if self.tab_4.roundFI_btn.isChecked():
+                    test_result["fi"] = zap(test_result["fi"], 0)
+
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 report_FC(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
@@ -1286,6 +1297,9 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 FC_models[statment.current_test].get_test_results()["fi"], \
                 FC_models[statment.current_test].get_test_results()["m"]
 
+                if self.tab_4.roundFI_btn.isChecked():
+                    test_result["fi"] = zap(test_result["fi"], 0)
+
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
                 report_FC(save + "/" + name, data_customer, statment[statment.current_test].physical_properties,
@@ -1337,6 +1351,9 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
                 test_result["c"], test_result["fi"] = FC_models[statment.current_test].get_test_results()["c"], \
                                                       FC_models[statment.current_test].get_test_results()["fi"]
+
+                if self.tab_4.roundFI_btn.isChecked():
+                    test_result["fi"] = zap(test_result["fi"], 0)
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
@@ -1448,6 +1465,9 @@ class StatickSoilTestApp(AppMixin, QWidget):
                     FC_models[statment.current_test].get_test_results()["m"], \
                     FC_models[statment.current_test].get_test_results()["c_res"], \
                     FC_models[statment.current_test].get_test_results()["fi_res"],
+
+                if self.tab_4.roundFI_btn.isChecked():
+                    test_result["fi"] = zap(test_result["fi"], 0)
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 
