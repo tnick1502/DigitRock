@@ -1734,6 +1734,13 @@ class VibrationCreepProperties(MechanicalProperties):
             self.Kd = [float(Kd)] if str(Kd).isdigit() else list(map(lambda Kd: float(Kd.replace(",", ".").strip(" ")),
                                                                      Kd.split(";")))"""
 
+            def fr(x, x1, x2):
+                min_y = 0.98
+                return (((x - x1) * (min_y - 1)) / (x2 - x1)) + 1
+
+            for i in range(len(self.Kd)):
+                self.Kd[i] *= fr(self.frequency[i], min(self.frequency), max(self.frequency))
+
             self.cycles_count = int(np.random.uniform(2000, 5000))
 
             if self.Kd[-1] >= 0.9:
@@ -1769,7 +1776,7 @@ class VibrationCreepProperties(MechanicalProperties):
         load_dependence = sigmoida(mirrow_element((4*t)/qf, 0.5), 0.5, 0.5, 0.5, 1.2)
         e_dependence = sigmoida(mirrow_element(e, 0.5), 0.2, 0, 0.8, 1.8)
         Il_dependence = sigmoida(mirrow_element(Il, 0.5), 0.1, 0.3, 0.9, 1)
-        frequency_dependence = sigmoida(mirrow_element(frequency, 50), 0.1, 40, 0.9, 120)
+        frequency_dependence = sigmoida(mirrow_element(frequency, 50), 0.18, 40, 0.85, 230)
 
         Kd *= load_dependence * e_dependence * Il_dependence * frequency_dependence * np.random.uniform(0.98, 1.02)
 
@@ -1854,9 +1861,11 @@ class VibrationCreepProperties(MechanicalProperties):
             5: type_5(e, frequency),
         }
 
+        e_dependence = sigmoida(mirrow_element(e, 0.5), 0.2, 0, 0.8, 2)
+
         sigma_koef = 0.0007*sigma_3 + 1
 
-        Kd = Kd_dict[type] * sigma_koef
+        Kd = Kd_dict[type] * sigma_koef #* e_dependence + 0.07
 
         if Kd >= 0.97:
             Kd = np.random.uniform(0.95, 0.97)

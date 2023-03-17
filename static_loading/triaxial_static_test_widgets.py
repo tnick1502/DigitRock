@@ -1625,7 +1625,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 "c": ['S', 19],
                 "fi": ['T', 20],
                 "cu": ['U', 21],
-                "uf": ['J', 5405],
+                "uf": ['J', 9],
+                "K0": ['K', 10],
                 "Skempton": ['AA', 27],
             }
 
@@ -1658,7 +1659,9 @@ class StatickSoilTestApp(AppMixin, QWidget):
                               round(statment[statment.current_test].mechanical_properties.sigma_3 / 1000, 3), sheet="Лист1")
                 set_cell_data(path, (parameters["sigma_1"][0] + str(i), (i, parameters["sigma_1"][1])),
                               round(statment[statment.current_test].mechanical_properties.sigma_1 / 1000, 3), sheet="Лист1")
-
+                set_cell_data(path, (parameters["K0"][0] + str(i), (i, parameters["K0"][1])),
+                              statment[statment.current_test].mechanical_properties.K0,
+                              sheet="Лист1")
                 E = E_models[statment.current_test].deviator_loading.get_test_results()["E"]
                 try:
                     E[0]
@@ -1712,6 +1715,9 @@ class StatickSoilTestApp(AppMixin, QWidget):
                                   depth, sheet="Лист1")
                     set_cell_data(path, (parameters["waterfill"][0] + str(i), (i, parameters["waterfill"][1])),
                                   waterfill, sheet="Лист1")
+
+                    set_cell_data(path, (parameters["K0"][0] + str(i), (i, parameters["K0"][1])),
+                                  statment[statment.current_test].mechanical_properties.K0, sheet="Лист1")
 
 
                     set_cell_data(path, (parameters["test_type"][0] + str(i), (i, parameters["test_type"][1])),
