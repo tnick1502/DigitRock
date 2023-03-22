@@ -1738,8 +1738,9 @@ class VibrationCreepProperties(MechanicalProperties):
                 min_y = 0.98
                 return (((x - x1) * (min_y - 1)) / (x2 - x1)) + 1
 
-            for i in range(len(self.Kd)):
-                self.Kd[i] *= fr(self.frequency[i], min(self.frequency), max(self.frequency))
+            if len(self.frequency)>=2:
+                for i in range(len(self.Kd)):
+                    self.Kd[i] *= fr(self.frequency[i], min(self.frequency), max(self.frequency))
 
             self.cycles_count = int(np.random.uniform(2000, 5000))
 
