@@ -642,6 +642,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         self.tab_2.layout_1.insertWidget(0, self.physical_line)
         self.physical_line.refresh_button.clicked.connect(self.tab_2.refresh)
         self.physical_line.save_button.clicked.connect(self.save_report_and_continue)
+        self.tab_3.roundFI_btn.hide()
 
     def keyPressEvent(self, event):
         if statment.current_test:

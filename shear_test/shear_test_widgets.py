@@ -539,22 +539,22 @@ class ShearSoilTestApp(AppMixin, QWidget):
 
             h, d = statment.general_parameters.equipment_sample_h_d
 
+            moisture_type = self.tab_1.open_line.get_data()["optional"]
             if self.combobox.currentText() == "Автоматически":
-                moisture_type = self.tab_1.open_line.get_data()["optional"]
                 moisture = ""
                 if moisture_type == self.tab_1.test_parameters["optional"]["vars"][1]:
-                    moisture = "при природной влажности "
+                    moisture = "при природной влажности, "
                 elif moisture_type == self.tab_1.test_parameters["optional"]["vars"][2]:
-                    moisture = "в водонасыщенном состоянии "
+                    moisture = "в водонасыщенном состоянии, "
             else:
-                moisture_type = self.combobox.currentText()
+                moisture_type_custom = self.combobox.currentText()
                 moisture = ""
-                if moisture_type == "Не указывать":
+                if moisture_type_custom == "Не указывать":
                     moisture = " "
-                elif moisture_type == "В водонасыщенном состоянии":
-                    moisture = "в водонасыщенном состоянии "
-                elif moisture_type == "При природной влажности":
-                    moisture = "при природной влажности "
+                elif moisture_type_custom == "В водонасыщенном состоянии":
+                    moisture = "в водонасыщенном состоянии, "
+                elif moisture_type_custom == "При природной влажности":
+                    moisture = "при природной влажности, "
 
             test_mode = self.tab_1.shear_test_type_from_open_line()
             mode = "КД"
@@ -564,7 +564,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
                 mode = "ПП"
 
             test_parameter = {"equipment": statment.general_parameters.equipment,
-                              "mode": mode + ", " + moisture + "в кинематическом режиме",
+                              "mode": mode + ", " + moisture + "кинематическое нагружение",
                               "sigma": statment[statment.current_test].mechanical_properties.sigma,
                               "K0": [statment[statment.current_test].mechanical_properties.K0,
                                      "-" if self.tab_3.reference_pressure_array_box.get_checked() == "set_by_user" or

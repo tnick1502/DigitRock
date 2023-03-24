@@ -258,6 +258,8 @@ class K0SoilTestApp(QWidget):
 
         self.tab_2.save_widget.general_statment_button.clicked.connect(self.general_statment)
 
+        self.tab_2.save_widget.roundFI_btn.hide()
+
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"

@@ -347,6 +347,8 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
         self.physical_line_2.refresh_button.clicked.connect(self.tab_3._refresh)
         self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
 
+        self.tab_4.roundFI_btn.hide()
+
     def _set_params(self, param):
         self.tab_2.set_params(param)
         self.tab_3.set_test_params(param)

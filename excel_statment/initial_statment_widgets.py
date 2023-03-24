@@ -851,7 +851,7 @@ class ShearStatment(InitialStatment):
             },
 
             "optional": {
-                "label": "Водонасыщение",
+                "label": "Состояние образца",
                 "vars": [
                     "Не выбрано",
                     "Природное",
