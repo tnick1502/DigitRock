@@ -2,7 +2,7 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFrame, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, \
     QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QFileDialog, QTabWidget, QTextEdit, QGridLayout, \
     QStyledItemDelegate, QAbstractItemView, QMessageBox, QDialog, QDialogButtonBox, QProgressDialog, QHeaderView, \
-    QCheckBox
+    QCheckBox, QComboBox
 from PyQt5.QtCore import Qt, pyqtSignal, QMetaObject
 from PyQt5.QtGui import QPalette, QBrush
 import matplotlib.pyplot as plt
@@ -450,6 +450,18 @@ class ShearSoilTestApp(AppMixin, QWidget):
         self.vertical_def_btn = QCheckBox('Вертикальная деформация')
         self.vertical_def_btn.setChecked(True)
         self.tab_4.advanced_box_layout.insertWidget(self.tab_4.advanced_box_layout.count() - 1, self.vertical_def_btn)
+
+        box = QGroupBox('Состояние образца')
+        self.combobox = QComboBox()
+        layout = QVBoxLayout()
+
+        self.combobox.addItems(["Автоматически", "Не указывать", "При природной влажности", "В водонасыщенном состоянии"])
+
+        box.setLayout(layout)
+        layout.addWidget(self.combobox)
+
+        self.tab_4.advanced_box_layout.insertWidget(self.tab_4.advanced_box_layout.count() - 1, box)
+
         # self.Tab_3.Save.save_button.clicked.connect(self.save_report)
 
         self.tab_widget.addTab(self.tab_1, "Обработка файла ведомости")
@@ -527,12 +539,22 @@ class ShearSoilTestApp(AppMixin, QWidget):
 
             h, d = statment.general_parameters.equipment_sample_h_d
 
-            moisture_type = self.tab_1.open_line.get_data()["optional"]
-            moisture = ""
-            if moisture_type == self.tab_1.test_parameters["optional"]["vars"][1]:
-                moisture = "при природной влажности "
-            elif moisture_type == self.tab_1.test_parameters["optional"]["vars"][2]:
-                moisture = "в водонасыщенном состоянии "
+            if self.combobox.currentText() == "Автоматически":
+                moisture_type = self.tab_1.open_line.get_data()["optional"]
+                moisture = ""
+                if moisture_type == self.tab_1.test_parameters["optional"]["vars"][1]:
+                    moisture = "при природной влажности "
+                elif moisture_type == self.tab_1.test_parameters["optional"]["vars"][2]:
+                    moisture = "в водонасыщенном состоянии "
+            else:
+                moisture_type = self.combobox.currentText()
+                moisture = ""
+                if moisture_type == "Не указывать":
+                    moisture = " "
+                elif moisture_type == "В водонасыщенном состоянии":
+                    moisture = "в водонасыщенном состоянии "
+                elif moisture_type == "При природной влажности":
+                    moisture = "при природной влажности "
 
             test_mode = self.tab_1.shear_test_type_from_open_line()
             mode = "КД"
