@@ -310,7 +310,7 @@ class ResultsTable(QGroupBox):
             try:
                 for i, lab in enumerate(statment):
                     for j, key in enumerate(self.condition_params):
-                        if not self.condition_params[key](lab):
+                        if self.condition_params[key](lab):
                             self.set_row_color(i, (255, 99, 71))
             except Exception as e:
                 print(str(e))

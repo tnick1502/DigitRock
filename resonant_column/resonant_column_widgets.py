@@ -566,10 +566,22 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         self.tab_2.popIn.connect(self.addTab)
         self.tab_2.popOut.connect(self.removeTab)
 
+        def G0_repeat(lab):
+            G0 = int(RC_models[lab].get_test_results()["G0"])
+            G0_list = [int(RC_models[i].get_test_results()["G0"]) for i in statment]
+            G0_list.pop(G0_list.index(G0))
+
+            return G0 in G0_list
+
+
         self.tab_3 = Save_Dir(result_table_params={
             "G0": lambda lab: RC_models[lab].get_test_results()['G0'],
             "gam_07": lambda lab: RC_models[lab].get_test_results()["threshold_shear_strain"],
-        }, qr={"state": True})
+        }, qr={"state": True},
+            result_table_condition_params={
+                "G0_repeat": lambda lab: G0_repeat(lab)
+            }
+        )
         self.tab_3.popIn.connect(self.addTab)
         self.tab_3.popOut.connect(self.removeTab)
 

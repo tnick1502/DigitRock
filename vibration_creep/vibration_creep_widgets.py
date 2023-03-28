@@ -305,7 +305,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
             "E50": lambda lab: "; ".join([str(i["E50"]) for i in VC_models[lab].get_test_results()]),
             },  qr={"state": True},
             result_table_condition_params={
-            "Kd": lambda lab:  sorted([i["Kd"] for i in VC_models[lab].get_test_results()])[::-1] == [i["Kd"] for i in VC_models[lab].get_test_results()],
+            "Kd": lambda lab:  sorted([i["Kd"] for i in VC_models[lab].get_test_results()])[::-1] != [i["Kd"] for i in VC_models[lab].get_test_results()],
             })
 
         self.tab_4.popIn.connect(self.addTab)
