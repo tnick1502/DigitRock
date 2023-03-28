@@ -305,6 +305,12 @@ class Statment:
 
         data_frame = Statment.createDataFrame(excel_path)
 
+        duplicated = data_frame.duplicated(subset=["Лаб. № пробы"])
+
+        if any(duplicated):
+            raise ValueError(f"""Дублирование Лаб. № пробы:
+{data_frame[duplicated]['Лаб. № пробы']}""")
+
         if not hasattr(self.general_parameters, "K0_mode"):
             self.general_parameters.K0_mode = None
 
@@ -314,7 +320,7 @@ class Statment:
         if not hasattr(self.general_parameters, "equipment"):
             self.general_parameters.equipment = None
 
-        if not  hasattr(self.general_parameters, "phi_mode"):
+        if not hasattr(self.general_parameters, "phi_mode"):
             self.general_parameters.phi_mode = None
 
         if data_frame is not None:
