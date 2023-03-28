@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QGroupBox, Q
     QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton, QTableWidget, QCheckBox
 import sys
 import os
+from PyQt5 import QtGui
 from pdf_watermark.widget import PDFWatermark
 
 from singletons import statment
@@ -17,7 +18,7 @@ class Save_Dir(TabMixin, QWidget):
      Название папки отчета передается в класс через коструктор mode"""
 
     def __init__(self, report_type=None, result_table_params=None, qr=None,  additional_dirs: list = [],
-                 plaxis_btn=False):
+                 plaxis_btn=False, result_table_condition_params=None):
         super().__init__()
 
         self.additional_dirs = additional_dirs
@@ -25,6 +26,7 @@ class Save_Dir(TabMixin, QWidget):
         self._report_types = report_type
 
         self._result_table_params = result_table_params
+        self._result_table_condition_params = result_table_condition_params
 
         self.full_executors = True
 
@@ -137,7 +139,7 @@ class Save_Dir(TabMixin, QWidget):
         self.layout_end.addWidget(self.model_box)
 
         if self._result_table_params is not None:
-            self.result_table = ResultsTable(self._result_table_params)
+            self.result_table = ResultsTable(self._result_table_params, self._result_table_condition_params)
             self.layout_end.addWidget(self.result_table)
 
         self.savebox_layout.addLayout(self.layout_end)
@@ -254,7 +256,7 @@ class ReportType(QGroupBox):
 
 class ResultsTable(QGroupBox):
 
-    def __init__(self, params: dict):
+    def __init__(self, params: dict, condition_params: dict = None):
         super().__init__()
         self.setTitle('Таблица результатов')
         self.layout = QHBoxLayout()
@@ -265,9 +267,9 @@ class ResultsTable(QGroupBox):
         self.layout.addWidget(self.table)
 
         self.params = params
+        self.condition_params = condition_params
 
         self._clear_table()
-
 
     def _clear_table(self):
         """Очистка таблицы и придание соответствующего вида"""
@@ -286,6 +288,12 @@ class ResultsTable(QGroupBox):
 
         self.table.setHorizontalHeaderLabels(["Лаб. ном.", *self.params.keys()])
 
+    def set_row_color(self, row, color=(129, 216, 208)):#color=(62, 180, 137)):
+        """Раскрашиваем строку"""
+        if row is not None:
+            for i in range(self.table.columnCount()):
+                self.table.item(row, i).setBackground(QtGui.QColor(*color))
+
     def update(self):
         """Функция для получения данных"""
         replaceNone = lambda x: x if x != "None" else "-"
@@ -297,6 +305,15 @@ class ResultsTable(QGroupBox):
                 replaceNone(str(lab))))
             for j, key in enumerate(self.params):
                 self.table.setItem(i, j + 1, QTableWidgetItem(replaceNone(str(self.params[key](lab)))))
+
+        if self.condition_params:
+            try:
+                for i, lab in enumerate(statment):
+                    for j, key in enumerate(self.condition_params):
+                        if not self.condition_params[key](lab):
+                            self.set_row_color(i, (255, 99, 71))
+            except Exception as e:
+                print(str(e))
 
 
 if __name__ == "__main__":
