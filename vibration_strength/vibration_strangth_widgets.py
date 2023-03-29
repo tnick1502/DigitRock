@@ -94,6 +94,7 @@ class VibrationStrangthSoilTestApp(QWidget):
         self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
         self.physical_line_2.refresh_button.clicked.connect(self.tab_3.refresh)
         self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
+        self.tab_4.roundFI_btn.hide()
 
 
     def keyPressEvent(self, event):

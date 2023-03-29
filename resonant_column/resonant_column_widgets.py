@@ -618,6 +618,8 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         self.physical_line.refresh_button.clicked.connect(self.tab_2._refresh)
         self.physical_line.save_button.clicked.connect(self.save_report_and_continue)
 
+        self.tab_3.roundFI_btn.hide()
+
     def _predict(self):
         if len(statment):
             dialog = PredictRCTestResults()

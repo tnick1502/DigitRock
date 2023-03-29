@@ -735,7 +735,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 "user_define_1": "Пользовательский с ε50",
                 "vibro": "Вибропрочность",
                 "vibroNN": "КриовиброНН",
-                "standart_E50_with_dilatancy": "Е50 с дилатнсией"
+                "standart_E50_with_dilatancy": "Е50 с дилатнсией",
+                "E_E50_with_dilatancy": "E/Е50 с дилатнсией"
             }, qr=True, additional_dirs=["plaxis_log_E50", "plaxis_log_FC"], plaxis_btn=True)
 
         self.tab_4.popIn.connect(self.addTab)

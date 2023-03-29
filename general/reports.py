@@ -1806,7 +1806,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
         E50 = zap(Res["dilatancy_angle"][0], 1)
         E50w = '''<p>Угол дилатансии ψ, град:</p>'''
 
-    elif result_E == "all":
+    elif result_E == "all" or result_E == "E_E50_with_dilatancy":
         E = zap(Res["E"][0], 1)
         Ew = '''<p>Модуль деформации E, МПа:</p>'''
 
@@ -1817,48 +1817,89 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
         a = svg2rlg(pick[0])
         a.scale(scale, scale)
         renderPDF.draw(a, canvas, 36 * mm, (66-moove) * mm)
-        if result_E == "all" or result_E == "E50_with_dilatancy":
+        if result_E == "all" or result_E == "E50_with_dilatancy" or result_E == "E_E50_with_dilatancy":
             tableData.append(
                 [Paragraph(Ew, LeftStyle), "", "",
                  E, "", ""])
             tableData.append(
                 [Paragraph(E50w, LeftStyle), "", "",
                  E50, "", ""])
+            if result_E == "E_E50_with_dilatancy":
+                tableData.append(
+                    [Paragraph('''<p>Угол дилатансии ψ, град:</p>''', LeftStyle), "", "",
+                     zap(Res["dilatancy_angle"][0], 1), "", ""])
+                sss = 5
+                style = [('SPAN', (0, 0), (-1, 0)),
+                         ('SPAN', (0, 1), (-1, r)),
 
-            sss = 4
-            style = [('SPAN', (0, 0), (-1, 0)),
-                     ('SPAN', (0, 1), (-1, r)),
+                         ('SPAN', (0, -2), (2, -1)),
+                         ('SPAN', (-3, -2), (-1, -1)),
 
-                     ('SPAN', (0, -2), (2, -1)),
-                     ('SPAN', (-3, -2), (-1, -1)),
+                         ('SPAN', (0, -3), (2, -3)),
+                         ('SPAN', (-3, -3), (-1, -3)),
+                         # ('SPAN', (2, -1), (3, -1)),
+                         # ('SPAN', (4, -1), (5, -1)),
+                         ('SPAN', (0, -4), (2, -4)),
+                         ('SPAN', (-3, -4), (-1, -4)),
+                         # ('SPAN', (2, -2), (3, -2)),
+                         # ('SPAN', (4, -2), (5, -2)),
+                         ('SPAN', (0, -5), (2, -5)),
+                         ('SPAN', (-3, -5), (-1, -5)),
 
-                     ('SPAN', (0, -3), (2, -3)),
-                     ('SPAN', (-3, -3), (-1, -3)),
-                     # ('SPAN', (2, -1), (3, -1)),
-                     # ('SPAN', (4, -1), (5, -1)),
-                     ('SPAN', (0, -4), (2, -4)),
-                     ('SPAN', (-3, -4), (-1, -4)),
-                     # ('SPAN', (2, -2), (3, -2)),
-                     # ('SPAN', (4, -2), (5, -2)),
-                     ('SPAN', (0, -5), (2, -5)),
-                     ('SPAN', (-3, -5), (-1, -5)),
+                         ('SPAN', (0, -6), (2, -6)),
+                         ('SPAN', (-3, -6), (-1, -6)),
 
-                     ('SPAN', (0, -6), (2, -6)),
-                     ('SPAN', (-3, -6), (-1, -6)),
-                     # ('SPAN', (2, -3), (3, -3)),
-                     #  ('SPAN', (4, -3), (5, -3)),
+                         ('SPAN', (0, -7), (2, -7)),
+                         ('SPAN', (-3, -7), (-1, -7)),
+                         # ('SPAN', (2, -3), (3, -3)),
+                         #  ('SPAN', (4, -3), (5, -3)),
 
-                     ("BACKGROUND", (0, -6), (2, -1), HexColor(0xebebeb)),
+                         ("BACKGROUND", (0, -7), (2, -1), HexColor(0xebebeb)),
 
-                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-                     ("FONTSIZE", (0, 0), (-1, -1), 8),
-                     # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
-                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                     ("ALIGN", (0, 0), (-1, r), "CENTER"),
-                     ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
-                     ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+                         ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                         ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                         ("FONTSIZE", (0, 0), (-1, -1), 8),
+                         # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                         ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                         ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                         ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                         ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+            else:
+                sss = 4
+                style = [('SPAN', (0, 0), (-1, 0)),
+                         ('SPAN', (0, 1), (-1, r)),
+
+                         ('SPAN', (0, -2), (2, -1)),
+                         ('SPAN', (-3, -2), (-1, -1)),
+
+                         ('SPAN', (0, -3), (2, -3)),
+                         ('SPAN', (-3, -3), (-1, -3)),
+                         # ('SPAN', (2, -1), (3, -1)),
+                         # ('SPAN', (4, -1), (5, -1)),
+                         ('SPAN', (0, -4), (2, -4)),
+                         ('SPAN', (-3, -4), (-1, -4)),
+                         # ('SPAN', (2, -2), (3, -2)),
+                         # ('SPAN', (4, -2), (5, -2)),
+                         ('SPAN', (0, -5), (2, -5)),
+                         ('SPAN', (-3, -5), (-1, -5)),
+
+                         ('SPAN', (0, -6), (2, -6)),
+                         ('SPAN', (-3, -6), (-1, -6)),
+                         # ('SPAN', (2, -3), (3, -3)),
+                         #  ('SPAN', (4, -3), (5, -3)),
+
+                         ("BACKGROUND", (0, -6), (2, -1), HexColor(0xebebeb)),
+
+                         ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                         ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                         ("FONTSIZE", (0, 0), (-1, -1), 8),
+                         # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                         ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                         ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                         ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                         ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
         elif result_E == "Eur":
             tableData.append(
                 [Paragraph('''<p>Модуль повторного нагружения E<sub rise="0.5" size="6">ur</sub>, МПа:</p>''',
@@ -1946,7 +1987,7 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
             #[Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "", "",
              #Res["qf"], ""])
 
-        if result_E == "all" or result_E == "E50_with_dilatancy":
+        if result_E == "all" or result_E == "E50_with_dilatancy" or result_E == "E_E50_with_dilatancy":
             tableData.append(
                 [Paragraph(Ew, LeftStyle), "", "",
                  E, "", ""])
@@ -1958,6 +1999,16 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
                 [Paragraph(Ew, LeftStyle), "", "",
                  E, "", ""])
         #tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", E, ""])
+        if result_E == "E_E50_with_dilatancy":
+            if Res["dilatancy_angle"] != None:
+                tableData.append(
+                    [Paragraph('''<p>Угол дилатансии ψ, град:</p>''', LeftStyle), "", "",
+                     zap(Res["dilatancy_angle"][0], 1), "", ""])
+            else:
+                tableData.append(
+                    [Paragraph('''<p>Угол дилатансии ψ, град:</p>''', LeftStyle), "", "",
+                     "-", "", ""])
+
         tableData.append(
             [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", zap(Res["poissons_ratio"], 2), "", ""])
 
@@ -2020,6 +2071,50 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
                  ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
 
             sss = 4
+
+        elif result_E == 'E_E50_with_dilatancy':
+            style = [('SPAN', (0, 0), (-1, 0)),
+                 ('SPAN', (0, 1), (-1, r)),
+
+                 ('SPAN', (0, -2), (2, -1)),
+                 ('SPAN', (-3, -2), (-1, -1)),
+
+                 ('SPAN', (0, -3), (2, -3)),
+                 ('SPAN', (-3, -3), (-1, -3)),
+                 # ('SPAN', (2, -1), (3, -1)),
+                 # ('SPAN', (4, -1), (5, -1)),
+                 ('SPAN', (0, -4), (2, -4)),
+                 ('SPAN', (-3, -4), (-1, -4)),
+                 ('SPAN', (0, -5), (2, -5)),
+                 ('SPAN', (-3, -5), (-1, -5)),
+
+                 ('SPAN', (0, -6), (2, -6)),
+                 ('SPAN', (-3, -6), (-1, -6)),
+                 # ('SPAN', (2, -2), (3, -2)),
+                 # ('SPAN', (4, -2), (5, -2)),
+                 #('SPAN', (0, -3), (3, -3)),
+                 #('SPAN', (-2, -3), (-1, -3)),
+
+                 #('SPAN', (0, -4), (3, -4)),
+                 #('SPAN', (-2, -4), (-1, -4)),
+                 # ('SPAN', (2, -3), (3, -3)),
+                 #  ('SPAN', (4, -3), (5, -3)),
+
+                 ("BACKGROUND", (0, -6), (2, -1), HexColor(0xebebeb)),
+                 #("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                 #("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+
+                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                 ("FONTSIZE", (0, 0), (-1, -1), 8),
+                 # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                 ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                 ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+            sss = 5
 
         else:
             style = [('SPAN', (0, 0), (-1, 0)),
@@ -3842,6 +3937,8 @@ def report_E(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pic
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50", moove=moove)
     elif report_type == "standart_E50_with_dilatancy":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E50_with_dilatancy", moove=moove)
+    elif report_type == "E_E50_with_dilatancy":
+        result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="E_E50_with_dilatancy", moove=moove)
     elif report_type == "plaxis_m":
         result_table_deviator_standart(canvas, res, [picks[2], picks[3]], result_E="Eur", moove=moove)
     elif report_type == "plaxis":
@@ -3893,6 +3990,8 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50", moove=moove)
     elif report_type == "standart_E50_with_dilatancy":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E50_with_dilatancy", moove=moove)
+    elif report_type == "E_E50_with_dilatancy":
+        result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="E_E50_with_dilatancy", moove=moove)
     elif report_type == "E_E50":
         result_table_deviator_standart(canvas, res, [picks[0], picks[1]], result_E="all", moove=moove)
     elif report_type == "user_define_1":
