@@ -1217,11 +1217,11 @@ def result_table_rc(canvas, Res, pick, scale = 0.8, moove=0):
     #a = Image(pick, 320, 240)
     a = svg2rlg(pick)
     a.scale(scale, scale)
-    renderPDF.draw(a, canvas, 38 * mm, (95-moove) * mm)
+    renderPDF.draw(a, canvas, 38 * mm, (50-moove) * mm)
     #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", ""]]
-    r = 25
+    r = 31
     for i in range(r):
         tableData.append([""])
 

@@ -54,12 +54,12 @@ class RezonantColumnUI(QWidget):
         self.figure.subplots_adjust(right=0.98, top=0.98, bottom=0.14, wspace=0.2, hspace=0.2, left=0.08)
         self.canvas = FigureCanvas(self.figure)
 
-        self.ax_G = self.figure.add_subplot(1, 2, 2)
+        self.ax_G = self.figure.add_subplot(2, 1, 2)
         self.ax_G.set_xlabel("Деформация сдвига γ, д.е.")
         self.ax_G.set_xscale("log")
         self.ax_G.set_ylabel("Модуль сдвига G, МПа")
 
-        self.ax_rezonant = self.figure.add_subplot(1, 2, 1)
+        self.ax_rezonant = self.figure.add_subplot(2, 1, 1)
         self.ax_rezonant.set_xlabel("Частота f, Гц")
         self.ax_rezonant.set_ylabel("Деформация сдвига γ, д.е.")
         self.canvas.draw()
@@ -111,7 +111,7 @@ class RezonantColumnUI(QWidget):
 
         path = BytesIO()
         size = self.figure.get_size_inches()
-        self.figure.set_size_inches([6, 3])
+        self.figure.set_size_inches([6, 5])
         self.figure.savefig(path, format='svg', transparent=True)
         path.seek(0)
         self.figure.set_size_inches(size)
