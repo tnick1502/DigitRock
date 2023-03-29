@@ -2000,9 +2000,14 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
                  E, "", ""])
         #tableData.append([Paragraph('''<p>Модуль деформации E, МПа:</p>''', LeftStyle), "", "", "", E, ""])
         if result_E == "E_E50_with_dilatancy":
-            tableData.append(
-                [Paragraph('''<p>Угол дилатансии ψ, град:</p>''', LeftStyle), "", "",
-                 zap(Res["dilatancy_angle"][0], 1), "", ""])
+            if Res["dilatancy_angle"] != None:
+                tableData.append(
+                    [Paragraph('''<p>Угол дилатансии ψ, град:</p>''', LeftStyle), "", "",
+                     zap(Res["dilatancy_angle"][0], 1), "", ""])
+            else:
+                tableData.append(
+                    [Paragraph('''<p>Угол дилатансии ψ, град:</p>''', LeftStyle), "", "",
+                     "-", "", ""])
 
         tableData.append(
             [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", zap(Res["poissons_ratio"], 2), "", ""])
