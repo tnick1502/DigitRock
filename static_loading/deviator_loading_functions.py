@@ -232,16 +232,20 @@ def deviator_loading_deviation1(strain, deviator, xc, amplitude):
     return deviation_array
 
 def deviator_loading_deviation(strain, deviator, xc, amplitude):
+
     # Добавим девиации после 0.6qf для кривой без пика
     index_015, = np.where(strain >= 0.15)
     qf = np.max(deviator[:index_015[0]])
+    amplitude_1, amplitude_2, amplitude_3 = amplitude
 
-    devition_1 = amplitude * qf
-    devition_2 = (amplitude / 2) * qf
-    devition_3 = (amplitude / 3) * qf
-    points_1 = np.random.uniform(5, 10)
-    points_2 = np.random.uniform(10, 20)
-    points_3 = np.random.uniform(20, 30)
+    points_1 = np.random.uniform(7, 12)
+    points_2 = np.random.uniform(25, 35)
+    points_3 = np.random.uniform(80, 100)
+
+    devition_1 = amplitude_1 * qf
+    devition_2 = amplitude_2 * qf
+    devition_3 = amplitude_3 * qf
+
 
     try:
         index_015, = np.where(strain >= 0.17)
@@ -869,8 +873,10 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     # безье второго участка
     d1_p2 = 0.00000
 
+    point2_x_alt = point2_x if point2_x != 0.0 else 0.00001
+
     b_c = bezier_curve([point2_x, point2_y],
-                       [point2_x - 0.1 * point2_x, d1_p2 * (point2_x - 0.1 * point2_x) + (point2_y - d1_p2 * point2_x)],
+                       [point2_x - 0.1 * point2_x_alt, d1_p2 * (point2_x - 0.1 * point2_x_alt) + (point2_y - d1_p2 * point2_x_alt)],
                        [point1_x, point1_y],
                        [x_inter, y_inter],
                        [point2_x, point2_y],  # Безье построиться только на возрастающем иксе
@@ -1541,8 +1547,10 @@ def curve(qf, e50, **kwargs):
     y_rel_p = kwargs.get('y_rel_p')
     point2_y = kwargs.get('point2_y')
     U = kwargs.get('U')
-    amplitude = kwargs.get('amplitude')[0]
-    free_deviations = kwargs.get('amplitude')[1]
+    amplitude_1 = kwargs.get('amplitude')[0]
+    amplitude_2 = kwargs.get('amplitude')[1]
+    amplitude_3 = kwargs.get('amplitude')[2]
+    free_deviations = kwargs.get('amplitude')[3]
     '''флаг, отвечает за наложение девиаций на контрольные точки'''
     hyp_ratio = kwargs.get('hyp_ratio')
 
@@ -1686,10 +1694,10 @@ def curve(qf, e50, **kwargs):
     while count < count_limit:
 
         if not free_deviations:
-            y += deviator_loading_deviation1(x, y, xc, amplitude=amplitude)
+            y += deviator_loading_deviation1(x, y, xc, amplitude=(amplitude_1, amplitude_2, amplitude_3))
             break
 
-        y += deviator_loading_deviation(x, y, xc, amplitude=amplitude)
+        y += deviator_loading_deviation(x, y, xc, amplitude=(amplitude_1, amplitude_2, amplitude_3))
 
         if not Eur:
             y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли

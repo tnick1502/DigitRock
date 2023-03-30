@@ -1277,7 +1277,7 @@ class TriaxialStaticLoading_Sliders(QWidget):
 class StaticSoilTestDialog(QDialog):
     def __init__(self, test, parent=None):
         super(StaticSoilTestDialog, self).__init__(parent)
-        self.resize(1200, 840)
+        self.resize(1200, 900)
         self.setWindowTitle("Обработка опыта")
         self._model = test
 
@@ -1305,15 +1305,17 @@ class StaticSoilTestDialog(QDialog):
                                                                        "dilatancy": "Угол дилатансии",
                                                                        "volumetric_strain_xc": "Объемн. деформ. в пике",
                                                                        "Eur": "Модуль разгрузки",
-                                                                       "amplitude": "Амплитуда девиаций",
+                                                                       "amplitude_1": "Амплитуда девиаций (низкая частота)",
+                                                                       "amplitude_2": "Амплитуда девиаций (средня частота)",
+                                                                       "amplitude_3": "Амплитуда девиаций (высокая частота)",
                                                                        "unload_start_y": "Сдвиг разгрузки",
                                                                        "hyp_ratio": "Коэффциент влияния"})
-        self.deviator_loading_sliders.setFixedHeight(240)
+        self.deviator_loading_sliders.setFixedHeight(300)
 
         self.deviator_loading_sliders_unload_start_y_slider = TriaxialStaticLoading_Sliders({"unload_start_y": "Сдвиг разгрузки"})
         box = getattr(self.deviator_loading_sliders_unload_start_y_slider, "{}_box".format("Настройки отрисовки"))
         box.setTitle('')
-        self.deviator_loading_sliders_unload_start_y_slider.setFixedHeight(60)
+        self.deviator_loading_sliders_unload_start_y_slider.setFixedHeight(80)
 
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.deviator_loading_sliders_unload_start_y_slider.signal[object].connect(self._deviator_loading_sliders_unload_start_y_slider_moove)
