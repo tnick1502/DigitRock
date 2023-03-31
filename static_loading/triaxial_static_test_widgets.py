@@ -493,9 +493,9 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
                                                                        "dilatancy": "Угол дилатансии",
                                                                        "volumetric_strain_xc": "Объемн. деформ. в пике",
                                                                        "Eur": "Модуль разгрузки",
-                                                                       "amplitude_1": "Амплитуда девиаций (низкая частота)",
-                                                                       "amplitude_2": "Амплитуда девиаций (средняя частота)",
-                                                                       "amplitude_3": "Амплитуда девиаций (высокая частота)",
+                                                                       "amplitude_1": "Амп. дев. (низк. час.)",
+                                                                       "amplitude_2": "Амп. дев. (сред. час.)",
+                                                                       "amplitude_3": "Амп. дев. (выс. час.)",
                                                                        "hyp_ratio": "Коэффициент влияния"
                                                                        })
 

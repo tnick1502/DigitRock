@@ -1305,9 +1305,9 @@ class StaticSoilTestDialog(QDialog):
                                                                        "dilatancy": "Угол дилатансии",
                                                                        "volumetric_strain_xc": "Объемн. деформ. в пике",
                                                                        "Eur": "Модуль разгрузки",
-                                                                       "amplitude_1": "Амплитуда девиаций (низкая частота)",
-                                                                       "amplitude_2": "Амплитуда девиаций (средня частота)",
-                                                                       "amplitude_3": "Амплитуда девиаций (высокая частота)",
+                                                                       "amplitude_1": "Амп. дев. (низк. час.)",
+                                                                       "amplitude_2": "Амп. дев. (сред. час.)",
+                                                                       "amplitude_3": "Амп. дев. (выс. час.)",
                                                                        "unload_start_y": "Сдвиг разгрузки",
                                                                        "hyp_ratio": "Коэффциент влияния"})
         self.deviator_loading_sliders.setFixedHeight(300)
