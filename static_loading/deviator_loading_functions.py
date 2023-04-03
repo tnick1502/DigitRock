@@ -174,6 +174,7 @@ def deviator_loading_deviation1(strain, deviator, xc, amplitude):
     devition_3 = amplitude_3 * qf
 
 
+
     i_60, = np.where(deviator >= 0.51 * qf)
     i_90, = np.where(deviator >= 0.98 * qf)
     i_end, = np.where(strain >= 0.15)
@@ -181,13 +182,13 @@ def deviator_loading_deviation1(strain, deviator, xc, amplitude):
     if xc >= 0.14:  # без пика
         try:
             curve = create_deviation_curve(strain[i_60[0]:i_xc[0]], devition_1,
-                                           points=np.random.uniform(points_1), borders="zero_diff",
+                                           points=points_1, borders="zero_diff",
                                            low_first_district=1, one_side=True) + \
                     create_deviation_curve(strain[i_60[0]:i_xc[0]], devition_2,
-                                           points=np.random.uniform(points_2), borders="zero_diff",
+                                           points=points_2, borders="zero_diff",
                                            low_first_district=1, one_side=True) + \
                     сreate_deviation_curve(strain[i_60[0]:i_xc[0]], devition_3,
-                                           points=np.random.uniform(points_3), borders="zero_diff",
+                                           points=points_3, borders="zero_diff",
                                            low_first_district=1, one_side=True)
             deviation_array = -np.hstack((np.zeros(i_60[0]),
                                           curve,
@@ -200,27 +201,27 @@ def deviator_loading_deviation1(strain, deviator, xc, amplitude):
         try:
             i_xc1, = np.where(deviator[i_xc[0]:] <= qf - devition_2)
             i_xc_m, = np.where(deviator >= qf - devition_1 * 2)
-            points_1 = round((xc) * 100)
+            points_1 = round((xc) * 30)
             if points_1 < 3:
                 points_1 = 3
-            points_2 = round(points_1*np.random.uniform(1.1, 1.5))
+            points_2 = round(points_1*np.random.uniform(1.5, 2))
             points_3 = round(points_1 * np.random.uniform(2.5, 3))
 
-            curve_1 = create_deviation_curve(strain[i_60[0]:i_xc_m[0]], devition_1,
-                                             points=np.random.uniform(3, 4), val=(1, 0.1), borders="zero_diff",
+            curve_1 = create_deviation_curve(strain[i_60[0]:i_xc_m[0]], devition_1/3,
+                                             points=points_1, val=(1, 0.1), borders="zero_diff",
                                              low_first_district=1) + \
-                create_deviation_curve(strain[i_60[0]:i_xc_m[0]], devition_2,
+                create_deviation_curve(strain[i_60[0]:i_xc_m[0]], devition_2/3,
                 points=points_2, borders="zero_diff",
                 low_first_district=1) + \
-                      create_deviation_curve(strain[i_60[0]:i_xc_m[0]], devition_3,
+                      create_deviation_curve(strain[i_60[0]:i_xc_m[0]], devition_3/3,
                 points=points_3, borders="zero_diff",
                 low_first_district=1)
 
             points_2 = round((0.15 - xc) * 100)
             if points_2 < 3:
                 points_2 = 3
-            points_2 = round(points_1 * np.random.uniform(1.8, 2.2))
-            points_3 = round(points_1 * np.random.uniform(5, 5.5))
+            points_2 = round(points_1 * np.random.uniform(2, 3))
+            points_3 = round(points_1 * np.random.uniform(5, 6))
 
             # devition_2 = ((deviator[i_xc[0]] - deviator[i_end[0]]) / 14) * (points_2 / 10)
 
