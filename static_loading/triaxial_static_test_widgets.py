@@ -493,11 +493,13 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
                                                                        "dilatancy": "Угол дилатансии",
                                                                        "volumetric_strain_xc": "Объемн. деформ. в пике",
                                                                        "Eur": "Модуль разгрузки",
-                                                                       "amplitude": "Амплитуда девиаций",
+                                                                       "amplitude_1": "Амп. дев. (низк. час.)",
+                                                                       "amplitude_2": "Амп. дев. (сред. час.)",
+                                                                       "amplitude_3": "Амп. дев. (выс. час.)",
                                                                        "hyp_ratio": "Коэффициент влияния"
                                                                        })
 
-        self.deviator_loading_sliders.setFixedHeight(240)
+        self.deviator_loading_sliders.setFixedHeight(280)
 
         self.deviator_loading_sliders_unload_start_y_slider = TriaxialStaticLoading_Sliders({"unload_start_y": "Сдвиг разгрузки"})
         box = getattr(self.deviator_loading_sliders_unload_start_y_slider, "{}_box".format("Настройки отрисовки"))

@@ -793,6 +793,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                       "volumetric_strain_xc": None,
                                       "Eur": None,
                                       "amplitude": None,
+                                      "amplitude_1": None,
+                                      "amplitude_2": None,
                                       "free_deviations": None,
                                       "hyp_ratio": None})
 
@@ -842,13 +844,20 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
 
         self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.qf*residual_strength
-        self._draw_params.amplitude = 0.05
+        self._draw_params.amplitude_1 = 0.06
+        self._draw_params.amplitude_2 = 0.05
+        self._draw_params.amplitude_3 = 0.04
         self._draw_params.free_deviations = True
         if amplitude_flag:
-            self._draw_params.amplitude = 0.02
+            self._draw_params.amplitude_1 = 0.04
+            self._draw_params.amplitude_2 = 0.03
+            self._draw_params.amplitude_3 = 0.02
+
         if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
             self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.q_res
-            self._draw_params.amplitude = 0.00001#[self._test_params.qf / 200, self._test_params.qf / 120]
+            self._draw_params.amplitude_1 = 0.01#[self._test_params.qf / 200, self._test_params.qf / 120]
+            self._draw_params.amplitude_2 = 0.01
+            self._draw_params.amplitude_3 = 0.02
             self._draw_params.free_deviations = False
         self._draw_params.qocr = 0
 
@@ -911,7 +920,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
                   "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]},
                   "Eur": Eur,
-                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]},
+                  "amplitude_1": {"value": self._draw_params.amplitude_1, "borders": [0.000001, 0.1]},
+                  "amplitude_2": {"value": self._draw_params.amplitude_2, "borders": [0.000001, 0.1]},
+                  "amplitude_3": {"value": self._draw_params.amplitude_3, "borders": [0.000001, 0.1]},
                   "hyp_ratio": {"value": self._draw_params.hyp_ratio, "borders": [0.000001, 1]}
                   }
         return params
@@ -935,7 +946,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.dilatancy = params["dilatancy"]
         self._draw_params.volumetric_strain_xc = params["volumetric_strain_xc"]
         self._draw_params.Eur = params["Eur"]
-        self._draw_params.amplitude = params["amplitude"]
+        self._draw_params.amplitude_1 = params["amplitude_1"]
+        self._draw_params.amplitude_2 = params["amplitude_2"]
+        self._draw_params.amplitude_3 = params["amplitude_3"]
         self._draw_params.hyp_ratio = params["hyp_ratio"]
 
         # if unload_start_y - self.loop_height > 10:
@@ -986,7 +999,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                                                 x2=self._draw_params.residual_strength_param,
                                                                 qf2=self._draw_params.residual_strength,
                                                                 qocr=self._draw_params.qocr,
-                                                                amplitude=(self._draw_params.amplitude,
+                                                                amplitude=(self._draw_params.amplitude_1,
+                                                                           self._draw_params.amplitude_2,
+                                                                           self._draw_params.amplitude_3,
                                                                            self._draw_params.free_deviations),
                                                                 m_given=self._draw_params.poisson,
                                                                 max_time=max_time,
@@ -1004,7 +1019,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 x2=self._draw_params.residual_strength_param,
                 qf2=self._draw_params.residual_strength,
                 qocr=self._draw_params.qocr,
-                amplitude=(self._draw_params.amplitude, self._draw_params.free_deviations),
+                amplitude=(self._draw_params.amplitude_1,
+                           self._draw_params.amplitude_2,
+                           self._draw_params.amplitude_3,
+                           self._draw_params.free_deviations),
                 m_given=self._draw_params.poisson,
                  max_time=max_time,
                 angle_of_dilatacy=dilatancy,
@@ -1327,67 +1345,58 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             elif type_ground == 2 or type_ground == 3:  # песок средней групности
                 if sigma3mor <= 0.15 and dens_sand == 3:  # песок средней крупности рыхлый
                     kr_fgs = 0
-                    amplitude = True
                 elif sigma3mor <= 0.15 and dens_sand == 2:  # песок средней крупности средней плотности
                     kr_fgs = round(np.random.uniform(0, 1))
                     _is_random = True
-                    amplitude = True
                 else:  # песок средней групности и sigma3>0.15
                     kr_fgs = 1
             elif type_ground == 4:  # мелкий песок
                 if sigma3mor < 0.1 and dens_sand == 3:  # мелкий песок рыхлый s3<0.1
                     kr_fgs = 0
-                    amplitude = True
                 elif (0.1 <= sigma3mor <= 0.2 and dens_sand == 3) or (sigma3mor <= 0.15 and dens_sand == 2):
                     kr_fgs = round(np.random.uniform(0, 1))  # мелкий песок рыхлый s3<=0.2 и средней плотности s3<=0.15
                     _is_random = True
-                    amplitude = True
                 else:  # мелкий песок рыхлый s3>=0.2 и средней плотности s3>=0.15 (плотный закрыт раньше)
                     kr_fgs = 1
             elif type_ground == 5:  # песок пылеватый
                 if sigma3mor < 0.1 and dens_sand == 3:  # песок пылеватый рыхлый s3<0.1
                     kr_fgs = 0
-                    amplitude = True
                 elif (0.1 <= sigma3mor <= 0.2 and dens_sand == 3) or (
                         sigma3mor <= 0.1 and dens_sand == 2):  # песок пылева-
                     kr_fgs = round(
                         np.random.uniform(0, 1))  # тый рыхлый 0.1<=s3<=0.2 и пылеватый средней плотности s3<=0.1
                     _is_random = True
-                    amplitude = True
                 else:  # песок пылеватый рыхлый s3>0.2 и пылеватый средней плотности s3>0.1 (плотный закрыт раньше)
                     kr_fgs = 1
             elif type_ground == 9:  # Торф
                 kr_fgs = 0
-                amplitude = True
             else:
                 kr_fgs = 0
-                amplitude = True
 
         elif Ip <= 7:  # число пластичности. Супесь
 
             if Il > 0.5:  # показатель текучести. больше 1 - текучий
                 kr_fgs = 0
-                amplitude = True
             elif 0.25 < Il <= 0.5:  # показатель текучести. от 0 до 1 - пластичный (для супеси)
                 kr_fgs = round(np.random.uniform(0, 1))
                 _is_random = True
-                amplitude = True
             else:  # <=0 твердый
                 kr_fgs = 1
 
         elif Ip > 7:  # суглинок и глина
             if Il > 0.5:  # показатель текучести.от 0.5 мягко- и текучепласт., текучий (для суглинков и глины)
                 kr_fgs = 0
-                amplitude = True
             elif 0.25 < Il <= 0.5:  # от 0.25 до 0.5 тугопластичный (для суглинков и глины)
                 kr_fgs = round(np.random.choice([0, 1], p=[0.7, 0.3]))
                 _is_random = True
-                amplitude = True
             else:  # меньше 0.25 твердый и полутвердый (для суглинков и глины)
                 kr_fgs = 1
         else:
             kr_fgs = 0
+
+        if kr_fgs == 0:
             amplitude = True
+
         return kr_fgs, _is_random, amplitude
 
     @staticmethod

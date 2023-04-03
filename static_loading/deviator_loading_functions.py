@@ -156,8 +156,107 @@ def find_puasson_dilatancy(strain, deviator, volume_strain):
 
     return round(puasson, 2), dilatancy
 
-
 def deviator_loading_deviation1(strain, deviator, xc, amplitude):
+    # Добавим девиации после 0.6qf для кривой без пика
+    qf = max(deviator)
+
+    # Добавим девиации после 0.6qf для кривой без пика
+    index_015, = np.where(strain >= 0.15)
+    qf = np.max(deviator[:index_015[0]])
+    amplitude_1, amplitude_2, amplitude_3 = amplitude
+
+    points_1 = np.random.uniform(7, 12)
+    points_2 = np.random.uniform(20, 30)
+    points_3 = np.random.uniform(50, 60)
+
+    devition_1 = amplitude_1 * qf
+    devition_2 = amplitude_2 * qf
+    devition_3 = amplitude_3 * qf
+
+
+
+    i_60, = np.where(deviator >= 0.51 * qf)
+    i_90, = np.where(deviator >= 0.98 * qf)
+    i_end, = np.where(strain >= 0.15)
+    i_xc, = np.where(strain >= xc)
+    if xc >= 0.14:  # без пика
+        try:
+            curve = create_deviation_curve(strain[i_60[0]:i_xc[0]], devition_1,
+                                           points=points_1, borders="zero_diff",
+                                           low_first_district=1, one_side=True) + \
+                    create_deviation_curve(strain[i_60[0]:i_xc[0]], devition_2,
+                                           points=points_2, borders="zero_diff",
+                                           low_first_district=1, one_side=True) + \
+                    сreate_deviation_curve(strain[i_60[0]:i_xc[0]], devition_3,
+                                           points=points_3, borders="zero_diff",
+                                           low_first_district=1, one_side=True)
+            deviation_array = -np.hstack((np.zeros(i_60[0]),
+                                          curve,
+                                          np.zeros(len(strain) - i_xc[0])))
+        except IndexError:
+            deviation_array = np.zeros(len(strain))
+
+    else:
+
+        try:
+            i_xc1, = np.where(deviator[i_xc[0]:] <= qf - devition_2)
+            i_xc_m, = np.where(deviator >= qf - devition_1 * 2)
+            points_1 = round((xc) * 30)
+            if points_1 < 3:
+                points_1 = 3
+            points_2 = round(points_1*np.random.uniform(1.5, 2))
+            points_3 = round(points_1 * np.random.uniform(2.5, 3))
+
+            curve_1 = create_deviation_curve(strain[i_60[0]:i_xc_m[0]], devition_1/3,
+                                             points=points_1, val=(1, 0.1), borders="zero_diff",
+                                             low_first_district=1) + \
+                create_deviation_curve(strain[i_60[0]:i_xc_m[0]], devition_2/3,
+                points=points_2, borders="zero_diff",
+                low_first_district=1) + \
+                      create_deviation_curve(strain[i_60[0]:i_xc_m[0]], devition_3/3,
+                points=points_3, borders="zero_diff",
+                low_first_district=1)
+
+            points_2 = round((0.15 - xc) * 100)
+            if points_2 < 3:
+                points_2 = 3
+            points_2 = round(points_1 * np.random.uniform(2, 3))
+            points_3 = round(points_1 * np.random.uniform(5, 6))
+
+            # devition_2 = ((deviator[i_xc[0]] - deviator[i_end[0]]) / 14) * (points_2 / 10)
+
+            curve_2 = create_deviation_curve(strain[i_xc[0] + i_xc1[0]:i_end[0]],
+                                             devition_1, val=(0.1, 1),
+                                             points=points_1, borders="zero_diff",
+                                             low_first_district=2) + create_deviation_curve(
+                strain[i_xc[0] + i_xc1[0]:i_end[0]],
+                devition_2, val=(0.1, 1),
+                points=points_2, borders="zero_diff",
+                low_first_district=2) + create_deviation_curve(
+                strain[i_xc[0] + i_xc1[0]:i_end[0]],
+                devition_3, val=(0.1, 1),
+                points=points_3, borders="zero_diff",
+                low_first_district=2)
+            deviation_array = -np.hstack((np.zeros(i_60[0]),
+                                          curve_1, np.zeros(i_xc[0] - i_xc_m[0]),
+                                          np.zeros(i_xc1[0]),
+                                          curve_2,
+                                          np.zeros(len(strain) - i_end[0])))
+        except (ValueError, IndexError):
+            print("Ошибка девиаций девиатора")
+            deviation_array = -np.hstack((np.zeros(i_60[0]),
+                                          create_deviation_curve(strain[i_60[0]:i_90[0]], devition_1,
+                                                                 points=np.random.uniform(3, 6), borders="zero_diff",
+                                                                 low_first_district=1),
+                                          create_deviation_curve(strain[i_90[0]:i_end[0]], devition_2, val=(1, 0.1),
+                                                                 points=np.random.uniform(10, 15), borders="zero_diff",
+                                                                 low_first_district=3,
+                                                                 one_side=True),
+                                          np.zeros(len(strain) - i_end[0])))
+
+    return deviation_array
+
+def deviator_loading_deviation1_old(strain, deviator, xc, amplitude):
     # Добавим девиации после 0.6qf для кривой без пика
     qf = max(deviator)
 
@@ -232,16 +331,20 @@ def deviator_loading_deviation1(strain, deviator, xc, amplitude):
     return deviation_array
 
 def deviator_loading_deviation(strain, deviator, xc, amplitude):
+
     # Добавим девиации после 0.6qf для кривой без пика
     index_015, = np.where(strain >= 0.15)
     qf = np.max(deviator[:index_015[0]])
+    amplitude_1, amplitude_2, amplitude_3 = amplitude
 
-    devition_1 = amplitude * qf
-    devition_2 = (amplitude / 2) * qf
-    devition_3 = (amplitude / 3) * qf
-    points_1 = np.random.uniform(5, 10)
-    points_2 = np.random.uniform(10, 20)
-    points_3 = np.random.uniform(20, 30)
+    points_1 = np.random.uniform(7, 12)
+    points_2 = np.random.uniform(20, 30)
+    points_3 = np.random.uniform(50, 60)
+
+    devition_1 = amplitude_1 * qf
+    devition_2 = amplitude_2 * qf
+    devition_3 = amplitude_3 * qf
+
 
     try:
         index_015, = np.where(strain >= 0.17)
@@ -869,8 +972,10 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     # безье второго участка
     d1_p2 = 0.00000
 
+    point2_x_alt = point2_x if point2_x != 0.0 else 0.00001
+
     b_c = bezier_curve([point2_x, point2_y],
-                       [point2_x - 0.1 * point2_x, d1_p2 * (point2_x - 0.1 * point2_x) + (point2_y - d1_p2 * point2_x)],
+                       [point2_x - 0.1 * point2_x_alt, d1_p2 * (point2_x - 0.1 * point2_x_alt) + (point2_y - d1_p2 * point2_x_alt)],
                        [point1_x, point1_y],
                        [x_inter, y_inter],
                        [point2_x, point2_y],  # Безье построиться только на возрастающем иксе
@@ -1541,8 +1646,10 @@ def curve(qf, e50, **kwargs):
     y_rel_p = kwargs.get('y_rel_p')
     point2_y = kwargs.get('point2_y')
     U = kwargs.get('U')
-    amplitude = kwargs.get('amplitude')[0]
-    free_deviations = kwargs.get('amplitude')[1]
+    amplitude_1 = kwargs.get('amplitude')[0]
+    amplitude_2 = kwargs.get('amplitude')[1]
+    amplitude_3 = kwargs.get('amplitude')[2]
+    free_deviations = kwargs.get('amplitude')[3]
     '''флаг, отвечает за наложение девиаций на контрольные точки'''
     hyp_ratio = kwargs.get('hyp_ratio')
 
@@ -1686,10 +1793,10 @@ def curve(qf, e50, **kwargs):
     while count < count_limit:
 
         if not free_deviations:
-            y += deviator_loading_deviation1(x, y, xc, amplitude=amplitude)
+            y += deviator_loading_deviation1(x, y, xc, amplitude=(amplitude_1, amplitude_2, amplitude_3))
             break
 
-        y += deviator_loading_deviation(x, y, xc, amplitude=amplitude)
+        y += deviator_loading_deviation(x, y, xc, amplitude=(amplitude_1, amplitude_2, amplitude_3))
 
         if not Eur:
             y = sensor_accuracy(x, y, qf, x50, xc)  # шум на кривой без петли
