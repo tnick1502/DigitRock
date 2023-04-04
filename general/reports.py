@@ -4210,7 +4210,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
-    if report_type == "standart":
+    if report_type == "standart" or report_type == 'E50_E':
         name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
         sig = "/ВП"
     elif report_type == 'cryo':
@@ -4236,7 +4236,10 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a"
     test_mode_vibration_creep(canvas, test_parameter, moove=moove)
 
-    result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]], moove=moove)
+    if report_type == 'E50_E':
+        result_table_deviator_standart(canvas, res_static, [picks[2], picks[3]], result_E="all", moove=moove)
+    else:
+        result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]], moove=moove)
 
     canvas.showPage()
 

@@ -296,7 +296,8 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                 "standart": "Стандардный отчет",
                 "cryo": "Крио",
                 "predict50": "Прогноз 50 лет",
-                "predict100": "Прогноз 100 лет"
+                "predict100": "Прогноз 100 лет",
+                "E50_Е": "Е50 + Е",
             },
 
             result_table_params={

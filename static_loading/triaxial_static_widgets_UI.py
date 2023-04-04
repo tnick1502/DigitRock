@@ -193,13 +193,10 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
     def plot(self, plots, res):
         """Построение графиков опыта"""
 
-        if statment.general_parameters.test_mode == "Виброползучесть":
-            self.combo_box.setCurrentText("E50")
-            self.combo_box.setDisabled(True)
-
         if statment.general_parameters.test_mode in ["Трёхосное сжатие с разгрузкой",
                                                      "Трёхосное сжатие (F, C, Eur)",
-                                                     "Трёхосное сжатие с разгрузкой (plaxis)"]:
+                                                     "Трёхосное сжатие с разгрузкой (plaxis)",
+                                                     "Виброползучесть"]:
 
             if "Eur_E" not in [self.combo_box.itemText(i) for i in range(self.combo_box.count())]:
                 self.combo_box.addItems(["Eur_E"])
@@ -207,6 +204,8 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                 self.combo_box.addItems(["Eur"])
                 if statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
                     self.combo_box.setCurrentText("Eur")
+                elif statment.general_parameters.test_mode == "Виброползучесть":
+                    self.combo_box.setCurrentText("E50")
                 else:
                     self.combo_box.setCurrentText("Eur_E")
 
@@ -449,23 +448,17 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
             self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"] + plots["sigma_3"],
                                   **plotter_params["static_loading_gray_line"])
 
-            if statment.general_parameters.test_mode != "Виброползучесть":
-                self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
-                self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
+            self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
+            self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
 
-            if statment.general_parameters.test_mode != "Виброползучесть":
-                self.deviator_ax2.scatter(res["Eps50"], res["qf50"], s=20, color="black")
+            self.deviator_ax2.scatter(res["Eps50"], res["qf50"], s=20, color="black")
 
-            if statment.general_parameters.test_mode != "Виброползучесть":
-                self.deviator_ax2.plot(*plots["E50"],
-                                       label=_label,
-                                       **plotter_params["static_loading_black_dotted_line"])
+            self.deviator_ax2.plot(*plots["E50"], label=_label, **plotter_params["static_loading_black_dotted_line"])
 
             self.deviator_ax2.plot(plots["strain"], plots["deviator"],
                                    **plotter_params["static_loading_main_line"])
             if res["E"] is not None:
-                if statment.general_parameters.test_mode != "Виброползучесть":
-                    self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"], label=_label,
+                self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"], label=_label,
                                           **plotter_params["static_loading_black_dotted_line"])
 
         label = "$K_{E_{50}} = $" + str(res["K_E50"]) + "; " + "$K_{E_{ur}} = $" + str(res["K_Eur"]) if res[
