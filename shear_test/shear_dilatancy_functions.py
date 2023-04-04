@@ -154,11 +154,11 @@ def find_puasson_dilatancy(strain, deviator, volume_strain):
     return round(puasson, 2), dilatancy
 
 
-def deviator_loading_deviation(strain, deviator, xc):
+def deviator_loading_deviation(strain, deviator, xc, amplitude):
     # Добавим девиации после 0.6qf для кривой без пика
     qf = max(deviator)
-    devition_1 = qf / 100
-    devition_2 = qf / 60
+    devition_1 = qf * amplitude
+    devition_2 = qf * amplitude * 6
 
     i_60, = np.where(deviator >= 0.51 * qf)
     i_90, = np.where(deviator >= 0.98 * qf)
@@ -666,7 +666,7 @@ def loop(x, y, Eur, y_rel_p, point2_y):
     return x_loop, y_loop, point1_x, point1_y, point2_x, point2_y, point3_x, point3_y, x1_l, x2_l, y1_l, y2_l
 
 
-def dev_loading(qf, e50, x50, xc, x2, qf2, qocr, gaus_or_par, amount_points, y_rel_p, Eur, point2_y):
+def dev_loading(qf, e50, x50, xc, x2, qf2, qocr, gaus_or_par, amount_points, y_rel_p, Eur, point2_y, amplitude):
     '''кусочная функция: на участкe [0,xc]-сумма функций гиперболы и
     (экспоненты или тангенса) и кусочной функции синуса и парболы
     на участке [xc...]-половина функции Гаусса или параболы'''
@@ -777,7 +777,7 @@ def dev_loading(qf, e50, x50, xc, x2, qf2, qocr, gaus_or_par, amount_points, y_r
     index_point1_y, = np.where(y_smooth >= point1_y)
     index_point3_y, = np.where(y_smooth >= point3_y)
 
-    y_smooth += deviator_loading_deviation(xnew, y_smooth, xc)
+    y_smooth += deviator_loading_deviation(xnew, y_smooth, xc, amplitude)
 
     y_smooth = sensor_accuracy(xnew, y_smooth, qf, x50, xc)  # шум на кривой без петли
     y_smooth = discrete_array(y_smooth, 0.5)  # ступеньки на кривой без петли
@@ -1082,6 +1082,11 @@ def curve_shear_dilatancy(qf, e50, **kwargs):
     except KeyError:
         kwargs["U"] = None
 
+    try:
+        kwargs["amplitude"]
+    except KeyError:
+        kwargs["amplitude"] = 0.01
+
     xc = kwargs.get('xc')
     x2 = kwargs.get('x2')
     qf2 = kwargs.get('qf2')
@@ -1092,6 +1097,7 @@ def curve_shear_dilatancy(qf, e50, **kwargs):
     y_rel_p = kwargs.get('y_rel_p')
     point2_y = kwargs.get('point2_y')
     U = kwargs.get('U')
+    amplitude = kwargs.get('amplitude')
 
     if y_rel_p > qf:
         y_rel_p = qf
@@ -1110,7 +1116,7 @@ def curve_shear_dilatancy(qf, e50, **kwargs):
         qf, e50, x50, xc, x2, qf2,
         qocr, gaus_or_par,
         amount_points, y_rel_p,
-        Eur, point2_y)  # x_old - без участка разгрузки, возвращается для обьемной деформации
+        Eur, point2_y, amplitude)  # x_old - без участка разгрузки, возвращается для обьемной деформации
     # x - c участком разгрузки или без в зависимости от того передан ли Eur
 
     # ограничение на хс (не меньше чем x_given)
