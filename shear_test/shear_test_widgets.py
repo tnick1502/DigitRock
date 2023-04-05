@@ -282,7 +282,8 @@ class ShearDilatancySoilTestWidget(TabMixin, ShearProcessingWidget):
                   "qocr": "Значение дивиатора OCR",
                   "poisson": "Коэффициент Пуассона",
                   "dilatancy": "Угол дилатансии",
-                  "volumetric_strain_xc": "Объемн. деформ. в пике"})
+                  "volumetric_strain_xc": "Объемн. деформ. в пике",
+                    "amplitude": "Амплитуда девиаций"})
         self.deviator_loading_sliders.setFixedHeight(210)
 
         self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)

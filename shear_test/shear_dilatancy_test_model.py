@@ -583,7 +583,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                                       "qocr": None,
                                       "poisson": None,
                                       "dilatancy": None,
-                                      "volumetric_strain_xc": None})
+                                      "volumetric_strain_xc": None,
+                                      "amplitude": None})
 
 
     def set_test_params(self, pre_defined_xc=None):
@@ -625,6 +626,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
 
         #self._test_params.E50 = (self._test_params.tau_max/xc)*np.random.uniform(2.0, 5.0)
+
+        self._draw_params.amplitude = 0.01
 
         self._draw_params.fail_strain = xc
         self._draw_params.residual_strength_param = \
@@ -681,7 +684,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                   "qocr": {"value": self._draw_params.qocr, "borders": [0, self._test_params.tau_max]},
                   "poisson": {"value": self._draw_params.poisson, "borders": [0.1, 0.45]},
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [-20, 25]},
-                  "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]}}
+                  "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]},
+                  "amplitude": {"value": self._draw_params.amplitude, "borders": [0.000001, 0.1]}}
         return params
 
     def set_draw_params(self, params):
@@ -693,7 +697,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         self._draw_params.qocr = params["qocr"]
         self._draw_params.poisson = params["poisson"]
         self._draw_params.dilatancy = params["dilatancy"]
-        self._draw_params.volumetric_strain_xc = params["volumetric_strain_xc"]
+        self._draw_params.amplitude = params["amplitude"]
+
         """self._draw_params.dilatancy = np.rad2deg(np.arctan(2 * np.sin(np.deg2rad(params["dilatancy"])) /
                                                            (1 - np.sin(np.deg2rad(params["dilatancy"])))))"""
 
@@ -727,7 +732,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                 m_given=self._draw_params.poisson,
                 amount_points=amount_point*20+1,
                 angle_of_dilatacy=dilatancy,
-                v_d_xc=-self._draw_params.volumetric_strain_xc)
+                v_d_xc=-self._draw_params.volumetric_strain_xc,
+            amplitude=self._draw_params.amplitude)
 
             # self._test_data.strain = (self._test_data.strain/0.15)*0.1*71.4
             # self._test_data.pore_volume_strain = self._test_data.pore_volume_strain/((((1-2*self._draw_params.poisson)/(self._draw_params.poisson*(71.4/35))))/71.4/0.1*0.15)
@@ -748,7 +754,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             m_given=self._draw_params.poisson,
             amount_points=amount_point*20+1,
             angle_of_dilatacy=dilatancy,
-            v_d_xc=-self._draw_params.volumetric_strain_xc)
+            v_d_xc=-self._draw_params.volumetric_strain_xc,
+            amplitude=self._draw_params.amplitude)
 
             self._test_data.deviator /= k
 
