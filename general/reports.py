@@ -2163,6 +2163,102 @@ def result_table_deviator_standart(canvas, Res, pick, scale = 0.8, result_E="E",
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (46 - sss -moove-((r-30)*4)) * mm)
 
+def result_table_deviator_standart_vc(canvas, Res, pick, scale = 0.8, moove=0):
+
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    r = 28
+    for i in range(r):
+        tableData.append([""])
+
+    E = zap(Res["E"][0], 1)
+    Ew = '''<p>Модуль деформации E, МПа:</p>'''
+
+    E50 = zap(Res["E50"], 1)
+    E50w = '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>'''
+
+
+    tableData.append(
+        [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "",
+            zap(Res["qf"], 3), "", ""])
+
+    tableData.append(
+        [Paragraph(Ew, LeftStyle), "", "",
+         E, "", ""])
+    tableData.append(
+        [Paragraph(E50w, LeftStyle), "", "",
+         E50, "", ""])
+
+    tableData.append(
+        [Paragraph('''<p>Коэффициент поперечной деформации ν, д.е.:</p>''', LeftStyle), "", "", zap(Res["poissons_ratio"], 2), "", ""])
+
+    tableData.append(["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+
+    try:
+        a = svg2rlg(pick[0])
+        a.scale(scale, scale)
+        renderPDF.draw(a, canvas, 36 * mm, (120-moove) * mm)
+        b = svg2rlg(pick[1])
+        b.scale(scale, scale)
+        renderPDF.draw(b, canvas, 36 * mm, (66-moove) * mm)
+    except AttributeError:
+        a = ImageReader(pick[1])
+        canvas.drawImage(a, 32 * mm, 60 * mm,
+                         width=160 * mm, height=54 * mm)
+        b = ImageReader(pick[0])
+        canvas.drawImage(b, 32 * mm, 114 * mm,
+                         width=160 * mm, height=54 * mm)
+
+    style = [('SPAN', (0, 0), (-1, 0)),
+         ('SPAN', (0, 1), (-1, r)),
+
+         ('SPAN', (0, -1), (2, -1)),
+         ('SPAN', (-3, -1), (-1, -1)),
+
+         ('SPAN', (0, -2), (2, -2)),
+         ('SPAN', (-3, -2), (-1, -2)),
+
+         ('SPAN', (0, -3), (2, -3)),
+         ('SPAN', (-3, -3), (-1, -3)),
+         # ('SPAN', (2, -1), (3, -1)),
+         # ('SPAN', (4, -1), (5, -1)),
+         ('SPAN', (0, -4), (2, -4)),
+         ('SPAN', (-3, -4), (-1, -4)),
+             ('SPAN', (0, -5), (2, -5)),
+             ('SPAN', (-3, -5), (-1, -5)),
+         # ('SPAN', (2, -2), (3, -2)),
+         # ('SPAN', (4, -2), (5, -2)),
+         #('SPAN', (0, -3), (3, -3)),
+         #('SPAN', (-2, -3), (-1, -3)),
+
+         #('SPAN', (0, -4), (3, -4)),
+         #('SPAN', (-2, -4), (-1, -4)),
+         # ('SPAN', (2, -3), (3, -3)),
+         #  ('SPAN', (4, -3), (5, -3)),
+
+         ("BACKGROUND", (0, -5), (2, -1), HexColor(0xebebeb)),
+         #("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+         #("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+
+         ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+         ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+         ("FONTSIZE", (0, 0), (-1, -1), 8),
+         # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+         ("ALIGN", (0, 0), (-1, r), "CENTER"),
+         ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+         ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+         ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+    sss = 4
+
+    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+    t.setStyle(style)
+
+    sss += 8
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, (46 - sss -moove-((r-30)*4)) * mm)
+
 
 def result_table_deviator_user_1(canvas, Res, pick, scale = 0.8, moove=0):
 
@@ -4237,7 +4333,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
     test_mode_vibration_creep(canvas, test_parameter, moove=moove)
 
     if report_type == 'E50_E':
-        result_table_deviator_standart(canvas, res_static, [picks[2], picks[3]], result_E="all", moove=moove)
+        result_table_deviator_standart_vc(canvas, res_static, [picks[2], picks[3]], moove=moove)
     else:
         result_table_deviator_vc(canvas, res_static, [picks[2], picks[3]], moove=moove)
 
