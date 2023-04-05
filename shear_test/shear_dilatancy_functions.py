@@ -158,7 +158,7 @@ def deviator_loading_deviation(strain, deviator, xc, amplitude):
     # Добавим девиации после 0.6qf для кривой без пика
     qf = max(deviator)
     devition_1 = qf * amplitude
-    devition_2 = qf * amplitude * 6
+    devition_2 = qf * amplitude * 1.67
 
     i_60, = np.where(deviator >= 0.51 * qf)
     i_90, = np.where(deviator >= 0.98 * qf)

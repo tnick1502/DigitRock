@@ -621,7 +621,7 @@ class TriaxialStaticLoading_Sliders(QWidget):
 class ShearDilatancyTestDialog(QDialog):
     def __init__(self, test, parent=None):
         super(ShearDilatancyTestDialog, self).__init__(parent)
-        self.resize(1200, 700)
+        self.resize(1200, 750)
         self.setWindowTitle("Обработка опыта")
         self._model = test
 
@@ -651,7 +651,7 @@ class ShearDilatancyTestDialog(QDialog):
                                                                        "volumetric_strain_xc": "Объемн. деформ. в пике",
                                                                        "amplitude": "Амплитуда девиаций"}
                                                                       )
-        self.deviator_loading_sliders.setFixedHeight(180)
+        self.deviator_loading_sliders.setFixedHeight(220)
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.shear_dilatancy.graph_layout.addWidget(self.deviator_loading_sliders)
 
