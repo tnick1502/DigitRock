@@ -648,7 +648,8 @@ class ShearDilatancyTestDialog(QDialog):
                                                                        "qocr": "Значение дивиатора OCR",
                                                                        "poisson": "Коэффициент Пуассона",
                                                                        "dilatancy": "Угол дилатансии",
-                                                                       "amplitude": "Амплитуда девиаций"},
+                                                                       "volumetric_strain_xc": "Объемн. деформ. в пике",
+                                                                       "amplitude": "Амплитуда девиаций"}
                                                                       )
         self.deviator_loading_sliders.setFixedHeight(180)
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)

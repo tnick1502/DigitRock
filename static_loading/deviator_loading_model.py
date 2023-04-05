@@ -792,9 +792,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                       "dilatancy": None,
                                       "volumetric_strain_xc": None,
                                       "Eur": None,
-                                      "amplitude": None,
                                       "amplitude_1": None,
                                       "amplitude_2": None,
+                                      "amplitude_3": None,
                                       "free_deviations": None,
                                       "hyp_ratio": None})
 
