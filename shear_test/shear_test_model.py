@@ -325,6 +325,8 @@ class ModelShearSoilTest(ModelShear):
 
         self.pre_defined_kr_fgs = None
 
+        self._noise_data = {}
+
     def add_test_st(self, pre_defined_xc=None):
         """Добавление опытов"""
         test = ModelShearDilatancySoilTest()
@@ -514,6 +516,9 @@ class ModelShearSoilTest(ModelShear):
     def set_test_params(self):
         self._test_modeling()
 
+    def form_noise_data(self):
+        self._noise_data["b"] = np.round(np.random.uniform(0.95, 0.98), 2)
+
     def save_log_files(self, directory, nonzero_vertical_def=True):
         """Метод генерирует файлы испытания для всех кругов"""
         if len(self._tests) >= 3:
@@ -530,7 +535,7 @@ class ModelShearSoilTest(ModelShear):
         if isNaturalShear:
             b = statment[statment.current_test].physical_properties.Sr
         else:
-            b = np.round(np.random.uniform(0.95, 0.98), 2)
+            b = self._noise_data["b"]
 
         data = {
             "laboratory_number": statment[statment.current_test].physical_properties.laboratory_number,

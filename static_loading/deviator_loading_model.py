@@ -798,6 +798,14 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                       "free_deviations": None,
                                       "hyp_ratio": None})
 
+        self._noise_data = AttrDict({"Unload_noise": None,
+                                     "PorePressure_noise": None,
+                                     "CellPress_noise": None,
+                                     "VerticalPress_noise": None,
+                                     "b_CVI": None})
+
+        self._dictionary_without_VFS = None
+
         self.pre_defined_kr_fgs = None
 
         self.unloading_borders = None
@@ -897,14 +905,14 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._test_params.velocity = velocity
         self._test_params.delta_h_consolidation = delta_h_consolidation
 
-    def get_dict(self, sample_size: Tuple[int, int] = (76, 38)):
+    def get_dict(self, sample_size: Tuple[int, int] = (76, 38), noise_data=None):
         return ModelTriaxialDeviatorLoadingSoilTest.dictionary_deviator_loading(self._test_data.strain,
                                                                                 self._test_data.deviator,
                                     self._test_data.pore_volume_strain, self._test_data.cell_volume_strain,
                                     self._test_data.reload_points, pore_pressure=self._test_data.pore_pressure,
                                     time=self._test_data.time, velocity=self._test_params.velocity,
                                     delta_h_consolidation = self._test_params.delta_h_consolidation,
-                                    sample_size=sample_size)
+                                    sample_size=sample_size, noise_data=noise_data)
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -1085,6 +1093,10 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                 76 - self._test_params.delta_h_consolidation)), 6)
 
         self._test_data.volume_strain = self._test_data.pore_volume_strain
+
+
+        self.form_noise_data()
+        self.form_dictionary_without_VFS()
         #i_end, = np.where(self._test_data.strain > self._draw_params.fail_strain + np.random.uniform(0.03, 0.04))
         #if len(i_end):
             #self.change_borders(begin, i_end[0])
@@ -1092,6 +1104,17 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self.change_borders(begin, len(self._test_data.volume_strain))
         #print(statment[statment.current_test].physical_properties.laboratory_number, self._test_result["E50"])
         #print(self._test_params.__dict__)
+
+    def get_noise_data(self):
+        return self._noise_data
+
+    def form_noise_data(self):
+        time_len = len(self._test_data.time) + 8
+        self._noise_data.Unload_noise = np.random.uniform(-1, 1, 9)
+        self._noise_data.PorePressure_noise = np.random.uniform(0.3, 0.5)
+        self._noise_data.CellPress_noise = np.random.uniform(-0.1, 0.1, time_len)
+        self._noise_data.VerticalPress_noise = np.random.uniform(-0.1, 0.1, time_len)
+        self._noise_data.b_CVI = np.round(np.random.uniform(0.95, 0.98), 2)
 
     def get_cvi_data(self, points: int = 10):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -1111,6 +1134,98 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
 
     def get_duration(self):
         return np.max(self._test_data.time)#)int((self._test_data.strain[-1] * (76 - self._test_params.delta_h_consolidation)) / self._test_params.velocity)
+
+    def get_dictionary_without_VFS(self):
+        return self._dictionary_without_VFS
+
+    def form_dictionary_without_VFS(self):
+        # Создаем массив набора нагрузки до обжимающего давления консолидации
+        # sigma_3 -= effective_stress_after_reconsolidation
+        sigma_3 = self._test_params.sigma_3
+        velocity = 49
+        d, h = statment[statment.current_test].physical_properties.sample_size
+        sample_size = (h, d)
+
+        k = sigma_3 / velocity
+        if k <= 2:
+            velocity = velocity / (2 / k) - 1
+        load_stage_time = round(sigma_3 / velocity, 2)
+        load_stage_time_array = np.arange(1, load_stage_time, 1)
+        time_max = np.random.uniform(20, 30)
+        time_array = np.arange(0, time_max, 1)
+        # Добавим набор нагрузки к основным массивам
+        time = np.hstack((load_stage_time_array, time_array + load_stage_time_array[-1]))
+
+        load_stage_cell_press = np.linspace(0, sigma_3, len(load_stage_time_array) + 1)
+        cell_press = np.hstack((load_stage_cell_press[1:], np.full(len(time_array), sigma_3))) + \
+                     np.random.uniform(-0.1, 0.1, len(time))
+
+        final_volume_strain = np.random.uniform(0.14, 0.2)
+        load_stage_cell_volume_strain = exponent(load_stage_time_array[:-1], final_volume_strain,
+                                                 np.random.uniform(1, 1))
+        # load_stage_cell_volume_strain[0] = 0
+        cell_volume_strain = np.hstack((load_stage_cell_volume_strain,
+                                        np.full(len(time_array) + 1, final_volume_strain))) * np.pi * (
+                                         (sample_size[1] / 2) ** 2) * sample_size[0] + \
+                             np.random.uniform(-0.1, 0.1, len(time))
+        cell_volume_strain[0] = 0
+        vertical_press = cell_press + np.random.uniform(-0.1, 0.1, len(time))
+
+        # На нэтапе нагружения 'LoadStage', на основном опыте Stabilization
+        load_stage = ['LoadStage' for _ in range(len(load_stage_time_array))]
+        wait = ['Wait' for _ in range(len(time_array))]
+        action = load_stage + wait
+
+        action_changed = ['' for _ in range(len(time))]
+        action_changed[len(load_stage_time_array) - 1] = "True"
+        action_changed[-1] = 'True'
+
+        # Значения на последнем LoadStage и Первом Wait (следующая точка) - равны
+        cell_press[len(load_stage)] = cell_press[len(load_stage) - 1]
+        vertical_press[len(load_stage)] = vertical_press[len(load_stage) - 1]
+        cell_volume_strain[len(load_stage)] = cell_volume_strain[len(load_stage) - 1]
+
+        trajectory = np.full(len(time), 'ReconsolidationWoDrain')
+        trajectory[-1] = "CTC"
+
+        # Подключение запуска опыта
+        time_start = [time[0]]
+        time = np.hstack((time_start, time))
+
+        action_start = ['Start']
+        action = np.hstack((action_start, action))
+
+        action_changed_start = ['True']
+        action_changed = np.hstack((action_changed_start, action_changed))
+
+        cell_press_start = [cell_press[0]]
+        cell_press = np.hstack((cell_press_start, cell_press))
+
+        cell_volume_strain_start = [cell_volume_strain[0]]
+        cell_volume_strain = np.hstack((cell_volume_strain_start, cell_volume_strain))
+
+        vertical_press_start = [vertical_press[0]]
+        vertical_press = np.hstack((vertical_press_start, vertical_press))
+
+        trajectory_start = [trajectory[0]]
+        trajectory = np.hstack((trajectory_start, trajectory))
+
+        data = {
+            "Time": time,
+            "Action": action,
+            "Action_Changed": action_changed,
+            "SampleHeight_mm": np.round(np.full(len(time), sample_size[0])),
+            "SampleDiameter_mm": np.round(np.full(len(time), sample_size[1])),
+            "Deviator_kPa": np.full(len(time), 0),
+            "VerticalDeformation_mm": np.full(len(time), 0),
+            "CellPress_kPa": cell_press,
+            "CellVolume_mm3": cell_volume_strain,
+            "PorePress_kPa": np.full(len(time), 0),
+            "PoreVolume_mm3": np.full(len(time), 0),
+            "VerticalPress_kPa": vertical_press,
+            "Trajectory": trajectory
+        }
+        self._dictionary_without_VFS = data
 
     @staticmethod
     def define_pore_pressure_array(strain, start, pore_pressure, amplitude):
@@ -1484,7 +1599,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
     @staticmethod
     def dictionary_deviator_loading(strain, deviator, pore_volume_strain, cell_volume_strain, indexs_loop,
                                     pore_pressure, time, velocity=1, delta_h_consolidation=0,
-                                    sample_size: Tuple[int, int] = (76, 38)):
+                                    sample_size: Tuple[int, int] = (76, 38), noise_data=None):
         """Формирует словарь девиаторного нагружения"""
         index_unload, = np.where(strain >= strain[-1] * 0.92)  # индекс абциссы конца разгрузки
         x_unload_p = strain[index_unload[0]]  # деформация на конце разгрузки
@@ -1501,7 +1616,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                              bc_type=([(1, 0)], [(1, abs(pore_volume_strain[-1] - z_unload_p) * 200)]))
         unload_pore_volume_strain = spl(x_unload)  # массив обьемных деформаций при разгрузке
 
-        y_unload = y_unload + np.random.uniform(-1, 1, len(y_unload))  # наложение  шума на разгрузку
+        y_unload = y_unload + noise_data.Unload_noise # наложение  шума на разгрузку
         y_unload = discrete_array(y_unload, 1)  # наложение ступенатого шума на разгрузку
 
         z_unload_p = min(cell_volume_strain) * 1.05
@@ -1524,7 +1639,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         action = ['WaitLimit' for __ in range(len(time))]
         pore_pressure = np.hstack((
             pore_pressure,
-            np.linspace(pore_pressure[-1], pore_pressure[-1] * np.random.uniform(0.3, 0.5), len(time) - len(pore_pressure))
+            np.linspace(pore_pressure[-1], pore_pressure[-1] * noise_data.PorePressure_noise, len(time) - len(pore_pressure))
         ))
 
         if indexs_loop[0] != 0:
@@ -1558,11 +1673,11 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
             "SampleDiameter_mm": np.round(np.full(len(time), sample_size[1])),
             "Deviator_kPa": np.round(deviator, 4),
             "VerticalDeformation_mm": strain * (sample_size[0] - delta_h_consolidation),
-            "CellPress_kPa": np.full(len(time), 0) + np.random.uniform(-0.1, 0.1, len(time)),
+            "CellPress_kPa": np.full(len(time), 0) + noise_data.CellPress_noise,
             "CellVolume_mm3": (cell_volume_strain * np.pi * 19 ** 2 * (sample_size[0] - delta_h_consolidation)),
             "PorePress_kPa": pore_pressure,
             "PoreVolume_mm3": pore_volume_strain * np.pi * 19 ** 2 * (sample_size[0] - delta_h_consolidation),
-            "VerticalPress_kPa": deviator + np.random.uniform(-0.1, 0.1, len(time)),
+            "VerticalPress_kPa": deviator + noise_data.VerticalPress_noise,
             "Trajectory": np.full(len(time), 'CTC')}
 
         return data

@@ -986,6 +986,12 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 
         self._draw_params = AttrDict({"max_time": None})
 
+        self._noise_data = AttrDict({"VerticalDeformation_noise": None,
+                                     "Deviator_noise": None,
+                                     "CellPress_noise": None,
+                                     "PorePress_noise": None,
+                                     "VerticalPress_noise": None})
+
     def set_test_params(self):
         """Установка основных параметров опыта"""
         self._test_params.Cv = statment[statment.current_test].mechanical_properties.Cv
@@ -1009,7 +1015,21 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
     def get_delta_h_consolidation(self):
         return self._test_data.delta_h_consolidation
 
-    def get_dict(self, effective_stress_after_reconsolidation, sample_size: Tuple[int, int] = (76, 38)):
+    def get_noise_data(self):
+        return self._noise_data
+
+    def form_noise_data(self):
+        load_stage_time = round(self._test_params.sigma_3 / 100, 2)
+        load_stage_time_array = np.arange(0, load_stage_time, 0.25)
+        time_len = len(np.hstack((load_stage_time_array, self._test_data.time)))
+        pore_volume_lenth = len(self._test_data.pore_volume_strain)
+        self._noise_data.VerticalDeformation_noise =  np.random.uniform(0.9, 1.1, pore_volume_lenth)
+        self._noise_data.Deviator_noise = np.random.uniform(-1, 1, time_len)
+        self._noise_data.CellPress_noise = np.random.uniform(-0.1, 0.1, time_len)
+        self._noise_data.PorePress_noise = np.random.uniform(-1, 1, time_len)
+        self._noise_data.VerticalPress_noise = np.random.uniform(-0.1, 0.1, time_len)
+
+    def get_dict(self, effective_stress_after_reconsolidation, sample_size: Tuple[int, int] = (76, 38), noise_data=None):
        return ModelTriaxialConsolidationSoilTest.dictionary_consalidation(self._test_data.time,
                                                                           self._test_data.pore_volume_strain,
                                                                           self._test_data.cell_volume_strain,
@@ -1017,7 +1037,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                                                           delta_h_consolidation=self._test_data.delta_h_consolidation,
                                                                           delta_h_reconsolidation=self._test_data.delta_h_reconsolidation,
                                                                           effective_stress_after_reconsolidation=effective_stress_after_reconsolidation,
-                                                                          sample_size=sample_size)
+                                                                          sample_size=sample_size, noise_data=noise_data)
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -1079,13 +1099,15 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             self._test_data.pore_volume_strain * np.pi * ((d/2) ** 2) / (h - self._test_data.delta_h_reconsolidation) /
             (np.pi * ((d/2) ** 2) / (h - self._test_data.delta_h_reconsolidation)), 6)
 
+        self.form_noise_data()
+
     def get_duration(self):
         return self._test_data.time[-1]
 
     @staticmethod
     def dictionary_consalidation(time, pore_volume_strain, cell_volume_strain, velocity=1, sigma_3=150,
                                  delta_h_consolidation=0, delta_h_reconsolidation=0,
-                                 effective_stress_after_reconsolidation=0, sample_size: Tuple[int, int] = (76, 38)):
+                                 effective_stress_after_reconsolidation=0, sample_size: Tuple[int, int] = (76, 38), noise_data=None):
         """Формирует словарь консолидации"""
         # Создаем массив набора нагрузки до обжимающего давления консолидации
         sigma_3 -= effective_stress_after_reconsolidation
@@ -1118,9 +1140,8 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         action_changed[-1] = 'True'
 
         h = delta_h_consolidation - delta_h_reconsolidation
-        vertical_deformation = np.hstack((
-            np.linspace(0, h, len(load_stage_time_array)),
-            np.random.uniform(0.9*h, 1.1*h, length)))
+        vertical_deformation = np.hstack((np.linspace(0, h, len(load_stage_time_array)),
+                                          noise_data.VerticalDeformation_noise*h))
 
         vertical_deformation[-1] = h
 
@@ -1135,13 +1156,13 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             "Action_Changed": action_changed,
             "SampleHeight_mm": np.round(np.full(len(time), sample_size[0])),
             "SampleDiameter_mm": np.round(np.full(len(time), sample_size[1])),
-            "Deviator_kPa": np.random.uniform(-1, 1, len(time)),
+            "Deviator_kPa": noise_data.Deviator_noise,
             "VerticalDeformation_mm": vertical_deformation,
-            "CellPress_kPa": cell_press + np.random.uniform(-0.1, 0.1, len(time)),
+            "CellPress_kPa": cell_press + noise_data.CellPress_noise,
             "CellVolume_mm3": -cell_volume_strain * np.pi * ((sample_size[1]/2) ** 2) * (sample_size[0]-delta_h_reconsolidation),
-            "PorePress_kPa": np.random.uniform(-1, 1, len(time)),
+            "PorePress_kPa": noise_data.PorePress_noise,
             "PoreVolume_mm3": pore_volume_strain * np.pi * (sample_size[1]/2) * (sample_size[0]-delta_h_reconsolidation),
-            "VerticalPress_kPa": cell_press + np.random.uniform(-0.1, 0.1, len(time)),
+            "VerticalPress_kPa": cell_press + noise_data.VerticalPress_noise,
             "Trajectory": np.full(len(time), 'Consolidation')
         }
         return data

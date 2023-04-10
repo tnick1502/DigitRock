@@ -1067,6 +1067,8 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 
         self._draw_params = AttrDict({"max_time": None})
 
+        self._noise_data = {}
+
     def set_test_params(self):
         """Установка основных параметров опыта"""
         self._test_params.Cv = statment[statment.current_test].mechanical_properties.Cv
@@ -1165,7 +1167,9 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         _time, _volume_strain = ModelTriaxialConsolidationSoilTest.ordering(self._test_data.time, self._test_data.volume_strain)
         self._test_data.time, self._test_data.volume_strain = copy.deepcopy(_time), copy.deepcopy(_volume_strain)
 
-    def save_log(self, path, name):
+        self.form_noise_data()
+
+    def save_log(self, path, name, noise_data=None):
         prec = None
         if self._prec_type:
             prec = 3
@@ -1174,12 +1178,12 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             ModelTriaxialConsolidationSoilTest.save_device(path=path, time_model=self._test_data.time,
                                                        strain_model=self._test_data.volume_strain,
                                                        pressure=self._test_params.p_max,
-                                                       report_number=name, device=True, prec=prec)
+                                                       report_number=name, device=True, prec=prec, noise_data=noise_data)
         else:
             ModelTriaxialConsolidationSoilTest.save_device(path=path, time_model=self._test_data.time,
                                                            strain_model=self._test_data.volume_strain,
                                                            pressure=self._test_params.p_max,
-                                                           report_number=name, device=False, prec=prec)
+                                                           report_number=name, device=False, prec=prec, noise_data=noise_data)
 
     def get_cvi_data(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -1195,7 +1199,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
             "ige": statment[statment.current_test].physical_properties.ige,
             "depth": statment[statment.current_test].physical_properties.depth,
             "sample_composition": "Н" if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4, 5] else "С",
-            "b": np.round(np.random.uniform(0.95, 0.98), 2),
+            "b": self._noise_data["b"],
 
             "test_data": {
             }
@@ -1209,6 +1213,20 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         }
 
         save_cvi_Cons(file_path=os.path.join(file_path, file_name), data=data)
+
+
+    def get_noise_data(self):
+        return self._noise_data
+
+    def form_noise_data(self):
+        self._noise_data["time_noise"] = np.random.uniform(0.1, 0.8, len(self._test_data.time))
+        time = np.hstack((np.array([0, 0]), self._test_data.time * 60 + np.round(self._noise_data["time_noise"], 6)))
+        self._noise_data["pressure_array_deviation_curve"] = create_deviation_curve(time, 0.1 * self._test_params.p_max,
+                                                                                    val=(1, 1),
+                                                                                    points=np.random.uniform(4, 5),
+                                                                                    borders="zero_diff")
+        self._noise_data["b"] = np.round(np.random.uniform(0.95, 0.98), 2)
+
 
     @property
     def test_duration(self):
@@ -1242,7 +1260,8 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
 
     @staticmethod
     def save_device(path: str, time_model, strain_model, pressure,
-                    report_number="-".join(['ЛАБОРАТОРНЫЙ-НОМЕР', 'НОМЕР-ОБЪЕКТА', 'КК']), device = False, prec = None):
+                    report_number="-".join(['ЛАБОРАТОРНЫЙ-НОМЕР', 'НОМЕР-ОБЪЕКТА', 'КК']), device = False, prec = None,
+                    noise_data=None):
         """
                     Функция пересечения двух прямых, заданных точками
                     :param path: путь до файла
@@ -1258,14 +1277,12 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         header2 = ';'.join(['20', '71.4', '0', '', '', '', '', 'Компрессионное сжатие', ''])
         header3 = "ID;DateTime;Press;Deformation;StabEnd;Consolidation"
 
-        time = np.hstack((np.array([0, 0]), time_model * 60 + np.round(np.random.uniform(0.1, 0.8, len(time_model)), 6)))
+        time = np.hstack((np.array([0, 0]), time_model * 60 + np.round(noise_data["time_noise"], 6)))
         strain = np.hstack((np.array([0, ModelTriaxialConsolidation.find_initial_strain(strain_model)]), strain_model))
         if device:
             pressure_array = np.hstack((np.array([0]), np.full(len(time) - 1, pressure)))
         else:
-            pressure_array = np.hstack(([0], np.full(len(time) - 1, pressure))) + \
-                             create_deviation_curve(time, 0.1 * pressure, val=(1, 1), points=np.random.uniform(4, 5),
-                                                    borders="zero_diff")
+            pressure_array = np.hstack(([0], np.full(len(time) - 1, pressure))) + noise_data["pressure_array_deviation_curve"]
         stab_end = np.zeros_like(pressure_array)
         stab_end[-1] = 1
         consolidation_array = np.ones_like(stab_end)

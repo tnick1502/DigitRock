@@ -495,11 +495,14 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
             effective_stress_after_reconsolidation = 0
 
         if self.consolidation is not None:
-            consolidation_dict = self.consolidation.get_dict(effective_stress_after_reconsolidation, sample_size=sample_size)
+            noise_data_consolidation = self.consolidation.get_noise_data()
+            consolidation_dict = self.consolidation.get_dict(effective_stress_after_reconsolidation, sample_size=sample_size, noise_data=noise_data_consolidation)
         else:
-            consolidation_dict = dictionary_without_VFS(sigma_3=self.deviator_loading._test_params.sigma_3, velocity=49, sample_size=sample_size)
+            consolidation_dict = self.deviator_loading.get_dictionary_without_VFS()
+            #consolidation_dict = dictionary_without_VFS(sigma_3=self.deviator_loading._test_params.sigma_3, velocity=49, sample_size=sample_size)
 
-        deviator_loading_dict = self.deviator_loading.get_dict(sample_size=sample_size)
+        noise_data_triaxal = self.deviator_loading.get_noise_data()
+        deviator_loading_dict = self.deviator_loading.get_dict(sample_size=sample_size, noise_data=noise_data_triaxal)
         main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
                                                                                          consolidation_dict,
                                                                                          deviator_loading_dict,
@@ -532,13 +535,15 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         elif d == 150 and h == 300:
             stock_aria = round((4 / 2) ** 2 * 3.14, 1)
 
+        noise_data = self.deviator_loading.get_noise_data()
+
         data = {
             "laboratory_number": statment[statment.current_test].physical_properties.laboratory_number,
             "borehole": statment[statment.current_test].physical_properties.borehole,
             "ige": statment[statment.current_test].physical_properties.ige,
             "depth": statment[statment.current_test].physical_properties.depth,
             "sample_composition": "Н" if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4, 5] else "С",
-            "b": np.round(np.random.uniform(0.95, 0.98), 2),
+            "b": noise_data.b_CVI,
             "sample_aria": sample_aria,
             "stock_aria": stock_aria,
             "test_data": {

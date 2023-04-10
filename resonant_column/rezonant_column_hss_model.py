@@ -309,6 +309,8 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
                                       "threshold_shear_strain_ratio": 1,
                                       "frequency_step": 5})
 
+        self._noise_data = {}
+
     def set_test_params(self):
         """Функция принимает параметры опыта для дальнейших построений"""
         self._test_params.p_ref = statment[statment.current_test].mechanical_properties.reference_pressure
@@ -348,6 +350,16 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
         # print(len(self._test_data.G_array), len(self._test_data.frequency[0]))
         # print([len(i) for i in self._test_data.frequency])
         self._test_processing()
+        self.form_noise_data()
+
+    def form_noise_data(self):
+        self._noise_data["G"] = (np.random.uniform(0, 0.01, len(self._test_data.G_array)),
+                                 np.random.uniform(0, 0.01, len(self._test_data.G_array)))
+
+        self._noise_data["A"] = [np.random.uniform(0, 0.01, len(self._test_data.G_array)*len(self._test_data.resonant_curves[0])),
+                                 np.random.uniform(0, 0.01, len(self._test_data.G_array)*len(self._test_data.resonant_curves[0])),
+                                 np.random.uniform(0, 0.01, len(self._test_data.G_array)*len(self._test_data.resonant_curves[0])),
+                                 np.random.uniform(0, 0.01, len(self._test_data.G_array)*len(self._test_data.resonant_curves[0]))]
 
     def save_log_file(self, director):
         G = self._test_data.G_array
@@ -373,8 +385,8 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
                 file.write(str(step[i]) + '; ' + str(int(Chastota[i])) + '; ' + str(points[i] * 302) + '; ' + str(
                     points[i]) + '; ' + str(G[i]) + '; ' + str(int(Chastota[i])) + '; ' + str(
                     points[i] * 302) + '; ' + str(
-                    (points[i] * (1 + np.random.uniform(0, 0.01)))) + '; ' + str(
-                    (G[i] * (1 + np.random.uniform(0, 0.01)))) + '; ' + '\n')
+                    (points[i] * (1 + self._noise_data["G"][0][i]))) + '; ' + str(
+                    (G[i] * (1 + self._noise_data["G"][1][i]))) + '; ' + '\n')
         file.close()
 
         with open(p2, "w") as file:
@@ -383,12 +395,12 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
             for i in range(len(G)):
                 for j in range(len(A[0])):
                     file.write(str(step[i]) + '; ' + str(int(Chastota[j])) + '; ' + str(acur[i]) + '; ' + str(
-                        acur[i]) + '; ' + str((A[i][j] * 1300000 * (1 + np.random.uniform(0, 0.01)))) + '; ' + str(
+                        acur[i]) + '; ' + str((A[i][j] * 1300000 * (1 + self._noise_data["A"][0][i+j*(j+1)]))) + '; ' + str(
                         A[i][j] * 1300000) + '; ' + str(points[i] * 302) + '; ' + str(A[i][j] * 200) + '; ' + str(
                         A[i][j] * 0.3) + '; ' + str(A[i][j]) + '; ' + str(
-                        (A[i][j] * 200 * (1 + np.random.uniform(0, 0.01)))) + '; ' + str(
-                        (A[i][j] * 0.3 * (1 + np.random.uniform(0, 0.01)))) + '; ' + str(
-                        (A[i][j] * (1 + np.random.uniform(0, 0.01)))) + '; ' + '\n')
+                        (A[i][j] * 200 * (1 + self._noise_data["A"][1][i+j*(j+1)]))) + '; ' + str(
+                        (A[i][j] * 0.3 * (1 + self._noise_data["A"][2][i+j*(j+1)]))) + '; ' + str(
+                        (A[i][j] * (1 + self._noise_data["A"][3][i+j*(j+1)]))) + '; ' + '\n')
 
             file.close()
 
