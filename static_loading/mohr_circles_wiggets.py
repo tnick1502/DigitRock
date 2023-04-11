@@ -1108,7 +1108,27 @@ class MWidgetUI(QGroupBox):
         #self.setFixedHeight(120)
         #self.layout.setContentsMargins(5, 5, 5, 5)
 
-        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.2, "wspace": 0.12, "hspace": 0.07, "left": 0.2}
+        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.25, "wspace": 0.12, "hspace": 0.07, "left": 0.2}
+
+        self.chose_processing_type = QGroupBox("Выбор метода аппроксимации")
+        self.chose_processing_type.setFixedHeight(55)
+        self.chose_processing_type_1 = QRadioButton('Формула plaxis')
+        self.chose_processing_type_2 = QRadioButton('Прямая (a*x + b)')
+        self.chose_processing_type_1.setChecked(True)
+
+        self.chose_processing_type_group = QButtonGroup()
+        self.chose_processing_type_group.addButton(self.chose_processing_type_1)
+        self.chose_processing_type_group.addButton(self.chose_processing_type_2)
+        # self.chose_volumometer_button_group.buttonClicked.connect(self.radio_button_clicked)
+
+        self.chose_processing_type_layout = QHBoxLayout()
+        self.chose_processing_type_layout.addWidget(self.chose_processing_type_1)
+        self.chose_processing_type_layout.addWidget(self.chose_processing_type_2)
+        self.chose_processing_type.setLayout(self.chose_processing_type_layout)
+
+        self.chose_processing_type_group.buttonClicked.connect(self._choose_m_type)
+
+        self.layout.addWidget(self.chose_processing_type)
 
         self.frame = QFrame()
         self.frame.setFrameShape(QFrame.StyledPanel)
@@ -1130,7 +1150,20 @@ class MWidgetUI(QGroupBox):
 
         self.layout.addWidget(self.frame)
 
+    def _choose_m_type(self, object):
+        if self.chose_processing_type_group.id(object) == -2:
+            FC_models[statment.current_test].set_m_type("plaxis")
+        else:
+            FC_models[statment.current_test].set_m_type("approximate")
+        self.plot()
+
     def plot(self):
+
+        if FC_models[statment.current_test]._m_approximate_type == "plaxis":
+            self.chose_processing_type_1.setChecked(True)
+        else:
+            self.chose_processing_type_2.setChecked(True)
+
         self.ax.clear()
         self.ax.set_xlabel(r"$ln(\frac{c*ctg(\varphi) + \sigma_3^{'}}{c*ctg(\varphi) + p_{ref}})$")
         self.ax.set_ylabel(r"$ln(\frac{E_{50}}{E_{50}^{ref}})$")
@@ -1147,6 +1180,8 @@ class MWidgetUI(QGroupBox):
                 self.ax.scatter(*plots["plot_data_m"], color="tomato")
                 self.ax.plot(*plots["plot_data_m_line"], **plotter_params["main_line"])
                 self.ax.plot([], [], label="m" + ", МПа$^{-1}$ = " + str(res["m"]), color="#eeeeee")
+                if FC_models[statment.current_test]._m_approximate_type == "plaxis":
+                    self.ax.scatter([0], [0], color="tomato", marker="*", s=120, zorder=5)
             self.ax.legend()
         self.canvas.draw()
 

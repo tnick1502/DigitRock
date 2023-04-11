@@ -20,6 +20,8 @@ import os
 import matplotlib.pyplot as plt
 from typing import List
 from scipy.optimize import fsolve, curve_fit
+from scipy.optimize import differential_evolution
+import warnings
 
 from static_loading.triaxial_static_loading_test_model import ModelTriaxialStaticLoad, ModelTriaxialStaticLoadSoilTest
 from general.general_functions import sigmoida, make_increas, line_approximate, line, define_poissons_ratio, mirrow_element, \
@@ -35,7 +37,8 @@ class ModelMohrCircles:
         # Основные модели опыта
         self._tests = []
         self._test_data = AttrDict({"fi": None, "c": None})
-        self._test_result = AttrDict({"fi": None, "c": None, "m": None, "c_res": None, "fi_res": None})
+        self._test_result = AttrDict({"fi": None, "c": None, "m_plaxis": None, "m_approximate": None, "c_res": None, "fi_res": None})
+        self._m_approximate_type = None
         self._test_reference_params = AttrDict({"p_ref": None, "Eref": None})
 
     def add_test(self, file_path):
@@ -141,6 +144,7 @@ class ModelMohrCircles:
 
     def _test_processing(self):
         """Обработка опытов"""
+        self._m_approximate_type = "plaxis"
         if statment.general_parameters.test_mode == "Трёхосное сжатие НН" or statment.general_parameters.test_mode == "Вибропрочность":
             self._test_result.fi = 0
             t = [test.deviator_loading.get_test_results()["qf"]/2 for test in self._tests]
@@ -161,11 +165,13 @@ class ModelMohrCircles:
 
                 if self._test_reference_params.p_ref and self._test_reference_params.Eref:
                     E50 = self.get_E50()
-                    self._test_result.m, self.plot_data_m, self.plot_data_m_line = ModelMohrCircles.calculate_m(
+                    self._test_result.m_plaxis, self._test_result.m_approximate, self.plot_data_m, self.plot_data_m_line = ModelMohrCircles.calculate_m(
                         sigma_3, E50, self._test_reference_params.Eref / 1000,
                                       self._test_reference_params.p_ref / 1000,
                         statment[statment.current_test].mechanical_properties.c,
                         statment[statment.current_test].mechanical_properties.fi)
+
+                    self._test_result.m = self._test_result.m_plaxis
         else:
             sigma_3, sigma_1 = self.get_sigma_3_1()
             if sigma_3 is not None:
@@ -177,11 +183,23 @@ class ModelMohrCircles:
 
                 if self._test_reference_params.p_ref and self._test_reference_params.Eref:
                     E50 = self.get_E50()
-                    self._test_result.m, self.plot_data_m, self.plot_data_m_line = ModelMohrCircles.calculate_m(
+                    self._test_result.m_plaxis, self._test_result.m_approximate, self.plot_data_m, self.plot_data_m_line_plaxis, self.plot_data_m_line_approximate, = ModelMohrCircles.calculate_m(
                         sigma_3, E50, self._test_reference_params.Eref/1000,
                         self._test_reference_params.p_ref/1000,
                         statment[statment.current_test].mechanical_properties.c,
                         statment[statment.current_test].mechanical_properties.fi)
+                    self.plot_data_m_line = self.plot_data_m_line_plaxis
+                    self._test_result.m = self._test_result.m_plaxis
+
+    def set_m_type(self, type):
+        if type == "plaxis":
+            self._test_result.m = self._test_result.m_plaxis
+            self.plot_data_m_line = self.plot_data_m_line_plaxis
+            self._m_approximate_type = "plaxis"
+        elif type == "approximate":
+            self._test_result.m = self._test_result.m_approximate
+            self.plot_data_m_line = self.plot_data_m_line_approximate
+            self._m_approximate_type = "approximate"
 
     def get_test_results(self):
         return self._test_result.get_dict()
@@ -390,20 +408,28 @@ class ModelMohrCircles:
             return (Eref * ((c * np.cos(fi) + sigma * np.sin(fi)) / (
                     c * np.cos(fi) + p_ref * np.sin(fi))) ** m)
 
-        popt, pcov = curve_fit(E50_from_sigma_3, sigma_3, E50)
-        m = popt
+        def line(x, a, b):
+            return a * x + b
 
-        m = np.round(m[0], 2)
+        popt, pcov = curve_fit(E50_from_sigma_3, sigma_3, E50)
+        m_plaxis = popt
+        m_plaxis = np.round(m_plaxis[0], 2)
+
 
         plot_data_y = [np.log(E50i/Eref) for E50i in E50]
         plot_data_x = [np.log((c*(1/np.tan(fi)) + sigma_3i) / (c*(1/np.tan(fi)) + p_ref)) for sigma_3i in sigma_3]
 
+        popt, pcov = curve_fit(line, np.array(plot_data_x), np.array(plot_data_y))
+        m_line_approximate, b = popt
+        m_line_approximate = np.round(m_line_approximate, 2)
+
         plot_data_x_line = [np.log((c * (1 / np.tan(fi)) + sigma_3i) / (c * (1 / np.tan(fi)) + p_ref)) for sigma_3i in
                        [sigma_3[0]*0.9, sigma_3[-1]*1.1]]
 
-        plot_data_y_line = [m * x for x in plot_data_x_line]
+        plot_data_y_line_1 = [m_plaxis * x for x in plot_data_x_line]
+        plot_data_y_line_2 = [m_line_approximate * x + b for x in plot_data_x_line]
 
-        return m, [plot_data_x, plot_data_y], [plot_data_x_line, plot_data_y_line]
+        return m_plaxis, m_line_approximate, [plot_data_x, plot_data_y], [plot_data_x_line, plot_data_y_line_1], [plot_data_x_line, plot_data_y_line_2]
 
 class ModelMohrCirclesSoilTest(ModelMohrCircles):
     """Класс моделирования опыта FCE"""
