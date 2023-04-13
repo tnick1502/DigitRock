@@ -429,8 +429,8 @@ class TestsLogWidget(QWidget):
                     QMessageBox.about(self, "Сообщение", "Успешно сохранено")
             except PermissionError:
                 QMessageBox.critical(self, "Ошибка", "Закройте файл для записи", QMessageBox.Ok)
-            except:
-                pass
+            except Exception as error:
+                print(error)
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)

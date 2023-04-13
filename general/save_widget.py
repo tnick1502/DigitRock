@@ -1,8 +1,12 @@
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QApplication, QFileDialog, QHBoxLayout, QGroupBox, QHeaderView, QTableWidgetItem, \
-    QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton, QTableWidget, QCheckBox
+    QWidget, QFileSystemModel, QTreeView, QLineEdit, QPushButton, QVBoxLayout, QLabel, QRadioButton, QTableWidget, \
+    QCheckBox, QMessageBox
 import sys
 import os
+
+from general.asis_collector import AsisCollector
+from loggers.logger import app_logger
 from pdf_watermark.widget import PDFWatermark
 
 from singletons import statment
@@ -17,7 +21,7 @@ class Save_Dir(TabMixin, QWidget):
      Название папки отчета передается в класс через коструктор mode"""
 
     def __init__(self, report_type=None, result_table_params=None, qr=None,  additional_dirs: list = [],
-                 plaxis_btn=False):
+                 plaxis_btn=False, asis_btn=False):
         super().__init__()
 
         self.additional_dirs = additional_dirs
@@ -28,12 +32,12 @@ class Save_Dir(TabMixin, QWidget):
 
         self.full_executors = True
 
-        self.create_UI(qr, plaxis_btn)
+        self.create_UI(qr, plaxis_btn, asis_btn)
 
         self.save_directory_text.setText(statment.save_dir.save_directory)
         self.tree.setRootIndex(self.model.index(statment.save_dir.save_directory))
 
-    def create_UI(self, qr, plaxis_btn=False):
+    def create_UI(self, qr, plaxis_btn=False, asis_btn=False):
 
         self.savebox_layout = QVBoxLayout()
         self.savebox_layout_line_1 = QHBoxLayout()
@@ -84,10 +88,15 @@ class Save_Dir(TabMixin, QWidget):
         self.executors_checkbox.setChecked(self.full_executors)
         self.executors_checkbox.stateChanged.connect(self.executors_changed)
 
-
         self.pdf_watermark_button = QPushButton("Маркировка отчетов")  # Button(icons + "Сохранить.png", 52, 52, 0.7)
         self.pdf_watermark_button.clicked.connect(self.pdf_watermark)
         self.advanced_box_layout.addWidget(self.pdf_watermark_button)
+
+        if asis_btn:
+            self.asis_btn = QPushButton("Выгнать АСИС")  # Button(icons + "Сохранить.png", 52, 52, 0.7)
+            self.asis_btn.clicked.connect(self.on_asis_btn)
+            self.advanced_box_layout.addWidget(self.asis_btn)
+
         self.advanced_box_layout.addWidget(self.executors_checkbox)
 
         if qr:
@@ -218,6 +227,43 @@ class Save_Dir(TabMixin, QWidget):
         else:
             reports.full_executors = False
             self.full_executors = False
+
+    def on_asis_btn(self):
+        #print(statment.save_dir.save_directory)
+        collector = AsisCollector()
+        try:
+            """
+            Коды ошибок:
+            - `1` : Сбор прошёл успешно
+            - `0` : Выбраного пути `path` не существует
+            - `-1` : Папки "Архив [Тип испытания]" не существует
+            - `-2' : Список проб пустой
+            - `-3` : Ошибка очистки папки Логи АСИС
+            - `-4` : Не найден файл .log в папке c пробой
+            """
+            error_code = collector.collect_logs(path=statment.save_dir.save_directory, print_logs=True)
+            if error_code == 1:
+                QMessageBox.about(self, "Успешно", str('Логи АСИС успешно сгенерированы'))
+                app_logger.info(f'Логи АСИС успешно сгенерированы')
+            elif error_code == 0:
+                QMessageBox.critical(self, "Ошибка", str('Папки не существует'), QMessageBox.Ok)
+                app_logger.exception(f'Папки не существует')
+            elif error_code == -1:
+                QMessageBox.critical(self, "Ошибка", str('Папки "Архив [Тип испытания]" не существует'), QMessageBox.Ok)
+                app_logger.exception(f'Папки "Архив [Тип испытания]" не существует')
+            elif error_code == -2:
+                QMessageBox.critical(self, "Ошибка", str('Список проб пустой'), QMessageBox.Ok)
+                app_logger.exception(f'Список проб пустой')
+            elif error_code == -3:
+                QMessageBox.critical(self, "Ошибка", str('Ошибка очистки папки Логи АСИС'), QMessageBox.Ok)
+                app_logger.exception(f'Ошибка очистки папки Логи АСИС')
+            elif error_code == -4:
+                QMessageBox.critical(self, "Ошибка", str('Не найден файл .log в папке c пробой. Процесс копирования прерван.'), QMessageBox.Ok)
+                app_logger.exception(f'Не найден файл .log в папке c пробой. Процесс копирования прерван.')
+
+        except Exception as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+            app_logger.exception(f"Ошибка генерации логов АСИС")
 
 class ReportType(QGroupBox):
     clicked = pyqtSignal()

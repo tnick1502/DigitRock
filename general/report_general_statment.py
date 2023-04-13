@@ -939,7 +939,7 @@ def save_report(titles1, data1, scales1, data_report1, customer_data_info1,
     # глобальные переменные
     # Шапка у информации о заказчиках и их объектах
     if accred1 is None:
-        accred1 = {'acrreditation': 'AO', 'acrreditation_key': 'новая'}
+        accred1 = {'accreditation': 'АО', 'accreditation_key': 'новая'}
     global customer_data_info
     customer_data_info = customer_data_info1
     # Сама информация о заказчиках и их объектах
