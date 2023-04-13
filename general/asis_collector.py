@@ -141,7 +141,7 @@ class AsisCollector:
         """
             Копирует файл `file_path` в путь `asis_dir` с названием `new_name`.log и создает его .xls копию.
         """
-        new_file_path = os.path.join(self.asis_dir, f'{new_name}.log')
+        new_file_path = os.path.join(self.asis_dir, f'{new_name}.txt')
         shutil.copy(file_path, new_file_path)
 
         for csvfile in glob.glob(new_file_path):
