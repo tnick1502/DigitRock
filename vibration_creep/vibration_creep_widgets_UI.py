@@ -56,7 +56,7 @@ class VibrationCreepUI(QWidget):
         self.vibration_creep_canvas = FigureCanvas(self.vibration_creep_figure)
         self.vibration_creep_ax = self.vibration_creep_figure.add_subplot(1, 1, 1)
         self.vibration_creep_ax.set_xlabel("Деформация $ε_1$, д.е.")
-        self.vibration_creep_ax.set_ylabel("Девиатор q, кПА")
+        self.vibration_creep_ax.set_ylabel("Девиатор q, МПА")
         self.vibration_creep_canvas.draw()
         self.vibration_creep_frame_layout.setSpacing(0)
         self.vibration_creep_frame_layout.addWidget(self.vibration_creep_canvas)
@@ -67,6 +67,11 @@ class VibrationCreepUI(QWidget):
         #self.dyn_phase_ax.set_ylabel("Девиатор q, МПА")
         #self.dyn_phase_ax.set_xticks([])
         #self.dyn_phase_ax.set_yticks([])
+
+        self.vibration_creep_ax2 = self.vibration_creep_figure.add_axes([0.8, 0.35, 0.18, 0.35])
+        self.vibration_creep_ax2.set_ylabel("Девиатор q, кПА", fontsize=8)
+        self.vibration_creep_ax2.set_xlabel("Деформация $ε_1$, д.е.", fontsize=8)
+
         self.vibration_creep_frame_layout.addWidget(self.vibration_creep_toolbar)
         self.main_graph_layout.addWidget(self.vibration_creep_frame)
 
@@ -132,6 +137,9 @@ class VibrationCreepUI(QWidget):
         #self.dyn_phase_ax.set_yticks([])
 
         self.creep_ax.clear()
+        self.vibration_creep_ax2.clear()
+        self.vibration_creep_ax2.set_ylabel("Девиатор q, МПа", fontsize=8)
+        self.vibration_creep_ax2.set_xlabel("Деформация $ε_1$, д.е.", fontsize=8)
         self.creep_ax.set_xlabel("Время, c")
         self.creep_ax.set_ylabel("Относительная деформация $ε_1$, д.е.")
         self.creep_ax.set_xscale("log")
@@ -169,9 +177,17 @@ class VibrationCreepUI(QWidget):
                 if plot_data["E50"][i]:
                     self.vibration_creep_ax.plot(*plot_data["E50"][i], **plotter_params["static_loading_black_dotted_line"])
 
+            self.vibration_creep_ax2.plot(plot_data["dyn_strain"][i], plot_data["dyn_curve"][i], alpha=0.5,
+                                          linewidth=0.1, color=color)
+
+            self.vibration_creep_ax2.plot([np.min(plot_data["dyn_strain"][i]), np.max(plot_data["dyn_strain"][i])],
+                                          [np.min(plot_data["dyn_curve"][i]), np.max(plot_data["dyn_curve"][i])],
+                                          linestyle="--",
+                                          linewidth=0.5, color="black")
 
 
-            self.vibration_creep_ax.legend(loc="lower right")#, bbox_to_anchor=(0.65, 0))
+
+            self.vibration_creep_ax.legend(loc="upper right")#, bbox_to_anchor=(0.65, 0))
             self.creep_ax.legend()
             self.vibration_creep_canvas.draw()
             self.creep_canvas.draw()
