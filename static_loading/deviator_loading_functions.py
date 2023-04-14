@@ -331,15 +331,11 @@ def deviator_loading_deviation1_old(strain, deviator, xc, amplitude):
     return deviation_array
 
 def deviator_loading_deviation(strain, deviator, xc, amplitude):
-
     # Добавим девиации после 0.6qf для кривой без пика
     index_015, = np.where(strain >= 0.15)
     qf = np.max(deviator[:index_015[0]])
     amplitude_1, amplitude_2, amplitude_3 = amplitude
 
-    points_1 = np.random.uniform(7, 12)
-    points_2 = np.random.uniform(20, 30)
-    points_3 = np.random.uniform(50, 60)
 
     devition_1 = amplitude_1 * qf
     devition_2 = amplitude_2 * qf
@@ -351,6 +347,26 @@ def deviator_loading_deviation(strain, deviator, xc, amplitude):
         index_015 = index_015[0]
     except TypeError:
         index_015 = -1
+
+
+
+
+
+    points_1 = np.random.uniform(7, 12)
+    points_2 = np.random.uniform(20, 30)
+    points_3 = np.random.uniform(50, 60)
+
+    if xc < 0.14:
+        i_max = np.argmax(deviator)
+        i, = np.where(deviator[i_max:] <= (1 - 0.08) * np.max(deviator))
+        if len(i) != 0:
+            index_008 = i[0] + i_max
+            k = 1 / (strain[index_008] / strain[index_015])
+        else:
+            k = 1
+        points_1 = int(points_1 * k * 0.7)
+        points_2 = int(points_2 * k * 0.7)
+        points_3 = int(points_3 * k * 0.7)
 
     try:
         strain_for_deviations = strain[:index_015]

@@ -844,13 +844,13 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
 
         self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.qf*residual_strength
-        self._draw_params.amplitude_1 = 0.06
+        self._draw_params.amplitude_1 = 0.1
         self._draw_params.amplitude_2 = 0.05
-        self._draw_params.amplitude_3 = 0.04
+        self._draw_params.amplitude_3 = 0.02
         self._draw_params.free_deviations = True
         if amplitude_flag:
-            self._draw_params.amplitude_1 = 0.04
-            self._draw_params.amplitude_2 = 0.03
+            self._draw_params.amplitude_1 = 0.1
+            self._draw_params.amplitude_2 = 0.05
             self._draw_params.amplitude_3 = 0.02
 
         if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
@@ -920,9 +920,9 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                   "dilatancy": {"value": self._draw_params.dilatancy, "borders": [1, 25]},
                   "volumetric_strain_xc": {"value": self._draw_params.volumetric_strain_xc, "borders": [0, 0.008]},
                   "Eur": Eur,
-                  "amplitude_1": {"value": self._draw_params.amplitude_1, "borders": [0.000001, 0.1]},
-                  "amplitude_2": {"value": self._draw_params.amplitude_2, "borders": [0.000001, 0.1]},
-                  "amplitude_3": {"value": self._draw_params.amplitude_3, "borders": [0.000001, 0.1]},
+                  "amplitude_1": {"value": self._draw_params.amplitude_1, "borders": [0.000001, 0.2]},
+                  "amplitude_2": {"value": self._draw_params.amplitude_2, "borders": [0.000001, 0.2]},
+                  "amplitude_3": {"value": self._draw_params.amplitude_3, "borders": [0.000001, 0.2]},
                   "hyp_ratio": {"value": self._draw_params.hyp_ratio, "borders": [0.000001, 1]}
                   }
         return params
