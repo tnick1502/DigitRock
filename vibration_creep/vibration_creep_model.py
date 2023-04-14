@@ -262,7 +262,7 @@ class ModelVibrationCreep:
                             test_result.E50 / (1 + ((test_result.E50 * test_result.prediction["100_years"] / 100) / (0.8 * sigma_1))),
                             2)
 
-                        delta_strain = dyn_test.strain_dynamic[-1] - dyn_test.strain_dynamic[dyn_test.start_dynamic]
+                        delta_strain = np.max(dyn_test.strain_dynamic[dyn_test.start_dynamic:]) - np.min(dyn_test.strain_dynamic[dyn_test.start_dynamic:])
 
                         E50d_elstic = statment[statment.current_test].mechanical_properties.t * 4 / delta_strain
 
