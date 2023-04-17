@@ -56,6 +56,7 @@ class TestResultModelVibrationCreep:
     Ered_100: float = None
     prediction: dict = None #{alpha, betta, 50_years, 100_years}
     cycles_count: int = None
+    Ed: float = None # Динамический упругий модуль. Гост 56353, формула Д3
 
     def get_dict(self):
         return self.__dict__
@@ -113,19 +114,21 @@ class ModelVibrationCreep:
         E50d = []
         creep_curve = []
         approximate_curve = []
+        dyn_strain = []
+        dyn_curve = []
 
         for dyn_test, test_result in zip(self._dynamic_tests, self._test_results):
             if test_result.E50d:
                 E50d.append(point_to_xy(Point(x=0, y=0), Point(
-                    x=1.05 * np.max(dyn_test.deviator_dynamic) / (test_result.E50d * 1000),
-                    y=1.05 * np.max(dyn_test.deviator_dynamic) / 1000)))
+                    x=1.03 * np.max(dyn_test.deviator_dynamic) / (test_result.E50d * 1000),
+                    y=1.03 * np.max(dyn_test.deviator_dynamic) / 1000)))
             else:
                 E50d.append(None)
 
             if test_result.E50:
                 E50.append(point_to_xy(Point(x=0, y=0), Point(
-                    x=1.05 * np.max(dyn_test.deviator_dynamic) / (test_result.E50 * 1000),
-                    y=1.05 * np.max(dyn_test.deviator_dynamic) / 1000)))
+                    x=1.03 * np.max(dyn_test.deviator_dynamic) / (test_result.E50 * 1000),
+                    y=1.03 * np.max(dyn_test.deviator_dynamic) / 1000)))
             else:
                 E50.append(None)
 
@@ -140,6 +143,9 @@ class ModelVibrationCreep:
                 approximate_curve.append(None)
             creep_curve.append(dyn_test.creep_curve + dyn_test.strain_dynamic[dyn_test.start_dynamic])
 
+            dyn_strain.append(dyn_test.strain_dynamic[dyn_test.start_dynamic:])
+            dyn_curve.append(dyn_test.deviator_dynamic[dyn_test.start_dynamic:] / 1000)
+
         return {"strain_dynamic": [i.strain_dynamic for i in self._dynamic_tests],
                 "deviator_dynamic": [i.deviator_dynamic/1000 for i in self._dynamic_tests],
                 "time": [i.time for i in self._dynamic_tests],
@@ -149,7 +155,10 @@ class ModelVibrationCreep:
                 "E50d": E50d,
                 "E50": E50,
                 "approximate_curve": approximate_curve,
-                "frequency": [i.frequency for i in self._dynamic_tests]}
+                "frequency": [i.frequency for i in self._dynamic_tests],
+                "dyn_strain": dyn_strain,
+                "dyn_curve": dyn_curve,
+                }
 
     def plotter(self, save_path=None):
         """остроитель опыта"""
@@ -252,6 +261,12 @@ class ModelVibrationCreep:
                         test_result.Ered_100 = np.round(
                             test_result.E50 / (1 + ((test_result.E50 * test_result.prediction["100_years"] / 100) / (0.8 * sigma_1))),
                             2)
+
+                        delta_strain = np.max(dyn_test.strain_dynamic[dyn_test.start_dynamic:]) - np.min(dyn_test.strain_dynamic[dyn_test.start_dynamic:])
+
+                        E50d_elstic = statment[statment.current_test].mechanical_properties.t * 4 / delta_strain
+
+                        test_result.Ed = np.round(E50d_elstic / 1000, 2)
 
                         """test_result.E50 = ModelVibrationCreep.find_E50_dynamic(dyn_test.strain_dynamic,
                                                                              dyn_test.deviator_dynamic, qf*1000)

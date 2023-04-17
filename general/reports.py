@@ -2632,10 +2632,12 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
         cycles_count = ""
         formula = ""
         Ered = ""
+        Ed_elastic = ""
         for i in range(len(Res)):
             Kd += zap(Res[i]["Kd"], 2) + "; "
             Ed += zap(Res[i]["E50d"], 1) + "; "
             E50 += zap(Res[i]["E50"], 1) + "; "
+            Ed_elastic += zap(Res[i]["Ed"], 1) + "; "
             cycles_count += str(Res[i]["cycles_count"]) + "; "
             prediction += zap(Res[i]["prediction"]["50_years"], 3) + "; "
             formula += f'{zap(Res[i]["prediction"]["alpha"], 5)}logt + {zap(Res[i]["prediction"]["betta"], 5)}' + "; "
@@ -2650,6 +2652,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
         Kd = zap(Res[0]["Kd"], 2)
         Ed = zap(Res[0]["E50d"], 1)
         E50 = zap(Res[0]["E50"], 1)
+        Ed_elastic = zap(Res[0]["Ed"], 1)
         prediction = zap(Res[0]["prediction"]["50_years"], 3)
         cycles_count = str(Res[0]["cycles_count"])
         formula = f'{zap(Res[0]["prediction"]["alpha"], 7)}*log(t) + {zap(Res[0]["prediction"]["betta"], 7)}' + "; "
@@ -2705,7 +2708,10 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
                 LeftStyle),
                 "", "", Ered, "", ""])
     else:
-        tableData.append(["Примечание:", "", "", Paragraph(description, LeftStyle), "", ""])
+        tableData.append(
+            [Paragraph('''<p>Динамический модуль деформации E<sub rise="0.5" size="6">d</sub>, МПа:</p>''', LeftStyle), "",
+             "", Ed_elastic, "", ""])
+        #tableData.append(["Примечание:", "", "", Paragraph(description, LeftStyle), "", ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights=4 * mm)
     if test_type == 'predict50' or test_type == 'predict100':
