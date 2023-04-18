@@ -1019,6 +1019,11 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         return self._noise_data
 
     def form_noise_data(self):
+        velocity = 100
+        k = self._test_params.sigma_3 / velocity
+        if k <= 2:
+            velocity = velocity / (2 / k)
+
         load_stage_time = round(self._test_params.sigma_3 / 100, 2)
         load_stage_time_array = np.arange(0, load_stage_time, 0.25)
         time_len = len(np.hstack((load_stage_time_array, self._test_data.time)))
