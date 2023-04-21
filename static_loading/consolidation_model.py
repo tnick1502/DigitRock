@@ -992,7 +992,9 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
                                      "PorePress_noise": None,
                                      "VerticalPress_noise": None})
 
-    def set_test_params(self):
+        _effective_stress_after_reconsolidation=0
+
+    def set_test_params(self, effective_stress_after_reconsolidation=0):
         """Установка основных параметров опыта"""
         self._test_params.Cv = statment[statment.current_test].mechanical_properties.Cv
         self._test_params.Ca = statment[statment.current_test].mechanical_properties.Ca
@@ -1002,6 +1004,7 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         h = statment[statment.current_test].physical_properties.sample_size[1]
         self._draw_params.max_time = (((0.848 * ((h/2)/10) * ((h/2)/10)) / (4 * self._test_params.Cv)))*np.random.uniform(5, 7)
         self._draw_params.volume_strain_90 = np.random.uniform(0.14, 0.2)
+        self._effective_stress_after_reconsolidation=effective_stress_after_reconsolidation
 
         self._test_data.delta_h_consolidation = round((76 * (self._test_params.sigma_3 / (3 * self._test_params.E)) \
                                                 + self._test_data.delta_h_reconsolidation), 5)
@@ -1019,12 +1022,14 @@ class ModelTriaxialConsolidationSoilTest(ModelTriaxialConsolidation):
         return self._noise_data
 
     def form_noise_data(self):
+        effective_stress_after_reconsolidation = self._effective_stress_after_reconsolidation
+        sigma_3 = self._test_params.sigma_3 - effective_stress_after_reconsolidation
         velocity = 100
-        k = self._test_params.sigma_3 / velocity
+        k = sigma_3 / velocity
         if k <= 2:
             velocity = velocity / (2 / k)
 
-        load_stage_time = round(self._test_params.sigma_3 / 100, 2)
+        load_stage_time = round(sigma_3 / velocity, 2)
         load_stage_time_array = np.arange(0, load_stage_time, 0.25)
         time_len = len(np.hstack((load_stage_time_array, self._test_data.time)))
         pore_volume_lenth = len(self._test_data.pore_volume_strain)

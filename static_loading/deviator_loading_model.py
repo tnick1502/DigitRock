@@ -802,7 +802,8 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
                                      "PorePressure_noise": None,
                                      "CellPress_noise": None,
                                      "VerticalPress_noise": None,
-                                     "b_CVI": None})
+                                     "b_CVI": None,
+                                     "time_noise":None})
 
         self._dictionary_without_VFS = None
 
@@ -1115,6 +1116,7 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._noise_data.CellPress_noise = np.random.uniform(-0.1, 0.1, time_len)
         self._noise_data.VerticalPress_noise = np.random.uniform(-0.1, 0.1, time_len)
         self._noise_data.b_CVI = np.round(np.random.uniform(0.95, 0.98), 2)
+        self._noise_data.time_noise = np.random.uniform(0.5, 0.8)
 
     def get_cvi_data(self, points: int = 10):
         """Возвращает параметры отрисовки для установки на ползунки"""

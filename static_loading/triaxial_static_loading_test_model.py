@@ -421,15 +421,18 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         if reconsolidation:
             self.reconsolidation.set_test_params()
             delta_h_reconsolidation = self.reconsolidation.get_test_results()["delta_h_reconsolidation"]
+            effective_stress_after_reconsolidation = self.reconsolidation.get_effective_stress_after_reconsolidation()
+
         else:
             self.reconsolidation = None
             delta_h_reconsolidation = 0
+            effective_stress_after_reconsolidation = 0
 
         if consolidation:
             velocity = None
             while velocity is None:
                 self.consolidation.set_delta_h_reconsolidation(delta_h_reconsolidation)
-                self.consolidation.set_test_params()
+                self.consolidation.set_test_params(effective_stress_after_reconsolidation=effective_stress_after_reconsolidation)
                 velocity = self.consolidation.get_test_results()["velocity"]
                 delta_h_consolidation = self.consolidation.get_delta_h_consolidation()
         else:
@@ -506,7 +509,8 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
                                                                                          consolidation_dict,
                                                                                          deviator_loading_dict,
-                                                                                         sample_size=sample_size)
+                                                                                         sample_size=sample_size,
+                                                                                         time_noise=noise_data_triaxal["time_noise"])
 
         ModelTriaxialStaticLoadSoilTest.text_file(file_path, main_dict)
         create_json_file('/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json",
@@ -791,9 +795,9 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
     @staticmethod
     def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading,
-                                             sample_size: Tuple[int, int] = (76, 38)):
+                                             sample_size: Tuple[int, int] = (76, 38), time_noise=None):
 
-        start = np.random.uniform(0.5, 0.8)
+        start = time_noise
         dict = {
             'Time': [0, 0, np.round(start, 3), np.round(start + 0.1, 3), np.round(start + 2, 3)],
             'Action': ["", "", "Start", "Start", "Start"],

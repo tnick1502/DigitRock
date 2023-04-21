@@ -416,6 +416,8 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         self.test_mode = statment.general_parameters.test_mode
         self.is_split_deviator = False
 
+        self._b_noise = None
+
     def add_test_st(self, pre_defined_kr_fgs=None):
         """Добавление опытов"""
         test = ModelTriaxialStaticLoadSoilTest()
@@ -579,6 +581,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
             statment[statment.current_test].mechanical_properties.u = u_origin
             statment[statment.current_test].mechanical_properties.Eur = Eur_origin
 
+        self._b_noise = np.round(np.random.uniform(0.95, 0.98), 2)
         self._test_processing()
 
     def set_test_params(self):
@@ -597,7 +600,7 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                                                                                                              3,
                                                                                                              4,
                                                                                                              5] else "С",
-            "b": np.round(np.random.uniform(0.95, 0.98), 2),
+            "b": self._b_noise,
 
             "test_data": {
             }
