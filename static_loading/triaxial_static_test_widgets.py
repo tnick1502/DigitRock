@@ -65,7 +65,7 @@ class StaticProcessingWidget(QWidget):
         self.point_identificator_deviator = None
         self.consolidation.setFixedHeight(500)
         self.deviator_loading = ModelTriaxialDeviatorLoadingUI()
-        self.deviator_loading.setFixedHeight(500)
+        self.deviator_loading.setFixedHeight(600)
         self.reconsolidation.setFixedHeight(300)
 
         self.deviator_loading.combo_box.activated.connect(self._combo_plot_deviator_changed)
@@ -504,7 +504,7 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
         self.deviator_loading_sliders_unload_start_y_slider = TriaxialStaticLoading_Sliders({"unload_start_y": "Сдвиг разгрузки"})
         box = getattr(self.deviator_loading_sliders_unload_start_y_slider, "{}_box".format("Настройки отрисовки"))
         box.setTitle('')
-        self.deviator_loading_sliders_unload_start_y_slider.setFixedHeight(60)
+        self.deviator_loading_sliders_unload_start_y_slider.setFixedHeight(80)
 
 
         self.consolidation_sliders = TriaxialStaticLoading_Sliders({"max_time": "Время испытания",
@@ -516,7 +516,7 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
         self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders_unload_start_y_slider)
 
         self.consolidation.setFixedHeight(500 + 90)
-        self.deviator_loading.setFixedHeight(530 + 180 + 60)
+        self.deviator_loading.setFixedHeight(530 + 180 + 60 + 100)
 
         self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
         self.deviator_loading_sliders_unload_start_y_slider.signal[object].connect(self._deviator_loading_sliders_unload_start_y_slider_moove)
