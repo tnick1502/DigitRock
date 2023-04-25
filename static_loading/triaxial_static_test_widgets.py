@@ -827,6 +827,10 @@ class StatickSoilTestApp(AppMixin, QWidget):
             self.tab_3.set_params()
             self.physical_line_1.set_data()
             self.physical_line_2.set_data()
+            try:
+                self.tab_3.mohr_dialog_widget.set_params()
+            except:
+                pass
         elif statment.general_parameters.test_mode == 'Трёхосное сжатие (F, C)' or \
                 statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or \
                 statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or \
@@ -834,6 +838,10 @@ class StatickSoilTestApp(AppMixin, QWidget):
             self.tab_3.item_identification.set_data()
             self.tab_3.set_params()
             self.physical_line_2.set_data()
+            try:
+                self.tab_3.mohr_dialog_widget.set_params()
+            except:
+                pass
         elif statment.general_parameters.test_mode == 'Трёхосное сжатие (E)':
             self.tab_2.item_identification.set_data()
             self.tab_2.set_params()

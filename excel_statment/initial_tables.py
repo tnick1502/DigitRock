@@ -166,6 +166,7 @@ class ComboBox_Initial_ParametersV2(QWidget):
             box = getattr(self, "box_{}".format(key))
             combobox = getattr(self, "combo_{}".format(key))
             layout = getattr(self, "box_layout_{}".format(key))
+            combobox.setMaximumWidth(120)
 
             combobox.addItems(self.data[key]["vars"])
             combobox.activated.connect(self._combo_changed)
