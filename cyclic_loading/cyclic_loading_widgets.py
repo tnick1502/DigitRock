@@ -625,6 +625,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         self.tab_1.signal[bool].connect(lambda x: self.physical_line.set_data())
 
         self.tab_3.save_button.clicked.connect(self.save_report)
+        self.tab_3.save_pickle.clicked.connect(self.save_pickle)
         #self.tab_2.save_button.clicked.connect(self.save_report)
         self.tab_3.save_all_button.clicked.connect(self.save_all_reports)
 
@@ -659,6 +660,15 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                     statment.current_test = list[index + 1]
                     self.tab_2.set_params(True)
                     self.tab_2.identification.set_data()
+
+    def save_pickle(self):
+        try:
+            statment.save([Cyclic_models], [f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"])
+            Cyclic_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
+            QMessageBox.about(self, "Сообщение", "Pickle успешно сохранен")
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
 
     def _predict(self):
         if len(statment):
@@ -883,8 +893,6 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
-            Cyclic_models.dump(os.path.join(statment.save_dir.save_directory,
-                                            f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
             #statment.dump(''.join(os.path.split(self.tab_3.directory)[:-1]),
                           #ame=statment.general_parameters.test_mode + ".pickle")
 
@@ -906,6 +914,14 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_all_reports(self):
+        try:
+            statment.save([Cyclic_models], [f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"])
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
+        Cyclic_models.dump(os.path.join(statment.save_dir.save_directory,
+                                        f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
+
         statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
@@ -926,11 +942,6 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             QMessageBox.about(self, "Сообщение", "Объект выгнан")
             app_logger.info("Объект успешно выгнан")
             self.save_massage = True
-
-            try:
-                statment.save([Cyclic_models], [f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"])
-            except Exception as err:
-                QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
 
         t = threading.Thread(target=save)
         progress.show()
@@ -972,6 +983,19 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         _statment.show()
 
     def save_report_and_continue(self):
+        try:
+            statment.save([Cyclic_models], [f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"])
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
+        Cyclic_models.dump(os.path.join(statment.save_dir.save_directory,
+                                        f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
+
+        try:
+            statment.save([Cyclic_models], [f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"])
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
         try:
             self.save_report()
         except:

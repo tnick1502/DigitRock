@@ -58,12 +58,18 @@ class Save_Dir(TabMixin, QWidget):
 
         self.save_button = QPushButton("Сохранить отчет")#Button(icons + "Сохранить.png", 52, 52, 0.7)
         self.save_button.setFixedHeight(65)
+
+        self.save_pickle = QPushButton("Сохранить pickle")  # Button(icons + "Сохранить.png", 52, 52, 0.7)
+        self.save_pickle.setFixedHeight(65)
+
         self.savebox_layout_line_1.addWidget(self.path_box)
         self.savebox_layout_line_1.addWidget(self.save_button)
 
         self.save_all_button = QPushButton("Сохранить все отчеты")  # Button(icons + "Сохранить.png", 52, 52, 0.7)
         self.save_all_button.setFixedHeight(65)
+
         self.savebox_layout_line_1.addWidget(self.save_all_button)
+        self.savebox_layout_line_1.addWidget(self.save_pickle)
 
         self.advanced_box = QGroupBox("Расширенные возможности")
         self.advanced_box_layout = QHBoxLayout()

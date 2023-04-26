@@ -488,10 +488,6 @@ class RezonantColumnProcessingApp(AppMixin, QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
-            RC_models.dump(os.path.join(statment.save_dir.save_directory,
-                                        f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
-
-
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
@@ -605,6 +601,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
 
         self.tab_1.signal[bool].connect(self.tab_2.identification_widget.set_data)
         self.tab_3.save_button.clicked.connect(self.save_report)
+        self.tab_3.save_pickle.clicked.connect(self.save_pickle)
         self.tab_3.save_all_button.clicked.connect(self.save_all_reports)
         self.tab_2.signal.connect(self.tab_3.result_table.update)
 
@@ -686,11 +683,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
             self.tab_1.table_physical_properties.set_row_color(
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
-            RC_models.dump(os.path.join(statment.save_dir.save_directory,
-                                        f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
-
             control()
-
 
         except AssertionError as error:
             QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
@@ -698,7 +691,24 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         except PermissionError:
             QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
 
+    def save_pickle(self):
+        try:
+            statment.save([RC_models], [f"rc_models{statment.general_data.get_shipment_number()}.pickle"])
+            RC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                        f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
+            QMessageBox.about(self, "Сообщение", "Pickle успешно сохранен")
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
     def save_all_reports(self):
+        try:
+            statment.save([RC_models], [f"rc_models{statment.general_data.get_shipment_number()}.pickle"])
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
+        RC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                    f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
+
         statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
@@ -718,11 +728,6 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
             QMessageBox.about(self, "Сообщение", "Объект выгнан")
             self.save_massage = True
 
-            try:
-                statment.save([RC_models], [f"rc_models{statment.general_data.get_shipment_number()}.pickle"])
-            except Exception as err:
-                QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
-
         t = threading.Thread(target=save)
         progress.show()
         t.start()
@@ -730,6 +735,13 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         SessionWriter.write_session(len(statment))
 
     def save_report_and_continue(self):
+        try:
+            statment.save([RC_models], [f"rc_models{statment.general_data.get_shipment_number()}.pickle"])
+            RC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                        f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
+        except Exception as err:
+            print(err)
+
         try:
             self.save_report()
         except:

@@ -379,7 +379,7 @@ class Statment:
             if entry.is_dir():
                 paths.append(datetime.strptime(os.path.split(entry)[-1], date_format))
 
-        if len(paths) > 3:
+        if len(paths) > 20:
             shutil.rmtree(os.path.join(backup_test, min(paths).strftime(date_format)))
 
         shutil.copy(self.general_data.path, os.path.join(backup_date_path, os.path.split(self.general_data.path)[-1]))

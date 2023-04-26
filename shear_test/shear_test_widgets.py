@@ -484,6 +484,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
         self.tab_1.open_line.combo_changes_signal.connect(self.on_test_type_changed)
 
         self.tab_4.save_button.clicked.connect(self.save_report)
+        self.tab_4.save_pickle.clicked.connect(self.save_pickle)
         self.tab_4.save_all_button.clicked.connect(self.save_all_reports)
         self.tab_4.jornal_button.clicked.connect(self.jornal)
 
@@ -499,6 +500,46 @@ class ShearSoilTestApp(AppMixin, QWidget):
         self.tab_3.line_1_1_layout.insertWidget(0, self.physical_line_2)
         self.physical_line_2.refresh_button.clicked.connect(self.tab_3.refresh)
         self.physical_line_2.save_button.clicked.connect(self.save_report_and_continue)
+
+    def save_pickle(self):
+        try:
+            models = [model for model in [E_models, FC_models] if len(model)]
+
+            names = []
+            if len(E_models):
+                names.append(f"E_models{statment.general_data.get_shipment_number()}.pickle")
+            if len(FC_models):
+                names.append(f"FC_models{statment.general_data.get_shipment_number()}.pickle")
+
+            statment.save(models, names)
+
+            if statment.general_parameters.test_mode in [
+                "Трёхосное сжатие (E)",
+                "Трёхосное сжатие с разгрузкой",
+                "Трёхосное сжатие с разгрузкой (plaxis)"
+            ]:
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                           f"E_models{statment.general_data.get_shipment_number()}.pickle"))
+            elif statment.general_parameters.test_mode in [
+                "Трёхосное сжатие (F, C, E)",
+                "Трёхосное сжатие (F, C, Eur)"
+            ]:
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                           f"E_models{statment.general_data.get_shipment_number()}.pickle"))
+                FC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
+            elif statment.general_parameters.test_mode in [
+                'Трёхосное сжатие (F, C)',
+                'Трёхосное сжатие КН',
+                'Трёхосное сжатие НН',
+                "Трёхосное сжатие (F, C) res"
+            ]:
+                FC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
+
+            QMessageBox.about(self, "Сообщение", "Pickle успешно сохранен")
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
 
     def keyPressEvent(self, event):
         if statment.current_test:
@@ -631,9 +672,6 @@ class ShearSoilTestApp(AppMixin, QWidget):
             if ShearStatment.is_dilatancy_type(_test_mode):
                 name = file_path_name + " " + statment.general_data.object_number + f" {shear_type_code}" + ".pdf"
 
-                Shear_Dilatancy_models.dump(os.path.join(statment.save_dir.save_directory,
-                                            f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
-
                 Shear_Dilatancy_models[statment.current_test].save_log_file(save + "/" + "Test.1.log",
                                                                             nonzero_vertical_def=self.vertical_def_btn.isChecked())
                 Shear_Dilatancy_models[statment.current_test].save_cvi_file(save,
@@ -655,11 +693,6 @@ class ShearSoilTestApp(AppMixin, QWidget):
                                                                   statment.save_dir.cvi_directory +
                                                                   "/" + f"{file_path_name} ЦВИ.xls",
                                                                   ShearStatment.shear_type(_test_mode) == ShearStatment.SHEAR_NATURAL)
-
-                Shear_models.dump(os.path.join(statment.save_dir.save_directory,
-                                            f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
-
-
                 test_result = {}
                 test_result["sigma_shear"], test_result["tau_max"] = Shear_models[
                     statment.current_test].get_sigma_tau_max()
@@ -720,6 +753,29 @@ class ShearSoilTestApp(AppMixin, QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_all_reports(self):
+        try:
+            models = [model for model in [Shear_models] if len(model)]
+
+            names = []
+            if len(Shear_models):
+                names.append(
+                    f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle")
+
+            statment.save(models, names)
+
+            _test_mode = statment.general_parameters.test_mode
+
+            if ShearStatment.is_dilatancy_type(_test_mode):
+                Shear_Dilatancy_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
+            elif not ShearStatment.is_dilatancy_type(_test_mode):
+                Shear_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
+            QMessageBox.about(self, "Сообщение", "Pickle успешно сохранен")
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
+
         statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
@@ -784,6 +840,27 @@ class ShearSoilTestApp(AppMixin, QWidget):
         # self.previous_test_type = self.tab_1.open_line.get_data()["test_mode"]
 
     def save_report_and_continue(self):
+        try:
+            models = [model for model in [Shear_models] if len(model)]
+
+            names = []
+            if len(Shear_models):
+                names.append(
+                    f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle")
+
+            statment.save(models, names)
+
+            _test_mode = statment.general_parameters.test_mode
+
+            if ShearStatment.is_dilatancy_type(_test_mode):
+                Shear_Dilatancy_models.dump(os.path.join(statment.save_dir.save_directory,
+                                                         f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
+            elif not ShearStatment.is_dilatancy_type(_test_mode):
+                Shear_models.dump(os.path.join(statment.save_dir.save_directory,
+                                               f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
         try:
             self.save_report()
         except:

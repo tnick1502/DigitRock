@@ -309,6 +309,7 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         self.tab_1.signal[bool].connect(lambda x: self.physical_line.set_data())
 
         self.tab_3.save_button.clicked.connect(self.save_report)
+        self.tab_3.save_pickle.clicked.connect(self.save_pickle)
         self.tab_3.save_all_button.clicked.connect(self.save_all_reports)
         self.tab_3.jornal_button.clicked.connect(self.jornal)
 
@@ -343,6 +344,16 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         self.tab_2.set_params()
         # self.tab_2._consolidation_interpolation_type(self.tab_2.consolidation.function_replacement_button_group.checkedButton())
 
+    def save_pickle(self):
+        try:
+            statment.save([Consolidation_models],
+                          [f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"])
+            Consolidation_models.dump(os.path.join(statment.save_dir.save_directory,
+                                                   f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"))
+            QMessageBox.about(self, "Сообщение", "Pickle успешно сохранен")
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
@@ -373,8 +384,6 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
                 os.mkdir(save)
 
             name = file_path_name + " " + statment.general_data.object_number + " ВК" + ".pdf"
-            Consolidation_models.dump(os.path.join(statment.save_dir.save_directory,
-                                        f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"))
             #models[statment.current_test].save_log_file(save + "/" + "Test.1.log")
             test_result = Consolidation_models[statment.current_test].get_test_results()
             Consolidation_models[statment.current_test].save_cvi_file(save, statment.save_dir.cvi_directory + "/" + f"{file_path_name} ЦВИ.xls")
@@ -438,7 +447,6 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
                               test_result["Ca_log"],
                               sheet="Лист1")
 
-
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
                 app_logger.info(
@@ -461,6 +469,14 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_all_reports(self):
+        try:
+            statment.save([Consolidation_models],
+                          [f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"])
+            Consolidation_models.dump(os.path.join(statment.save_dir.save_directory,
+                                                   f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"))
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
         statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
@@ -481,11 +497,6 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
             app_logger.info("Объект успешно выгнан")
             self.save_massage = True
 
-            try:
-                statment.save([Consolidation_models], [f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"])
-            except Exception as err:
-                QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
-
         t = threading.Thread(target=save)
         progress.show()
         t.start()
@@ -493,6 +504,14 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         SessionWriter.write_session(len(statment))
 
     def save_report_and_continue(self):
+        try:
+            statment.save([Consolidation_models],
+                          [f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"])
+            Consolidation_models.dump(os.path.join(statment.save_dir.save_directory,
+                                                   f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"))
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
         try:
             self.save_report()
         except:
