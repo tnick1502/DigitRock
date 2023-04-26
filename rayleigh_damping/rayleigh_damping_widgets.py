@@ -26,6 +26,7 @@ from version_control.configs import actual_version
 from general.tab_view import TabMixin, AppMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
+from metrics.session_writer import SessionWriter
 
 class RayleighDampingWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -334,6 +335,8 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
         progress.show()
         t.start()
 
+        SessionWriter.write_session(len(statment))
+
     def _predict(self):
         if len(statment):
             dialog = PredictVCTestResults()
@@ -372,6 +375,7 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
                 break
             else:
                 pass
+        SessionWriter.write_test()
 
 
 if __name__ == '__main__':

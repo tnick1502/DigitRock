@@ -38,6 +38,7 @@ __version__ = actual_version
 from authentication.request_qr import request_qr
 from authentication.control import control
 from saver import XMLWidget
+from metrics.session_writer import SessionWriter
 
 
 class StaticProcessingWidget(QWidget):
@@ -1549,6 +1550,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 break
             else:
                 pass
+        SessionWriter.write_test()
 
     def save_all_reports(self):
         statment.save_dir.clear_dirs()
@@ -1588,6 +1590,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
         t = threading.Thread(target=save)
         progress.show()
         t.start()
+
+        SessionWriter.write_session(len(statment))
 
     def jornal(self):
         if statment.tests == {}:

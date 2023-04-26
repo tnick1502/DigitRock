@@ -29,7 +29,7 @@ from k0_test.triaxial_k0_widgets_UI import K0UI, K0OpenTestUI, \
     K0SoilTestUI, K0IdentificationUI
 from k0_test.triaxial_k0_model import ModelK0
 from authentication.request_qr import request_qr
-
+from metrics.session_writer import SessionWriter
 
 class K0ProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -395,6 +395,8 @@ class K0SoilTestApp(QWidget):
         progress.show()
         t.start()
 
+        SessionWriter.write_session(len(statment))
+
     def general_statment(self):
         try:
             s = statment.general_data.path
@@ -422,6 +424,7 @@ class K0SoilTestApp(QWidget):
                 break
             else:
                 pass
+        SessionWriter.write_test()
 
 
 if __name__ == '__main__':

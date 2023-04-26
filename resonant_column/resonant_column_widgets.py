@@ -28,6 +28,7 @@ __version__ = actual_version
 from general.general_statement import StatementGenerator
 from authentication.request_qr import request_qr
 from authentication.control import control
+from metrics.session_writer import SessionWriter
 
 class RezonantColumnProcessingWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора"""
@@ -726,6 +727,8 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         progress.show()
         t.start()
 
+        SessionWriter.write_session(len(statment))
+
     def save_report_and_continue(self):
         try:
             self.save_report()
@@ -740,6 +743,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
                 break
             else:
                 pass
+        SessionWriter.write_test()
 
     def general_statment(self):
         try:

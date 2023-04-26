@@ -30,6 +30,7 @@ __version__ = actual_version
 
 from authentication.request_qr import request_qr
 from authentication.control import control
+from metrics.session_writer import SessionWriter
 
 
 class ConsilidationSoilTestWidget(TabMixin, QWidget):
@@ -489,6 +490,8 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         progress.show()
         t.start()
 
+        SessionWriter.write_session(len(statment))
+
     def save_report_and_continue(self):
         try:
             self.save_report()
@@ -503,6 +506,7 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
                 break
             else:
                 pass
+        SessionWriter.write_test()
 
     def jornal(self):
         self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogCyclic, self.tab_1.path)

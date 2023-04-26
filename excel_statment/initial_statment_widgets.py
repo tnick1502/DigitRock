@@ -32,6 +32,7 @@ from k0_test.triaxial_k0_model import ModelK0SoilTest
 from excel_statment.params import accreditation
 from excel_statment.position_configs import c_fi_E_PropertyPosition, GeneralDataColumns, MechanicalPropertyPosition
 from excel_statment.functions import set_cell_data
+from metrics.session_writer import SessionWriter
 
 from vibration_strength.vibration_strangth_model import CyclicVibrationStrangthMohr
 
@@ -283,6 +284,7 @@ class RezonantColumnStatment(InitialStatment):
 
     @log_this(app_logger, "debug")
     def file_open(self):
+        SessionWriter.set_sheet_load_datetime()
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
             combo_params = self.open_line.get_data()
@@ -432,6 +434,7 @@ class TriaxialStaticStatment(InitialStatment):
 
     @log_this(app_logger, "debug")
     def file_open(self):
+        SessionWriter.set_sheet_load_datetime()
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
             combo_params = self.open_line.get_data()
@@ -592,6 +595,7 @@ class CyclicStatment(InitialStatment):
 
     @log_this(app_logger, "debug")
     def file_open(self):
+        SessionWriter.set_sheet_load_datetime()
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
             combo_params = self.open_line.get_data()
@@ -696,6 +700,7 @@ class VibrationCreepStatment(InitialStatment):
 
     @log_this(app_logger, "debug")
     def file_open(self):
+        SessionWriter.set_sheet_load_datetime()
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
 
@@ -771,6 +776,7 @@ class ConsolidationStatment(InitialStatment):
 
     @log_this(app_logger, "debug")
     def file_open(self):
+        SessionWriter.set_sheet_load_datetime()
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
 
@@ -883,6 +889,7 @@ class ShearStatment(InitialStatment):
 
     @log_this(app_logger, "debug")
     def file_open(self):
+        SessionWriter.set_sheet_load_datetime()
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
 
@@ -1118,6 +1125,7 @@ class VibrationStrangthStatment(InitialStatment):
 
     @log_this(app_logger, "debug")
     def file_open(self):
+        SessionWriter.set_sheet_load_datetime()
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
             combo_params = self.open_line.get_data()
@@ -1173,6 +1181,7 @@ class RayleighDampingStatment(InitialStatment):
 
     @log_this(app_logger, "debug")
     def file_open(self):
+        SessionWriter.set_sheet_load_datetime()
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
             combo_params = self.open_line.get_data()
@@ -1248,6 +1257,7 @@ class K0Statment(InitialStatment):
 
     @log_this(app_logger, "debug")
     def file_open(self):
+        SessionWriter.set_sheet_load_datetime()
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
             combo_params = self.open_line.get_data()
