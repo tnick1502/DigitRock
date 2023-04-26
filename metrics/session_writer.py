@@ -51,7 +51,7 @@ class DBSessionWriter(metaclass=SingletonMeta):
                 ) as conn:
                     try:
                         with conn.cursor() as cursor:
-                            cursor.execute(f"SELECT session_id FROM sessions WHERE object_number='{object_number}' AND test_type='{test_type}' AND report_count={report_count}"
+                            cursor.execute(f"SELECT session_id, ROUND (CAST (EXTRACT (EPOCH FROM (session_end - session_start)) AS numeric), 1) AS duration FROM sessions WHERE object_number='{object_number}' AND test_type='{test_type}' AND report_count={report_count}"
                             )
                             x = cursor.fetchone()
                             if x is None:
@@ -59,6 +59,12 @@ class DBSessionWriter(metaclass=SingletonMeta):
                                     f"INSERT INTO sessions (user_ip, session_start, session_end , object_number, test_type, report_count, program_version) VALUES ('{user_ip()}', '{self.sheet_load_datetime}', '{datetime.datetime.now()}', '{object_number}', '{test_type}', '{report_count}', '{actual_version}')"
                                 )
                                 conn.commit()
+                            elif x[1] <= (datetime.datetime.now() - self.sheet_load_datetime).seconds:
+                                cursor.execute(
+                                    f"UPDATE sessions SET session_start='{self.sheet_load_datetime}', session_end='{datetime.datetime.now()}' WHERE session_id ={x[0]}"
+                                )
+                                conn.commit()
+
                         self.sheet_load_datetime = None
                     except errors as err:
                         print(err)
