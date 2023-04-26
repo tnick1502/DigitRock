@@ -395,8 +395,8 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
             #set_cell_data(self.tab_1.path,
                           #"BK" + str(statment[statment.current_test].physical_properties.sample_number + 7),
                           #test_result["E50"], sheet="Лист1", color="FF6961")
-
-            Consolidation_models[statment.current_test].save_log(save, file_path_name + " " + statment.general_data.object_number + "ВК")
+            noise_data = Consolidation_models[statment.current_test].get_noise_data()
+            Consolidation_models[statment.current_test].save_log(save, file_path_name + " " + statment.general_data.object_number + "ВК", noise_data=noise_data)
 
             # Запись в xls параметров ca и cv
             if self.save_cv_ca_btn.isChecked():

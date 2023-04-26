@@ -1481,6 +1481,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 if self.tab_4.roundFI_btn.isChecked():
                     test_result["fi"] = zap(test_result["fi"], 0)
+                    test_result["fi_res"] = zap(test_result["fi_res"], 0)
 
                 test_result["u_mohr"] = FC_models[statment.current_test].get_sigma_u()
 

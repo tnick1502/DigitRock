@@ -586,6 +586,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
                                       "volumetric_strain_xc": None,
                                       "amplitude": None})
 
+        self._noise_data = {}
+
 
     def set_test_params(self, pre_defined_xc=None):
         """Установка основных параметров опыта"""
@@ -665,13 +667,15 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         self._test_params.delta_h_consolidation = delta_h_consolidation
 
     def get_dict(self, nonzero_vertical_def=True):
+        noise_data = self._noise_data
         return ModelShearDilatancySoilTest.dictionary_deviator_loading(self._test_data.strain,
                                                                        self._test_data.deviator,
                                                                        self._test_data.pore_volume_strain,
                                                                        self._test_params.sigma,
                                                                        self._test_params.velocity,
                                                                        nonzero_vertical_def=nonzero_vertical_def,
-                                                                       equipment_sample_h_d=self._test_params.equipment_sample_h_d)
+                                                                       equipment_sample_h_d=self._test_params.equipment_sample_h_d,
+                                                                       noise_data = noise_data)
 
     def get_draw_params(self):
         """Возвращает параметры отрисовки для установки на ползунки"""
@@ -723,7 +727,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         if self._test_params.tau_max >= 150:
 
-            self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
+             self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
             self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve_shear_dilatancy(
                 self._test_params.tau_max, self._test_params.E50, xc=self._draw_params.fail_strain,
                 x2=self._draw_params.residual_strength_param,
@@ -810,6 +814,8 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         self.change_borders(begin, len(self._test_data.volume_strain))
 
+        self.form_noise_data()
+
     def get_duration(self):
         return int((self._test_data.strain[-1] * (76 - self._test_params.delta_h_consolidation)) / self._test_params.velocity)
 
@@ -830,7 +836,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             "depth": statment[statment.current_test].physical_properties.depth,
             "sample_composition": "Н" if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4,
                                                                                                              5] else "С",
-            "b": np.round(np.random.uniform(0.95, 0.98), 2),
+            "b": self._noise_data["b"],
 
             "test_data": {
             }
@@ -847,6 +853,32 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         save_cvi_shear_dilatancy(file_path=os.path.join(file_path, file_name), data=data)
 
+    def form_noise_data(self):
+        vertical_strain = self._test_data.pore_volume_strain
+        vertical_deformation = np.hstack((np.full(5, 0),
+                                          np.repeat(np.full(2, 0), 2), -vertical_strain[1:]))
+        vertical_deformation = np.hstack((vertical_deformation, np.array([vertical_deformation[-1], 0])))
+
+        velocity = self._test_params.velocity
+        equipment_sample_h_d = self._test_params.equipment_sample_h_d
+        strain = self._test_data.strain
+
+        time_end = (equipment_sample_h_d[1]/10 / velocity) * 60
+        time = np.linspace(0, time_end, len(strain)) + 0.004
+        time_initial = np.hstack((np.full(5, 0.004), np.repeat(np.array([60 + 0,
+                                                                         1860 + 0]), 2)))
+
+        time = np.hstack((time_initial, time[1:] + time_initial[-1]))
+        time = np.hstack((time, np.array(time[-1]), np.array(time[-1]) + 0))
+
+        self._noise_data["time_initial_noise"] = (np.random.uniform(0.3, 0.6), np.random.uniform(0.3, 0.6))
+        self._noise_data["time_noise"] = np.random.uniform(100, 120)
+        self._noise_data["vertical_press_noise"] = (np.random.uniform(-2, 0.1, len(time)-7), np.random.uniform(1, 2))
+        self._noise_data["vertical_deformation_noise"] = (np.random.uniform(0.3, 0.7, 2), np.random.uniform(-0.5, -0.1))
+        self._noise_data["shear_deformation_noise"] = (np.random.uniform(0.1, 0.15, 2), np.random.uniform(0.1, 0.3))
+        self._noise_data["shear_press_noise"] = (np.random.uniform(3, 6, 2), np.random.uniform(-50, -40))
+        self._noise_data["zero_vertical_def_noise"] = np.random.uniform(0, 0.0005, len(vertical_deformation))
+        self._noise_data["b"] = np.round(np.random.uniform(0.95, 0.98), 2)
 
     @staticmethod
     def define_pore_pressure_array(strain, start, pore_pressure, amplitude):
@@ -1274,15 +1306,17 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
         return s
 
     @staticmethod
-    def dictionary_deviator_loading(strain, tau, vertical_strain, sigma, velocity, equipment_sample_h_d, nonzero_vertical_def=True):
+    def dictionary_deviator_loading(strain, tau, vertical_strain, sigma, velocity, equipment_sample_h_d,
+                                    nonzero_vertical_def=True, noise_data=None):
         """Формирует словарь девиаторного нагружения"""
 
         time_end = (equipment_sample_h_d[1]/10 / velocity) * 60
         time = np.linspace(0, time_end, len(strain)) + 0.004
-        time_initial = np.hstack((np.full(5, 0.004), np.repeat(np.array([60 + np.random.uniform(0.3, 0.6),
-                                                                         1860 + np.random.uniform(0.3, 0.6)]), 2)))
+        time_initial = np.hstack((np.full(5, 0.004), np.repeat(np.array([60 + noise_data["time_initial_noise"][0],
+                                                                         1860 + noise_data["time_initial_noise"][1]]), 2)))
+
         time = np.hstack((time_initial, time[1:] + time_initial[-1]))
-        time= np.hstack((time, np.array(time[-1]), np.array(time[-1])+ np.random.uniform(100, 120)))
+        time = np.hstack((time, np.array(time[-1]), np.array(time[-1])+ noise_data["time_noise"]))
 
         action = [''] * 2 + ['Start'] * 2 + ['LoadStage'] * 2 + \
                  ['Wait'] * 2 + ['WaitLimit'] * (len(time) - 10) + ['Unload'] * 2
@@ -1291,19 +1325,19 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         vertical_press = np.hstack((np.full(5, 0),
                                     np.full(len(time) - 7,
-                                            sigma + np.random.uniform(-2, 0.1, len(time)-7))))
-        vertical_press = np.hstack((vertical_press, np.array([vertical_press[-1], np.random.uniform(1, 2)])))
+                                            sigma + noise_data["vertical_press_noise"][0])))
+        vertical_press = np.hstack((vertical_press, np.array([vertical_press[-1], noise_data["vertical_press_noise"][1]])))
         vertical_deformation = np.hstack((np.full(5, 0),
-                                          np.repeat(np.random.uniform(0.3, 0.7, 2), 2), -vertical_strain[1:]))
-        vertical_deformation = np.hstack((vertical_deformation, np.array([vertical_deformation[-1], np.random.uniform(-0.5, -0.1)])))
+                                          np.repeat(noise_data["vertical_deformation_noise"][0], 2), -vertical_strain[1:]))
+        vertical_deformation = np.hstack((vertical_deformation, np.array([vertical_deformation[-1], noise_data["vertical_deformation_noise"][1]])))
 
         shear_deformation = np.hstack((np.full(5, 0),
-                                       np.repeat(np.random.uniform(0.1, 0.15, 2), 2), strain[1:]))
-        shear_deformation = np.hstack((shear_deformation, np.array([shear_deformation[-1], np.random.uniform(0.1, 0.3)])))
+                                       np.repeat(noise_data["shear_deformation_noise"][0], 2), strain[1:]))
+        shear_deformation = np.hstack((shear_deformation, np.array([shear_deformation[-1], noise_data["shear_deformation_noise"][1]])))
         shear_press = np.hstack((np.full(5, 0),
-                                 np.repeat(np.random.uniform(3, 6, 2), 2), tau[1:]))
+                                 np.repeat(noise_data["shear_press_noise"][0], 2), tau[1:]))
         shear_press = np.hstack((shear_press, np.array([shear_press[-1],
-                                                                   np.random.uniform(-50, -40)])))
+                                                                   noise_data["shear_press_noise"][1]])))
         stage = ['Пуск'] * 3 + ['Вертикальное нагружение'] * 4 + ['Срез'] * (len(time) - 7)
 
         data = {
@@ -1313,7 +1347,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
             "SampleHeight_mm": np.round(np.full(len(time), equipment_sample_h_d[0])),
             "SampleDiameter_mm": np.round(np.full(len(time), equipment_sample_h_d[1]),1),
             "VerticalPress_kPa": np.round(vertical_press, 4),
-            "VerticalDeformation_mm": np.round(vertical_deformation,7) if nonzero_vertical_def else np.round(np.random.uniform(0, 0.0005, len(vertical_deformation)),7),
+            "VerticalDeformation_mm": np.round(vertical_deformation,7) if nonzero_vertical_def else np.round(noise_data["zero_vertical_def_noise"],7),
             "ShearDeformation_mm": np.round(shear_deformation,8),
             "ShearPress_kPa": np.round(shear_press, 6),
             "Stage": stage

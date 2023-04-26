@@ -167,8 +167,22 @@ class CyclicVibrationStrangth(ModelTriaxialDeviatorLoadingSoilTest):
         self._test_result.max_pore_pressure = np.max(self._test_data.pore_pressure)
         self._test_result.qf = np.round(np.max(self._test_data.deviator_cut) / 1000, 3)
 
+        self.form_noise_data()
+
         # print(statment[statment.current_test].physical_properties.laboratory_number, self._test_result["E50"])
         # print(self._test_params.__dict__)
+
+    def form_noise_data(self):
+        deviator = self._test_data.deviator
+        self._noise_data["pore_pressure_after_consolidation"] = np.random.uniform(300, 500)
+        self._noise_data["force_initial"] = np.random.uniform(15, 40)
+        self._noise_data["piston_position_initial"] = np.random.uniform(5, 20)
+        self._noise_data["vertical_strain_initial"] = np.random.uniform(0, 0.001)
+        self._noise_data["diameter"] = np.random.uniform(38.001, 38.002, len(deviator))
+        self._noise_data["external_displacement_coefficient"] = np.random.uniform(50, 80)
+        self._noise_data["sample_height"] = round(np.random.uniform(75.970000, 76.000000), 5)
+        self._noise_data["Diameter under isotropic conditions"] = np.random.uniform(38.001, 38.002, len(deviator))
+        self._noise_data["cell_pressure"] = np.random.uniform(-0.5, 0.5, len(self._test_data.deviator_cut))
 
     @staticmethod
     def cyclic_step(cycles, deviator_amplitude, max_strain, E50, frequency, qf):
@@ -298,9 +312,9 @@ class ModelCyclicVibrationStrangthSoilTest(ModelTriaxialStaticLoadSoilTest):
         self.test_params = None
 
     def save_log_file(self, file_path):
-        reconsolidation_time = (((0.848 * 3.8 * 3.8) /
-                                 (4 * statment[statment.current_test].mechanical_properties.Cv))) * \
-                               np.random.uniform(5, 7) * 60 + np.random.uniform(3000, 5000)
+        # reconsolidation_time = (((0.848 * 3.8 * 3.8) /
+        #                          (4 * statment[statment.current_test].mechanical_properties.Cv))) * \
+        #                        np.random.uniform(5, 7) * 60 + np.random.uniform(3000, 5000)
         ModelTriaxialCyclicLoadingSoilTest.generate_willie_log_file(
             file_path,
             deviator=self.deviator_loading._test_data.deviator_cut,
@@ -311,11 +325,10 @@ class ModelCyclicVibrationStrangthSoilTest(ModelTriaxialStaticLoadSoilTest):
             points_in_cycle=20,
             setpoint=self.deviator_loading._test_data.deviator_cut,
             cell_pressure=np.full(len(self.deviator_loading._test_data.deviator_cut),
-                                  self.deviator_loading._test_params.sigma_3) + np.random.uniform(-0.5, 0.5, len(
-                self.deviator_loading._test_data.deviator_cut)),
+                                  self.deviator_loading._test_params.sigma_3) + self._noise_data["cell_pressure"],
             reconsolidation_time=0,
             post_name=statment.current_test,
-            time=self.deviator_loading._test_data.time)
+            time=self.deviator_loading._test_data.time, noise_data=self.deviator_loading.get_noise_data())
 
 
 class CyclicVibrationStrangthMohr(ModelMohrCirclesSoilTest):

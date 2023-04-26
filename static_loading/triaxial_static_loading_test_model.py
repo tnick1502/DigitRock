@@ -421,15 +421,18 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         if reconsolidation:
             self.reconsolidation.set_test_params()
             delta_h_reconsolidation = self.reconsolidation.get_test_results()["delta_h_reconsolidation"]
+            effective_stress_after_reconsolidation = self.reconsolidation.get_effective_stress_after_reconsolidation()
+
         else:
             self.reconsolidation = None
             delta_h_reconsolidation = 0
+            effective_stress_after_reconsolidation = 0
 
         if consolidation:
             velocity = None
             while velocity is None:
                 self.consolidation.set_delta_h_reconsolidation(delta_h_reconsolidation)
-                self.consolidation.set_test_params()
+                self.consolidation.set_test_params(effective_stress_after_reconsolidation=effective_stress_after_reconsolidation)
                 velocity = self.consolidation.get_test_results()["velocity"]
                 delta_h_consolidation = self.consolidation.get_delta_h_consolidation()
         else:
@@ -495,15 +498,19 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
             effective_stress_after_reconsolidation = 0
 
         if self.consolidation is not None:
-            consolidation_dict = self.consolidation.get_dict(effective_stress_after_reconsolidation, sample_size=sample_size)
+            noise_data_consolidation = self.consolidation.get_noise_data()
+            consolidation_dict = self.consolidation.get_dict(effective_stress_after_reconsolidation, sample_size=sample_size, noise_data=noise_data_consolidation)
         else:
-            consolidation_dict = dictionary_without_VFS(sigma_3=self.deviator_loading._test_params.sigma_3, velocity=49, sample_size=sample_size)
+            consolidation_dict = self.deviator_loading.get_dictionary_without_VFS()
+            #consolidation_dict = dictionary_without_VFS(sigma_3=self.deviator_loading._test_params.sigma_3, velocity=49, sample_size=sample_size)
 
-        deviator_loading_dict = self.deviator_loading.get_dict(sample_size=sample_size)
+        noise_data_triaxal = self.deviator_loading.get_noise_data()
+        deviator_loading_dict = self.deviator_loading.get_dict(sample_size=sample_size, noise_data=noise_data_triaxal)
         main_dict = ModelTriaxialStaticLoadSoilTest.triaxial_deviator_loading_dictionary(reconsolidation_dict,
                                                                                          consolidation_dict,
                                                                                          deviator_loading_dict,
-                                                                                         sample_size=sample_size)
+                                                                                         sample_size=sample_size,
+                                                                                         time_noise=noise_data_triaxal["time_noise"])
 
         ModelTriaxialStaticLoadSoilTest.text_file(file_path, main_dict)
         create_json_file('/'.join(os.path.split(file_path)[:-1]) + "/processing_parameters.json",
@@ -532,13 +539,15 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
         elif d == 150 and h == 300:
             stock_aria = round((4 / 2) ** 2 * 3.14, 1)
 
+        noise_data = self.deviator_loading.get_noise_data()
+
         data = {
             "laboratory_number": statment[statment.current_test].physical_properties.laboratory_number,
             "borehole": statment[statment.current_test].physical_properties.borehole,
             "ige": statment[statment.current_test].physical_properties.ige,
             "depth": statment[statment.current_test].physical_properties.depth,
             "sample_composition": "Н" if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4, 5] else "С",
-            "b": np.round(np.random.uniform(0.95, 0.98), 2),
+            "b": noise_data.b_CVI,
             "sample_aria": sample_aria,
             "stock_aria": stock_aria,
             "test_data": {
@@ -786,9 +795,9 @@ class ModelTriaxialStaticLoadSoilTest(ModelTriaxialStaticLoad):
 
     @staticmethod
     def triaxial_deviator_loading_dictionary(b_test, consolidation, deviator_loading,
-                                             sample_size: Tuple[int, int] = (76, 38)):
+                                             sample_size: Tuple[int, int] = (76, 38), time_noise=None):
 
-        start = np.random.uniform(0.5, 0.8)
+        start = time_noise
         dict = {
             'Time': [0, 0, np.round(start, 3), np.round(start + 0.1, 3), np.round(start + 2, 3)],
             'Action': ["", "", "Start", "Start", "Start"],

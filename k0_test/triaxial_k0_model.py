@@ -523,6 +523,10 @@ class ModelK0SoilTest(ModelK0):
         self._test_data = AttrDict({'sigma_3': np.asarray([]),
                                     'sigma_1': np.asarray([])})
 
+        self._main_dict = None # Словарь с лог данными опыта, которые будут писаться в файл
+
+        self._b_noise = None # Значение параметра b
+
     def set_test_params(self, test_params=None):
         if test_params:
             try:
@@ -707,6 +711,7 @@ class ModelK0SoilTest(ModelK0):
 
         self.set_debug_data(debug_data)
         self.set_test_data({'sigma_1': sigma_1, 'sigma_3': sigma_3, 'action': action, 'time': time})
+        self.form_log_data()
 
     def verify_test_params(self):
         """
@@ -739,8 +744,7 @@ class ModelK0SoilTest(ModelK0):
             self._test_params.sigma_1_max = ModelK0SoilTest.sigma_1_max_mpa(self._test_params.sigma_1_max * 1000,
                                                                             self._test_params.sigma_1_step)
 
-    def save_log_file(self, file_path):
-        """Метод генерирует логфайл прибора"""
+    def form_log_data(self):
         if self._test_params.mode_kinematic:
             #
             TIME = 5000
@@ -808,7 +812,12 @@ class ModelK0SoilTest(ModelK0):
                                                                              consolidation_dict,
                                                                              deviator_loading_dict, no_last_start=True)
 
-        ModelK0SoilTest.text_file(file_path, main_dict)
+        self._b_noise = np.round(np.random.uniform(0.95, 0.98), 2)
+        self._main_dict = main_dict
+
+    def save_log_file(self, file_path):
+        """Метод генерирует логфайл прибора"""
+        ModelK0SoilTest.text_file(file_path, self._main_dict)
 
     def save_cvi_file(self, file_path, file_name):
         data = {
@@ -817,7 +826,7 @@ class ModelK0SoilTest(ModelK0):
             'ige': statment[statment.current_test].physical_properties.ige,
             'depth': statment[statment.current_test].physical_properties.depth,
             'sample_composition': 'Н' if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4, 5] else "С",
-            "b": np.round(np.random.uniform(0.95, 0.98), 2),
+            "b": self._b_noise,
 
             'test_data': {
             }

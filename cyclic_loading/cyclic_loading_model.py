@@ -770,6 +770,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                       "deviator_start_value": None,
                                       "reverse": None})
 
+        self._noise_data = {}
+
     def set_test_params(self, cosine=False):
         """Функция принимает параметры опыта для дальнейших построений.
         n_fail моделируется из кривой CSR. Если нет разжижения - n_fail = None"""
@@ -959,6 +961,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._test_params.K0 = params["K0"]
 
     def generate_log_file(self, file_path, post_name=None):
+        noise_data = self._noise_data
         ModelTriaxialCyclicLoadingSoilTest.generate_willie_log_file(file_path, self._test_data.deviator,
                                                                     self._test_data.PPR, self._test_data.strain,
                                                                     self._test_params.frequency,
@@ -967,7 +970,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                                                     self._test_data.setpoint,
                                                                     self._test_data.cell_pressure,
                                                                     self._test_params.reconsolidation_time,
-                                                                    post_name)
+                                                                    post_name, noise_data=noise_data)
         #print(self.get_processing_parameters())
         create_json_file(f"{file_path}/processing_parameters.json", self.get_processing_parameters())
 
@@ -1231,6 +1234,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             strain_cyclic *= (((self._load_stage.strain[-1] / self._test_params.Kd) - self._load_stage.strain[-1])/np.max(strain_cyclic))
             self._test_data.strain = np.hstack((self._load_stage.strain, strain_cyclic + self._load_stage.strain[-1]))
 
+        self.form_noise_data()
             #self._test_data.strain *= ((self._load_stage.strain[-1] * self._test_params.Kd)/np.max(self._test_data.strain - self._load_stage.strain[-1])) - self._load_stage.strain[-1]
 
         """i, Msf = ModelTriaxialCyclicLoadingSoilTest.intercept_CSL(self._test_data.deviator/2, self.critical_line)
@@ -1260,6 +1264,17 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         fi = np.deg2rad(self._test_params.fi)
         k = (6 * np.sin(fi) / (3 - np.sin(fi)))
         self.critical_line = c + 0.5 * k * self._test_data.mean_effective_stress
+
+    def form_noise_data(self):
+        deviator = self._test_data.deviator
+        self._noise_data["pore_pressure_after_consolidation"] = np.random.uniform(300, 500)
+        self._noise_data["force_initial"] = np.random.uniform(15, 40)
+        self._noise_data["piston_position_initial"] = np.random.uniform(5, 20)
+        self._noise_data["vertical_strain_initial"] = np.random.uniform(0, 0.001)
+        self._noise_data["diameter"] = np.random.uniform(38.001, 38.002, len(deviator))
+        self._noise_data["external_displacement_coefficient"] = np.random.uniform(50, 80)
+        self._noise_data["sample_height"] = round(np.random.uniform(75.970000, 76.000000), 5)
+        self._noise_data["Diameter under isotropic conditions"] = np.random.uniform(38.001, 38.002, len(deviator))
 
     @property
     def test_duration(self):
@@ -1655,7 +1670,8 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         return time, strain, deviator
 
     @staticmethod
-    def generate_willie_log_file(file_path, deviator, PPR, strain, frequency, N, points_in_cycle, setpoint, cell_pressure, reconsolidation_time, post_name=None, time=None):
+    def generate_willie_log_file(file_path, deviator, PPR, strain, frequency, N, points_in_cycle, setpoint,
+                                 cell_pressure, reconsolidation_time, post_name=None, time=None, noise_data=None):
         """Сохранение текстового файла формата Willie.
                     Передается папка, массивы"""
         if post_name:
@@ -1683,24 +1699,24 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             s += '\n'
             return (s)
 
-        pore_pressure_after_consolidation = np.random.uniform(300, 500)
+        pore_pressure_after_consolidation = noise_data["pore_pressure_after_consolidation"]
 
 
         """if not Ip:
             time_initial = np.random.uniform(7200.000000, 18000.000000)  # Начальное время опыта
         else:
             time_initial = np.random.uniform(22000.000000, 55000.000000)  # Начальное время опыта"""
-        force_initial = np.random.uniform(15, 40)
-        piston_position_initial = np.random.uniform(5, 20)
-        vertical_strain_initial = np.random.uniform(0, 0.001)
-        diameter = np.random.uniform(38.001, 38.002, len(deviator))
+        force_initial = noise_data["force_initial"]
+        piston_position_initial = noise_data["piston_position_initial"]
+        vertical_strain_initial = noise_data["vertical_strain_initial"]
+        diameter = noise_data["diameter"]
         sample_area_initial = np.pi * (diameter[0] / 2) ** 2
         sample_area = np.pi * (diameter / 2) ** 2
 
-        external_displacement_coefficient = np.random.uniform(50, 80)
+        external_displacement_coefficient = noise_data["external_displacement_coefficient"]
 
         piston_area = 314.159265
-        sample_height = round(np.random.uniform(75.970000, 76.000000), 5)
+        sample_height = noise_data["sample_height"]
 
         if time is None:
             time = np.round((np.arange(0, (N / frequency) + 1 / (points_in_cycle * frequency),
@@ -1746,7 +1762,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             "Drainage valve": ["True" for _ in range(len(deviator))],
             "Volume": ["86.192736" for _ in range(len(deviator))],
             "Sample Area under isotropic conditions": sample_area,
-            "Diameter under isotropic conditions": np.random.uniform(38.001, 38.002, len(deviator)),
+            "Diameter under isotropic conditions":  noise_data["Diameter under isotropic conditions"],
             "Vertical stress under isotropic conditions": (
                                                                       cell_pressure + pore_pressure_after_consolidation) + deviator,
             "Deviator": deviator,

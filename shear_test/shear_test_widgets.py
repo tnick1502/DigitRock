@@ -631,7 +631,7 @@ class ShearSoilTestApp(AppMixin, QWidget):
             if ShearStatment.is_dilatancy_type(_test_mode):
                 name = file_path_name + " " + statment.general_data.object_number + f" {shear_type_code}" + ".pdf"
 
-                Shear_models.dump(os.path.join(statment.save_dir.save_directory,
+                Shear_Dilatancy_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"{ShearStatment.models_name(ShearStatment.shear_type(self.tab_1._shear_type)).split('.')[0]}{statment.general_data.get_shipment_number()}.pickle"))
 
                 Shear_Dilatancy_models[statment.current_test].save_log_file(save + "/" + "Test.1.log",
