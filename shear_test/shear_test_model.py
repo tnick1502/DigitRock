@@ -512,6 +512,7 @@ class ModelShearSoilTest(ModelShear):
         # statment[statment.current_test].mechanical_properties.u = u_origin
 
         self._test_processing()
+        self.form_noise_data()
 
     def set_test_params(self):
         self._test_modeling()

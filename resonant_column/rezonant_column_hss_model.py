@@ -395,12 +395,12 @@ class ModelRezonantColumnSoilTest(ModelRezonantColumn):
             for i in range(len(G)):
                 for j in range(len(A[0])):
                     file.write(str(step[i]) + '; ' + str(int(Chastota[j])) + '; ' + str(acur[i]) + '; ' + str(
-                        acur[i]) + '; ' + str((A[i][j] * 1300000 * (1 + self._noise_data["A"][0][i+j*(j+1)]))) + '; ' + str(
+                        acur[i]) + '; ' + str((A[i][j] * 1300000 * (1 + self._noise_data["A"][0][len(G)*i+j]))) + '; ' + str(
                         A[i][j] * 1300000) + '; ' + str(points[i] * 302) + '; ' + str(A[i][j] * 200) + '; ' + str(
                         A[i][j] * 0.3) + '; ' + str(A[i][j]) + '; ' + str(
-                        (A[i][j] * 200 * (1 + self._noise_data["A"][1][i+j*(j+1)]))) + '; ' + str(
-                        (A[i][j] * 0.3 * (1 + self._noise_data["A"][2][i+j*(j+1)]))) + '; ' + str(
-                        (A[i][j] * (1 + self._noise_data["A"][3][i+j*(j+1)]))) + '; ' + '\n')
+                        (A[i][j] * 200 * (1 + self._noise_data["A"][1][len(G)*i+j]))) + '; ' + str(
+                        (A[i][j] * 0.3 * (1 + self._noise_data["A"][2][len(G)*i+j]))) + '; ' + str(
+                        (A[i][j] * (1 + self._noise_data["A"][3][len(G)*i+j]))) + '; ' + '\n')
 
             file.close()
 

@@ -525,6 +525,8 @@ class ModelK0SoilTest(ModelK0):
 
         self._main_dict = None # Словарь с лог данными опыта, которые будут писаться в файл
 
+        self._b_noise = None # Значение параметра b
+
     def set_test_params(self, test_params=None):
         if test_params:
             try:
@@ -810,7 +812,7 @@ class ModelK0SoilTest(ModelK0):
                                                                              consolidation_dict,
                                                                              deviator_loading_dict, no_last_start=True)
 
-        main_dict["b"] = np.round(np.random.uniform(0.95, 0.98), 2)
+        self._b_noise = np.round(np.random.uniform(0.95, 0.98), 2)
         self._main_dict = main_dict
 
     def save_log_file(self, file_path):
@@ -824,7 +826,7 @@ class ModelK0SoilTest(ModelK0):
             'ige': statment[statment.current_test].physical_properties.ige,
             'depth': statment[statment.current_test].physical_properties.depth,
             'sample_composition': 'Н' if statment[statment.current_test].physical_properties.type_ground in [1, 2, 3, 4, 5] else "С",
-            "b": self._main_dict["b"],
+            "b": self._b_noise,
 
             'test_data': {
             }

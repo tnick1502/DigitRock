@@ -727,7 +727,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
 
         if self._test_params.tau_max >= 150:
 
-            self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
+             self._test_data.strain, self._test_data.deviator, self._test_data.pore_volume_strain, \
             self._test_data.cell_volume_strain, self._test_data.reload_points, begin = curve_shear_dilatancy(
                 self._test_params.tau_max, self._test_params.E50, xc=self._draw_params.fail_strain,
                 x2=self._draw_params.residual_strength_param,
@@ -856,7 +856,7 @@ class ModelShearDilatancySoilTest(ModelShearDilatancy):
     def form_noise_data(self):
         vertical_strain = self._test_data.pore_volume_strain
         vertical_deformation = np.hstack((np.full(5, 0),
-                                          np.repeat(0, 2), -vertical_strain[1:]))
+                                          np.repeat(np.full(2, 0), 2), -vertical_strain[1:]))
         vertical_deformation = np.hstack((vertical_deformation, np.array([vertical_deformation[-1], 0])))
 
         velocity = self._test_params.velocity
