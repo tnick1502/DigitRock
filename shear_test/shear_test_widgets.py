@@ -29,6 +29,7 @@ from version_control.configs import actual_version
 __version__ = actual_version
 from authentication.request_qr import request_qr
 from authentication.control import control
+from metrics.session_writer import SessionWriter
 
 class ShearProcessingWidget(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -755,6 +756,8 @@ class ShearSoilTestApp(AppMixin, QWidget):
         progress.show()
         t.start()
 
+        SessionWriter.write_session(len(statment))
+
     def jornal(self):
         self.dialog = TestsLogWidget({"ЛИГА КЛ-1С": 23, "АСИС ГТ.2.0.5": 30}, TestsLogTriaxialStatic, self.tab_1.path)
         self.dialog.show()
@@ -793,6 +796,8 @@ class ShearSoilTestApp(AppMixin, QWidget):
                 break
             else:
                 pass
+
+        SessionWriter.write_test()
 
 
 

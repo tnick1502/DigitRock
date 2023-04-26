@@ -29,6 +29,7 @@ from general.general_statement import StatementGenerator
 from authentication.control import control
 
 from authentication.request_qr import request_qr
+from metrics.session_writer import SessionWriter
 
 class VibrationCreepSoilTestWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -536,6 +537,8 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
         progress.show()
         t.start()
 
+        SessionWriter.write_session(len(statment))
+
     def _predict(self):
         if len(statment):
             dialog = PredictVCTestResults()
@@ -580,6 +583,8 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                 break
             else:
                 pass
+
+        SessionWriter.write_test()
 
 
 

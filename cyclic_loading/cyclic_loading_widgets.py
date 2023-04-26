@@ -36,6 +36,7 @@ __version__ = actual_version
 
 from authentication.request_qr import request_qr
 from authentication.control import control
+from metrics.session_writer import SessionWriter
 
 class CyclicProcessingWidget(QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -935,6 +936,8 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         progress.show()
         t.start()
 
+        SessionWriter.write_session(len(statment))
+
     def jornal(self):
         self.dialog = TestsLogWidget(dynamic, TestsLogCyclic, self.tab_1.path)
         self.dialog.show()
@@ -983,6 +986,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                 break
             else:
                 pass
+        SessionWriter.write_test()
 
 
 

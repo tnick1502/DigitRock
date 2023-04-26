@@ -147,7 +147,6 @@ class MohrWidget(QWidget):
         self.item_identification.setFixedWidth(350)
         self.mohr_test_manager = MohrTestManager()
         self.m_widget = MWidgetUI(self._model)
-        self.m_widget.setFixedHeight(350)
         self._create_UI()
 
         self.mohr_test_manager.add_test_button.clicked.connect(self._add_test)
@@ -159,16 +158,19 @@ class MohrWidget(QWidget):
         self.line_1_layout = QHBoxLayout()
         self.line_1_1_layout = QVBoxLayout()
         self.line_1_layout.addWidget(self.item_identification)
-        self.line_1_1_layout.addWidget(self.mohr_test_manager)
+
+        #self.line_1_1_layout.addWidget(self.mohr_test_manager)
+
         self.line_1_layout.addLayout(self.line_1_1_layout)
         self.layout_wiget.addLayout(self.line_1_layout)
+
         self.line_2_layout = QHBoxLayout()
 
         self.box_graph = QGroupBox("Построение графиков")
         self.graph_canvas_layout = QHBoxLayout()
         self.box_graph.setLayout(self.graph_canvas_layout)
-        self.box_graph.setFixedWidth(1050)
-        self.box_graph.setFixedHeight(350)
+        self.box_graph.setFixedWidth(1350)
+        self.box_graph.setFixedHeight(450)
 
         # Графики
         self.deviator_frame = QFrame()
@@ -214,7 +216,7 @@ class MohrWidget(QWidget):
 
         self.layout_wiget.addLayout(self.line_2_layout)
         self.layout_wiget.addStretch(-1)
-        self.line_2_layout.addWidget(self.m_widget)
+        #self.line_2_layout.addWidget(self.m_widget)
 
     def resizeEvent(self, event):
         pass
@@ -799,15 +801,24 @@ class MohrWidgetSoilTest(TabMixin, MohrWidget):
 
     def add_UI(self):
         """Дополнительный интерфейс"""
-        self.add_parameters_layout = QHBoxLayout()
+        self.add_parameters_layout = QGridLayout()
+        self.line_1_1_layout.addLayout(self.add_parameters_layout)
         self.reference_pressure_array_box = PressureArray()
-        self.add_parameters_layout.addWidget(self.reference_pressure_array_box)
+        self.add_parameters_layout.addWidget(self.reference_pressure_array_box, 0, 0)
         self.reconsolidation = ReconsolidationRadio(self._model)
-        self.add_parameters_layout.addWidget(self.reconsolidation)
+        self.add_parameters_layout.addWidget(self.reconsolidation, 0, 1)
+
+        self.add_parameters_layout.addWidget(self.m_widget, 0, 4, -1, -1)
+
+        self.dialog_button = QPushButton("Обработчики опытов")
+        self.dialog_button.setFixedHeight(250)
+        self.add_parameters_layout.addWidget(self.dialog_button, 0, 3, 2, 1)
+
+        self.dialog_button.clicked.connect(self.open_dialog)
 
         self.m_sliders = TriaxialStaticLoading_Sliders({"m": "Предполагаемое значение m"})
         self.m_sliders.signal[object].connect(self._m_sliders_moove)
-        self.add_parameters_layout.addWidget(self.m_sliders)
+        self.add_parameters_layout.addWidget(self.m_sliders, 1, 0, 1, 3)
 
         if self._model == "VibrationFC_models":
             self.k_sliders = TriaxialStaticLoading_Sliders({"Kcu": "Kcu"})
@@ -822,9 +833,9 @@ class MohrWidgetSoilTest(TabMixin, MohrWidget):
         self.split_deviator_layout.addWidget(self.split_deviator_radio_button)
         self.split_deviator.setLayout(self.split_deviator_layout)
 
-        self.add_parameters_layout.addWidget(self.split_deviator)
+        self.add_parameters_layout.addWidget(self.split_deviator, 0, 2)
 
-        self.add_parameters_layout.addStretch(-1)
+
         self.layout_wiget.addLayout(self.add_parameters_layout)
 
         self.split_deviator_radio_button.clicked.connect(self._on_split_radio_clicked)
@@ -964,6 +975,15 @@ class MohrWidgetSoilTest(TabMixin, MohrWidget):
         FC_models[statment.current_test].is_split_deviator = self.is_split_deviator
         self._plot()
 
+    def open_dialog(self):
+        try:
+            self.mohr_dialog_widget = StaticSoilTestDialog()
+            self.mohr_dialog_widget.show()
+            self.mohr_dialog_widget.signal.connect(self.set_params)
+        except Exception as Err:
+            print(Err)
+
+
 
 class PressureArray(QGroupBox):
     def __init__(self):
@@ -1070,7 +1090,6 @@ class ReconsolidationRadio(QGroupBox):
         self.layout.addWidget(self.button)
         self.layout.addStretch(-1)
 
-
     def _onClicked(self):
         radioButton = self.sender()
         if radioButton.isChecked():
@@ -1104,11 +1123,12 @@ class MWidgetUI(QGroupBox):
         self.setTitle('Обработка параметра m')
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
+        self.setFixedHeight(250)
         self.setFixedWidth(300)
         #self.setFixedHeight(120)
         #self.layout.setContentsMargins(5, 5, 5, 5)
 
-        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.25, "wspace": 0.12, "hspace": 0.07, "left": 0.2}
+        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.35, "wspace": 0.12, "hspace": 0.07, "left": 0.22}
 
         self.chose_processing_type = QGroupBox("Выбор метода аппроксимации")
         self.chose_processing_type.setFixedHeight(55)
@@ -1144,8 +1164,6 @@ class MWidgetUI(QGroupBox):
         self.canvas.draw()
         self.frame_layout.setSpacing(0)
         self.frame_layout.addWidget(self.canvas)
-        self.toolbar = NavigationToolbar(self.canvas, self)
-        self.frame_layout.addWidget(self.toolbar)
         self.frame.setLayout(self.frame_layout)
 
         self.layout.addWidget(self.frame)
@@ -1204,10 +1222,230 @@ class MWidgetUI(QGroupBox):
         return path
 
 
+
+
+
+class DeviatorWidget(QWidget):
+    """Интерфейс обработчика циклического трехосного нагружения.
+    При создании требуется выбрать модель трехосного нагружения методом set_model(model).
+    Класс реализует Построение 3х графиков опыта циклического разрушения, также таблицы результатов опыта."""
+    signal = pyqtSignal(object)
+
+    def __init__(self, id=None):
+        super().__init__()
+
+        self.id = id
+
+        self.point_identificator = None
+        self.point_identificator_deviator = None
+
+        self.deviator_loading = ModelTriaxialDeviatorLoadingUI()
+        self.deviator_loading.setFixedHeight(900)
+
+        self.deviator_loading.combo_box.activated.connect(self._combo_plot_deviator_changed)
+        self.deviator_loading.dilatancy_radio_btn.clicked.connect(self._combo_plot_deviator_changed)
+
+        self._create_UI()
+        self._wigets_connect()
+
+        self.deviator_loading_sliders = TriaxialStaticLoading_Sliders({"fail_strain": "Деформация разрушения",
+                                                                       "residual_strength": "Остаточная прочность",
+                                                                       "residual_strength_param": "Изгиб остаточной прочности",
+                                                                       "qocr": "Значение дивиатора OCR",
+                                                                       "poisson": "Коэффициент Пуассона",
+                                                                       "dilatancy": "Угол дилатансии",
+                                                                       "volumetric_strain_xc": "Объемн. деформ. в пике",
+                                                                       "Eur": "Модуль разгрузки",
+                                                                       "amplitude_1": "Амп. дев. (низк. час.)",
+                                                                       "amplitude_2": "Амп. дев. (сред. час.)",
+                                                                       "amplitude_3": "Амп. дев. (выс. час.)",
+                                                                       "hyp_ratio": "Коэффициент влияния"
+                                                                       })
+
+        self.deviator_loading_sliders.setFixedHeight(280)
+
+        self.deviator_loading_sliders_unload_start_y_slider = TriaxialStaticLoading_Sliders(
+            {"unload_start_y": "Сдвиг разгрузки"})
+        box = getattr(self.deviator_loading_sliders_unload_start_y_slider, "{}_box".format("Настройки отрисовки"))
+        box.setTitle('')
+        self.deviator_loading_sliders_unload_start_y_slider.setFixedHeight(80)
+
+        self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)
+        self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders_unload_start_y_slider)
+
+        self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
+        self.deviator_loading_sliders_unload_start_y_slider.signal[object].connect(
+            self._deviator_loading_sliders_unload_start_y_slider_moove)
+
+        # if model:
+        # self.set_model(model)
+        # else:
+        # self._model = ModelTriaxialStaticLoad()
+
+    def _create_UI(self):
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.deviator_loading)
+
+        self.setLayout(self.layout)
+
+    def _wigets_connect(self):
+
+        self.deviator_loading.chose_volumometer_button_group.buttonClicked.connect(self._deviator_volumeter)
+
+        self.deviator_loading.split_deviator_radio_button.clicked.connect(self._split_deviator)
+
+        self.deviator_loading.slider_cut.sliderMoved.connect(self._cut_slider_deviator_moove)
+
+        self.deviator_loading.deviator_canvas.mpl_connect('button_press_event', self._canvas_deviator_click)
+        self.deviator_loading.deviator_canvas.mpl_connect("motion_notify_event", self._canvas_deviator_on_moove)
+        self.deviator_loading.deviator_canvas.mpl_connect('button_release_event', self._canvas_deviator_on_release)
+
+    def _connect_model_Ui(self):
+        """Связь слайдеров с моделью"""
+        self._cut_slider_deviator_set_len(len(FC_models[statment.current_test]._tests[self.id].deviator_loading._test_data.strain))
+        self._cut_slider_deviator_set_val(FC_models[statment.current_test]._tests[self.id].deviator_loading.get_borders())
+        self._deviator_volumeter_current_vol(
+            FC_models[statment.current_test]._tests[self.id].deviator_loading.get_current_volume_strain())
+
+    def _plot_deviator_loading(self):
+        try:
+            plot_data = FC_models[statment.current_test]._tests[self.id].deviator_loading.get_plot_data()
+            res = FC_models[statment.current_test]._tests[self.id].deviator_loading.get_test_results()
+            self.deviator_loading.plot(plot_data, res)
+        except KeyError:
+            pass
+
+    def _deviator_volumeter(self, button):
+        """Передача значения выбранного волюмометра в модель"""
+        if FC_models[statment.current_test]._tests[self.id].deviator_loading.check_none():
+            FC_models[statment.current_test]._tests[self.id].deviator_loading.choise_volume_strain(button.text())
+            self._cut_slider_deviator_set_val(FC_models[statment.current_test]._tests[self.id].deviator_loading.get_borders())
+            self._plot_deviator_loading()
+
+    def _split_deviator(self, is_split_deviator):
+        if FC_models[statment.current_test]._tests[self.id].deviator_loading.check_none():
+            FC_models[statment.current_test]._tests[self.id].deviator_loading.set_split_deviator(is_split_deviator)
+            self._plot_deviator_loading()
+
+    def _deviator_volumeter_current_vol(self, current_volume_strain):
+        """Чтение с модели, какие волюмометры рабочие и заполнение в интерфейсе"""
+        if current_volume_strain["current"] == "pore_volume":
+            self.deviator_loading.chose_volumometer_radio_button_1.setChecked(True)
+        else:
+            self.deviator_loading.chose_volumometer_radio_button_2.setChecked(True)
+
+        if current_volume_strain["pore_volume"]:
+            self.deviator_loading.chose_volumometer_radio_button_1.setDisabled(False)
+        else:
+            self.deviator_loading.chose_volumometer_radio_button_1.setDisabled(True)
+
+        if current_volume_strain["cell_volume"]:
+            self.deviator_loading.chose_volumometer_radio_button_2.setDisabled(False)
+        else:
+            self.deviator_loading.chose_volumometer_radio_button_2.setDisabled(True)
+
+    def _cut_slider_deviator_set_len(self, len):
+        """Определение размера слайдера. Через длину массива"""
+        self.deviator_loading.slider_cut.setMinimum(0)
+        self.deviator_loading.slider_cut.setMaximum(len)
+
+    def _cut_slider_deviator_set_val(self, vals):
+        """Установка значений слайдера обрезки"""
+        self.deviator_loading.slider_cut.setLow(vals["left"])
+        self.deviator_loading.slider_cut.setHigh(vals["right"])
+
+    def _cut_slider_deviator_moove(self):
+        """Обработчик перемещения слайдера обрезки"""
+        if FC_models[statment.current_test]._tests[self.id].deviator_loading.check_none():
+            if (int(self.deviator_loading.slider_cut.high()) - int(self.deviator_loading.slider_cut.low())) >= 50:
+                FC_models[statment.current_test]._tests[self.id].deviator_loading.change_borders(
+                    int(self.deviator_loading.slider_cut.low()),
+                    int(self.deviator_loading.slider_cut.high()))
+            self._plot_deviator_loading()
+
+    def _canvas_deviator_click(self, event):
+        """Метод обрабатывает нажатие на канвас"""
+        if event.button == 1 and event.xdata and event.ydata:
+            self.point_identificator_deviator = E_models[statment.current_test].deviator_loading.define_click_point(
+                float(event.xdata),
+                float(event.ydata))
+
+    def _canvas_deviator_on_moove(self, event):
+        """Метод обрабаотывает перемещение зажатой точки"""
+        if self.point_identificator_deviator and event.xdata and event.ydata and event.button == 1:
+            FC_models[statment.current_test]._tests[self.id].deviator_loading.moove_catch_point(float(event.xdata), float(event.ydata),
+                                                                               self.point_identificator_deviator)
+            self._plot_deviator_loading()
+
+    def _canvas_deviator_on_release(self, event):
+        """Метод обрабатывает итпуск зажатой точки"""
+        self.point_identificator_deviator = None
+
+    def _combo_plot_deviator_changed(self):
+        self._plot_deviator_loading()
+
+    def get_test_results(self):
+        return FC_models[statment.current_test]._tests[self.id].get_test_results()
+
+    def refresh(self):
+        try:
+            FC_models[statment.current_test]._tests[self.id].set_test_params()
+            self.deviator_loading_sliders.set_sliders_params(
+                FC_models[statment.current_test]._tests[self.id].get_deviator_loading_draw_params())
+
+            self.deviator_loading_sliders_unload_start_y_slider.set_sliders_params(
+                FC_models[statment.current_test]._tests[self.id].get_deviator_loading_draw_params_unload_start_y())
+
+            self.consolidation_sliders.set_sliders_params(
+                FC_models[statment.current_test]._tests[self.id].get_consolidation_draw_params())
+
+            self._plot_deviator_loading()
+            self._connect_model_Ui()
+            self.signal.emit(True)
+        except KeyError:
+            pass
+
+    @log_this(app_logger, "debug")
+    def set_params(self, param=None):
+        try:
+            self.deviator_loading_sliders.set_sliders_params(
+                FC_models[statment.current_test]._tests[self.id].get_deviator_loading_draw_params())
+
+            self.deviator_loading.split_deviator_radio_button.setChecked(
+                FC_models[statment.current_test]._tests[self.id].deviator_loading.get_split_deviator())
+
+            self._plot_deviator_loading()
+            self._connect_model_Ui()
+        except KeyError:
+            pass
+
+    @log_this(app_logger, "debug")
+    def _deviator_loading_sliders_moove(self, params):
+        """Обработчик движения слайдера"""
+        try:
+            FC_models[statment.current_test]._tests[self.id].set_deviator_loading_draw_params(params)
+            self._plot_deviator_loading()
+            self._connect_model_Ui()
+            self.signal.emit(True)
+        except KeyError:
+            pass
+
+    @log_this(app_logger, "debug")
+    def _deviator_loading_sliders_unload_start_y_slider_moove(self, params):
+        """Обработчик движения слайдера"""
+        try:
+            FC_models[statment.current_test]._tests[self.id].set_deviator_loading_draw_params_unload_start_y(params)
+            self._plot_deviator_loading()
+            self._connect_model_Ui()
+            self.signal.emit(True)
+        except KeyError:
+            pass
+
 class TriaxialStaticLoading_Sliders(QWidget):
     """Виджет с ползунками для регулирования значений переменных.
     При перемещении ползунков отправляет 2 сигнала."""
     signal = pyqtSignal(object)
+
     def __init__(self, params):
         """Определяем основную структуру данных"""
         super().__init__()
@@ -1310,149 +1548,126 @@ class TriaxialStaticLoading_Sliders(QWidget):
         self._sliders_moove()
 
 class StaticSoilTestDialog(QDialog):
-    def __init__(self, test, parent=None):
-        super(StaticSoilTestDialog, self).__init__(parent)
+    signal = pyqtSignal(object)
+
+    def __init__(self, parent=None):
+        super(QDialog, self).__init__(parent)
         self.resize(1200, 900)
         self.setWindowTitle("Обработка опыта")
-        self._model = test
 
-        self.layout = QVBoxLayout()
-        self.deviator_loading = ModelTriaxialDeviatorLoadingUI()
-        self.layout.addWidget(self.deviator_loading)
+        self.layout_scroll_area = QVBoxLayout()
 
-        self.buttonBox = QDialogButtonBox()
-        self.buttonBox.setOrientation(Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
-        self.buttonBox.setObjectName("buttonBox")
-        self.layout.addWidget(self.buttonBox)
+        self.wiget = QWidget()
+        self.wiget.setLayout(self.layout_scroll_area)
+        self.area = QScrollArea()
+        self.area.setWidgetResizable(True)
+        self.area.setWidget(self.wiget)
 
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
+        self.params = {
+            "fail_strain": {"value": 1, "borders": [0.5, 2]},
+            "residual_strength_param": {"value": 1, "borders": [0.5, 2]},
+            "residual_strength": {"value": 1, "borders": [0.5, 2]},
+            "qocr": {"value": 1, "borders": [0.5, 2]},
+            "poisson": {"value": 1, "borders": [0.5, 2]},
+            "dilatancy": {"value": 1, "borders": [0.5, 2]},
+            "volumetric_strain_xc": {"value": 1, "borders": [0.5, 2]},
+            "Eur": {"value": 1, "borders": [0.5, 2]},
+            "amplitude_1": {"value": 1, "borders": [0.5, 2]},
+            "amplitude_2": {"value": 1, "borders": [0.5, 2]},
+            "amplitude_3": {"value": 1, "borders": [0.5, 2]},
+            "hyp_ratio": {"value": 1, "borders": [0.5, 2]}
+        }
 
-        self.deviator_loading.chose_volumometer_button_group.buttonClicked.connect(self._deviator_volumeter)
-        self.deviator_loading.slider_cut.sliderMoved.connect(self._cut_slider_deviator_moove)
+        self.configs = {
+            "fail_strain": "Деформация разрушения",
+            "residual_strength": "Остаточная прочность",
+            "residual_strength_param": "Изгиб остаточной прочности",
+            "qocr": "Значение дивиатора OCR",
+            "poisson": "Коэффициент Пуассона",
+            "dilatancy": "Угол дилатансии",
+            "volumetric_strain_xc": "Объемн. деформ. в пике",
+            "Eur": "Модуль разгрузки",
+            "amplitude_1": "Амп. дев. (низк. час.)",
+            "amplitude_2": "Амп. дев. (сред. час.)",
+            "amplitude_3": "Амп. дев. (выс. час.)",
+            "hyp_ratio": "Коэффициент влияния"
+        }
 
-        self.deviator_loading_sliders = TriaxialStaticLoading_Sliders({"fail_strain": "Деформация разрушения",
-                                                                       "residual_strength": "Остаточная прочность",
-                                                                       "residual_strength_param": "Изгиб остаточной прочности",
-                                                                       "qocr": "Значение дивиатора OCR",
-                                                                       "poisson": "Коэффициент Пуассона",
-                                                                       "dilatancy": "Угол дилатансии",
-                                                                       "volumetric_strain_xc": "Объемн. деформ. в пике",
-                                                                       "Eur": "Модуль разгрузки",
-                                                                       "amplitude_1": "Амп. дев. (низк. час.)",
-                                                                       "amplitude_2": "Амп. дев. (сред. час.)",
-                                                                       "amplitude_3": "Амп. дев. (выс. час.)",
-                                                                       "unload_start_y": "Сдвиг разгрузки",
-                                                                       "hyp_ratio": "Коэффциент влияния"})
-        self.deviator_loading_sliders.setFixedHeight(300)
+        self.general_sliders = GeneralSlider(self.configs, self.params)
+        self.general_sliders.signal[object].connect(self._general_sliders_moove)
+        self.layout_scroll_area.addWidget(self.general_sliders)
 
-        self.deviator_loading_sliders_unload_start_y_slider = TriaxialStaticLoading_Sliders({"unload_start_y": "Сдвиг разгрузки"})
-        box = getattr(self.deviator_loading_sliders_unload_start_y_slider, "{}_box".format("Настройки отрисовки"))
-        box.setTitle('')
-        self.deviator_loading_sliders_unload_start_y_slider.setFixedHeight(80)
+        for i in range(len(FC_models[statment.current_test]._tests)):
+            # Создадим слайдер
+            setattr(self, f"widget_{i}", DeviatorWidget(id=i))
+            widget = getattr(self, f"widget_{i}")
+            self.layout_scroll_area.addWidget(widget)
+            widget.signal.connect(lambda: self.signal.emit(True))
+            widget.set_params(True)
 
-        self.deviator_loading_sliders.signal[object].connect(self._deviator_loading_sliders_moove)
-        self.deviator_loading_sliders_unload_start_y_slider.signal[object].connect(self._deviator_loading_sliders_unload_start_y_slider_moove)
+        self.layout = QVBoxLayout(self)
+        self.layout.addWidget(self.area)
 
+    def _general_sliders_moove(self, params):
+        """Обработчик движения слайдера"""
+        self.set_params()
 
-        self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders)
-        self.deviator_loading.graph_layout.addWidget(self.deviator_loading_sliders_unload_start_y_slider)
+        self.signal.emit(True)
 
+    def set_params(self):
+        for i in range(len(FC_models[statment.current_test]._tests)):
+            widget = getattr(self, f"widget_{i}")
+            widget.set_params(True)
 
-        self._connect_model_Ui()
-        self._plot_deviator_loading()
+class GeneralSlider(QWidget):
+    signal = pyqtSignal(object)
 
-        self.deviator_loading_sliders.set_sliders_params(self._model.get_deviator_loading_draw_params())
-        self.deviator_loading_sliders_unload_start_y_slider.set_sliders_params(self._model.get_deviator_loading_draw_params_unload_start_y())
+    def __init__(self, configs, params):
+        super().__init__()
 
-        self.deviator_loading.split_deviator.setVisible(False)
+        self.params = params
 
+        self.general_sliders = TriaxialStaticLoading_Sliders(configs)
 
-        self.setLayout(self.layout)
+        self.set_initial_general_sliders_params()
 
-    def _connect_model_Ui(self):
-        """Связь слайдеров с моделью"""
-        self._cut_slider_deviator_set_len(len(self._model.deviator_loading._test_data.strain))
-        self._cut_slider_deviator_set_val(self._model.deviator_loading.get_borders())
+        self.general_sliders.signal[object].connect(self._general_sliders_moove)
 
-        self._deviator_volumeter_current_vol(self._model.deviator_loading.get_current_volume_strain())
+        self.general_sliders.setFixedHeight(280)
 
-    def _plot_deviator_loading(self):
-        try:
-            plot_data = self._model.deviator_loading.get_plot_data()
-            res = self._model.deviator_loading.get_test_results()
+        self.layout = QVBoxLayout(self)
 
-            self.deviator_loading._plot_E_E50(plot_data, res)
-            self.deviator_loading._plot_volume_strain(plot_data, res)
+        self.layout.addWidget(self.general_sliders)
 
-        except KeyError:
-            pass
+    def set_initial_general_sliders_params(self):
+        self.general_sliders.set_sliders_params(self.params)
 
-    def _deviator_volumeter(self, button):
-        """Передача значения выбранного волюмометра в модель"""
-        if self._model.deviator_loading.check_none():
-            self._model.deviator_loading.choise_volume_strain(button.text())
-            self._cut_slider_deviator_set_val(self._model.deviator_loading.get_borders())
-            self._plot_deviator_loading()
-
-    def _deviator_volumeter_current_vol(self, current_volume_strain):
-        """Чтение с модели, какие волюмометры рабочие и заполнение в интерфейсе"""
-        if current_volume_strain["current"] == "pore_volume":
-            self.deviator_loading.chose_volumometer_radio_button_1.setChecked(True)
-        else:
-            self.deviator_loading.chose_volumometer_radio_button_2.setChecked(True)
-
-        if current_volume_strain["pore_volume"]:
-            self.deviator_loading.chose_volumometer_radio_button_1.setDisabled(False)
-        else:
-            self.deviator_loading.chose_volumometer_radio_button_1.setDisabled(True)
-
-        if current_volume_strain["cell_volume"]:
-            self.deviator_loading.chose_volumometer_radio_button_2.setDisabled(False)
-        else:
-            self.deviator_loading.chose_volumometer_radio_button_2.setDisabled(True)
-
-    def _cut_slider_deviator_set_len(self, len):
-        """Определение размера слайдера. Через длину массива"""
-        self.deviator_loading.slider_cut.setMinimum(0)
-        self.deviator_loading.slider_cut.setMaximum(len)
-
-    def _cut_slider_deviator_set_val(self, vals):
-        """Установка значений слайдера обрезки"""
-        self.deviator_loading.slider_cut.setLow(vals["left"])
-        self.deviator_loading.slider_cut.setHigh(vals["right"])
-
-    def _cut_slider_deviator_moove(self):
-        """Обработчик перемещения слайдера обрезки"""
-        try:
-            if self._model.deviator_loading.check_none():
-                if (int(self.deviator_loading.slider_cut.high()) - int(self.deviator_loading.slider_cut.low())) >= 50:
-                    self._model.deviator_loading.change_borders(
-                        int(self.deviator_loading.slider_cut.low()),
-                        int(self.deviator_loading.slider_cut.high()))
-                self._plot_deviator_loading()
-        except:
-            pass
-
-    def _deviator_loading_sliders_moove(self, params):
+    def _general_sliders_moove(self, params):
         """Обработчик движения слайдера"""
         try:
-            self._model.set_deviator_loading_draw_params(params)
-            self._plot_deviator_loading()
-            self._connect_model_Ui()
-        except KeyError:
-            pass
+            params_modified = {}
 
-    def _deviator_loading_sliders_unload_start_y_slider_moove(self, params):
-        """Обработчик движения слайдера"""
-        try:
-            self._model.set_deviator_loading_draw_params_unload_start_y(params)
-            self._plot_deviator_loading()
-            self._connect_model_Ui()
-        except KeyError:
-            pass
+            for i in range(len(FC_models[statment.current_test]._tests)):
+                original = FC_models[statment.current_test]._tests[i].deviator_loading.get_draw_params()
+                for param in params:
+                    if original[param]["value"] is not None and (params[param] < 0.98 or params[param] > 1.02):
+                        value = original[param]["value"] * params[param]
+                        if value < original[param]["borders"][0]:
+                            params_modified[param] = original[param]["borders"][0]
+                        elif value > original[param]["borders"][1]:
+                            params_modified[param] = original[param]["borders"][1]
+                        else:
+                            params_modified[param] = original[param]["value"] * params[param]
+                    else:
+                        params_modified[param] = original[param]["value"]
 
+                FC_models[statment.current_test]._tests[i].set_deviator_loading_draw_params(params_modified)
+
+            self.set_initial_general_sliders_params()
+            self.signal.emit(True)
+
+        except Exception as err:
+            print(err)
 
 
 if __name__ == '__main__':
