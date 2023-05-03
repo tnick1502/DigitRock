@@ -190,7 +190,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         except:
             pass
 
-    def plot(self, plots, res):
+    def plot(self, plots, res, mode=None):
         """Построение графиков опыта"""
 
         if statment.general_parameters.test_mode in ["Трёхосное сжатие с разгрузкой",
@@ -198,16 +198,19 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                                                      "Трёхосное сжатие с разгрузкой (plaxis)",
                                                      "Виброползучесть"]:
 
-            if "Eur_E" not in [self.combo_box.itemText(i) for i in range(self.combo_box.count())]:
-                self.combo_box.addItems(["Eur_E"])
-                self.combo_box.addItems(["Eur_E50"])
-                self.combo_box.addItems(["Eur"])
-                if statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
-                    self.combo_box.setCurrentText("Eur")
-                elif statment.general_parameters.test_mode == "Виброползучесть":
-                    self.combo_box.setCurrentText("E50")
-                else:
-                    self.combo_box.setCurrentText("Eur_E")
+            if mode:
+                self.combo_box.setCurrentText(mode)
+            else:
+                if "Eur_E" not in [self.combo_box.itemText(i) for i in range(self.combo_box.count())]:
+                    self.combo_box.addItems(["Eur_E"])
+                    self.combo_box.addItems(["Eur_E50"])
+                    self.combo_box.addItems(["Eur"])
+                    if statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
+                        self.combo_box.setCurrentText("Eur")
+                    elif statment.general_parameters.test_mode == "Виброползучесть":
+                        self.combo_box.setCurrentText("E50")
+                    else:
+                        self.combo_box.setCurrentText("Eur_E")
 
         try:
             # Если необходимо безразрывное построение девиатора

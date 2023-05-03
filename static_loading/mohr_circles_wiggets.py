@@ -1240,6 +1240,7 @@ class DeviatorWidget(QWidget):
         self.point_identificator_deviator = None
 
         self.deviator_loading = ModelTriaxialDeviatorLoadingUI()
+        self.deviator_loading.combo_box.setCurrentText("E50")
         self.deviator_loading.setFixedHeight(900)
 
         self.deviator_loading.combo_box.activated.connect(self._combo_plot_deviator_changed)
@@ -1311,7 +1312,7 @@ class DeviatorWidget(QWidget):
         try:
             plot_data = FC_models[statment.current_test]._tests[self.id].deviator_loading.get_plot_data()
             res = FC_models[statment.current_test]._tests[self.id].deviator_loading.get_test_results()
-            self.deviator_loading.plot(plot_data, res)
+            self.deviator_loading.plot(plot_data, res, mode="E50")
         except KeyError:
             pass
 
