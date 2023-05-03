@@ -176,7 +176,7 @@ class ModelMohrCircles:
             sigma_3, sigma_1 = self.get_sigma_3_1()
             if sigma_3 is not None:
                 c, fi = ModelMohrCircles.mohr_cf_stab(sigma_3, sigma_1)
-                self._test_result.c = np.round(np.arctan(c), 3)
+                self._test_result.c = np.round(np.arctan(c), 3) + 0 # отрицательные нули тут как дома
                 self._test_result.fi = np.round(np.rad2deg(np.arctan(fi)), 1)# round(np.rad2deg(np.arctan(fi)), 1)
 
                 self.plot_data_m = None, None
@@ -476,139 +476,153 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
         self._reference_pressure_array = reference_pressure_array
 
     def _test_modeling(self):
-        if statment.general_parameters.test_mode in ["Трёхосное сжатие (F, C, E)", 'Трёхосное сжатие (F, C, Eur)']:
-            pre_defined_kr_fgs = E_models[statment.current_test].deviator_loading.pre_defined_kr_fgs
-            sigma = E_models[statment.current_test].deviator_loading._test_params["sigma_3"]
-            _pre_defined_kr_fgs = []
-            _pressure_array = statment[statment.current_test].mechanical_properties.pressure_array["current"]
-            for press in _pressure_array:
-                if pre_defined_kr_fgs:
-                    if press >= sigma:
-                        _pre_defined_kr_fgs.append(1)
+        self._generate_tests()
+
+    def _generate_tests(self):
+        c_count = 0
+        resulted_c = -1
+        while resulted_c < 0 and c_count < 5:
+            if statment.general_parameters.test_mode in ["Трёхосное сжатие (F, C, E)", 'Трёхосное сжатие (F, C, Eur)']:
+                pre_defined_kr_fgs = E_models[statment.current_test].deviator_loading.pre_defined_kr_fgs
+                sigma = E_models[statment.current_test].deviator_loading._test_params["sigma_3"]
+                _pre_defined_kr_fgs = []
+                _pressure_array = statment[statment.current_test].mechanical_properties.pressure_array["current"]
+                for press in _pressure_array:
+                    if pre_defined_kr_fgs:
+                        if press >= sigma:
+                            _pre_defined_kr_fgs.append(1)
+                        else:
+                            _pre_defined_kr_fgs.append(None)
                     else:
-                        _pre_defined_kr_fgs.append(None)
-                else:
-                    if press <= sigma:
-                        _pre_defined_kr_fgs.append(0)
-                    else:
-                        _pre_defined_kr_fgs.append(None)
-            self.pre_defined_kr_fgs = _pre_defined_kr_fgs
+                        if press <= sigma:
+                            _pre_defined_kr_fgs.append(0)
+                        else:
+                            _pre_defined_kr_fgs.append(None)
+                self.pre_defined_kr_fgs = _pre_defined_kr_fgs
 
-        self._tests = []
+            self._tests = []
 
-        if statment.general_parameters.test_mode == "Трёхосное сжатие НН" or statment.general_parameters.test_mode == "Вибропрочность":
-            self.add_test_st_NN()
-        else:
-            self.set_reference_params(statment[statment.current_test].mechanical_properties.sigma_3, statment[statment.current_test].mechanical_properties.E50)
-
-            self._reference_pressure_array = statment[statment.current_test].mechanical_properties.pressure_array["current"]
-
-            sigma_3_array = []
-            qf_array = []
-            sigma_1_array = []
-            E50_array = []
-            if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Вибропрочность':
-                u_array = statment[statment.current_test].mechanical_properties.u
-                if type(u_array) != list:
-                    u_array = [0 for i in self._reference_pressure_array]
+            if statment.general_parameters.test_mode == "Трёхосное сжатие НН" or statment.general_parameters.test_mode == "Вибропрочность":
+                self.add_test_st_NN()
             else:
-                u_array = [0 for i in self._reference_pressure_array]
+                self.set_reference_params(statment[statment.current_test].mechanical_properties.sigma_3, statment[statment.current_test].mechanical_properties.E50)
 
-            sigma_3_origin = statment[statment.current_test].mechanical_properties.sigma_3
-            qf_origin = statment[statment.current_test].mechanical_properties.qf
-            sigma_1_origin = statment[statment.current_test].mechanical_properties.sigma_1
-            E50_origin = statment[statment.current_test].mechanical_properties.E50
-            u_origin = statment[statment.current_test].mechanical_properties.u
-            Eur_origin = statment[statment.current_test].mechanical_properties.Eur
-            statment[statment.current_test].mechanical_properties.Eur = None
+                self._reference_pressure_array = statment[statment.current_test].mechanical_properties.pressure_array["current"]
 
-            for num, sigma_3 in enumerate(self._reference_pressure_array):
-                sigma_3_array.append(sigma_3 - u_array[num])
-                qf_array.append(define_qf(sigma_3, statment[statment.current_test].mechanical_properties.c,
-                                          statment[statment.current_test].mechanical_properties.fi))
-                sigma_1_array.append(np.round(qf_array[-1] + sigma_3_array[-1], 3))
+                sigma_3_array = []
+                qf_array = []
+                sigma_1_array = []
+                E50_array = []
+                if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Вибропрочность':
+                    u_array = statment[statment.current_test].mechanical_properties.u
+                    if type(u_array) != list:
+                        u_array = [0 for i in self._reference_pressure_array]
+                else:
+                    u_array = [0 for i in self._reference_pressure_array]
 
-            c = 0
-            fi = 0
+                sigma_3_origin = statment[statment.current_test].mechanical_properties.sigma_3
+                qf_origin = statment[statment.current_test].mechanical_properties.qf
+                sigma_1_origin = statment[statment.current_test].mechanical_properties.sigma_1
+                E50_origin = statment[statment.current_test].mechanical_properties.E50
+                u_origin = statment[statment.current_test].mechanical_properties.u
+                Eur_origin = statment[statment.current_test].mechanical_properties.Eur
+                statment[statment.current_test].mechanical_properties.Eur = None
 
-            current_c = np.round(statment[statment.current_test].mechanical_properties.c, 3)
-            current_fi = np.round(statment[statment.current_test].mechanical_properties.fi, 1)
+                for num, sigma_3 in enumerate(self._reference_pressure_array):
+                    sigma_3_array.append(sigma_3 - u_array[num])
+                    qf_array.append(define_qf(sigma_3, statment[statment.current_test].mechanical_properties.c,
+                                              statment[statment.current_test].mechanical_properties.fi))
+                    sigma_1_array.append(np.round(qf_array[-1] + sigma_3_array[-1], 3))
 
-            count = 0
-            while True:
-                if (c == current_c and fi == current_fi):
-                    break
+                c = 0
+                fi = 0
 
-                if count > 5:
-                    break
+                current_c = np.round(statment[statment.current_test].mechanical_properties.c, 3)
+                current_fi = np.round(statment[statment.current_test].mechanical_properties.fi, 1)
 
-                qf = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(
-                    np.array(sigma_3_array), np.array(sigma_1_array),
-                    statment[statment.current_test].mechanical_properties.fi,
-                    statment[statment.current_test].mechanical_properties.c * 1000)
+                count = 0
+                while True:
+                    if (c == current_c and fi == current_fi):
+                        break
 
-                for i in range(len(qf)):
-                    qf_array[i] = round(qf[i], 3)
-                    sigma_1_array[i] = round(qf_array[i] + sigma_3_array[i], 3)
-                    E50_array.append(define_E50(
-                        statment[statment.current_test].mechanical_properties.E50,
-                        statment[statment.current_test].mechanical_properties.c * 1000,
+                    if count > 5:
+                        break
+
+                    qf = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(
+                        np.array(sigma_3_array), np.array(sigma_1_array),
                         statment[statment.current_test].mechanical_properties.fi,
-                        sigma_3_array[i],
-                        statment[statment.current_test].mechanical_properties.sigma_3,
-                        statment[statment.current_test].mechanical_properties.m) * np.random.uniform(0.95, 1.05))
+                        statment[statment.current_test].mechanical_properties.c * 1000)
+
+                    for i in range(len(qf)):
+                        qf_array[i] = round(qf[i], 3)
+                        sigma_1_array[i] = round(qf_array[i] + sigma_3_array[i], 3)
+                        E50_array.append(define_E50(
+                            statment[statment.current_test].mechanical_properties.E50,
+                            statment[statment.current_test].mechanical_properties.c * 1000,
+                            statment[statment.current_test].mechanical_properties.fi,
+                            sigma_3_array[i],
+                            statment[statment.current_test].mechanical_properties.sigma_3,
+                            statment[statment.current_test].mechanical_properties.m) * np.random.uniform(0.95, 1.05))
 
 
-                c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab(
-                    [np.round(sigma_3 / 1000, 3) for sigma_3 in sigma_3_array],
-                    [np.round(sigma_1/1000, 3) for sigma_1 in sigma_1_array])
-                    #[np.round(sigma_3/1000 - pore, 3) for sigma_3, pore in zip(sigma_3_array, u_origin)],
-                    #[np.round(sigma_1/1000 - pore, 3) for sigma_1, pore in zip(sigma_1_array, u_origin)])
-                c = round(c, 3)
-                fi = round(np.rad2deg(np.arctan(fi)), 1)
+                    c, fi = ModelMohrCirclesSoilTest.mohr_cf_stab(
+                        [np.round(sigma_3 / 1000, 3) for sigma_3 in sigma_3_array],
+                        [np.round(sigma_1/1000, 3) for sigma_1 in sigma_1_array])
+                        #[np.round(sigma_3/1000 - pore, 3) for sigma_3, pore in zip(sigma_3_array, u_origin)],
+                        #[np.round(sigma_1/1000 - pore, 3) for sigma_1, pore in zip(sigma_1_array, u_origin)])
+                    c = round(c, 3)
+                    fi = round(np.rad2deg(np.arctan(fi)), 1)
 
-                count += 1
-
-            if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
-                q_res_normal = np.asarray([np.round(float(define_qf(sigma_3_array[i],
-                                                             statment[statment.current_test].mechanical_properties.c_res,
-                                                             statment[statment.current_test].mechanical_properties.fi_res)), 1) for i in range(len(sigma_1_array))])
-                sigma_1_res = q_res_normal + sigma_3_array
-                q_res_noised = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(np.asarray(sigma_3_array), np.asarray(sigma_1_res),
-                                                                                  statment[statment.current_test].mechanical_properties.fi_res,
-                                                                                  statment[statment.current_test].mechanical_properties.c_res*1000)
-
-            for i in range(len(sigma_1_array)):
-                statment[statment.current_test].mechanical_properties.sigma_3 = sigma_3_array[i] + u_array[i]
-                statment[statment.current_test].mechanical_properties.qf = qf_array[i]
-                statment[statment.current_test].mechanical_properties.sigma_1 = sigma_1_array[i] + u_array[i]
-                statment[statment.current_test].mechanical_properties.E50 = E50_array[i]
+                    count += 1
 
                 if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
-                    statment[statment.current_test].mechanical_properties.q_res = q_res_noised[i]
+                    q_res_normal = np.asarray([np.round(float(define_qf(sigma_3_array[i],
+                                                                 statment[statment.current_test].mechanical_properties.c_res,
+                                                                 statment[statment.current_test].mechanical_properties.fi_res)), 1) for i in range(len(sigma_1_array))])
+                    sigma_1_res = q_res_normal + sigma_3_array
+                    q_res_noised = ModelMohrCirclesSoilTest.new_noise_for_mohrs_circles(np.asarray(sigma_3_array), np.asarray(sigma_1_res),
+                                                                                      statment[statment.current_test].mechanical_properties.fi_res,
+                                                                                      statment[statment.current_test].mechanical_properties.c_res*1000)
 
-                if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == 'Вибропрочность':
-                    statment[statment.current_test].mechanical_properties.u = u_array[i]
-                if statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == "Вибропрочность":
-                    self.add_test_st_NN()
-                else:
-                    if statment.general_parameters.test_mode in ["Трёхосное сжатие (F, C, E)", 'Трёхосное сжатие (F, C, Eur)']:
-                        self.current_kr_fgs_ind = i
-                        self.add_test_st(pre_defined_kr_fgs=self.pre_defined_kr_fgs[i])
+                for i in range(len(sigma_1_array)):
+                    statment[statment.current_test].mechanical_properties.sigma_3 = sigma_3_array[i] + u_array[i]
+                    statment[statment.current_test].mechanical_properties.qf = qf_array[i]
+                    statment[statment.current_test].mechanical_properties.sigma_1 = sigma_1_array[i] + u_array[i]
+                    statment[statment.current_test].mechanical_properties.E50 = E50_array[i]
+
+                    if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
+                        statment[statment.current_test].mechanical_properties.q_res = q_res_noised[i]
+
+                    if statment.general_parameters.test_mode == 'Трёхосное сжатие КН' or statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == 'Вибропрочность':
+                        statment[statment.current_test].mechanical_properties.u = u_array[i]
+                    if statment.general_parameters.test_mode == 'Трёхосное сжатие НН' or statment.general_parameters.test_mode == "Вибропрочность":
+                        self.add_test_st_NN()
                     else:
-                        self.add_test_st(pre_defined_kr_fgs=self.pre_defined_kr_fgs)
+                        if statment.general_parameters.test_mode in ["Трёхосное сжатие (F, C, E)", 'Трёхосное сжатие (F, C, Eur)']:
+                            self.current_kr_fgs_ind = i
+                            self.add_test_st(pre_defined_kr_fgs=self.pre_defined_kr_fgs[i])
+                        else:
+                            self.add_test_st(pre_defined_kr_fgs=self.pre_defined_kr_fgs)
 
-            self.pre_defined_kr_fgs = None
+                self.pre_defined_kr_fgs = None
 
-            statment[statment.current_test].mechanical_properties.sigma_3 = sigma_3_origin
-            statment[statment.current_test].mechanical_properties.qf = qf_origin
-            statment[statment.current_test].mechanical_properties.sigma_1 = sigma_1_origin
-            statment[statment.current_test].mechanical_properties.E50 = E50_origin
-            statment[statment.current_test].mechanical_properties.u = u_origin
-            statment[statment.current_test].mechanical_properties.Eur = Eur_origin
+                statment[statment.current_test].mechanical_properties.sigma_3 = sigma_3_origin
+                statment[statment.current_test].mechanical_properties.qf = qf_origin
+                statment[statment.current_test].mechanical_properties.sigma_1 = sigma_1_origin
+                statment[statment.current_test].mechanical_properties.E50 = E50_origin
+                statment[statment.current_test].mechanical_properties.u = u_origin
+                statment[statment.current_test].mechanical_properties.Eur = Eur_origin
 
-        self._b_noise = np.round(np.random.uniform(0.95, 0.98), 2)
-        self._test_processing()
+            self._b_noise = np.round(np.random.uniform(0.95, 0.98), 2)
+            self._test_processing()
+
+            resulted_c = self.get_test_results()["c"]
+
+            if resulted_c is None:
+                break
+
+            c_count += 1
+
 
     def set_test_params(self):
         self._test_modeling()
