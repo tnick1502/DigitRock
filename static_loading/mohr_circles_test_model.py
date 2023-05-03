@@ -176,7 +176,7 @@ class ModelMohrCircles:
             sigma_3, sigma_1 = self.get_sigma_3_1()
             if sigma_3 is not None:
                 c, fi = ModelMohrCircles.mohr_cf_stab(sigma_3, sigma_1)
-                self._test_result.c = np.round(np.arctan(c), 3)
+                self._test_result.c = np.round(np.arctan(c), 3) + 0 # отрицательные нули тут как дома
                 self._test_result.fi = np.round(np.rad2deg(np.arctan(fi)), 1)# round(np.rad2deg(np.arctan(fi)), 1)
 
                 self.plot_data_m = None, None
@@ -622,7 +622,6 @@ class ModelMohrCirclesSoilTest(ModelMohrCircles):
                 break
 
             c_count += 1
-
 
 
     def set_test_params(self):
