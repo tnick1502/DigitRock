@@ -1607,27 +1607,42 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
             names = []
             if len(E_models):
-                names.append(f"E_models{statment.general_data.get_shipment_number()}.pickle")
+                if statment.general_parameters.test_mode in [
+                    "Трёхосное сжатие с разгрузкой",
+                    "Трёхосное сжатие с разгрузкой (plaxis)",
+                    "Трёхосное сжатие (F, C, Eur)"
+                ]:
+                    names.append(f"Eur_models{statment.general_data.get_shipment_number()}.pickle")
+                else:
+                    names.append(f"E_models{statment.general_data.get_shipment_number()}.pickle")
             if len(FC_models):
                 names.append(f"FC_models{statment.general_data.get_shipment_number()}.pickle")
 
             statment.save(models, names)
 
-            if statment.general_parameters.test_mode in [
-                "Трёхосное сжатие (E)",
+            if statment.general_parameters.test_mode == "Трёхосное сжатие (E)":
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                           f"E_models{statment.general_data.get_shipment_number()}.pickle"))
+            elif statment.general_parameters.test_mode in [
                 "Трёхосное сжатие с разгрузкой",
                 "Трёхосное сжатие с разгрузкой (plaxis)"
             ]:
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
-                                           f"E_models{statment.general_data.get_shipment_number()}.pickle"))
-            elif statment.general_parameters.test_mode in [
-                "Трёхосное сжатие (F, C, E)",
-                "Трёхосное сжатие (F, C, Eur)"
-            ]:
+                                           f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
+
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
                                            f"E_models{statment.general_data.get_shipment_number()}.pickle"))
                 FC_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
+
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, Eur)":
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                           f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
+                FC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
+
+
             elif statment.general_parameters.test_mode in [
                 'Трёхосное сжатие (F, C)',
                 'Трёхосное сжатие КН',
