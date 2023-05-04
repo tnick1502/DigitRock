@@ -1515,6 +1515,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
     def save_report_and_continue(self):
+        self.save_pickle()
         try:
             self.save_report()
         except:
