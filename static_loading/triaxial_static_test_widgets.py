@@ -38,6 +38,7 @@ __version__ = actual_version
 from authentication.request_qr import request_qr
 from authentication.control import control
 from saver import XMLWidget
+from general.general_statement import StatementGenerator
 from metrics.session_writer import SessionWriter
 
 
@@ -800,6 +801,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
         self.tab_4._report_types_widget.clicked.connect(self.on_report_type_clicked)
 
+        self.tab_4.general_statment_button.clicked.connect(self.general_statment)
+
         if not os.path.exists(self.plaxis_log_path):
             os.mkdir(self.plaxis_log_path)
 
@@ -1542,19 +1545,23 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
             statment.save(models, names)
 
-            if statment.general_parameters.test_mode in [
-                "Трёхосное сжатие (E)",
+            if statment.general_parameters.test_mode == "Трёхосное сжатие (E)":
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                           f"E_models{statment.general_data.get_shipment_number()}.pickle"))
+            elif statment.general_parameters.test_mode in [
                 "Трёхосное сжатие с разгрузкой",
                 "Трёхосное сжатие с разгрузкой (plaxis)"
             ]:
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
-                                           f"E_models{statment.general_data.get_shipment_number()}.pickle"))
-            elif statment.general_parameters.test_mode in [
-                "Трёхосное сжатие (F, C, E)",
-                "Трёхосное сжатие (F, C, Eur)"
-            ]:
+                                           f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
                                            f"E_models{statment.general_data.get_shipment_number()}.pickle"))
+                FC_models.dump(os.path.join(statment.save_dir.save_directory,
+                                            f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
+            elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, Eur)":
+                E_models.dump(os.path.join(statment.save_dir.save_directory,
+                                           f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
                 FC_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
             elif statment.general_parameters.test_mode in [
@@ -1630,20 +1637,16 @@ class StatickSoilTestApp(AppMixin, QWidget):
             ]:
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
                                            f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
-
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, E)":
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
                                            f"E_models{statment.general_data.get_shipment_number()}.pickle"))
                 FC_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
-
             elif statment.general_parameters.test_mode == "Трёхосное сжатие (F, C, Eur)":
                 E_models.dump(os.path.join(statment.save_dir.save_directory,
                                            f"Eur_models{statment.general_data.get_shipment_number()}.pickle"))
                 FC_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"FC_models{statment.general_data.get_shipment_number()}.pickle"))
-
-
             elif statment.general_parameters.test_mode in [
                 'Трёхосное сжатие (F, C)',
                 'Трёхосное сжатие КН',
@@ -1846,6 +1849,21 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
         QMessageBox.about(self, "Сообщение", "Excel сохранен")
         app_logger.info("Excel сохранен")
+
+    def general_statment(self):
+        try:
+            s = statment.general_data.path
+        except:
+            s = None
+        try:
+            test_mode_file_name = "FCE"
+
+            _statment = StatementGenerator(self, path=s, statement_structure_key="Resonance column",
+                                           test_mode_and_shipment=(test_mode_file_name,
+                                                                   statment.general_data.get_shipment_number()))
+            _statment.show()
+        except Exception as err:
+            print(err)
 
 
 if __name__ == '__main__':
