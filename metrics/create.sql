@@ -72,3 +72,21 @@ RETURNS TABLE (test_type varchar, session_start timestamp, session_duration nume
 	LEFT JOIN users USING (user_ip)
 	WHERE username = current_username AND EXTRACT(MONTH FROM session_start) = current_month AND EXTRACT(YEAR FROM session_start) = current_year
 $$ LANGUAGE SQL;
+
+SELECT * FROM get_sessions_by_user('Михайлов А.И.', 2023, 5)
+SELECT * FROM get_sessions_by_user('Денисова Л.Г.', 2023, 5)
+SELECT * FROM get_sessions_by_user('Жмылев Д.А.', 2023, 5)
+
+
+SELECT * FROM get_avg_by_user('Михайлов А.И.', 2023, 5)
+SELECT * FROM get_avg_by_user('Денисова Л.Г.', 2023, 5)
+SELECT * FROM get_avg_by_user('Жмылев Д.А.', 2023, 5)
+
+SELECT * FROM get_avg_report_time_by_test_type()
+
+SELECT * FROM users
+
+SELECT SUM (report_count)
+FROM sessions
+LEFT JOIN users USING (user_ip)
+WHERE username = 'Жмылев Д.А.' and EXTRACT (MONTH FROM session_start) = 5

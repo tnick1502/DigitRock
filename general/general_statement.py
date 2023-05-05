@@ -24,6 +24,49 @@ from general.report_writer import ReportXlsxSaver
 from singletons import statment
 
 
+def zap(val, prec, none='-'):
+    """ Возвращает значение `val` в виде строки с `prec` знаков после запятой
+    используя запятую как разделитель дробной части
+    """
+    if isinstance(val, str):
+        return val
+    if val is None:
+        return none
+    fmt = "{:." + str(int(prec)) + "f}"
+    return fmt.format(val).replace(".", ",")
+
+def val_to_list(val, prec) -> list:
+    if val is None:
+        return [None]
+    else:
+        try:
+            val = [float(val)]
+        except ValueError:
+            if val.count(';') > 0:
+                v = val.split(";")
+                val = []
+                for value in v:
+                    try:
+                        a = value.replace(",", ".").strip(" ")
+                        a = zap(a, prec)
+                        val.append(a)
+                    except:
+                        pass
+            else:
+                return [val]
+
+        return val
+
+def convert_borehole_data(x):
+    try:
+        borehole = float(x)
+        if borehole % 1 < 0.001:
+            return str(int(borehole))
+        else:
+            return str(borehole)
+    except ValueError:
+        return x
+
 def convert_data(data):
     def zap(val, prec, none='-'):
         """ Возвращает значение `val` в виде строки с `prec` знаков после запятой
@@ -186,6 +229,33 @@ def convert_data2(data):
 
     #x.insert(val, pos)
 
+
+def expand_data(data):
+    data_new = []
+
+    for i in range(len(data)):
+        try:
+            line = data[i]
+            line[0] = [line[0]]
+            line[1] = [convert_borehole_data(line[1])]
+            line[2] = [line[2].replace(".", ",")]
+
+            max_len = 1
+            for i in range(3, len(line)):
+                line[i] = val_to_list(line[i], 1)
+                max_len = max(max_len, len(line[i]))
+
+            for k in range(max_len):
+                k_line = []
+                for i in range(len(line)):
+                    try:
+                        k_line.append(line[i][k])
+                    except:
+                        k_line.append(line[i][0])
+                data_new.append(k_line)
+        except:
+            data_new.append(line[0])
+    return data_new
 
 
 class StatementGenerator(QDialog):
@@ -533,10 +603,15 @@ class StatementGenerator(QDialog):
                     try:
                         if statment.general_parameters.test_mode == "Виброползучесть":
                            data = convert_data(data)
+                        elif statment.general_parameters.test_mode in [
+                            "Трёхосное сжатие (F, C, E)",
+                            "Трёхосное сжатие (F, C)",
+                        ]:
+                            data = expand_data(data)
                         elif statment.general_parameters.test_mode == "Демпфирование по Релею":
                             data = convert_data2(data)
-                    except:
-                        pass
+                    except Exception as err:
+                        print(err)
 
                     for i in range(len(data)):
                         for j in range(len(data[i])):
@@ -1294,7 +1369,19 @@ class StatementStructure(QWidget):
         return structure
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+
+
+    data = [['70-10', '70.0', '44,0', 'Глина тяжелая твёрдая', 'FC;FC;FC', '0,05;0,075;0,1', '0,28;0,34;0,39', '20,8', '0,062', '38,0;28,7;38,0', '29,6;26,6;32,7', '0,26;0,29;0,27'], ['70-11', '70.0', '44,0', 'Глина тяжелая твёрдая', 'FC;FC;FC', '0,05;0,075;0,1', '0,28;0,34;0,39', '20,8', '0,062', '32,5;35,3;39,6', '28,2;33,4;32,0', '0,26;0,26;0,27'], ['70-12', '70.0', '44,0', 'Глина тяжелая твёрдая', 'FC;FC;FC', '0,05;0,075;0,1', '0,28;0,34;0,39', '20,8', '0,062', '30,3;29,4;33,1', '27,4;28,3;29,2', '0,26;0,23;0,24'], ['70-13', '70.0', '44,0', 'Глина тяжелая твёрдая', 'FC;FC;FC', '0,05;0,075;0,1', '0,28;0,34;0,39', '20,8', '0,062', '34,7;29,1;34,9', '30,4;27,4;30,5', '0,27;0,31;0,29'], ['70-14', '70.0', '44,0', 'Глина тяжелая твёрдая', 'FC;FC;FC', '0,05;0,075;0,1', '0,29;0,34;0,39', '20,8', '0,062', '35,6;27,8;35,3', '32,4;27,0;31,2', '0,28;0,29;0,27'], ['70-15', '70.0', '44,0', 'Глина тяжелая твёрдая', 'FC;FC;FC', '0,05;0,075;0,1', '0,29;0,34;0,39', '20,8', '0,062', '31,6;30,0;35,4', '28,2;29,1;29,0', '0,28;0,28;0,27'], ['70-16', '70.0', '44,0', 'Глина тяжелая твёрдая', 'FC;FC;FC', '0,05;0,075;0,1', '0,28;0,34;0,39', '20,8', '0,062', '32,1;30,5;39,8', '28,5;28,5;34,5', '0,27;0,28;0,26'], ['70-17', '70.0', '44,0', 'Глина тяжелая твёрдая', 'FC;FC;FC', '0,05;0,075;0,1', '0,28;0,34;0,39', '20,8', '0,062', '33,9;32,7;39,2', '30,1;29,6;33,7', '0,26;0,28;0,27'], ['']]
+
+    for i in data:
+        print(i)
+
+    data = expand_data(data)
+
+    for i in data:
+        print(i)
+
+    '''app = QApplication(sys.argv)
 
     headlines = ["Лаб. ном.", "Модуль деформации E, кПа", "Сцепление с, МПа",
                  "Угол внутреннего трения, град",
@@ -1316,6 +1403,6 @@ if __name__ == "__main__":
     app.setStyle('Fusion')
 
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec_())'''
 
 

@@ -1494,8 +1494,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
                                (number, MechanicalPropertyPosition["fi_res"][1])),
                               test_result["fi_res"], sheet="Лист1", color="FF6961")
 
-            # statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
-            # name=statment.general_parameters.test_mode + ".pickle")
+            self.write_excel_general_data(number)
+
             if self.save_massage:
                 QMessageBox.about(self, "Сообщение", "Успешно сохранено")
                 app_logger.info(
@@ -1532,6 +1532,94 @@ class StatickSoilTestApp(AppMixin, QWidget):
             else:
                 pass
         SessionWriter.write_test()
+
+    def write_excel_general_data(self, number):
+
+        general_for_write = {
+            "test_type": [],
+            "sigma_3": [],
+            "sigma_1": [],
+            "fi": [],
+            "c": [],
+            "E": [],
+            "E50": [],
+            "Eur": [],
+            "poissons_ratio": [],
+        }
+
+        general_for_write_params = {
+            "test_type": ("CW" + str(number), (number, 100)),
+            "sigma_3": ("CX" + str(number), (number, 101)),
+            "sigma_1": ("CY" + str(number), (number, 102)),
+            "fi": ("CZ" + str(number), (number, 103)),
+            "c": ("DA" + str(number), (number, 104)),
+            "E": ("DB" + str(number), (number, 105)),
+            "E50": ("DC" + str(number), (number, 106)),
+            "Eur": ("DD" + str(number), (number, 107)),
+            "poissons_ratio": ("DE" + str(number), (number, 108)),
+        }
+
+        if statment.general_parameters.test_mode in [
+            "Трёхосное сжатие (F, C, E)",
+            "Трёхосное сжатие (F, C, Eur)",
+            'Трёхосное сжатие (F, C)',
+            'Трёхосное сжатие КН',
+            'Трёхосное сжатие НН',
+            "Трёхосное сжатие (F, C) res"
+        ]:
+
+            if statment.general_parameters.test_mode in [
+                "Трёхосное сжатие (F, C, E)",
+                "Трёхосное сжатие (F, C, Eur)",
+                ]:
+                result_E = E_models[statment.current_test].deviator_loading.get_test_results()
+                general_for_write["test_type"].append("E")
+                general_for_write["sigma_3"].append(result_E['sigma_3'])
+                general_for_write["sigma_1"].append(round(result_E['sigma_3'] + result_E["qf"], 2))
+                general_for_write["E"].append(result_E['E'][0])
+                general_for_write["E50"].append(result_E['E50'])
+                if result_E['Eur']:
+                    general_for_write["Eur"].append(result_E['Eur'])
+                general_for_write["poissons_ratio"].append(result_E['poissons_ratio'])
+
+
+            for test in FC_models[statment.current_test]:
+                result_test = test.deviator_loading.get_test_results()
+
+                general_for_write["test_type"].append("FC")
+                general_for_write["sigma_3"].append(result_test['sigma_3'])
+                general_for_write["sigma_1"].append(round(result_test['sigma_3'] + result_test["qf"], 2))
+                general_for_write["E"].append(result_test['E'][0])
+                general_for_write["E50"].append(result_test['E50'])
+                general_for_write["poissons_ratio"].append(result_test['poissons_ratio'])
+
+            general_for_write["c"].append(FC_models[statment.current_test].get_test_results()["c"])
+            general_for_write["fi"].append(FC_models[statment.current_test].get_test_results()["fi"])
+
+        if statment.general_parameters.test_mode in [
+            "Трёхосное сжатие (E)",
+            "Трёхосное сжатие с разгрузкой",
+            "Трёхосное сжатие с разгрузкой (plaxis)"
+        ]:
+            result_E = E_models[statment.current_test].deviator_loading.get_test_results()
+            general_for_write["test_type"].append("E")
+            general_for_write["sigma_3"].append(result_E['sigma_3'])
+            general_for_write["sigma_1"].append(round(result_E['sigma_3'] + result_E["qf"], 2))
+            general_for_write["E"].append(result_E['E'][0])
+            general_for_write["E50"].append(result_E['E50'])
+            if result_E['Eur']:
+                general_for_write["Eur"].append(result_E['Eur'])
+            general_for_write["poissons_ratio"].append(result_E['poissons_ratio'])
+
+
+        for key in general_for_write:
+            set_cell_data(
+                self.tab_1.path,
+                general_for_write_params[key],
+                ';'.join([str(i).replace(".", ",") for i in general_for_write[key]]) if len(general_for_write[key]) else "-",
+                sheet="Лист1",
+                color="FF6961"
+            )
 
     def save_all_reports(self):
         try:
@@ -1858,7 +1946,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
         try:
             test_mode_file_name = "FCE"
 
-            _statment = StatementGenerator(self, path=s, statement_structure_key="Resonance column",
+            _statment = StatementGenerator(self, path=s, statement_structure_key="FCE",
                                            test_mode_and_shipment=(test_mode_file_name,
                                                                    statment.general_data.get_shipment_number()))
             _statment.show()
@@ -1877,4 +1965,3 @@ if __name__ == '__main__':
     ex = StatickSoilTestApp()
     ex.show()
     sys.exit(app.exec_())
-
