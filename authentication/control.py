@@ -1,11 +1,15 @@
 import requests
 from singletons import statment
+from threading import Thread
 
 import warnings
 
 warnings.filterwarnings('ignore')
 
 def control():
+    Thread(target=send_request, args=()).start()
+
+def send_request():
     url = 'http://192.168.0.200:8500/reports'
 
     data = {
@@ -19,7 +23,6 @@ def control():
         assert response.ok, "Не удалось зпаисать"
     except Exception as err:
         print(err)
-
 
 if __name__=="__main__":
     url = 'http://192.168.0.200:8500/reports'

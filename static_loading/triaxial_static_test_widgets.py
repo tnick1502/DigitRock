@@ -1679,10 +1679,10 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 self.save_report()
                 progress.setValue(i)
             progress.setValue(len(statment))
-            progress.close()
-            QMessageBox.about(self, "Сообщение", "Объект выгнан")
             app_logger.info("Объект успешно выгнан")
             self.save_massage = True
+            progress.close()
+            QMessageBox.about(self, "Сообщение", "Объект выгнан")
 
         t = threading.Thread(target=save)
         progress.show()
@@ -1763,7 +1763,10 @@ class StatickSoilTestApp(AppMixin, QWidget):
             print(str(err))
 
     def save_excel(self):
-        path = os.path.join(statment.save_dir.save_directory, "FCE. Выгрузка.xlsx")
+        customer_name = ''.join(list(filter(lambda c: c not in '\/:*?"<>|', statment.general_data.customer)))
+        save_file_name = f"{customer_name} - {statment.general_data.object_number} - {statment.general_data.object_name} - Сводная ведомость {'Трехосное сжатие'}{statment.general_data.get_shipment_number()}.xlsx"
+
+        path = os.path.join(statment.save_dir.save_directory, save_file_name)
         shutil.copy(os.getcwd() + "/project_data/" + "FCE. Выгрузка.xlsx", path)
         i = 3
 
@@ -1773,9 +1776,11 @@ class StatickSoilTestApp(AppMixin, QWidget):
             statment.setCurrentTest(test)
             laboratory_number = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
             depth = statment[statment.current_test].physical_properties.depth
+            borehole = statment[statment.current_test].physical_properties.borehole
 
             parameters = {
                 "laboratory_number": ['B', 1],
+                "borehole": ['C', 2],
                 "depth": ['D', 3],
                 "test_type": ['G', 6],
                 "scheme": ['E', 4],
@@ -1809,6 +1814,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
 
                 set_cell_data(path, (parameters["laboratory_number"][0] + str(i), (i, parameters["laboratory_number"][1])),
                               laboratory_number, sheet="Лист1")
+                set_cell_data(path, (parameters["borehole"][0] + str(i), (i, parameters["borehole"][1])),
+                              borehole, sheet="Лист1")
                 set_cell_data(path, (parameters["depth"][0] + str(i), (i, parameters["depth"][1])),
                               depth, sheet="Лист1")
                 set_cell_data(path, (parameters["waterfill"][0] + str(i), (i, parameters["waterfill"][1])),
@@ -1875,6 +1882,8 @@ class StatickSoilTestApp(AppMixin, QWidget):
                     set_cell_data(path, (
                     parameters["laboratory_number"][0] + str(i), (i, parameters["laboratory_number"][1])),
                                   laboratory_number, sheet="Лист1")
+                    set_cell_data(path, (parameters["borehole"][0] + str(i), (i, parameters["borehole"][1])),
+                                  borehole, sheet="Лист1")
                     set_cell_data(path, (parameters["depth"][0] + str(i), (i, parameters["depth"][1])),
                                   depth, sheet="Лист1")
                     set_cell_data(path, (parameters["waterfill"][0] + str(i), (i, parameters["waterfill"][1])),
@@ -1933,7 +1942,6 @@ class StatickSoilTestApp(AppMixin, QWidget):
                     i += 1
             except Exception as err:
                 print(err)
-
 
         QMessageBox.about(self, "Сообщение", "Excel сохранен")
         app_logger.info("Excel сохранен")

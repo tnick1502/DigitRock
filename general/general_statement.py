@@ -589,7 +589,10 @@ class StatementGenerator(QDialog):
                     save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
                     if self.statment_test_mode and self.shipment:
-                        save_file_name = f'Ведомость {self.statment_test_mode} {self.shipment}.pdf'
+                        print(self.customer['customer'])
+                        #save_file_name = f"{self.customer['object_number']} - {self.customer['object_name']} - Сводная ведомость {self.statment_test_mode}{self.shipment}.pdf"
+                        customer_name = ''.join(list(filter(lambda c: c not in '\/:*?"<>|', self.customer['customer'])))
+                        save_file_name = f"{customer_name} - {self.customer['object_number']} - {self.customer['object_name']} - Сводная ведомость {self.statment_test_mode}{self.shipment}.pdf"
                     else:
                         save_file_name = 'Общая ведомость.pdf'
                     # считывание параметра "Заголовок"

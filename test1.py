@@ -1,8 +1,8 @@
-import datetime
-import time
-time_1 = datetime.datetime.now()
 
-time.sleep(1)
 
-time_2 = datetime.datetime.now()
-print((time_2 - time_1).seconds)
+s = 'ООО "ЦИИАК"'
+castomer_name = ''.join(list(filter(lambda c: c not in '\/:*?"<>|', s)))
+
+
+#castomer_name = s.translate('\/:*?"<>|')
+print(castomer_name)
