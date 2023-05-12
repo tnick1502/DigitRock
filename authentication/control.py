@@ -10,7 +10,7 @@ def control():
     Thread(target=send_request, args=()).start()
 
 def send_request():
-    url = 'http://192.168.0.200:8500/reports'
+    url = 'http://192.168.0.205:8500/reports'
 
     data = {
         "object_number": statment.general_data.object_number,

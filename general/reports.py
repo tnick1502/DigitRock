@@ -4079,7 +4079,7 @@ def report_FCE(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, p
                              "СЖАТИЯ (ГОСТ 12248.3-2020)"], "/ТД")
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
-    test_parameter["K0"] = K0[0]
+    test_parameter["K0"] = K0[1]
     p_or_sigma = False
     if report_type == "plaxis" or report_type == "plaxis_m":
         p_or_sigma = True

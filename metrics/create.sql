@@ -90,3 +90,23 @@ SELECT SUM (report_count)
 FROM sessions
 LEFT JOIN users USING (user_ip)
 WHERE username = 'Жмылев Д.А.' and EXTRACT (MONTH FROM session_start) = 5
+
+
+SELECT
+    unnest(ARRAY(
+      SELECT COUNT (*)
+		FROM sessions
+		LEFT JOIN users USING (user_ip)
+		WHERE username = unnest
+    )) r
+FROM
+	unnest('{Жмылев Д.А., Михайлов А.И.}'::character[])
+
+CREATE OR REPLACE FUNCTION get_report_count_by_month (current_month int, current_year int)
+RETURNS TABLE (username varchar, report_count numeric) AS $$
+	SELECT users.username, SUM (report_count)
+	FROM sessions
+	LEFT JOIN users USING (user_ip)
+	WHERE username IN (SELECT username FROM users) AND EXTRACT (MONTH FROM session_start) = current_month AND EXTRACT (YEAR FROM session_start) = current_year
+	GROUP BY users.username
+$$ LANGUAGE SQL;
