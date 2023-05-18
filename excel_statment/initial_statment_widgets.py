@@ -750,6 +750,8 @@ class VibrationCreepStatment(InitialStatment):
 class ConsolidationStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
     def __init__(self):
+        self.test_mode = "Консолидация"
+
         data_test_parameters = {
 
             "equipment": {
@@ -760,6 +762,14 @@ class ConsolidationStatment(InitialStatment):
                     "КППА 60/25 ДС (ГТ 1.1.1)",
                     "GIG, Absolut Digimatic ID-S",
                     "АСИС ГТ.2.0.5"]
+            },
+            "axis": {
+                "label": "Ось скважены",
+                "vars": [
+                    "Не выбрано",
+                    "Параллельно оси скважены",
+                    "Перпендикулярно оси скважены"
+                ]
             }
         }
 
@@ -788,10 +798,15 @@ class ConsolidationStatment(InitialStatment):
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
             else:
-                combo_params["test_mode"] = "Консолидация"
+                if self.open_line.get_data()["axis"] == 'Не выбрано':
+                    combo_params["test_mode"] = "Консолидация"
+                else:
+                    combo_params["test_mode"] = f"Консолидация {self.open_line.get_data()['axis'].lower()}"
+
+                self.test_mode = combo_params["test_mode"]
 
                 self.load_statment(
-                    statment_name="Консолидация.pickle",
+                    statment_name=f"{combo_params['test_mode']}.pickle",
                     properties_type=ConsolidationProperties,
                     general_params=combo_params)
 
@@ -807,8 +822,32 @@ class ConsolidationStatment(InitialStatment):
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
 
-                    self.load_models(models_name="consolidation_models.pickle",
+                    if combo_params["test_mode"] == "Консолидация":
+                        models = "consolidation_models.pickle"
+                    elif combo_params["test_mode"] == f"Консолидация {self.test_parameters['axis']['vars'][1].lower()}":
+                        models = "consolidation_parallel_models.pickle"
+                    elif combo_params["test_mode"] == f"Консолидация {self.test_parameters['axis']['vars'][2].lower()}":
+                        models = "consolidation_perpendicular_models.pickle"
+
+                    self.load_models(models_name=models,
                                      models=Consolidation_models, models_type=ModelTriaxialConsolidationSoilTest)
+
+    def button_open_click(self):
+        combo_params = self.open_line.get_data()
+        test = True
+        for key in self.test_parameters:
+            if key in ["axis"]:
+                continue
+            if combo_params[key] == self.test_parameters[key]["vars"][0]:
+                test = False
+                QMessageBox.critical(self, "Предупреждение", "Проверьте заполнение {}".format(key),
+                                           QMessageBox.Ok)
+                break
+
+        if test:
+            self.path = QFileDialog.getOpenFileName(self, 'Open file')[0]
+            if self.path != "":
+                self.file_open()
 
 class ShearStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""

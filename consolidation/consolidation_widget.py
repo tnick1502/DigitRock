@@ -346,10 +346,19 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
 
     def save_pickle(self):
         try:
+            if self.tab_1.test_mode == "Консолидация":
+                models = "consolidation_models"
+            elif self.tab_1.test_mode == f"Консолидация {self.tab_1.test_parameters['axis']['vars'][1].lower()}":
+                models = "consolidation_parallel_models"
+            elif self.tab_1.test_mode == f"Консолидация {self.tab_1.test_parameters['axis']['vars'][2].lower()}":
+                models = "consolidation_perpendicular_models"
+            else:
+                models = "consolidation_models"
+
             statment.save([Consolidation_models],
-                          [f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"])
+                          [f"{models}{statment.general_data.get_shipment_number()}.pickle"])
             Consolidation_models.dump(os.path.join(statment.save_dir.save_directory,
-                                                   f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"))
+                                                   f"{models}{statment.general_data.get_shipment_number()}.pickle"))
             QMessageBox.about(self, "Сообщение", "Pickle успешно сохранен")
         except Exception as err:
             QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
@@ -364,9 +373,13 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
             else:
                 equipment = "ЛИГА КЛ1, КППА 60/25 ДС (ГТ 1.1.1), GIG, Absolut Digimatic ID-S, АСИС ГТ.2.0.5"
 
+            if self.tab_1.open_line.get_data()["axis"] != "Не выбрано":
+                mode = f", {self.tab_1.open_line.get_data()['axis'].lower()}"
+            else:
+                mode = ''
 
             test_parameter = {"equipment": equipment,
-                              "mode": "Статическая нагрузка",
+                              "mode": f"Статическая нагрузка{mode}",
                               "p_max": statment[statment.current_test].mechanical_properties.p_max,
                               "h": 20,
                               "d": 71.4}
@@ -470,10 +483,19 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
 
     def save_all_reports(self):
         try:
+            if self.tab_1.test_mode == "Консолидация":
+                models = "consolidation_models"
+            elif self.tab_1.test_mode == f"Консолидация {self.tab_1.test_parameters['axis']['vars'][1].lower()}":
+                models = "consolidation_parallel_models"
+            elif self.tab_1.test_mode == f"Консолидация {self.tab_1.test_parameters['axis']['vars'][2].lower()}":
+                models = "consolidation_perpendicular_models"
+            else:
+                models = "consolidation_models"
+
             statment.save([Consolidation_models],
-                          [f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"])
+                          [f"{models}{statment.general_data.get_shipment_number()}.pickle"])
             Consolidation_models.dump(os.path.join(statment.save_dir.save_directory,
-                                                   f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"))
+                                                   f"{models}{statment.general_data.get_shipment_number()}.pickle"))
         except Exception as err:
             QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
 
@@ -505,10 +527,19 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
 
     def save_report_and_continue(self):
         try:
+            if self.tab_1.test_mode == "Консолидация":
+                models = "consolidation_models"
+            elif self.tab_1.test_mode == f"Консолидация {self.tab_1.test_parameters['axis']['vars'][1].lower()}":
+                models = "consolidation_parallel_models"
+            elif self.tab_1.test_mode == f"Консолидация {self.tab_1.test_parameters['axis']['vars'][2].lower()}":
+                models = "consolidation_perpendicular_models"
+            else:
+                models = "consolidation_models"
+
             statment.save([Consolidation_models],
-                          [f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"])
+                          [f"{models}{statment.general_data.get_shipment_number()}.pickle"])
             Consolidation_models.dump(os.path.join(statment.save_dir.save_directory,
-                                                   f"consolidation_models{statment.general_data.get_shipment_number()}.pickle"))
+                                                   f"{models}{statment.general_data.get_shipment_number()}.pickle"))
         except Exception as err:
             QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
 
