@@ -346,15 +346,6 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
 
     def save_pickle(self):
         try:
-            if self.tab_1.test_mode == "Консолидация":
-                models = "consolidation_models"
-            elif self.tab_1.test_mode == f"Консолидация {self.tab_1.test_parameters['axis']['vars'][1].lower()}":
-                models = "consolidation_parallel_models"
-            elif self.tab_1.test_mode == f"Консолидация {self.tab_1.test_parameters['axis']['vars'][2].lower()}":
-                models = "consolidation_perpendicular_models"
-            else:
-                models = "consolidation_models"
-
             statment.save([Consolidation_models],
                           [f"{models}{statment.general_data.get_shipment_number()}.pickle"])
             Consolidation_models.dump(os.path.join(statment.save_dir.save_directory,
