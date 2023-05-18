@@ -2,7 +2,7 @@ import json
 
 path = "Z:/Digitrock/version_log.json"
 local = 'version_control/version_log.json'
-# local = 'c://projects/DigitRock/version_control/version_log.json'
+#local = 'c://projects/DigitRock/version_control/version_log.json'
 
 def open_json(path: str) -> dict:
     """Считывание json файла в словарь"""
@@ -40,7 +40,10 @@ def test_version(version: float) -> bool:
     return True if float(version) == float(get_actual_version()) else False
 
 if __name__ == "__main__":
-    add_data("3.72", """
-    1. Исправлена ошибка в срезе  
-    2. Добавлена проверка отрицательного сцепления
+    add_data("3.73", """
+    1. Убран К0 из протокола Е при задании ручных ступеней давления
+    2. Добавлено Наименование выработки в выгрузке FCE
+    3. Изменено имя общей ведомости
+    4. Реализовано сохранение и выбор моделей по аналогии с опытом среза в зависимости от оси скважены
+    5. Изменены величины девиций по умолчанию
     """)
