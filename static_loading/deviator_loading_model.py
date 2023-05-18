@@ -853,20 +853,20 @@ class ModelTriaxialDeviatorLoadingSoilTest(ModelTriaxialDeviatorLoading):
         self._draw_params.residual_strength_param *= np.random.uniform(0.8, 1.2)
 
         self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.qf*residual_strength
-        self._draw_params.amplitude_1 = 0.01
-        self._draw_params.amplitude_2 = 0.015
-        self._draw_params.amplitude_3 = 0.02
+        self._draw_params.amplitude_1 = 0.04
+        self._draw_params.amplitude_2 = 0.02
+        self._draw_params.amplitude_3 = 0.01
         self._draw_params.free_deviations = True
         if amplitude_flag:
-            self._draw_params.amplitude_1 = 0.01
-            self._draw_params.amplitude_2 = 0.015
-            self._draw_params.amplitude_3 = 0.02
+            self._draw_params.amplitude_1 = 0.04
+            self._draw_params.amplitude_2 = 0.02
+            self._draw_params.amplitude_3 = 0.01
 
         if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C) res":
             self._draw_params.residual_strength = statment[statment.current_test].mechanical_properties.q_res
-            self._draw_params.amplitude_1 = 0.01#[self._test_params.qf / 200, self._test_params.qf / 120]
+            self._draw_params.amplitude_1 = 0.02#[self._test_params.qf / 200, self._test_params.qf / 120]
             self._draw_params.amplitude_2 = 0.01
-            self._draw_params.amplitude_3 = 0.02
+            self._draw_params.amplitude_3 = 0.01
             self._draw_params.free_deviations = False
         self._draw_params.qocr = 0
 
