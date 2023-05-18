@@ -798,6 +798,13 @@ class ConsolidationStatment(InitialStatment):
             except AssertionError as error:
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
             else:
+                if self.open_line.get_data()["axis"] == 'Не выбрано':
+                    combo_params["test_mode"] = "Консолидация"
+                else:
+                    combo_params["test_mode"] = f"Консолидация {self.open_line.get_data()['axis'].lower()}"
+
+                self.test_mode = combo_params["test_mode"]
+
                 self.load_statment(
                     statment_name=f"{combo_params['test_mode']}.pickle",
                     properties_type=ConsolidationProperties,
