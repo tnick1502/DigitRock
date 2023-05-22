@@ -591,8 +591,6 @@ class StatementGenerator(QDialog):
                     if self.statment_test_mode and self.shipment:
                         #save_file_name = f"{self.customer['object_number']} - {self.customer['object_name']} - Сводная ведомость {self.statment_test_mode}{self.shipment}.pdf"
                         customer_name = ''.join(list(filter(lambda c: c not in '''«»\/:*?"'<>|''', self.customer['customer'])))
-                        object_name = ''.join(list(filter(lambda c: c not in '''«»\/:*?"'<>|''', self.customer['object_name'])))
-                        print(self.customer)
                         save_file_name = f"{customer_name} - {self.customer['object_number']} - {self.customer['object_short']} - Сводная ведомость {self.statment_test_mode}{self.shipment}.pdf"
                     else:
                         save_file_name = 'Общая ведомость.pdf'

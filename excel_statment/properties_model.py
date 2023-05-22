@@ -1676,6 +1676,8 @@ class RCProperties(MechanicalProperties):
 
             sigma_3 = MechanicalProperties.round_sigma_3(self.sigma_1 * self.K0)
 
+            #print(str(np.round(sigma_3/1000, 2)).replace('.', ',') if sigma_3 >= 100 else '0,1')
+
             self.G0, self.threshold_shear_strain = define_G0_threshold_shear_strain(
                 self.reference_pressure, self.E50, self.c, self.fi, self.K0, physical_properties.type_ground,
                 physical_properties.Ip, physical_properties.e)
