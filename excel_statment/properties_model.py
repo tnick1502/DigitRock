@@ -1666,8 +1666,6 @@ class RCProperties(MechanicalProperties):
             self.reference_pressure = np.round(float_df(data_frame.iat[string,
                                                           DynamicsPropertyPosition["reference_pressure"][1]]), 2)
 
-            print(self.reference_pressure)
-
             if physical_properties.depth <= physical_properties.ground_water_depth:
                 sigma_1 = round(2 * 9.81 * physical_properties.depth)
             elif physical_properties.depth > physical_properties.ground_water_depth:

@@ -70,7 +70,13 @@ class ModelRezonantColumn:
                                             "right": None})
 
         # Результаты опыта
-        self._test_result = AttrDict({"G0": None, "threshold_shear_strain": None})
+        self._test_result = AttrDict(
+            {
+                "G0": None,
+                "threshold_shear_strain": None,
+                "E0": None
+            }
+        )
 
     def set_test_data(self, test_data):
         """Получение и обработка массивов данных, считанных с файла прибора"""
@@ -179,6 +185,7 @@ class ModelRezonantColumn:
                 ModelRezonantColumn.approximate_Hardin_Drnevick(
                     self._test_data.shear_strain[self._test_cut_position.left: self._test_cut_position.right],
                     self._test_data.G_array[self._test_cut_position.left: self._test_cut_position.right])
+            self._test_result.E0 = np.round(self._test_result.G0 * 2.4, 2)
         except:
             app_logger.exception("Ошибка обработки данных РК")
             pass
