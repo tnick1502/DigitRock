@@ -151,7 +151,13 @@ class AsisCollector:
                 reader = csv.reader(f, delimiter='\t')
                 for r, row in enumerate(reader):
                     for c, col in enumerate(row):
-                        worksheet.write(r, c, col)
+                        try:
+                            number = float(col.replace(',', '.'))
+                            worksheet.write(r, c, number)
+                        except ValueError:
+                            worksheet.write(r, c, col)
+                        except Exception as err:
+                            print(err)
             workbook.save(f"{self.asis_dir}/{new_name}.xls")
 
     @staticmethod
