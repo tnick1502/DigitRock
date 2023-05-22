@@ -607,10 +607,10 @@ class StatementGenerator(QDialog):
                         elif statment.general_parameters.test_mode in [
                             "Трёхосное сжатие (F, C, E)",
                             "Трёхосное сжатие (F, C)",
+                            "Демпфирование по Релею"
                         ]:
                             data = expand_data(data)
-                        elif statment.general_parameters.test_mode == "Демпфирование по Релею":
-                            data = convert_data2(data)
+
                     except Exception as err:
                         print(err)
 

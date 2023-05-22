@@ -158,7 +158,7 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
             "alpha": lambda lab: RayleighDamping_models[lab].get_test_results()['alpha'],
             "betta": lambda lab: RayleighDamping_models[lab].get_test_results()["betta"],
             "Коэф. демпфирования": lambda lab: str(RayleighDamping_models[lab].get_test_results()["damping_ratio"]),
-        })
+        }, qr={"state": True})
         self.tab_4.popIn.connect(self.addTab)
         self.tab_4.popOut.connect(self.removeTab)
 
@@ -204,9 +204,6 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
             file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
-
-            RayleighDamping_models.dump(os.path.join(statment.save_dir.save_directory,
-                                        f"RayleighDamping_models{statment.general_data.get_shipment_number()}.pickle"))
 
             #statment.dump(''.join(os.path.split(self.tab_4.directory)[:-1]),
                           #name=statment.general_parameters.test_mode + ".pickle")
@@ -256,7 +253,7 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
             }
 
             if self.tab_4.qr:
-                qr = None  # qr = request_qr(data)
+                qr = request_qr()
             else:
                 qr = None
 
@@ -310,7 +307,24 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
         except:
             app_logger.exception(f"Не выгнан {statment.current_test}")
 
+    def save_pickle(self):
+        try:
+            RayleighDamping_models.dump(os.path.join(statment.save_dir.save_directory,
+                                                     f"RayleighDamping_models{statment.general_data.get_shipment_number()}.pickle"))
+            statment.save([RayleighDamping_models], [f"RayleighDamping_models{statment.general_data.get_shipment_number()}.pickle"])
+            QMessageBox.about(self, "Сообщение", "Pickle успешно сохранен")
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
     def save_all_reports(self):
+        try:
+            RayleighDamping_models.dump(os.path.join(statment.save_dir.save_directory,
+                                                     f"RayleighDamping_models{statment.general_data.get_shipment_number()}.pickle"))
+            statment.save([RayleighDamping_models], [f"RayleighDamping_models{statment.general_data.get_shipment_number()}.pickle"])
+            print("Pickle успешно сохранен")
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
+
         statment.save_dir.clear_dirs()
         progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
         progress.setCancelButton(None)
@@ -357,10 +371,16 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
         except:
             s = None
 
-        _statment = StatementGenerator(self, path=s, statement_structure_key="rayleigh_damping")
+        key = "rayleigh_damping"
+        test_mode_file_name = "Демпфирование"
+
+        _statment = StatementGenerator(self, path=s, statement_structure_key=key,
+                                       test_mode_and_shipment=(test_mode_file_name,
+                                                               statment.general_data.get_shipment_number()))
         _statment.show()
 
     def save_report_and_continue(self):
+        self.save_pickle()
         try:
             self.save_report()
         except:
