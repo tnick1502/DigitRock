@@ -1,8 +1,12 @@
+import os
+
+s = "Z:/МДГТ - (Заказчики)/ПетроБурСервис ООО/2023/246-23 Судоремонтная верфь Рем-Нова ДВ/2. в работе/G0/246-23 Судоремонтная верфь Рем-Нова ДВ - plaxis.xls"
+"162-23- ГКС Сахалин - мех.xls"
+""
+""
+
+name = os.path.split(s)[-1]
+name = name[name.index(" ") + 1: len(name) - name[::-1].index("-") - 1].strip()
 
 
-s = 'ООО "ЦИИАК"'
-castomer_name = ''.join(list(filter(lambda c: c not in '\/:*?"<>|', s)))
-
-
-#castomer_name = s.translate('\/:*?"<>|')
-print(castomer_name)
+print(name)
