@@ -1663,8 +1663,21 @@ class RCProperties(MechanicalProperties):
     def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode) -> None:
         super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
         if self.c and self.fi and self.E50:
-            self.reference_pressure = float_df(data_frame.iat[string,
-                                                          DynamicsPropertyPosition["reference_pressure"][1]])
+            self.reference_pressure = np.round(float_df(data_frame.iat[string,
+                                                          DynamicsPropertyPosition["reference_pressure"][1]]), 2)
+
+            print(self.reference_pressure)
+
+            if physical_properties.depth <= physical_properties.ground_water_depth:
+                sigma_1 = round(2 * 9.81 * physical_properties.depth)
+            elif physical_properties.depth > physical_properties.ground_water_depth:
+                sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                        9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+
+            sigma_3 = np.round(sigma_1 * self.K0)
+
+            sigma_3 = MechanicalProperties.round_sigma_3(self.sigma_1 * self.K0)
+
             self.G0, self.threshold_shear_strain = define_G0_threshold_shear_strain(
                 self.reference_pressure, self.E50, self.c, self.fi, self.K0, physical_properties.type_ground,
                 physical_properties.Ip, physical_properties.e)
