@@ -152,8 +152,7 @@ class AsisCollector:
                 for r, row in enumerate(reader):
                     for c, col in enumerate(row):
                         try:
-                            number = float(col.replace(',', '.'))
-                            worksheet.write(r, c, number)
+                            worksheet.write(r, c, col)
                         except ValueError:
                             worksheet.write(r, c, col)
                         except Exception as err:
