@@ -439,10 +439,12 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                 Ed = ""
                 E50 = ""
                 prediction = ""
+                Ed_state = ''
                 for i in range(len(res)):
                     Kd += zap(res[i]["Kd"], 2) + "; "
                     Ed += zap(res[i]["E50d"], 1) + "; "
                     E50 += zap(res[i]["E50"], 1) + "; "
+                    Ed += zap(res[i]["Ed"], 1) + "; "
                     prediction += zap(res[i]["prediction"]["50_years"], 3) + "; "
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
@@ -450,7 +452,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                 set_cell_data(self.tab_1.path, ("IH" + str(number), (number, 241)), E50, sheet="Лист1", color="FF6961")
                 set_cell_data(self.tab_1.path, ("II" + str(number), (number, 242)), Ed, sheet="Лист1", color="FF6961")
                 set_cell_data(self.tab_1.path, ("CB" + str(number), (number, 79)), Kd, sheet="Лист1", color="FF6961")
-
+                set_cell_data(self.tab_1.path, ("IJ" + str(number), (number, 243)), Ed, sheet="Лист1", color="FF6961")
 
             else:
                 pick_vc, pick_c = self.tab_3.dynamic_widget.save_canvas()
@@ -472,6 +474,8 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                 set_cell_data(self.tab_1.path, ("CB" + str(number), (number, 79)), res["Kd"], sheet="Лист1",
                               color="FF6961")
                 set_cell_data(self.tab_1.path, ("BU" + str(number), (number, 72)), res["E50"], sheet="Лист1",
+                              color="FF6961")
+                set_cell_data(self.tab_1.path, ("IJ" + str(number), (number, 243)), res["Ed"], sheet="Лист1",
                               color="FF6961")
 
 
