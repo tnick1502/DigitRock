@@ -7,7 +7,7 @@ from scipy.optimize import differential_evolution
 plt.style.use('bmh')
 
 def cyclic_stress_ratio_curve_params(Ip, Il=None, e=None)->tuple:
-    """Функция находит параметры (alpha, betta) кривой SCR для образца по физическим свойствам
+    """Функция находит параметры (alpha, betta) кривой CSR для образца по физическим свойствам
     :argument
         Ip (float): Число пластичности
         Il (float): Показатель текучести
@@ -16,9 +16,13 @@ def cyclic_stress_ratio_curve_params(Ip, Il=None, e=None)->tuple:
         (alpha, betta)"""
 
     if Ip:
-        return (-0.0026 * Ip + 0.139, 0.0033 * Ip + 0.91)
+        alpha = -0.0026 * Ip + 0.139
+        betta = 0.0033 * Ip + 0.91
     else:
-        return (0.08, 0.7)
+        alpha = 0.08
+        betta = 0.7
+
+    return (np.random.normal(loc=alpha, scale=3), np.random.normal(loc=betta, scale=3))
 
 def define_cyclic_stress_ratio(cycle, alpha, betta)->float:
     """Функция Возвращает значения кривой CSR при заданном цикле
@@ -175,8 +179,8 @@ def plotter(alpha, betta, borders=(5, 1000), sample_CSR=None, sample_cycles=None
 if __name__ == '__main__':
 
     # Зададим параметры
-    sigma_1 = 100
-    t = 15
+    sigma_1 = 10
+    t = 5
     Ip = 6
     Il = "-"
     e = "-"
@@ -186,7 +190,7 @@ if __name__ == '__main__':
     print(define_fail_cycle(sample_cycles, sigma_1, t, Ip, Il, e))
 
     # Построим кривые
-    plotter(*cyclic_stress_ratio_curve_params("-", "-", "-"), borders=(5, 1000),
+    plotter(*cyclic_stress_ratio_curve_params(Ip), borders=(5, 1000),
             sample_CSR=cyclic_stress_ratio_load(sigma_1, t), sample_cycles=sample_cycles, save_path=None)
     plt.show()
 
@@ -195,7 +199,7 @@ if __name__ == '__main__':
     CSR = define_cyclic_stress_ratio(cycles, 0.08, 0.7)
 
     alpha, betta = approximate_test_data(cycles, CSR)
-    plotter(*cyclic_stress_ratio_curve_params("-", "-", "-"), borders=(5, 400),
+    plotter(*cyclic_stress_ratio_curve_params(Ip), borders=(5, 400),
             sample_CSR=cyclic_stress_ratio_load(sigma_1, t), sample_cycles=sample_cycles,
             sample_CSR_array=CSR, sample_cycles_array=cycles, save_path=None)
     plt.show()

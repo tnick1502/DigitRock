@@ -680,6 +680,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
             number = statment[statment.current_test].physical_properties.sample_number + 7
 
             set_cell_data(self.tab_1.path, ("HL" + str(number), (number, 219)), test_result["G0"], sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("HJ" + str(number), (number, 217)), test_result["E0"], sheet="Лист1")
             set_cell_data(self.tab_1.path, ("HK" + str(number), (number, 218)), test_result["threshold_shear_strain"], sheet="Лист1")
 
             shutil.copy(file_name, statment.save_dir.report_directory + "/" + file_name[len(file_name) -
