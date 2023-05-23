@@ -589,14 +589,12 @@ class StatementGenerator(QDialog):
                     save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
                     if self.statment_test_mode and self.shipment:
-                        print(self.customer['customer'])
                         #save_file_name = f"{self.customer['object_number']} - {self.customer['object_name']} - Сводная ведомость {self.statment_test_mode}{self.shipment}.pdf"
-                        customer_name = ''.join(list(filter(lambda c: c not in '\/:*?"<>|', self.customer['customer'])))
-                        save_file_name = f"{customer_name} - {self.customer['object_number']} - {self.customer['object_name']} - Сводная ведомость {self.statment_test_mode}{self.shipment}.pdf"
+                        customer_name = ''.join(list(filter(lambda c: c not in '''«»\/:*?"'<>|''', self.customer['customer'])))
+                        save_file_name = f"{customer_name} - {self.customer['object_number']} - {self.customer['object_short']} - Сводная ведомость {self.statment_test_mode}{self.shipment}.pdf"
                     else:
                         save_file_name = 'Общая ведомость.pdf'
                     # считывание параметра "Заголовок"
-
                     statement_title = self.StatementStructure.get_structure().get("statement_title", '')
 
                     # self.StatementStructure._additional_parameters = \
@@ -609,10 +607,10 @@ class StatementGenerator(QDialog):
                         elif statment.general_parameters.test_mode in [
                             "Трёхосное сжатие (F, C, E)",
                             "Трёхосное сжатие (F, C)",
+                            "Демпфирование по Релею"
                         ]:
                             data = expand_data(data)
-                        elif statment.general_parameters.test_mode == "Демпфирование по Релею":
-                            data = convert_data2(data)
+
                     except Exception as err:
                         print(err)
 
@@ -640,13 +638,12 @@ class StatementGenerator(QDialog):
                                                                 'accreditation_key': self.accreditation_key},
                                         less_participants=self.StatementStructure.less_participants_btn.isChecked())
                             QMessageBox.about(self, "Сообщение", "Успешно сохранено")
-                    except PermissionError:
-                        QMessageBox.critical(self, "Ошибка", "Закройте файл для записи", QMessageBox.Ok)
+                    except Exception as err:
+                        QMessageBox.critical(self, "Ошибка", str(err), QMessageBox.Ok)
                     except:
                         pass
-                except (ValueError, IndexError, ZeroDivisionError) as error:
+                except Exception as error:
                     QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
-                    pass
             else:
                 pass
             pass
@@ -784,7 +781,8 @@ class StatementGenerator(QDialog):
     def read_customer(self, path):
         """Чтение данных заказчика, даты
             Передается документ excel, возвращает маркер False и данные, либо маркер True и имя ошибки"""
-
+        short_name = os.path.split(path)[-1]
+        object_short = short_name[short_name.index(" ") + 1: len(short_name) - short_name[::-1].index("-") - 1].strip()
         if path.endswith("xlsx"):
             wb = load_workbook(path, data_only=True)
             data = {"customer": str(wb["Лист1"]["A1"].value),
@@ -792,7 +790,8 @@ class StatementGenerator(QDialog):
                     "data": wb["Лист1"]["Q1"].value,
                     "start_date": wb["Лист1"]["U1"].value,
                     "accreditation": str(wb["Лист1"]["I2"].value),
-                    "object_number": str(wb["Лист1"]["AI1"].value)}
+                    "object_number": str(wb["Лист1"]["AI1"].value),
+                    "object_short": object_short}
         else:
             wb = xlrd.open_workbook(path, formatting_info=True)
             wb = wb.sheet_by_index(0)
@@ -801,7 +800,8 @@ class StatementGenerator(QDialog):
                     "data": self.date_datetime(wb.cell(0, 16).value),
                     "start_date": self.date_datetime(wb.cell(0, 20).value),
                     "accreditation": self.str_float(wb.cell(1, 8).value),
-                    "object_number": self.str_float(wb.cell(0, 34).value)}
+                    "object_number": self.str_float(wb.cell(0, 34).value),
+                    "object_short": object_short}
 
         for i in data:
             if data[i] == "None":

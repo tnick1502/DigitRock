@@ -571,7 +571,10 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
             return G0 in G0_list
 
 
-        self.tab_3 = Save_Dir(result_table_params={
+        self.tab_3 = Save_Dir({
+                "G0": "G0",
+                "G0E0": "G0 + E0"},
+        result_table_params={
             "G0": lambda lab: RC_models[lab].get_test_results()['G0'],
             "gam_07": lambda lab: RC_models[lab].get_test_results()["threshold_shear_strain"],
         }, qr={"state": True},
@@ -650,7 +653,11 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
 
             test_result = RC_models[statment.current_test].get_test_results()
 
-            results = {"G0": test_result["G0"], "gam07": test_result["threshold_shear_strain"]}
+            results = {
+                "G0": test_result["G0"],
+                "gam07": test_result["threshold_shear_strain"],
+                "E0": test_result["E0"],
+            }
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date
@@ -661,12 +668,14 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
                 qr = request_qr()
             else:
                 qr = None
-
-            report_rc(file_name, data_customer,
-                      statment[statment.current_test].physical_properties,
-                      statment.getLaboratoryNumber(),
-                      os.getcwd() + "/project_data/", statment[statment.current_test].mechanical_properties, results,
-                      self.tab_2.test_widget.save_canvas(), __version__, qr_code=qr)
+            try:
+                report_rc(file_name, data_customer,
+                          statment[statment.current_test].physical_properties,
+                          statment.getLaboratoryNumber(),
+                          os.getcwd() + "/project_data/", statment[statment.current_test].mechanical_properties, results,
+                          self.tab_2.test_widget.save_canvas(), self.tab_3.report_type, __version__, qr_code=qr)
+            except Exception as err:
+                print(err)
 
             number = statment[statment.current_test].physical_properties.sample_number + 7
 
@@ -763,7 +772,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         except:
             s = None
 
-        test_mode_file_name = "резонанс"
+        test_mode_file_name = "G0"
 
         _statment = StatementGenerator(self, path=s, statement_structure_key="Resonance column",
                                        test_mode_and_shipment=(test_mode_file_name,

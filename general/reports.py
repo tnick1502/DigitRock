@@ -1211,7 +1211,7 @@ def testModeStamm(canvas, wb, Nop, Data):
 
 
 
-def result_table_rc(canvas, Res, pick, scale = 0.8, moove=0):
+def result_table_rc(canvas, Res, pick, report_type, scale = 0.8, moove=0):
 
 
     #a = Image(pick, 320, 240)
@@ -1225,24 +1225,51 @@ def result_table_rc(canvas, Res, pick, scale = 0.8, moove=0):
     for i in range(r):
         tableData.append([""])
 
-    tableData.append([Paragraph('''<p>Модуль сдвига при сверхмалых деформациях G<sub rise="0.5" size="5">0</sub>, МПа:</p>''', LeftStyle), zap(Res["G0"], 1)])
-    tableData.append([Paragraph('''<p>Пороговое значение сдвиговой деформации γ<sub rise="0.5" size="5">0.7</sub>, д.е.:</p>''', LeftStyle), Paragraph('<p>' + zap(Res["gam07"], 2) + '*10<sup rise="2.5" size="5">-4</sup><p>', CentralStyle)])
-    t = Table(tableData, colWidths=87.5 * mm, rowHeights=4 * mm)
-    t.setStyle([('SPAN', (0, 0), (-1, 0)),
-                ('SPAN', (0, 1), (1, r)),
-                ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
-                ("FONTNAME", (0, 1), (-1, -1), 'Times'),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (0, 0), (-1, 11), "CENTER"),
-                ("ALIGN", (0, 12), (0, -1), "LEFT"),
-                ("ALIGN", (1, 12), (1, -1), "CENTER"),
-                ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
-                ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+    tableData.append([Paragraph(
+        '''<p>Модуль сдвига при сверхмалых деформациях G<sub rise="0.5" size="5">0</sub>, МПа:</p>''', LeftStyle),
+                      zap(Res["G0"], 1)])
+    tableData.append([Paragraph(
+        '''<p>Пороговое значение сдвиговой деформации γ<sub rise="0.5" size="5">0.7</sub>, д.е.:</p>''', LeftStyle),
+                      Paragraph('<p>' + zap(Res["gam07"], 2) + '*10<sup rise="2.5" size="5">-4</sup><p>',
+                                CentralStyle)])
+
+    if report_type == "G0":
+        s = 0
+        t = Table(tableData, colWidths=87.5 * mm, rowHeights=4 * mm)
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                    ('SPAN', (0, 1), (1, r)),
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    #("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, 11), "CENTER"),
+                    ("ALIGN", (0, 12), (0, -1), "LEFT"),
+                    ("ALIGN", (1, 12), (1, -1), "CENTER"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+    elif report_type == "G0E0":
+        s = 4
+        tableData.append([Paragraph(
+            '''<p>Динамический модуль упругости E<sub rise="0.5" size="5">0</sub>, МПа:</p>''', LeftStyle),
+            zap(Res["E0"], 1)])
+        t = Table(tableData, colWidths=87.5 * mm, rowHeights=4 * mm)
+        t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                    ('SPAN', (0, 1), (1, r)),
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, 11), "CENTER"),
+                    ("ALIGN", (0, 12), (0, -1), "LEFT"),
+                    ("ALIGN", (1, 12), (1, -1), "CENTER"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 2), (-1, -1), 0.3 * mm, "black")])
+
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (51-moove -(( r-30)*4)) * mm)
+    t.drawOn(canvas, 25 * mm, (51-moove - s -(( r-30)*4)) * mm)
 
 def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8, moove=0, tttyytuyuuk=1):
 
@@ -3796,7 +3823,7 @@ def ResultStampPart2(canvas, R):
 
 
 
-def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, report_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
 
 
     # Подгружаем шрифты
@@ -3824,7 +3851,7 @@ def report_rc(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, pi
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_rc(canvas, Data_phiz.r, test_parameter, moove=moove)
-    result_table_rc(canvas, res, picks, moove=moove)
+    result_table_rc(canvas, res, picks, report_type=report_type, moove=moove)
 
 
     canvas.showPage()
