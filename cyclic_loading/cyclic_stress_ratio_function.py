@@ -6,7 +6,7 @@ from scipy.optimize import differential_evolution
 
 plt.style.use('bmh')
 
-def cyclic_stress_ratio_curve_params(Ip, Il=None, e=None)->tuple:
+def cyclic_stress_ratio_curve_params(Ip, Il=None, e=None )-> tuple:
     """Функция находит параметры (alpha, betta) кривой CSR для образца по физическим свойствам
     :argument
         Ip (float): Число пластичности
@@ -22,7 +22,7 @@ def cyclic_stress_ratio_curve_params(Ip, Il=None, e=None)->tuple:
         alpha = 0.08
         betta = 0.7
 
-    return (np.random.normal(loc=alpha, scale=3), np.random.normal(loc=betta, scale=3))
+    return (alpha, betta)
 
 def define_cyclic_stress_ratio(cycle, alpha, betta)->float:
     """Функция Возвращает значения кривой CSR при заданном цикле
