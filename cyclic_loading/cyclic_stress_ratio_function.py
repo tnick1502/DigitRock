@@ -6,7 +6,7 @@ from scipy.optimize import differential_evolution
 
 plt.style.use('bmh')
 
-def cyclic_stress_ratio_curve_params(Ip, Il=None, e=None )-> tuple:
+def cyclic_stress_ratio_curve_params(Ip, Il=None, e=None ) -> tuple:
     """Функция находит параметры (alpha, betta) кривой CSR для образца по физическим свойствам
     :argument
         Ip (float): Число пластичности
@@ -21,10 +21,10 @@ def cyclic_stress_ratio_curve_params(Ip, Il=None, e=None )-> tuple:
     else:
         alpha = 0.08
         betta = 0.7
-
+    #return (np.random.normal(loc=alpha, scale=0.015), np.random.normal(loc=betta, scale=0.1))
     return (alpha, betta)
 
-def define_cyclic_stress_ratio(cycle, alpha, betta)->float:
+def define_cyclic_stress_ratio(cycle, alpha, betta) -> float:
     """Функция Возвращает значения кривой CSR при заданном цикле
     :argument
         cycle (float): Цикл нагружения
@@ -33,7 +33,7 @@ def define_cyclic_stress_ratio(cycle, alpha, betta)->float:
         CSR"""
     return betta - alpha*np.log(cycle)
 
-def define_cycle(CSR, alpha, betta)->float:
+def define_cycle(CSR, alpha, betta) -> float:
     """Функция Возвращает значение цикла при заданном значении нагружения
     :argument
         CSR (float): Параметр нагружения CSR
@@ -42,7 +42,7 @@ def define_cycle(CSR, alpha, betta)->float:
         cycle"""
     return np.e**((betta-CSR)/alpha)
 
-def cyclic_stress_ratio_load(sigma_1, t)->float:
+def cyclic_stress_ratio_load(sigma_1, t) -> float:
     """Функция находит параметр CSR из условий нагружения
     :argument
         sigma_1 (float): Эффективное вертикальное дафление консолидации
@@ -51,7 +51,7 @@ def cyclic_stress_ratio_load(sigma_1, t)->float:
         CSR"""
     return t/sigma_1
 
-def define_fail_cycle(cycles_count, sigma_1, t, Ip, Il, e)->tuple:
+def define_fail_cycle(cycles_count, sigma_1, t, Ip, Il, e) -> tuple:
     """Функция находит цикл разрушения, либо запас по прочности
     :argument
         cycles_count (int): Предполагаемое количество циклов нагружения (из условия опыта)
@@ -86,7 +86,7 @@ def define_fail_cycle(cycles_count, sigma_1, t, Ip, Il, e)->tuple:
     else:
         return (None, analytical_SCR/sample_CSR)
 
-def approximate_test_data(cycles, CSR)->tuple:
+def approximate_test_data(cycles, CSR) -> tuple:
     """Функция находит параметры (alpha, betta) кривой SCR для образца по данным испытаний
         :argument
             cycles: Массив циклов разрушения

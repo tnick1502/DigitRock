@@ -1,12 +1,5 @@
-import os
-
-s = "Z:/МДГТ - (Заказчики)/ПетроБурСервис ООО/2023/246-23 Судоремонтная верфь Рем-Нова ДВ/2. в работе/G0/246-23 Судоремонтная верфь Рем-Нова ДВ - plaxis.xls"
-"162-23- ГКС Сахалин - мех.xls"
-""
-""
-
-name = os.path.split(s)[-1]
-name = name[name.index(" ") + 1: len(name) - name[::-1].index("-") - 1].strip()
-
-
-print(name)
+import numpy as np
+alpha = 0.08
+betta = 0.7
+print(alpha, np.random.normal(loc=alpha, scale=0.015))
+print(betta, np.random.normal(loc=betta, scale=0.1))

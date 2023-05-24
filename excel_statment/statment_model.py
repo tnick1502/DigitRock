@@ -21,6 +21,7 @@ from loggers.logger import app_logger
 class StatmentData:
     """Класс, хранящий данные ведомости"""
     object_name = DataTypeValidation(str)
+    object_short_name = DataTypeValidation(str)
     customer = DataTypeValidation(str)
     start_date = DataTypeValidation(datetime)
     end_date = DataTypeValidation(datetime)
@@ -73,6 +74,14 @@ class StatmentData:
             self.accreditation_key = "новая"
         elif accreditation == "ООО" or accreditation == "OOO":
             self.accreditation_key = "2"
+
+        try:
+            short_name = os.path.split(statment_path)[-1]
+            self.object_short_name = short_name[short_name.index(" ") + 1: len(short_name) - short_name[::-1].index("-") - 1].strip()
+        except Exception as err:
+            print(err)
+            self.object_short_name = ""
+
 
         self.object_name = object_name
         self.customer = customer

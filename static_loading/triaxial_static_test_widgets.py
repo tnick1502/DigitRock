@@ -1763,124 +1763,58 @@ class StatickSoilTestApp(AppMixin, QWidget):
             print(str(err))
 
     def save_excel(self):
-        customer_name = ''.join(list(filter(lambda c: c not in '\/:*?"<>|', statment.general_data.customer)))
-        save_file_name = f"{customer_name} - {statment.general_data.object_number} - {statment.general_data.object_name} - Сводная ведомость {'Трехосное сжатие'}{statment.general_data.get_shipment_number()}.xlsx"
+        try:
+            customer_name = ''.join(list(filter(lambda c: c not in '''«»\/:*?"'<>|''', statment.general_data.customer)))
+            save_file_name = f"{customer_name} - {statment.general_data.object_number} - {statment.general_data.object_short_name} - Сводная ведомость {'Трехосное сжатие'}{statment.general_data.get_shipment_number()}.xlsx"
 
-        path = os.path.join(statment.save_dir.save_directory, save_file_name)
-        shutil.copy(os.getcwd() + "/project_data/" + "FCE. Выгрузка.xlsx", path)
-        i = 3
 
-        parameters_for_write = []
+            path = os.path.join(statment.save_dir.save_directory, save_file_name)
+            shutil.copy(os.getcwd() + "/project_data/" + "FCE. Выгрузка.xlsx", path)
+            i = 3
 
-        for test in statment:
-            statment.setCurrentTest(test)
-            laboratory_number = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
-            depth = statment[statment.current_test].physical_properties.depth
-            borehole = statment[statment.current_test].physical_properties.borehole
+            parameters_for_write = []
 
-            parameters = {
-                "laboratory_number": ['B', 1],
-                "borehole": ['C', 2],
-                "depth": ['D', 3],
-                "test_type": ['G', 6],
-                "scheme": ['E', 4],
-                "waterfill": ['F', 5],
-                "sigma_1": ['I', 8],
-                "sigma_3": ['H', 7],
-                "E": ['M', 12],
-                "E50": ['N', 13],
-                "Eur": ['O', 14],
-                "poissons_ratio": ['P', 15],
-                "c": ['S', 19],
-                "fi": ['T', 20],
-                "cu": ['U', 21],
-                "uf": ['J', 9],
-                "K0": ['K', 10],
-                "Skempton": ['AA', 27],
-            }
+            for test in statment:
+                statment.setCurrentTest(test)
+                laboratory_number = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
+                depth = statment[statment.current_test].physical_properties.depth
+                borehole = statment[statment.current_test].physical_properties.borehole
 
-            try:
-                if statment.general_parameters.waterfill == "Водонасыщенное состояние":
-                    waterfill = "водонасыщенное"
-                elif statment.general_parameters.waterfill == "Природная влажность":
-                    waterfill = "природное"
-                elif statment.general_parameters.waterfill == "Не указывать":
-                    waterfill = ""
-            except:
-                waterfill = ""
+                parameters = {
+                    "laboratory_number": ['B', 1],
+                    "borehole": ['C', 2],
+                    "depth": ['D', 3],
+                    "test_type": ['G', 6],
+                    "scheme": ['E', 4],
+                    "waterfill": ['F', 5],
+                    "sigma_1": ['I', 8],
+                    "sigma_3": ['H', 7],
+                    "E": ['M', 12],
+                    "E50": ['N', 13],
+                    "Eur": ['O', 14],
+                    "poissons_ratio": ['P', 15],
+                    "c": ['S', 19],
+                    "fi": ['T', 20],
+                    "cu": ['U', 21],
+                    "uf": ['J', 9],
+                    "K0": ['K', 10],
+                    "Skempton": ['AA', 27],
+                }
 
-            try:
-                E_models[statment.current_test]
-
-                set_cell_data(path, (parameters["laboratory_number"][0] + str(i), (i, parameters["laboratory_number"][1])),
-                              laboratory_number, sheet="Лист1")
-                set_cell_data(path, (parameters["borehole"][0] + str(i), (i, parameters["borehole"][1])),
-                              borehole, sheet="Лист1")
-                set_cell_data(path, (parameters["depth"][0] + str(i), (i, parameters["depth"][1])),
-                              depth, sheet="Лист1")
-                set_cell_data(path, (parameters["waterfill"][0] + str(i), (i, parameters["waterfill"][1])),
-                              waterfill, sheet="Лист1")
-
-                set_cell_data(path, (parameters["test_type"][0] + str(i), (i, parameters["test_type"][1])),
-                              "E", sheet="Лист1")
-                set_cell_data(path, (parameters["scheme"][0] + str(i), (i, parameters["scheme"][1])),
-                              "КД", sheet="Лист1")
-
-                set_cell_data(path, (parameters["sigma_3"][0] + str(i), (i, parameters["sigma_3"][1])),
-                              round(statment[statment.current_test].mechanical_properties.sigma_3 / 1000, 3), sheet="Лист1")
-                set_cell_data(path, (parameters["sigma_1"][0] + str(i), (i, parameters["sigma_1"][1])),
-                              round(statment[statment.current_test].mechanical_properties.sigma_1 / 1000, 3), sheet="Лист1")
-                set_cell_data(path, (parameters["K0"][0] + str(i), (i, parameters["K0"][1])),
-                              statment[statment.current_test].mechanical_properties.K0,
-                              sheet="Лист1")
-                E = E_models[statment.current_test].deviator_loading.get_test_results()["E"]
                 try:
-                    E[0]
-                    set_cell_data(path, (parameters["E"][0] + str(i), (i, parameters["E"][1])),
-                                  E[0], sheet="Лист1")
+                    if statment.general_parameters.waterfill == "Водонасыщенное состояние":
+                        waterfill = "водонасыщенное"
+                    elif statment.general_parameters.waterfill == "Природная влажность":
+                        waterfill = "природное"
+                    elif statment.general_parameters.waterfill == "Не указывать":
+                        waterfill = ""
                 except:
-                    pass
+                    waterfill = ""
 
-                set_cell_data(path, (parameters["E50"][0] + str(i), (i, parameters["E50"][1])),
-                              E_models[statment.current_test].deviator_loading.get_test_results()["E50"], sheet="Лист1")
+                try:
+                    E_models[statment.current_test]
 
-                Eur = E_models[statment.current_test].deviator_loading.get_test_results()["Eur"]
-                if Eur is not None:
-                    set_cell_data(path, (parameters["Eur"][0] + str(i), (i, parameters["Eur"][1])),
-                                  Eur, sheet="Лист1")
-
-                poissons_ratio = E_models[statment.current_test].deviator_loading.get_test_results()["poissons_ratio"]
-                set_cell_data(path, (parameters["poissons_ratio"][0] + str(i), (i, parameters["poissons_ratio"][1])),
-                              poissons_ratio, sheet="Лист1")
-
-                set_cell_data(path,
-                              (parameters["uf"][0] + str(i), (i, parameters["uf"][1])),
-                              E_models[statment.current_test].deviator_loading.get_test_results()[
-                                  "max_pore_pressure"],
-                              sheet="Лист1")
-
-                set_cell_data(path, (parameters["c"][0] + str(i), (i, parameters["c"][1])),
-                              statment[statment.current_test].mechanical_properties.c,
-                              sheet="Лист1")
-                set_cell_data(path, (parameters["fi"][0] + str(i), (i, parameters["fi"][1])),
-                              statment[statment.current_test].mechanical_properties.fi,
-                              sheet="Лист1")
-                if E_models[statment.current_test].reconsolidation is not None:
-                    set_cell_data(path, (parameters["Skempton"][0] + str(i), (i, parameters["Skempton"][1])),
-                                  E_models[statment.current_test].reconsolidation.get_test_results()["scempton"],
-                                  sheet="Лист1")
-
-                set_cell_data(path, ("A" + str(i), (i, 1)), i - 2, sheet="Лист1")
-                i += 1
-            except Exception as err:
-                print(err)
-
-            try:
-                FC_models[statment.current_test]
-
-                for test in FC_models[statment.current_test]:
-                    set_cell_data(path, (
-                    parameters["laboratory_number"][0] + str(i), (i, parameters["laboratory_number"][1])),
+                    set_cell_data(path, (parameters["laboratory_number"][0] + str(i), (i, parameters["laboratory_number"][1])),
                                   laboratory_number, sheet="Лист1")
                     set_cell_data(path, (parameters["borehole"][0] + str(i), (i, parameters["borehole"][1])),
                                   borehole, sheet="Лист1")
@@ -1889,22 +1823,19 @@ class StatickSoilTestApp(AppMixin, QWidget):
                     set_cell_data(path, (parameters["waterfill"][0] + str(i), (i, parameters["waterfill"][1])),
                                   waterfill, sheet="Лист1")
 
-                    set_cell_data(path, (parameters["K0"][0] + str(i), (i, parameters["K0"][1])),
-                                  statment[statment.current_test].mechanical_properties.K0, sheet="Лист1")
-
-
                     set_cell_data(path, (parameters["test_type"][0] + str(i), (i, parameters["test_type"][1])),
-                                  "FC", sheet="Лист1")
+                                  "E", sheet="Лист1")
                     set_cell_data(path, (parameters["scheme"][0] + str(i), (i, parameters["scheme"][1])),
                                   "КД", sheet="Лист1")
+
                     set_cell_data(path, (parameters["sigma_3"][0] + str(i), (i, parameters["sigma_3"][1])),
-                                  test.deviator_loading.get_test_results()["sigma_3"], sheet="Лист1")
-                    sigma_1 = round(test.deviator_loading.get_test_results()["sigma_3"] + test.deviator_loading.get_test_results()["qf"], 3)
-
+                                  round(statment[statment.current_test].mechanical_properties.sigma_3 / 1000, 3), sheet="Лист1")
                     set_cell_data(path, (parameters["sigma_1"][0] + str(i), (i, parameters["sigma_1"][1])),
-                                  sigma_1, sheet="Лист1")
-
-                    E = test.deviator_loading.get_test_results()["E"]
+                                  round(statment[statment.current_test].mechanical_properties.sigma_1 / 1000, 3), sheet="Лист1")
+                    set_cell_data(path, (parameters["K0"][0] + str(i), (i, parameters["K0"][1])),
+                                  statment[statment.current_test].mechanical_properties.K0,
+                                  sheet="Лист1")
+                    E = E_models[statment.current_test].deviator_loading.get_test_results()["E"]
                     try:
                         E[0]
                         set_cell_data(path, (parameters["E"][0] + str(i), (i, parameters["E"][1])),
@@ -1913,38 +1844,111 @@ class StatickSoilTestApp(AppMixin, QWidget):
                         pass
 
                     set_cell_data(path, (parameters["E50"][0] + str(i), (i, parameters["E50"][1])),
-                                  test.deviator_loading.get_test_results()["E50"],
-                                  sheet="Лист1")
+                                  E_models[statment.current_test].deviator_loading.get_test_results()["E50"], sheet="Лист1")
 
-                    poissons_ratio = test.deviator_loading.get_test_results()["poissons_ratio"]
-                    set_cell_data(path, (
-                    parameters["poissons_ratio"][0] + str(i), (i, parameters["poissons_ratio"][1])),
-                                  poissons_ratio,
-                                  sheet="Лист1")
+                    Eur = E_models[statment.current_test].deviator_loading.get_test_results()["Eur"]
+                    if Eur is not None:
+                        set_cell_data(path, (parameters["Eur"][0] + str(i), (i, parameters["Eur"][1])),
+                                      Eur, sheet="Лист1")
+
+                    poissons_ratio = E_models[statment.current_test].deviator_loading.get_test_results()["poissons_ratio"]
+                    set_cell_data(path, (parameters["poissons_ratio"][0] + str(i), (i, parameters["poissons_ratio"][1])),
+                                  poissons_ratio, sheet="Лист1")
 
                     set_cell_data(path,
                                   (parameters["uf"][0] + str(i), (i, parameters["uf"][1])),
-                                  test.deviator_loading.get_test_results()["max_pore_pressure"],
+                                  E_models[statment.current_test].deviator_loading.get_test_results()[
+                                      "max_pore_pressure"],
                                   sheet="Лист1")
 
                     set_cell_data(path, (parameters["c"][0] + str(i), (i, parameters["c"][1])),
-                                  FC_models[statment.current_test].get_test_results()["c"],
+                                  statment[statment.current_test].mechanical_properties.c,
                                   sheet="Лист1")
                     set_cell_data(path, (parameters["fi"][0] + str(i), (i, parameters["fi"][1])),
-                                  FC_models[statment.current_test].get_test_results()["fi"],
+                                  statment[statment.current_test].mechanical_properties.fi,
                                   sheet="Лист1")
-                    if test.reconsolidation is not None:
+                    if E_models[statment.current_test].reconsolidation is not None:
                         set_cell_data(path, (parameters["Skempton"][0] + str(i), (i, parameters["Skempton"][1])),
-                                      test.reconsolidation.get_test_results()["scempton"],
+                                      E_models[statment.current_test].reconsolidation.get_test_results()["scempton"],
                                       sheet="Лист1")
 
                     set_cell_data(path, ("A" + str(i), (i, 1)), i - 2, sheet="Лист1")
                     i += 1
-            except Exception as err:
-                print(err)
+                except Exception as err:
+                    print(err)
 
-        QMessageBox.about(self, "Сообщение", "Excel сохранен")
-        app_logger.info("Excel сохранен")
+                try:
+                    FC_models[statment.current_test]
+
+                    for test in FC_models[statment.current_test]:
+                        set_cell_data(path, (
+                        parameters["laboratory_number"][0] + str(i), (i, parameters["laboratory_number"][1])),
+                                      laboratory_number, sheet="Лист1")
+                        set_cell_data(path, (parameters["borehole"][0] + str(i), (i, parameters["borehole"][1])),
+                                      borehole, sheet="Лист1")
+                        set_cell_data(path, (parameters["depth"][0] + str(i), (i, parameters["depth"][1])),
+                                      depth, sheet="Лист1")
+                        set_cell_data(path, (parameters["waterfill"][0] + str(i), (i, parameters["waterfill"][1])),
+                                      waterfill, sheet="Лист1")
+
+                        set_cell_data(path, (parameters["K0"][0] + str(i), (i, parameters["K0"][1])),
+                                      statment[statment.current_test].mechanical_properties.K0, sheet="Лист1")
+
+
+                        set_cell_data(path, (parameters["test_type"][0] + str(i), (i, parameters["test_type"][1])),
+                                      "FC", sheet="Лист1")
+                        set_cell_data(path, (parameters["scheme"][0] + str(i), (i, parameters["scheme"][1])),
+                                      "КД", sheet="Лист1")
+                        set_cell_data(path, (parameters["sigma_3"][0] + str(i), (i, parameters["sigma_3"][1])),
+                                      test.deviator_loading.get_test_results()["sigma_3"], sheet="Лист1")
+                        sigma_1 = round(test.deviator_loading.get_test_results()["sigma_3"] + test.deviator_loading.get_test_results()["qf"], 3)
+
+                        set_cell_data(path, (parameters["sigma_1"][0] + str(i), (i, parameters["sigma_1"][1])),
+                                      sigma_1, sheet="Лист1")
+
+                        E = test.deviator_loading.get_test_results()["E"]
+                        try:
+                            E[0]
+                            set_cell_data(path, (parameters["E"][0] + str(i), (i, parameters["E"][1])),
+                                          E[0], sheet="Лист1")
+                        except:
+                            pass
+
+                        set_cell_data(path, (parameters["E50"][0] + str(i), (i, parameters["E50"][1])),
+                                      test.deviator_loading.get_test_results()["E50"],
+                                      sheet="Лист1")
+
+                        poissons_ratio = test.deviator_loading.get_test_results()["poissons_ratio"]
+                        set_cell_data(path, (
+                        parameters["poissons_ratio"][0] + str(i), (i, parameters["poissons_ratio"][1])),
+                                      poissons_ratio,
+                                      sheet="Лист1")
+
+                        set_cell_data(path,
+                                      (parameters["uf"][0] + str(i), (i, parameters["uf"][1])),
+                                      test.deviator_loading.get_test_results()["max_pore_pressure"],
+                                      sheet="Лист1")
+
+                        set_cell_data(path, (parameters["c"][0] + str(i), (i, parameters["c"][1])),
+                                      FC_models[statment.current_test].get_test_results()["c"],
+                                      sheet="Лист1")
+                        set_cell_data(path, (parameters["fi"][0] + str(i), (i, parameters["fi"][1])),
+                                      FC_models[statment.current_test].get_test_results()["fi"],
+                                      sheet="Лист1")
+                        if test.reconsolidation is not None:
+                            set_cell_data(path, (parameters["Skempton"][0] + str(i), (i, parameters["Skempton"][1])),
+                                          test.reconsolidation.get_test_results()["scempton"],
+                                          sheet="Лист1")
+
+                        set_cell_data(path, ("A" + str(i), (i, 1)), i - 2, sheet="Лист1")
+                        i += 1
+                except Exception as err:
+                    print(err)
+
+            QMessageBox.about(self, "Сообщение", "Excel сохранен")
+            app_logger.info("Excel сохранен")
+        except Exception as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
     def general_statment(self):
         try:
