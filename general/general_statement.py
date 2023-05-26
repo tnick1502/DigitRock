@@ -297,7 +297,7 @@ class StatementGenerator(QDialog):
         super().__init__(parent)
 
         self.sort = False
-        self.split_freq = False
+        self.split_freq = True
 
         self.setGeometry(100, 50, 1000, 950)
 
@@ -453,7 +453,9 @@ class StatementGenerator(QDialog):
                 save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
                 if self.statment_test_mode and self.shipment:
-                    save_file_name = f'Ведомость {self.statment_test_mode} {self.shipment}.pdf'
+                    customer_name = ''.join(
+                        list(filter(lambda c: c not in '''«»\/:*?"'<>|''', self.customer['customer'])))
+                    save_file_name = f"{customer_name} - {self.customer['object_number']} - {self.customer['object_short']} - Сводная ведомость {self.statment_test_mode}{self.shipment}.pdf"
                 else:
                     save_file_name = 'Общая ведомость.pdf'
                 # считывание параметра "Заголовок"
@@ -463,6 +465,8 @@ class StatementGenerator(QDialog):
                 # self.StatementStructure._additional_parameters = \
                 #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
                 titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
+
+                data = expand_data(data)
 
                 try:
                     if statment.general_parameters.test_mode == "Виброползучесть":
@@ -531,6 +535,11 @@ class StatementGenerator(QDialog):
                         elif self.StatementStructure.combo_box.currentText() == 'Storm liquefaction':
                             template_filename = 'xls_statment_STORM_template.xlsx'
                             num_page_rows = 53
+                            is_template = True
+
+                        elif self.StatementStructure.combo_box.currentText() == 'FCE':
+                            template_filename = 'xls_statment_FCE_template.xlsx'
+                            num_page_rows = 71
                             is_template = True
 
                         else:
@@ -954,7 +963,6 @@ class StatementGenerator(QDialog):
         self._plot()
 
     def _on_devide_freq(self, checked: bool):
-        print(checked)
         if checked:
             self.split_freq = True
         else:
@@ -1124,6 +1132,7 @@ class StatementStructure(QWidget):
         self.end_line.addWidget(self.less_participants_btn)
 
         self.devide_freq_btn = QCheckBox("Разбить по частоте")
+        self.devide_freq_btn.setChecked(True)
         self.devide_freq_btn.setFixedHeight(30)
         self.devide_freq_btn.setFixedWidth(150)
         self.end_line.addWidget(self.devide_freq_btn)

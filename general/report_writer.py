@@ -439,6 +439,16 @@ class ReportXlsxSaver:
                            'page_of_pages': f'R{52 + self.page_slant}'}
             return __positions[key]
 
+        if self.__template_filename == 'xls_statment_FCE_template.xlsx':
+            __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
+                           'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
+                           'date': f'J{70 + self.page_slant}', 'doc_num': f'V{70 + self.page_slant}',
+                           'bottomTableJoinFirstCol': 'K', 'bottomTableJoinLastCol': 21,
+                           'labNum': 'B', 'skv': 'C', 'depth': 'D', 'type': 'E',
+                           'first_row': 13 + self.page_slant, 'last_title_col': 13,
+                           'page_of_pages': f'R{70 + self.page_slant}'}
+            return __positions[key]
+
         __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
                        'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
                        'date': f'J{54 + self.page_slant}', 'doc_num': f'H{54 + self.page_slant}',
