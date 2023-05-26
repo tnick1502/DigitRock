@@ -297,6 +297,7 @@ class StatementGenerator(QDialog):
         super().__init__(parent)
 
         self.sort = False
+        self.split_freq = False
 
         self.setGeometry(100, 50, 1000, 950)
 
@@ -354,6 +355,8 @@ class StatementGenerator(QDialog):
 
         self.StatementStructure.sort_btn.clicked.connect(self._on_sort)
 
+        self.StatementStructure.devide_freq_btn.clicked.connect(self._on_devide_freq)
+
         self.setLayout(self.layout)
 
     def open_excel(self, path=None):
@@ -396,6 +399,9 @@ class StatementGenerator(QDialog):
                     for j in range(len(data[i])):
                         if data[i][j] == 'None':
                             data[i][j] = ' '
+
+                if self.split_freq:
+                    data = expand_data(data)
 
                 if self.sort:
                     data = self.sort_data_by_skv_depth(data)
@@ -947,6 +953,14 @@ class StatementGenerator(QDialog):
 
         self._plot()
 
+    def _on_devide_freq(self, checked: bool):
+        print(checked)
+        if checked:
+            self.split_freq = True
+        else:
+            self.split_freq = False
+        self._plot()
+
     def sort_data_by_skv_depth(self, data):
         result = copy.deepcopy(data[:-1])
 
@@ -1111,8 +1125,8 @@ class StatementStructure(QWidget):
 
         self.devide_freq_btn = QCheckBox("Разбить по частоте")
         self.devide_freq_btn.setFixedHeight(30)
-        self.less_participants_btn.setFixedWidth(150)
-        self.end_line.addWidget(self.less_participants_btn)
+        self.devide_freq_btn.setFixedWidth(150)
+        self.end_line.addWidget(self.devide_freq_btn)
 
         self.end_line.addStretch(-1)
         self.parameter_box_layout.addLayout(self.end_line)
