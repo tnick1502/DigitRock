@@ -6,7 +6,7 @@ __version__ = 1
 
 from PyQt5.QtWidgets import QApplication, QGridLayout, QFrame, QLabel, QHBoxLayout,\
     QVBoxLayout, QGroupBox, QWidget, QLineEdit, QPushButton, QTableWidget, QDialog, QHeaderView,  QTableWidgetItem, \
-    QHeaderView, QDialogButtonBox, QFileDialog, QMessageBox, QItemDelegate, QComboBox
+    QHeaderView, QDialogButtonBox, QFileDialog, QMessageBox, QItemDelegate, QComboBox, QScrollArea
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
@@ -24,6 +24,7 @@ from general.general_functions import read_json_file, create_json_file
 from configs.styles import style
 from singletons import Cyclic_models, statment
 from general.report_general_statment import save_report
+from cyclic_loading.liquefaction_potential_model import GeneralLiquefactionModel
 import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
 try:
@@ -637,6 +638,146 @@ class CyclicLoadingUISoilTest(CyclicLoadingUI):
         self.deviator_canvas_frame = None
         self.sliders_widget = ModelTriaxialCyclicLoading_Sliders()
         self.graph_layout.addWidget(self.sliders_widget)
+
+model = GeneralLiquefactionModel()
+
+class CsrItemUI(QGroupBox):
+    def __init__(self, EGE: str = None, parent=None):
+        """Определяем основную структуру данных"""
+        super().__init__(parent=parent)
+        # Параметры построения для всех графиков
+        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.1, "wspace": 0.12, "hspace": 0.07, "left": 0.07}
+        self.setTitle(f"ИГЭ: {EGE}")
+        self.EGE = EGE
+        self._create_UI()
+
+    def _create_UI(self):
+        """Создание данных интерфейса"""
+        self.layout = QVBoxLayout()
+
+        self.widgets_line = QHBoxLayout()
+
+        self.CSR_frame = QFrame()
+        self.CSR_frame.setFrameShape(QFrame.StyledPanel)
+        self.CSR_frame.setStyleSheet('background: #ffffff')
+        self.CSR_frame_layout = QVBoxLayout()
+        self.CSR_figure = plt.figure()
+        self.CSR_figure.subplots_adjust(**self.plot_params)
+        self.CSR_canvas = FigureCanvas(self.CSR_figure)
+        self.CSR_ax = self.CSR_figure.add_subplot(111)
+        self.CSR_ax.grid(axis='both', linewidth='0.4')
+        self.CSR_ax.set_xlabel("Число циклов N, ед.")
+        self.CSR_ax.set_ylabel("Cyclic Stress Ratio, д.е.")
+        self.CSR_canvas.draw()
+        self.CSR_frame_layout.setSpacing(0)
+        self.CSR_frame_layout.addWidget(self.CSR_canvas)
+        self.CSR_toolbar = NavigationToolbar(self.CSR_canvas, self)
+        self.CSR_frame_layout.addWidget(self.CSR_toolbar)
+        self.CSR_frame.setLayout(self.CSR_frame_layout)
+
+        self.CSR_log_frame = QFrame()
+        self.CSR_log_frame.setFrameShape(QFrame.StyledPanel)
+        self.CSR_log_frame.setStyleSheet('background: #ffffff')
+        self.CSR_log_frame_layout = QVBoxLayout()
+        self.CSR_log_figure = plt.figure()
+        self.CSR_log_figure.subplots_adjust(**self.plot_params)
+        self.CSR_log_canvas = FigureCanvas(self.CSR_log_figure)
+        self.CSR_log_ax = self.CSR_log_figure.add_subplot(111)
+        self.CSR_log_ax.grid(axis='both', linewidth='0.4')
+        self.CSR_log_ax.set_xlabel("Число циклов N, ед.")
+        self.CSR_log_ax.set_ylabel("Cyclic Stress Ratio, д.е.")
+        self.CSR_log_canvas.draw()
+        self.CSR_log_frame_layout.setSpacing(0)
+        self.CSR_log_frame_layout.addWidget(self.deviator_canvas)
+        self.CSR_log_toolbar = NavigationToolbar(self.deviator_canvas, self)
+        self.CSR_log_frame_layout.addWidget(self.CSR_log_toolbar)
+        self.CSR_log_frame.setLayout(self.CSR_log_frame_layout)
+
+        self.layout.addLayout(self.widgets_line)
+        self.layout.addWidget(self.CSR_frame)
+        self.layout.addWidget(self.CSR_log_frame)
+
+        self.layout.setContentsMargins(5, 5, 5, 5)
+        self.setLayout(self.layout)
+
+    def plot(self):
+        """Построение графиков опыта"""
+        self.CSR_ax.clear()
+        self.CSR_log_ax.clear()
+
+        self.CSR_log_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
+        self.CSR_ax.set_ylabel("Девиатор напряжений $q$', МПa")
+        results = model[self.EGE].get_results()
+        self.results_table.set_data(results)
+
+        plot_data = model[self.EGE].get_plot_data()
+
+        for key in plot_data:
+            if key == "averaged":
+                if plot_data[key]["strain"] is not None:
+                    self.plot_ax.plot(
+                        plot_data[key]["strain"], plot_data[key]["deviator"],
+                        label=key, linewidth=3, linestyle="-")
+            else:
+                self.plot_ax.plot(
+                    plot_data[key]["strain"], plot_data[key]["deviator"],
+                    label=key, linewidth=1, linestyle="-", alpha=0.6)
+
+        self.plot_ax.plot(
+            [0, 0.9 * results["averaged_qf"] / results["averaged_E50"]],
+            [0, 0.9 * results["averaged_qf"] * 1000],
+            linewidth=1, linestyle="-", alpha=0.6, color="black")
+
+        self.plot_ax.legend()
+        self.plot_canvas.draw()
+
+class ScrWidget(QGroupBox):
+    def __init__(self):
+        super().__init__()
+        self._create_UI()
+        self.plot()
+        self.setMinimumHeight(800)
+        self.setMinimumWidth(1200)
+
+    def _create_UI(self):
+        """Создание данных интерфейса"""
+        self.layout_wiget = QVBoxLayout()
+
+        for EGE in model:
+            setattr(self, f"CSR_{EGE}", CsrItemUI(EGE, parent=self))
+            widget = getattr(self, f"CSR_{EGE}")
+            self.layout_wiget.addWidget(widget)
+
+        self.wiget = QWidget()
+        self.wiget.setLayout(self.layout_wiget)
+        self.area = QScrollArea()
+        self.area.setWidgetResizable(True)
+        self.area.setWidget(self.wiget)
+
+        self.layout = QVBoxLayout(self)
+        self.layout.addWidget(self.area)
+
+    def plot(self):
+        """Построение графиков опыта"""
+        for EGE in model:
+            widget = getattr(self, f"CSR_{EGE}")
+            widget.plot()
+
+    def save_report(self):
+        try:
+            file_name = statment.save_dir.directory + "/" + "Отчет по усреднению девиаторных нагружений.pdf"
+
+            data = {key: model[key].get_results() for key in model}
+
+            for EGE in data:
+                widget = getattr(self, f"deviator_{EGE}")
+                data[EGE]["pick"] = widget.save_canvas()
+
+            #report
+
+            QMessageBox.about(self, "Сообщение", f"Отчет успешно сохранен: {file_name}")
+        except Exception as error:
+            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
 
 if __name__ == '__main__':
