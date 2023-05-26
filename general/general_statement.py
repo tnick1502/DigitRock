@@ -1109,6 +1109,11 @@ class StatementStructure(QWidget):
         self.less_participants_btn.setFixedWidth(150)
         self.end_line.addWidget(self.less_participants_btn)
 
+        self.devide_freq_btn = QCheckBox("Разбить по частоте")
+        self.devide_freq_btn.setFixedHeight(30)
+        self.less_participants_btn.setFixedWidth(150)
+        self.end_line.addWidget(self.less_participants_btn)
+
         self.end_line.addStretch(-1)
         self.parameter_box_layout.addLayout(self.end_line)
         self.layout.addWidget(self.parameter_box)
