@@ -175,8 +175,7 @@ def plotter(alpha, betta, borders=(5, 1000), sample_CSR=None, sample_cycles=None
         except:
             pass
 
-
-def define_cycles_array(default_array : list = [10, 30, 100, 200, 450], random_ratio=0.25) -> np.array:
+def define_cycles_array(default_array: list = [10, 30, 100, 200, 450], random_ratio=0.25) -> np.array:
     """Функция подбора циклов для разрушения
         :argument
             default_array: начальный массив циклов
@@ -185,7 +184,7 @@ def define_cycles_array(default_array : list = [10, 30, 100, 200, 450], random_r
         """
     return np.array([int(np.round(i * np.random.uniform(1 - random_ratio, 1 + random_ratio))) for i in default_array])
 
-def define_cycles_array_from_count_linery(test_count) -> np.array:
+def define_cycles_array_from_count_linery(test_count: int) -> np.array:
     """Функция подбора циклов для разрушения исходя из количества опытов с линейным распределением
         :argument
             test_count: количество опытов
@@ -198,7 +197,7 @@ def define_cycles_array_from_count_linery(test_count) -> np.array:
 
     return define_cycles_array(default_array=[10, *cycles_array, 450])
 
-def define_cycles_array_from_count_gyp(test_count) -> np.array:
+def define_cycles_array_from_count_gyp(test_count: int) -> np.array:
     """Функция подбора циклов для разрушения исходя из количества опытов с гиперболическим распредилением
         :argument
             test_count: количество опытов
@@ -211,7 +210,7 @@ def define_cycles_array_from_count_gyp(test_count) -> np.array:
 
     return define_cycles_array(default_array=[10, *cycles_array, 450])
 
-def define_csr_from_cycles_array(cycles_array : np.array, alpha, betta) -> np.array:
+def define_csr_from_cycles_array(cycles_array: np.array, alpha, betta) -> np.array:
     """Функция построения кривой CSR
         :argument
             alpha, betta: параметры кривой CSR
@@ -220,7 +219,7 @@ def define_csr_from_cycles_array(cycles_array : np.array, alpha, betta) -> np.ar
         """
     return define_cyclic_stress_ratio(cycles_array, alpha, betta)
 
-def define_t_from_csr(csr : float, sigma_1 : float) -> float:
+def define_t_from_csr(csr: float, sigma_1: float) -> float:
     """Функция нахождения касательного напряжения при заданном значении сsr и обжатия sigma_1
         :argument
             сsr: значение сsr

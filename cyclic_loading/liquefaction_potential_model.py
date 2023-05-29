@@ -23,32 +23,40 @@ class LiquefactionPotentialModel:
         self.not_fail = []
 
         for test in self.tests:
-            n_fail = Cyclic_models[test].get_test_results()['n_fail']
+
+            n_fail = Cyclic_models[test].get_test_results()["fail_cycle"]
 
             if n_fail:
                 self.cycles.append(
-                    Cyclic_models[test].get_test_results()['n_fail']
+                    n_fail
                 )
                 self.CSR.append(
                     cyclic_stress_ratio_load(
-                        statment[statment.current_test].mechanical_properties.sigma_1,
-                        statment[statment.current_test].mechanical_properties.t
+                        statment[test].mechanical_properties.sigma_1,
+                        statment[test].mechanical_properties.t
                     )
                 )
             else:
                 self.not_fail.append(test)
 
-        self.alpha, self.betta = approximate_test_data(self.cycles, self.CSR)
+        try:
+            self.alpha, self.betta = approximate_test_data(self.cycles, self.CSR)
+        except Exception as err:
+            print(err)
 
-    def get_plot_data(self, borders: tuple = (1, 1000)):
-        cycles_array = np.linspace(*borders, 100)
-        CSR_array = define_cyclic_stress_ratio(cycles_array, self.alpha, self.betta)
+    def get_plot_data(self, borders: tuple = (1, 600)):
+        if self.alpha and self.betta:
+            cycles_array = np.linspace(*borders, 100)
+            CSR_array = define_cyclic_stress_ratio(cycles_array, self.alpha, self.betta)
+        else:
+            cycles_array = []
+            CSR_array = []
 
         return {
             'cycles_linspase_array': cycles_array,
             'CSR_linspase_array': CSR_array,
-            'cycles_array': self.cycles_array,
-            'CSR_array': self.CSR_array,
+            'cycles_array': self.cycles,
+            'CSR_array': self.CSR,
         }
 
     def get_results(self):

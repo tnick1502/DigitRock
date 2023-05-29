@@ -15,8 +15,9 @@ import threading
 from authentication.request_qr import request_qr
 
 
-from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI, CyclicLoadingOpenTestUI, CyclicLoadingUISoilTest, CyclicDampingUI
+from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI, CyclicLoadingOpenTestUI, CyclicLoadingUISoilTest, CyclicDampingUI, CsrWidget
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, ModelTriaxialCyclicLoadingSoilTest
+from cyclic_loading.liquefaction_potential_model import GeneralLiquefactionModel
 from excel_statment.initial_tables import LinePhysicalProperties
 from general.save_widget import Save_Dir
 from general.report_general_statment import save_report
@@ -137,6 +138,7 @@ class CyclicSoilTestWidget(TabMixin, QWidget):
         self.test_widget.sliders_widget.strain_signal[object].connect(self._sliders_strain)
         self.test_widget.sliders_widget.PPR_signal[object].connect(self._sliders_PPR)
         self.test_widget.sliders_widget.cycles_count_signal[object].connect(self._sliders_cycles_count)
+        self.test_widget.sliders_widget.csr_button.clicked.connect(self._csr)
 #        self.screen_button.clicked.connect(self._screenshot)
 
     def _create_Ui(self):
@@ -203,6 +205,14 @@ class CyclicSoilTestWidget(TabMixin, QWidget):
             self.signal.emit()
         except KeyError:
             pass
+
+    def _csr(self):
+        try:
+            model = GeneralLiquefactionModel()
+            self.csr_widget = CsrWidget(model)
+            self.csr_widget.show()
+        except Exception as err:
+            print(err)
 
     def set_params(self, params):
         """Полкчение параметров образца и передача в классы модели и ползунков"""
@@ -629,6 +639,8 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         #self.tab_2.save_button.clicked.connect(self.save_report)
         self.tab_3.save_all_button.clicked.connect(self.save_all_reports)
 
+        self.tab_2.signal.connect(self.replot_csr)
+
         self.tab_3.jornal_button.clicked.connect(self.jornal)
 
         #self.tab_3.jornal_button.clicked.connect(self.jornal)
@@ -660,6 +672,13 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                     statment.current_test = list[index + 1]
                     self.tab_2.set_params(True)
                     self.tab_2.identification.set_data()
+
+    def replot_csr(self, *kwargs):
+        print("tyuj")
+        try:
+            self.tab_2.csr_widget.replot()
+        except Exception as err:
+            print(err)
 
     def save_pickle(self):
         try:

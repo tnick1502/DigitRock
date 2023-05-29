@@ -406,6 +406,7 @@ class ModelTriaxialCyclicLoading_Sliders(QWidget):
     strain_signal = pyqtSignal(object)
     PPR_signal = pyqtSignal(object)
     cycles_count_signal = pyqtSignal(object)
+
     def __init__(self):
         """Определяем основную структуру данных"""
         super().__init__()
@@ -461,7 +462,7 @@ class ModelTriaxialCyclicLoading_Sliders(QWidget):
                 label.setFixedWidth(150)  # Фиксируем размер подписи
 
                 # Создадим слайдер
-                setattr(self, "{name_var}_slider".format( name_var=var),
+                setattr(self, "{name_var}_slider".format(name_var=var),
                         Float_Slider(Qt.Horizontal))
                 slider = getattr(self, "{name_var}_slider".format(name_var=var))
 
@@ -508,6 +509,10 @@ class ModelTriaxialCyclicLoading_Sliders(QWidget):
         self.layout.addWidget(self.PPR_box, 0, 1, alignment=Qt.AlignTop)
         self._create_UI_by_params("cycles_count", self._cycles_count_params)
         self.layout.addWidget(self.cycles_count_box, 0, 2, alignment=Qt.AlignTop)
+
+        self.csr_button = QPushButton("Потенциал разжижения")
+        self.csr_button.setFixedHeight(50)
+        self.cycles_count_box_layout.addWidget(self.csr_button)
 
 
         self.layout.setColumnStretch(0, 1)
@@ -639,21 +644,22 @@ class CyclicLoadingUISoilTest(CyclicLoadingUI):
         self.sliders_widget = ModelTriaxialCyclicLoading_Sliders()
         self.graph_layout.addWidget(self.sliders_widget)
 
-model = GeneralLiquefactionModel()
-
 class CsrItemUI(QGroupBox):
-    def __init__(self, EGE: str = None, parent=None):
+    def __init__(self, EGE: str, model, parent=None):
         """Определяем основную структуру данных"""
         super().__init__(parent=parent)
+
+        self.model = model
+
         # Параметры построения для всех графиков
-        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.1, "wspace": 0.12, "hspace": 0.07, "left": 0.07}
+        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.18, "wspace": 0.12, "hspace": 0.07, "left": 0.12}
         self.setTitle(f"ИГЭ: {EGE}")
         self.EGE = EGE
         self._create_UI()
 
     def _create_UI(self):
         """Создание данных интерфейса"""
-        self.layout = QVBoxLayout()
+        self.layout = QHBoxLayout()
 
         self.widgets_line = QHBoxLayout()
 
@@ -684,12 +690,13 @@ class CsrItemUI(QGroupBox):
         self.CSR_log_canvas = FigureCanvas(self.CSR_log_figure)
         self.CSR_log_ax = self.CSR_log_figure.add_subplot(111)
         self.CSR_log_ax.grid(axis='both', linewidth='0.4')
+        self.CSR_log_ax.set_xscale('log')
         self.CSR_log_ax.set_xlabel("Число циклов N, ед.")
         self.CSR_log_ax.set_ylabel("Cyclic Stress Ratio, д.е.")
         self.CSR_log_canvas.draw()
         self.CSR_log_frame_layout.setSpacing(0)
-        self.CSR_log_frame_layout.addWidget(self.deviator_canvas)
-        self.CSR_log_toolbar = NavigationToolbar(self.deviator_canvas, self)
+        self.CSR_log_frame_layout.addWidget(self.CSR_log_canvas)
+        self.CSR_log_toolbar = NavigationToolbar(self.CSR_log_canvas, self)
         self.CSR_log_frame_layout.addWidget(self.CSR_log_toolbar)
         self.CSR_log_frame.setLayout(self.CSR_log_frame_layout)
 
@@ -705,61 +712,73 @@ class CsrItemUI(QGroupBox):
         self.CSR_ax.clear()
         self.CSR_log_ax.clear()
 
-        self.CSR_log_ax.set_xlabel("Относительная деформация $ε_1$, д.е.")
-        self.CSR_ax.set_ylabel("Девиатор напряжений $q$', МПa")
-        results = model[self.EGE].get_results()
-        self.results_table.set_data(results)
+        self.CSR_ax.set_xlabel("Число циклов N, ед.")
+        self.CSR_ax.set_ylabel("Cyclic Stress Ratio, д.е.")
 
-        plot_data = model[self.EGE].get_plot_data()
+        self.CSR_log_ax.set_xlabel("Число циклов N, ед.")
+        self.CSR_log_ax.set_ylabel("Cyclic Stress Ratio, д.е.")
+        self.CSR_log_ax.set_xscale('log')
 
-        for key in plot_data:
-            if key == "averaged":
-                if plot_data[key]["strain"] is not None:
-                    self.plot_ax.plot(
-                        plot_data[key]["strain"], plot_data[key]["deviator"],
-                        label=key, linewidth=3, linestyle="-")
-            else:
-                self.plot_ax.plot(
-                    plot_data[key]["strain"], plot_data[key]["deviator"],
-                    label=key, linewidth=1, linestyle="-", alpha=0.6)
+        results = self.model[self.EGE].get_results()
+        plot_data = self.model[self.EGE].get_plot_data()
 
-        self.plot_ax.plot(
-            [0, 0.9 * results["averaged_qf"] / results["averaged_E50"]],
-            [0, 0.9 * results["averaged_qf"] * 1000],
-            linewidth=1, linestyle="-", alpha=0.6, color="black")
+        self.CSR_ax.scatter(plot_data['cycles_array'], plot_data['CSR_array'], color="tomato")
+        self.CSR_ax.plot(plot_data['cycles_linspase_array'], plot_data['CSR_linspase_array'], **plotter_params["main_line"])
 
-        self.plot_ax.legend()
-        self.plot_canvas.draw()
+        self.CSR_log_ax.scatter(plot_data['cycles_array'], plot_data['CSR_array'], color="tomato")
+        self.CSR_log_ax.plot(plot_data['cycles_linspase_array'], plot_data['CSR_linspase_array'], **plotter_params["main_line"])
 
-class ScrWidget(QGroupBox):
-    def __init__(self):
+        if results["alpha"] and results["betta"]:
+            self.CSR_ax.plot([], [], label=r'$\alpha$, д.е. = ' + str(results["alpha"]),
+                                 color="#eeeeee")
+            self.CSR_ax.plot([], [], label=r'$\beta$, д.е. = ' + str(results["betta"]),
+                                 color="#eeeeee")
+            self.CSR_ax.legend()
+
+            self.CSR_log_ax.plot([], [], label=r'$\alpha$, д.е. = ' + str(results["alpha"]),
+                             color="#eeeeee")
+            self.CSR_log_ax.plot([], [], label=r'$\beta$, д.е. = ' + str(results["betta"]),
+                                 color="#eeeeee")
+            self.CSR_log_ax.legend()
+
+        self.CSR_log_canvas.draw()
+        self.CSR_canvas.draw()
+
+class CsrWidget(QGroupBox):
+    def __init__(self, model):
         super().__init__()
+        self.model = model
         self._create_UI()
         self.plot()
         self.setMinimumHeight(800)
-        self.setMinimumWidth(1200)
+        self.setMinimumWidth(800)
 
     def _create_UI(self):
         """Создание данных интерфейса"""
-        self.layout_wiget = QVBoxLayout()
+        self.layout_widget = QVBoxLayout()
 
-        for EGE in model:
-            setattr(self, f"CSR_{EGE}", CsrItemUI(EGE, parent=self))
+        for EGE in self.model:
+            setattr(self, f"CSR_{EGE}", CsrItemUI(EGE, self.model, parent=self))
             widget = getattr(self, f"CSR_{EGE}")
-            self.layout_wiget.addWidget(widget)
+            widget.setFixedHeight(350)
+            self.layout_widget.addWidget(widget)
 
-        self.wiget = QWidget()
-        self.wiget.setLayout(self.layout_wiget)
+        self.widget = QWidget()
+        self.widget.setLayout(self.layout_widget)
         self.area = QScrollArea()
         self.area.setWidgetResizable(True)
-        self.area.setWidget(self.wiget)
+        self.area.setWidget(self.widget)
 
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.area)
 
+    def replot(self):
+        widget = getattr(self, f"CSR_{statment[statment.current_test].physical_properties.ige}")
+        widget.plot()
+
     def plot(self):
         """Построение графиков опыта"""
-        for EGE in model:
+        for EGE in self.model:
             widget = getattr(self, f"CSR_{EGE}")
             widget.plot()
 
@@ -767,7 +786,7 @@ class ScrWidget(QGroupBox):
         try:
             file_name = statment.save_dir.directory + "/" + "Отчет по усреднению девиаторных нагружений.pdf"
 
-            data = {key: model[key].get_results() for key in model}
+            data = {key: self.model[key].get_results() for key in self.model}
 
             for EGE in data:
                 widget = getattr(self, f"deviator_{EGE}")

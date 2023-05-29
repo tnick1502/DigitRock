@@ -1524,10 +1524,45 @@ class CyclicProperties(MechanicalProperties):
 
                 self.t = np.round(self.t, 1)
 
+            elif test_mode == "Потенциал разжижения":
+                if physical_properties.depth <= physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
+                elif physical_properties.depth > physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                            9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
 
-            self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
-                                                       physical_properties.Ip,
-                                                       physical_properties.Il, physical_properties.e)
+                self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
+                if self.sigma_3 < 10:
+                    self.sigma_3 = 10
+                    self.sigma_1 = np.round(self.sigma_3 / self.K0)
+
+                self.acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]]) # В долях g
+                if self.acceleration:
+                    self.acceleration = np.round(self.acceleration, 3)
+                    self.intensity = CyclicProperties.define_intensity(self.acceleration)
+                else:
+                    self.intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
+                    self.acceleration = CyclicProperties.define_acceleration(self.intensity)
+
+                self.magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
+
+                self.t = np.round(0.65 * self.acceleration * self.sigma_1 * float(self.rd))
+                if self.t < 1.0:
+                    self.t = 1.0
+                self.t = np.round(self.t)
+
+                self.cycles_count = 15
+
+                self.frequency = 0.5
+
+            if test_mode != "Потенциал разжижения":
+                self.n_fail = 10
+
+            else:
+                self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
+                                                           physical_properties.Ip,
+                                                           physical_properties.Il, physical_properties.e)
             if self.n_fail:
                 if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
                     self.Ms = np.round(np.random.uniform(60, 200), 2)
@@ -1538,10 +1573,11 @@ class CyclicProperties(MechanicalProperties):
                     self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.t, self.cycles_count,
                     physical_properties.e, physical_properties.Il)
 
+
             self.CSR = np.round(self.t / self.sigma_1, 2)
 
             self.damping_ratio = CyclicProperties.define_damping_ratio(physical_properties.type_ground, self.frequency)
-            #np.round(CyclicProperties.define_damping_ratio(), 2)
+            # np.round(CyclicProperties.define_damping_ratio(), 2)
 
     @staticmethod
     def define_Ms(c, fi, Mcsr, sigma_3, sigma_1, t, cycles_count, e, Il) -> float:
