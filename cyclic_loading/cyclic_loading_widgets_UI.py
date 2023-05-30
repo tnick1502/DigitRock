@@ -25,6 +25,8 @@ from configs.styles import style
 from singletons import Cyclic_models, statment
 from general.report_general_statment import save_report
 from cyclic_loading.liquefaction_potential_model import GeneralLiquefactionModel
+from general.reports import report_liquid_potential
+
 import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
 try:
@@ -842,8 +844,8 @@ class CsrItemUI(QGroupBox):
             return path
 
         return {
-            'lineral': save(self.CSR_figure, self.CSR_canvas, [4.75, 4], "svg"),
-            'log': save(self.CSR_log_figure, self.CSR_log_canvas, [4.75, 4], "svg"),
+            'lineral': save(self.CSR_figure, self.CSR_canvas, [6.5, 3.2], "svg"),
+            'log': save(self.CSR_log_figure, self.CSR_log_canvas, [6.5, 3.2], "svg"),
         }
 
 class CsrWidget(QGroupBox):
@@ -893,15 +895,18 @@ class CsrWidget(QGroupBox):
     def save_report(self):
         try:
             file_name = statment.save_dir.directory + "/" + "Потенциал разжижения.pdf"
-
+            data_customer = statment.general_data
             result = {}
-
             for EGE in self.model:
                 widget = getattr(self, f"CSR_{EGE}")
                 result[EGE] = {
                     **self.model[EGE].get_results(),
                     **widget.save_canvas()
                 }
+            report_liquid_potential(
+                file_name, data_customer, os.getcwd() + "/project_data/", result,
+                version="{:.2f}".format(__version__), qr_code=None
+            )
 
             QMessageBox.about(self, "Сообщение", f"Отчет успешно сохранен: {file_name}")
         except Exception as error:
