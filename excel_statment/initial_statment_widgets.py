@@ -647,31 +647,38 @@ class CyclicStatment(InitialStatment):
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
-
                     if combo_params["test_mode"] == "Потенциал разжижения":
-                        test_dict = {}
+                        if statment.general_data.shipment_number:
+                            shipment_number = f" - {statment.general_data.shipment_number}"
+                        else:
+                            shipment_number = ""
 
-                        for test in statment:
-                            EGE = statment[test].physical_properties.ige
-                            if test_dict.get(EGE, None):
-                                test_dict[EGE].append(test)
-                            else:
-                                test_dict[EGE] = [test]
+                        model_file = os.path.join(statment.save_dir.save_directory, "cyclic_models.pickle".split(".")[0] + shipment_number + ".pickle")
 
-                        for EGE in test_dict:
-                            count_in_EGE = len(test_dict[EGE])
-                            alpha, betta = cyclic_stress_ratio_curve_params(
-                                statment[test_dict[EGE][0]].physical_properties.Ip)
-                            cycles = define_cycles_array_from_count_linery(count_in_EGE)
-                            csr = define_csr_from_cycles_array(cycles, alpha, betta)
+                        if not os.path.exists(model_file):
+                            test_dict = {}
 
-                            for i in range(count_in_EGE):
-                                statment[test_dict[EGE][i]].mechanical_properties.n_fail = cycles[i]
-                                statment[test_dict[EGE][i]].mechanical_properties.t = round(define_t_from_csr(
-                                    csr[i],
-                                    statment[test_dict[EGE][i]].mechanical_properties.sigma_1
-                                ))
-                                statment[test_dict[EGE][i]].mechanical_properties.cycles_count = int(cycles[i] * 1.1)
+                            for test in statment:
+                                EGE = statment[test].physical_properties.ige
+                                if test_dict.get(EGE, None):
+                                    test_dict[EGE].append(test)
+                                else:
+                                    test_dict[EGE] = [test]
+
+                            for EGE in test_dict:
+                                count_in_EGE = len(test_dict[EGE])
+                                alpha, betta = cyclic_stress_ratio_curve_params(
+                                    statment[test_dict[EGE][0]].physical_properties.Ip)
+                                cycles = define_cycles_array_from_count_linery(count_in_EGE)
+                                csr = define_csr_from_cycles_array(cycles, alpha, betta)
+
+                                for i in range(count_in_EGE):
+                                    statment[test_dict[EGE][i]].mechanical_properties.n_fail = cycles[i]
+                                    statment[test_dict[EGE][i]].mechanical_properties.t = round(define_t_from_csr(
+                                        csr[i],
+                                        statment[test_dict[EGE][i]].mechanical_properties.sigma_1
+                                    ))
+                                    statment[test_dict[EGE][i]].mechanical_properties.cycles_count = int(cycles[i] * 1.1)
 
                     self.table_physical_properties.set_data()
                     self.load_models(models_name="cyclic_models.pickle",

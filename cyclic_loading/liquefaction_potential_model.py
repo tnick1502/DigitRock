@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import math
 
 from singletons import Cyclic_models, statment
 from cyclic_loading.cyclic_stress_ratio_function import cyclic_stress_ratio_load, approximate_test_data, define_cyclic_stress_ratio
@@ -40,7 +41,8 @@ class LiquefactionPotentialModel:
                 self.not_fail.append(test)
 
         try:
-            self.alpha, self.betta = approximate_test_data(self.cycles, self.CSR)
+            alpha, betta = approximate_test_data(self.cycles, self.CSR)
+            self.alpha, self.betta = float(f'{float(f"{alpha:.3g}"):g}'), float(f'{float(f"{betta:.3g}"):g}')
         except Exception as err:
             print(err)
 
