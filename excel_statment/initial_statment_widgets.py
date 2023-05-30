@@ -681,10 +681,13 @@ class CyclicStatment(InitialStatment):
                                     statment[test_dict[EGE][i]].mechanical_properties.cycles_count = int(cycles[i] * 1.1)
 
                     self.table_physical_properties.set_data()
-                    self.load_models(models_name="cyclic_models.pickle",
-                                     models=Cyclic_models, models_type=ModelTriaxialCyclicLoadingSoilTest)
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
+                    try:
+                        self.load_models(models_name="cyclic_models.pickle",
+                                         models=Cyclic_models, models_type=ModelTriaxialCyclicLoadingSoilTest)
+                        self.statment_directory.emit(self.path)
+                        self.open_line.text_file_path.setText(self.path)
+                    except Exception as err:
+                        print(err)
 
 class VibrationCreepStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""

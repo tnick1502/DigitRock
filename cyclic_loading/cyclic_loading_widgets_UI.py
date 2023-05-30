@@ -517,10 +517,6 @@ class ModelTriaxialCyclicLoading_Sliders(QWidget):
         self.csr_button.setFixedHeight(30)
         self.cycles_count_box_layout.addWidget(self.csr_button)
 
-        self.liquid_potential_button = QPushButton("Снижение прочности")
-        self.liquid_potential_button.setFixedHeight(30)
-        self.cycles_count_box_layout.addWidget(self.liquid_potential_button)
-
         self.layout.setColumnStretch(0, 1)
         self.layout.setColumnStretch(1, 1)
         self.layout.setColumnStretch(2, 1)
@@ -898,7 +894,9 @@ class CsrWidget(QGroupBox):
 
     def save_report(self):
         try:
-            file_name = statment.save_dir.directory + "/" + "Потенциал разжижения.pdf"
+            customer_name = ''.join(list(filter(lambda c: c not in '''«»\/:*?"'<>|''', statment.general_data.customer)))
+            file_name = f"{statment.save_dir.directory}/{customer_name} - {statment.general_data.object_number} - {statment.general_data.object_short_name} - Сводная ведомость {'Потенциал разжижения'}{statment.general_data.get_shipment_number()}.pdf"
+
             data_customer = statment.general_data
             result = {}
 

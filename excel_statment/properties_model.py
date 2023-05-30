@@ -1556,13 +1556,13 @@ class CyclicProperties(MechanicalProperties):
 
                 self.frequency = 0.5
 
-            if test_mode != "Потенциал разжижения":
+            if test_mode == "Потенциал разжижения":
                 self.n_fail = 10
-
             else:
                 self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
                                                            physical_properties.Ip,
                                                            physical_properties.Il, physical_properties.e)
+
             if self.n_fail:
                 if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
                     self.Ms = np.round(np.random.uniform(60, 200), 2)
@@ -1573,9 +1573,7 @@ class CyclicProperties(MechanicalProperties):
                     self.c, self.fi, self.Mcsr, self.sigma_3, self.sigma_1, self.t, self.cycles_count,
                     physical_properties.e, physical_properties.Il)
 
-
             self.CSR = np.round(self.t / self.sigma_1, 2)
-
             self.damping_ratio = CyclicProperties.define_damping_ratio(physical_properties.type_ground, self.frequency)
             # np.round(CyclicProperties.define_damping_ratio(), 2)
 
