@@ -740,7 +740,6 @@ class CsrItemUI(QGroupBox):
             self.CSR_log_ax.plot([], [], label=r'$\beta$, д.е. = ' + str(results["betta"]),
                                  color="#eeeeee")
             self.CSR_log_ax.legend()
-
         self.CSR_log_canvas.draw()
         self.CSR_canvas.draw()
 
@@ -774,6 +773,7 @@ class CsrWidget(QGroupBox):
 
     def replot(self):
         widget = getattr(self, f"CSR_{statment[statment.current_test].physical_properties.ige}")
+        widget.model.processing()
         widget.plot()
 
     def plot(self):

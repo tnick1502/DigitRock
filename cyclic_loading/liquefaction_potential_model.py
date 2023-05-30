@@ -33,8 +33,8 @@ class LiquefactionPotentialModel:
                 )
                 self.CSR.append(
                     cyclic_stress_ratio_load(
-                        statment[test].mechanical_properties.sigma_1,
-                        statment[test].mechanical_properties.t
+                        Cyclic_models[test]._test_params.sigma_1,
+                        Cyclic_models[test]._test_params.t
                     )
                 )
             else:
