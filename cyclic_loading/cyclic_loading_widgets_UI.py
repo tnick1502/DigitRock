@@ -644,6 +644,31 @@ class CyclicLoadingUISoilTest(CyclicLoadingUI):
         self.sliders_widget = ModelTriaxialCyclicLoading_Sliders()
         self.graph_layout.addWidget(self.sliders_widget)
 
+class CSRResultTable(QTableWidget):
+    def __init__(self):
+        super().__init__()
+        self._clear_table()
+
+    def _clear_table(self):
+        """Очистка таблицы и придание соответствующего вида"""
+        while (self.rowCount() > 0):
+            self.removeRow(0)
+        self.verticalHeader().hide()
+        self.setRowCount(1)
+        self.setColumnCount(2)
+        self.setHorizontalHeaderLabels(["α", "β"])
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+    def set_data(self, alpha, betta):
+        """Получение данных, Заполнение таблицы параметрами"""
+        self._clear_table()
+
+        replaceNone = lambda x: x if x != "None" else "-"
+
+        self.setItem(0, 0, QTableWidgetItem(replaceNone(str(alpha))))
+        self.setItem(0, 1, QTableWidgetItem(replaceNone(str(betta))))
+
 class CsrItemUI(QGroupBox):
     def __init__(self, EGE: str, model, parent=None):
         """Определяем основную структуру данных"""
@@ -659,7 +684,9 @@ class CsrItemUI(QGroupBox):
 
     def _create_UI(self):
         """Создание данных интерфейса"""
-        self.layout = QHBoxLayout()
+        self.layout = QVBoxLayout()
+
+        self.layout_graph = QHBoxLayout()
 
         self.widgets_line = QHBoxLayout()
 
@@ -700,9 +727,15 @@ class CsrItemUI(QGroupBox):
         self.CSR_log_frame_layout.addWidget(self.CSR_log_toolbar)
         self.CSR_log_frame.setLayout(self.CSR_log_frame_layout)
 
-        self.layout.addLayout(self.widgets_line)
-        self.layout.addWidget(self.CSR_frame)
-        self.layout.addWidget(self.CSR_log_frame)
+        self.layout_graph.addLayout(self.widgets_line)
+        self.layout_graph.addWidget(self.CSR_frame)
+        self.layout_graph.addWidget(self.CSR_log_frame)
+
+        self.layout.addLayout(self.layout_graph)
+
+        self.res_table = CSRResultTable()
+        self.res_table.setFixedHeight(50)
+        self.layout.addWidget(self.res_table)
 
         self.layout.setContentsMargins(5, 5, 5, 5)
         self.setLayout(self.layout)
@@ -722,26 +755,49 @@ class CsrItemUI(QGroupBox):
         results = self.model[self.EGE].get_results()
         plot_data = self.model[self.EGE].get_plot_data()
 
-        self.CSR_ax.scatter(plot_data['cycles_array'], plot_data['CSR_array'], color="tomato")
-        self.CSR_ax.plot(plot_data['cycles_linspase_array'], plot_data['CSR_linspase_array'], **plotter_params["main_line"])
+        self.CSR_ax.plot(plot_data['cycles_linspase_array'], plot_data['CSR_linspase_array'],
+                         **plotter_params["main_line"])
+        self.CSR_log_ax.plot(plot_data['cycles_linspase_array'], plot_data['CSR_linspase_array'],
+                             **plotter_params["main_line"])
 
-        self.CSR_log_ax.scatter(plot_data['cycles_array'], plot_data['CSR_array'], color="tomato")
-        self.CSR_log_ax.plot(plot_data['cycles_linspase_array'], plot_data['CSR_linspase_array'], **plotter_params["main_line"])
+        self.CSR_log_ax.scatter([], [])
+        self.CSR_ax.scatter([], [])
 
-        if results["alpha"] and results["betta"]:
-            self.CSR_ax.plot([], [], label=r'$\alpha$, д.е. = ' + str(results["alpha"]),
-                                 color="#eeeeee")
-            self.CSR_ax.plot([], [], label=r'$\beta$, д.е. = ' + str(results["betta"]),
-                                 color="#eeeeee")
-            self.CSR_ax.legend()
+        for i in range(len(plot_data['cycles_array'])):
+            self.CSR_log_ax.scatter(plot_data['cycles_array'][i], plot_data['CSR_array'][i],
+                                    label=plot_data['tests'][i])
+            self.CSR_ax.scatter(plot_data['cycles_array'][i], plot_data['CSR_array'][i],
+                                label=plot_data['tests'][i])
+        self.CSR_ax.legend()
+        self.CSR_log_ax.legend()
 
-            self.CSR_log_ax.plot([], [], label=r'$\alpha$, д.е. = ' + str(results["alpha"]),
-                             color="#eeeeee")
-            self.CSR_log_ax.plot([], [], label=r'$\beta$, д.е. = ' + str(results["betta"]),
-                                 color="#eeeeee")
-            self.CSR_log_ax.legend()
+
+        self.res_table.set_data(results["alpha"], results["betta"])
+
         self.CSR_log_canvas.draw()
         self.CSR_canvas.draw()
+
+    def save_canvas(self, format_="svg"):
+        """Сохранение графиков для передачи в отчет"""
+
+        def save(figure, canvas, size_figure, ax, file_type):
+            path = BytesIO()
+            size = figure.get_size_inches()
+            figure.set_size_inches(size_figure)
+            if file_type == "svg":
+                figure.savefig(path, format='svg', transparent=True)
+            elif file_type == "jpg":
+                figure.savefig(path, format='jpg', dpi=500, bbox_inches='tight')
+            path.seek(0)
+            figure.set_size_inches(size)
+            canvas.draw()
+
+            return path
+
+        return {
+            'lineral': save(self.CSR_figure, self.CSR_canvas, [4.75, 4], self.CSR_ax, "svg"),
+            'log': save(self.CSR_log_figure, self.CSR_log_canvas, [4.75, 4], self.CSR_log_ax, "svg"),
+        }
 
 class CsrWidget(QGroupBox):
     def __init__(self, model):
@@ -759,7 +815,7 @@ class CsrWidget(QGroupBox):
         for EGE in self.model:
             setattr(self, f"CSR_{EGE}", CsrItemUI(EGE, self.model, parent=self))
             widget = getattr(self, f"CSR_{EGE}")
-            widget.setFixedHeight(350)
+            widget.setFixedHeight(400)
             self.layout_widget.addWidget(widget)
 
         self.widget = QWidget()

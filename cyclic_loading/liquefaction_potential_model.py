@@ -7,7 +7,7 @@ from singletons import Cyclic_models, statment
 from cyclic_loading.cyclic_stress_ratio_function import cyclic_stress_ratio_load, approximate_test_data, define_cyclic_stress_ratio
 
 class LiquefactionPotentialModel:
-    tests: dict = []
+    tests: list = []
     cycles: list = []
     CSR: list = []
     alpha: float = None
@@ -55,6 +55,7 @@ class LiquefactionPotentialModel:
             CSR_array = []
 
         return {
+            'tests': self.tests,
             'cycles_linspase_array': cycles_array,
             'CSR_linspase_array': CSR_array,
             'cycles_array': self.cycles,
