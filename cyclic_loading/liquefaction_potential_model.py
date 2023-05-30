@@ -12,7 +12,7 @@ class LiquefactionPotentialModel:
     CSR: list = []
     alpha: float = None
     betta: float = None
-    not_fail: list = []
+    fail_tests: list = []
 
     def __init__(self, tests):
         self.tests = tests
@@ -21,7 +21,7 @@ class LiquefactionPotentialModel:
     def processing(self):
         self.cycles = []
         self.CSR = []
-        self.not_fail = []
+        self.fail_tests = []
 
         for test in self.tests:
 
@@ -37,8 +37,9 @@ class LiquefactionPotentialModel:
                         Cyclic_models[test]._test_params.t
                     )
                 )
+                self.fail_tests.append(test)
             else:
-                self.not_fail.append(test)
+                pass
 
         try:
             alpha, betta = approximate_test_data(self.cycles, self.CSR)

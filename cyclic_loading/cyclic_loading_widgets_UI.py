@@ -682,6 +682,16 @@ class CsrItemUI(QGroupBox):
         self.EGE = EGE
         self._create_UI()
 
+        self.CSR_canvas.mpl_connect('button_press_event', self._canvas_click)
+        self.CSR_canvas.mpl_connect("motion_notify_event", self._canvas_on_moove)
+        self.CSR_canvas.mpl_connect('button_release_event', self._canvas_on_release)
+
+        self.CSR_log_canvas.mpl_connect('button_press_event', self._canvas_click)
+        self.CSR_log_canvas.mpl_connect("motion_notify_event", self._canvas_on_moove)
+        self.CSR_log_canvas.mpl_connect('button_release_event', self._canvas_on_release)
+
+        self.point_identificator = None
+
     def _create_UI(self):
         """Создание данных интерфейса"""
         self.layout = QVBoxLayout()
@@ -740,7 +750,7 @@ class CsrItemUI(QGroupBox):
         self.layout.setContentsMargins(5, 5, 5, 5)
         self.setLayout(self.layout)
 
-    def plot(self):
+    def plot(self, plot_data=None):
         """Построение графиков опыта"""
         self.CSR_ax.clear()
         self.CSR_log_ax.clear()
@@ -753,7 +763,8 @@ class CsrItemUI(QGroupBox):
         self.CSR_log_ax.set_xscale('log')
 
         results = self.model[self.EGE].get_results()
-        plot_data = self.model[self.EGE].get_plot_data()
+        if not plot_data:
+            plot_data = self.model[self.EGE].get_plot_data()
 
         self.CSR_ax.plot(plot_data['cycles_linspase_array'], plot_data['CSR_linspase_array'],
                          **plotter_params["main_line"])
@@ -777,10 +788,46 @@ class CsrItemUI(QGroupBox):
         self.CSR_log_canvas.draw()
         self.CSR_canvas.draw()
 
+    def _canvas_click(self, event):
+        if event.button == 1 and event.xdata and event.ydata and event.canvas is self.CSR_canvas:
+            a = (max(self.model[self.EGE].cycles) / 50) ** 2
+            b = (max(self.model[self.EGE].CSR ) / 50) ** 2
+
+            for i in range(len(self.model[self.EGE].fail_tests)):
+                if (((float(event.xdata) - self.model[self.EGE].cycles[i]) ** 2) / a) + (((float(event.ydata) - self.model[self.EGE].CSR[i]) ** 2) / b) <= 1:
+                    self.point_identificator = self.model[self.EGE].fail_tests[i]
+
+    def _canvas_on_moove(self, event):
+        if self.point_identificator and event.xdata and event.ydata and event.button == 1 and event.canvas is self.CSR_canvas:
+            plot_data = self.model[self.EGE].get_plot_data()
+
+            plot_data['cycles_array'][plot_data['tests'].index(self.point_identificator)] = float(event.xdata)
+            plot_data['CSR_array'][plot_data['tests'].index(self.point_identificator)] = float(event.ydata)
+
+            self.plot(plot_data)
+
+    def _canvas_on_release(self, event):
+        if self.point_identificator and event.xdata and event.ydata and event.button == 1 and event.canvas is self.CSR_canvas:
+            statment.current_test = self.point_identificator
+
+            statment[self.point_identificator].mechanical_properties.n_fail = int(round(float(event.xdata)))
+            statment[self.point_identificator].mechanical_properties.t = round(
+                float(event.ydata) * statment[self.point_identificator].mechanical_properties.sigma_1)
+            statment[self.point_identificator].mechanical_properties.cycles_count = int(
+                statment[self.point_identificator].mechanical_properties.n_fail * 1.1)
+
+            #print(self.point_identificator, print(Cyclic_models.tests.keys()))
+
+            Cyclic_models[self.point_identificator].set_test_params()
+
+            self.point_identificator = None
+            self.model[self.EGE].processing()
+            self.plot()
+
     def save_canvas(self, format_="svg"):
         """Сохранение графиков для передачи в отчет"""
 
-        def save(figure, canvas, size_figure, ax, file_type):
+        def save(figure, canvas, size_figure, file_type):
             path = BytesIO()
             size = figure.get_size_inches()
             figure.set_size_inches(size_figure)
@@ -795,8 +842,8 @@ class CsrItemUI(QGroupBox):
             return path
 
         return {
-            'lineral': save(self.CSR_figure, self.CSR_canvas, [4.75, 4], self.CSR_ax, "svg"),
-            'log': save(self.CSR_log_figure, self.CSR_log_canvas, [4.75, 4], self.CSR_log_ax, "svg"),
+            'lineral': save(self.CSR_figure, self.CSR_canvas, [4.75, 4], "svg"),
+            'log': save(self.CSR_log_figure, self.CSR_log_canvas, [4.75, 4], "svg"),
         }
 
 class CsrWidget(QGroupBox):
@@ -827,6 +874,11 @@ class CsrWidget(QGroupBox):
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.area)
 
+        self.save_button = QPushButton("Сохранить отчет")
+        self.save_button.setFixedHeight(50)
+        self.save_button.clicked.connect(self.save_report)
+        self.layout.addWidget(self.save_button)
+
     def replot(self):
         widget = getattr(self, f"CSR_{statment[statment.current_test].physical_properties.ige}")
         widget.model.processing()
@@ -840,15 +892,16 @@ class CsrWidget(QGroupBox):
 
     def save_report(self):
         try:
-            file_name = statment.save_dir.directory + "/" + "Отчет по усреднению девиаторных нагружений.pdf"
+            file_name = statment.save_dir.directory + "/" + "Потенциал разжижения.pdf"
 
-            data = {key: self.model[key].get_results() for key in self.model}
+            result = {}
 
-            for EGE in data:
-                widget = getattr(self, f"deviator_{EGE}")
-                data[EGE]["pick"] = widget.save_canvas()
-
-            #report
+            for EGE in self.model:
+                widget = getattr(self, f"CSR_{EGE}")
+                result[EGE] = {
+                    **self.model[EGE].get_results(),
+                    **widget.save_canvas()
+                }
 
             QMessageBox.about(self, "Сообщение", f"Отчет успешно сохранен: {file_name}")
         except Exception as error:

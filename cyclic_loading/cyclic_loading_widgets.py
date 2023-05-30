@@ -674,7 +674,6 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                     self.tab_2.identification.set_data()
 
     def replot_csr(self, *kwargs):
-        print("tyuj")
         try:
             self.tab_2.csr_widget.replot()
         except Exception as err:
