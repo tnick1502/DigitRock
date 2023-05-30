@@ -26,6 +26,7 @@ from singletons import Cyclic_models, statment
 from general.report_general_statment import save_report
 from cyclic_loading.liquefaction_potential_model import GeneralLiquefactionModel
 from general.reports import report_liquid_potential
+from authentication.request_qr import request_ege_qr
 
 import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
@@ -513,9 +514,12 @@ class ModelTriaxialCyclicLoading_Sliders(QWidget):
         self.layout.addWidget(self.cycles_count_box, 0, 2, alignment=Qt.AlignTop)
 
         self.csr_button = QPushButton("Потенциал разжижения")
-        self.csr_button.setFixedHeight(50)
+        self.csr_button.setFixedHeight(30)
         self.cycles_count_box_layout.addWidget(self.csr_button)
 
+        self.liquid_potential_button = QPushButton("Снижение прочности")
+        self.liquid_potential_button.setFixedHeight(30)
+        self.cycles_count_box_layout.addWidget(self.liquid_potential_button)
 
         self.layout.setColumnStretch(0, 1)
         self.layout.setColumnStretch(1, 1)
@@ -897,6 +901,9 @@ class CsrWidget(QGroupBox):
             file_name = statment.save_dir.directory + "/" + "Потенциал разжижения.pdf"
             data_customer = statment.general_data
             result = {}
+
+            qr = request_ege_qr(test_type='Потенциал разжижения', laboratory_number=', '.join(self.model.EGES.keys()))
+
             for EGE in self.model:
                 widget = getattr(self, f"CSR_{EGE}")
                 result[EGE] = {
@@ -905,7 +912,7 @@ class CsrWidget(QGroupBox):
                 }
             report_liquid_potential(
                 file_name, data_customer, os.getcwd() + "/project_data/", result,
-                version="{:.2f}".format(__version__), qr_code=None
+                version="{:.2f}".format(__version__), qr_code=qr
             )
 
             QMessageBox.about(self, "Сообщение", f"Отчет успешно сохранен: {file_name}")
