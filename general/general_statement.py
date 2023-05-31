@@ -555,7 +555,8 @@ class StatementGenerator(QDialog):
 
 
                             writer = ReportXlsxSaver(template_filename=template_filename,
-                                                     num_page_rows=num_page_rows)
+                                                     num_page_rows=num_page_rows,
+                                                     less_participants=self.StatementStructure.less_participants_btn.isChecked())
 
                             formatted_tests_data, additional = writer.form_tests_data_list_mode(titles, data)
 

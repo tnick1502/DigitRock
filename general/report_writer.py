@@ -45,6 +45,8 @@ class ReportXlsxSaver:
             В этом случае данные заполняеются построчно, названий столцов нет, они должны быть заданы в шаблоне
     """
     def __init__(self, template_filename: str = None, num_page_rows: int = 55, less_participants: bool = False):
+        self._less_participants = less_participants
+
         self.__TEMPLATE_PATH: str = r"general/xls_statment_base_template.xlsx"
         '''относительный путь до шаблона'''
         if less_participants:
@@ -369,6 +371,10 @@ class ReportXlsxSaver:
         Строки корректируются на сдвиг текущего листа `self.page_slant`
         """
 
+        template_filename = self.__template_filename
+        if self._less_participants:
+            template_filename = self.__template_filename.replace('_less_participants', '')
+
         if not self.__template_mode:
             __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
                            'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
@@ -379,7 +385,7 @@ class ReportXlsxSaver:
                            'page_of_pages': f'Q{54 + self.page_slant}'}
             return __positions[key]
 
-        if self.__template_filename == 'xls_statment_VIBRO_template.xlsx':
+        if template_filename == 'xls_statment_VIBRO_template.xlsx':
             __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
                            'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
                            'date': f'J{54 + self.page_slant}', 'doc_num': f'H{54 + self.page_slant}',
@@ -389,7 +395,7 @@ class ReportXlsxSaver:
                            'page_of_pages': f'Q{54 + self.page_slant}'}
             return __positions[key]
 
-        if self.__template_filename == 'xls_statment_DEMPH_template.xlsx':
+        if template_filename == 'xls_statment_DEMPH_template.xlsx':
             __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
                            'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
                            'date': f'J{53 + self.page_slant}', 'doc_num': f'H{53 + self.page_slant}',
@@ -399,7 +405,7 @@ class ReportXlsxSaver:
                            'page_of_pages': f'Q{53 + self.page_slant}'}
             return __positions[key]
 
-        if self.__template_filename == 'xls_statment_RELEY_template.xlsx':
+        if template_filename == 'xls_statment_RELEY_template.xlsx':
             __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
                            'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
                            'date': f'J{53 + self.page_slant}', 'doc_num': f'H{53 + self.page_slant}',
@@ -409,7 +415,7 @@ class ReportXlsxSaver:
                            'page_of_pages': f'Q{53 + self.page_slant}'}
             return __positions[key]
 
-        if self.__template_filename == 'xls_statment_RESONANT_template.xlsx':
+        if template_filename == 'xls_statment_RESONANT_template.xlsx':
             __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
                            'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
                            'date': f'J{53 + self.page_slant}', 'doc_num': f'H{53 + self.page_slant}',
@@ -419,7 +425,7 @@ class ReportXlsxSaver:
                            'page_of_pages': f'Q{53 + self.page_slant}'}
             return __positions[key]
 
-        if self.__template_filename == 'xls_statment_SEISMO_template.xlsx':
+        if template_filename == 'xls_statment_SEISMO_template.xlsx':
             __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
                            'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
                            'date': f'J{52 + self.page_slant}', 'doc_num': f'H{52 + self.page_slant}',
@@ -429,7 +435,7 @@ class ReportXlsxSaver:
                            'page_of_pages': f'R{52 + self.page_slant}'}
             return __positions[key]
 
-        if self.__template_filename == 'xls_statment_STORM_template.xlsx':
+        if template_filename == 'xls_statment_STORM_template.xlsx':
             __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
                            'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
                            'date': f'J{52 + self.page_slant}', 'doc_num': f'H{52 + self.page_slant}',
@@ -439,14 +445,14 @@ class ReportXlsxSaver:
                            'page_of_pages': f'R{52 + self.page_slant}'}
             return __positions[key]
 
-        if self.__template_filename == 'xls_statment_FCE_template.xlsx':
+        if template_filename == 'xls_statment_FCE_template.xlsx':
             __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
                            'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
-                           'date': f'J{70 + self.page_slant}', 'doc_num': f'V{70 + self.page_slant}',
+                           'date': f'J{70 + self.page_slant}', 'doc_num': f'H{70 + self.page_slant}',
                            'bottomTableJoinFirstCol': 'K', 'bottomTableJoinLastCol': 21,
                            'labNum': 'B', 'skv': 'C', 'depth': 'D', 'type': 'E',
                            'first_row': 13 + self.page_slant, 'last_title_col': 13,
-                           'page_of_pages': f'R{70 + self.page_slant}'}
+                           'page_of_pages': f'V{70 + self.page_slant}'}
             return __positions[key]
 
         __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
