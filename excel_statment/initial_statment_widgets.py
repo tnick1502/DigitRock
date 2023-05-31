@@ -693,6 +693,14 @@ class VibrationCreepStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
     def __init__(self):
         data_test_parameters = {
+            "test_mode": {
+                "label": "Тип испытания",
+                "vars": [
+                    "Виброползучесть",
+                    "Снижение модуля деформации сейсмо"
+                ]
+            },
+
             "K0_mode": {
                 "label": "Тип определения K0",
                 "vars": [
@@ -755,10 +763,8 @@ class VibrationCreepStatment(InitialStatment):
 
             else:
 
-                combo_params["test_mode"] = "Виброползучесть"
-
                 self.load_statment(
-                    statment_name="Виброползучесть.pickle",
+                    statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
                     properties_type=VibrationCreepProperties,
                     general_params=combo_params)
 

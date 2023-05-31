@@ -1,5 +1,11 @@
 import numpy as np
-alpha = 0.08
-betta = 0.7
-print(alpha, np.random.normal(loc=alpha, scale=0.015))
-print(betta, np.random.normal(loc=betta, scale=0.1))
+import matplotlib.pyplot as plt
+from general.general_functions import sigmoida, mirrow_element
+
+
+x = np.linspace(0, 1)
+
+y = sigmoida(mirrow_element(x, 0.5), 0.5, 0.5, 0.55, 1.55)
+
+plt.plot(x, y)
+plt.show()

@@ -2680,7 +2680,7 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False, moov
 
 
 
-def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='standart', description="-"):
+def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='standart', description="-", parameter= "Виброползучесть"):
 
     try:
         a = ImageReader(pick[1])
@@ -2744,14 +2744,22 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
             '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''',
             LeftStyle),
          "", "", E50, "", ""])
-
     tableData.append(
-        [Paragraph('''<p>Модуль деформации после динамического нагружения E<sub rise="0.5" size="6">50d</sub>, МПа:</p>''', LeftStyle), "",
+        [Paragraph(
+            '''<p>Модуль деформации после динамического нагружения E<sub rise="0.5" size="6">50d</sub>, МПа:</p>''',
+            LeftStyle), "",
          "", Ed, "", ""])
 
-    tableData.append(
-        [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub>, д.е.:</p>''', LeftStyle), "",
-         "", Kd, "", ""])
+
+    if parameter == "Виброползучесть":
+        tableData.append(
+            [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub>, д.е.:</p>''', LeftStyle), "",
+             "", Kd, "", ""])
+    else:
+        tableData.append(
+            [Paragraph('''<p>Коэффициент снижения модуля деформации K<sub rise="0.5" size="6">ds</sub>, д.е.:</p>''', LeftStyle),
+             "",
+             "", Kd, "", ""])
 
     if test_type == 'predict50':
         tableData.append(
@@ -4469,20 +4477,26 @@ def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
 
     canvas.save()
 
-def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, report_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, report_type, test_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
-    if report_type == "standart" or report_type == 'E50_E':
-        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
-        sig = "/ВП"
-    elif report_type == 'cryo':
-        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КРИОВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
-        sig = "/ВПК"
-    elif report_type == 'predict50' or report_type == 'predict100':
-        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
-        sig = "/ВП"
+    if test_type == "Виброползучесть":
+        if report_type == "standart" or report_type == 'E50_E':
+            name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+            sig = "/ВП"
+        elif report_type == 'cryo':
+            name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КРИОВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+            sig = "/ВПК"
+        elif report_type == 'predict50' or report_type == 'predict100':
+            name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+            sig = "/ВП"
+        name2 = "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"
+    elif test_type == "Снижение модуля деформации сейсмо":
+        name = "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ МОДУЛЯ ДЕФОРМАЦИИ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ"
+        name2 = "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"
+        sig = "/СП"
 
 
     res_static["description"] = Data_phiz.description
@@ -4493,8 +4507,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            [name,
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], sig)
+                            [name,name2], sig)
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a"
@@ -4511,13 +4524,12 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], sig)
+                            [name, name2], sig)
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_vibration_creep(canvas, test_parameter, moove=moove)
 
-    result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]], moove=moove, test_type=report_type, description=Data_phiz.description)
+    result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]], moove=moove, test_type=report_type, description=Data_phiz.description, parameter=test_type)
 
     canvas.save()
 
