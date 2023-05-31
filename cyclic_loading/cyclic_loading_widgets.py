@@ -15,7 +15,7 @@ import threading
 from authentication.request_qr import request_qr
 
 
-from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI, CyclicLoadingOpenTestUI, CyclicLoadingUISoilTest, CyclicDampingUI, CsrWidget
+from cyclic_loading.cyclic_loading_widgets_UI import CyclicLoadingUI, CyclicLoadingOpenTestUI, CyclicLoadingUISoilTest, CyclicDampingUI, CsrWidget, SeismicStrangthUI
 from cyclic_loading.cyclic_loading_model import ModelTriaxialCyclicLoading, ModelTriaxialCyclicLoadingSoilTest
 from cyclic_loading.liquefaction_potential_model import GeneralLiquefactionModel
 from excel_statment.initial_tables import LinePhysicalProperties
@@ -147,31 +147,26 @@ class CyclicSoilTestWidget(TabMixin, QWidget):
 
         self.test_widget = CyclicLoadingUISoilTest()
         fill_keys = {
-            "laboratory_number": "Лаб. ном.",
             "E50": "Модуль деформации E50, кПа",
             "c": "Сцепление с, МПа",
             "fi": "Угол внутреннего трения, град",
-            "CSR": "CSR, д.е.",
             "sigma_3": "Обжимающее давление 𝜎3, кПа",
             "K0": "K0, д.е.",
             "t": "Касательное напряжение τ, кПа",
-            "cycles_count": "Число циклов N, ед.",
             "intensity": "Бальность, балл",
-            "magnitude": "Магнитуда",
-            "rd": "Понижающий коэф. rd",
-            "MSF": "MSF",
             "frequency": "Частота, Гц",
-            "Hw": "Расчетная высота волны, м",
-            "rw": "Плотность воды, кН/м3",
             "damping_ratio": "Коэффициент демпфирования, %"
         }
         self.identification = TableVertical(fill_keys)
-        self.identification.setFixedWidth(400)
+        self.identification.setFixedWidth(380)
+        self.identification.setFixedHeight(200)
         self.damping = CyclicDampingUI()
-        self.damping.setFixedHeight(320)
+        self.seismic_strangth = SeismicStrangthUI()
+        self.seismic_strangth.setFixedHeight(280)
         self.layout_2 = QVBoxLayout()
         self.layout_1.addWidget(self.test_widget)
         self.layout_2.addWidget(self.identification)
+        self.layout_2.addWidget(self.seismic_strangth)
         self.layout_2.addWidget(self.damping)
         self.layout.addLayout(self.layout_1)
         self.layout.addLayout(self.layout_2)
@@ -240,6 +235,16 @@ class CyclicSoilTestWidget(TabMixin, QWidget):
         res = Cyclic_models[statment.current_test].get_test_results()
         self.test_widget.plot(plots, res)
         self.damping.plot(plots, res)
+
+        u = np.round((Cyclic_models[statment.current_test].get_test_results()['max_PPR'] * statment[statment.current_test].mechanical_properties.sigma_1) / 1000, 2)
+        self.seismic_strangth.plot(
+            statment[statment.current_test].mechanical_properties.sigma_3/1000,
+            statment[statment.current_test].mechanical_properties.sigma_1/1000,
+            u,
+            statment[statment.current_test].mechanical_properties.c/1000,
+            statment[statment.current_test].mechanical_properties.fi
+        )
+
 
     def _screenshot(self):
         """Сохранение скриншота"""

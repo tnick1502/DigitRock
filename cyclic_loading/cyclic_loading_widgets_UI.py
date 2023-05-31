@@ -7,6 +7,7 @@ __version__ = 1
 from PyQt5.QtWidgets import QApplication, QGridLayout, QFrame, QLabel, QHBoxLayout,\
     QVBoxLayout, QGroupBox, QWidget, QLineEdit, QPushButton, QTableWidget, QDialog, QHeaderView,  QTableWidgetItem, \
     QHeaderView, QDialogButtonBox, QFileDialog, QMessageBox, QItemDelegate, QComboBox, QScrollArea
+from cyclic_loading.strangth_functions import define_t_rel_point, perpendicular_passing_through_the_point
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
@@ -27,6 +28,7 @@ from general.report_general_statment import save_report
 from cyclic_loading.liquefaction_potential_model import GeneralLiquefactionModel
 from general.reports import report_liquid_potential
 from authentication.request_qr import request_ege_qr
+from general.general_functions import line
 
 import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 10000
@@ -223,7 +225,7 @@ class CyclicLoadingUI(QWidget):
         return [save(fig, can, size, format) for fig, can, size in zip([self.strain_figure,
                                                                             self.PPR_figure, self.stress_figure],
                                                    [self.strain_canvas, self.PPR_canvas, self.stress_canvas],
-                                                                          [[3, 3],[3, 3],[6, 3]])]
+                                                                          [[3, 3], [3, 3], [6, 3]])]
 
 class CyclicDampingUI(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -289,6 +291,127 @@ class CyclicDampingUI(QWidget):
         self.deviator_ax.legend(loc='upper left')
 
         self.deviator_canvas.draw()
+
+    def save_canvas(self, format_="svg"):
+        """Сохранение графиков для передачи в отчет"""
+
+        def save(figure, canvas, size_figure, ax, file_type):
+            try:
+                ax.get_legend().remove()
+                canvas.draw()
+
+                path = BytesIO()
+                size = figure.get_size_inches()
+                figure.set_size_inches(size_figure)
+                if file_type == "svg":
+                    figure.savefig(path, format='svg', transparent=True)
+                elif file_type == "jpg":
+                    figure.savefig(path, format='jpg', dpi=500, bbox_inches='tight')
+                path.seek(0)
+                figure.set_size_inches(size)
+                ax.legend(loc='upper left')
+                canvas.draw()
+            except AttributeError:
+                path = BytesIO()
+                size = figure.get_size_inches()
+                figure.set_size_inches(size_figure)
+                if file_type == "svg":
+                    figure.savefig(path, format='svg', transparent=True)
+                elif file_type == "jpg":
+                    figure.savefig(path, format='jpg', dpi=500, bbox_inches='tight')
+                path.seek(0)
+                figure.set_size_inches(size)
+                canvas.draw()
+            return path
+
+        if format_ == "jpg":
+            import matplotlib as mpl
+            mpl.rcParams['agg.path.chunksize'] = len(self.model._test_data.cycles)
+            format = 'jpg'
+        else:
+            format = 'svg'
+
+        return save(self.deviator_figure, self.deviator_canvas, [4.75, 4.75], self.deviator_ax, "jpg")
+
+class SeismicStrangthUI(QWidget):
+    def __init__(self):
+        """Определяем основную структуру данных"""
+        super().__init__()
+        # Параметры построения для всех графиков
+        self.plot_params = {"right": 0.98, "top": 0.98, "bottom": 0.2, "wspace": 0.12, "hspace": 0.07, "left": 0.15}
+        self._create_UI()
+
+    def _create_UI(self):
+        """Создание данных интерфейса"""
+        self.layout = QVBoxLayout()
+        self.graph = QGroupBox("Seismic strangth")
+        self.graph_layout = QVBoxLayout()
+        self.graph.setLayout(self.graph_layout)
+
+        self.frame = QFrame()
+        self.frame.setFrameShape(QFrame.StyledPanel)
+        self.frame.setStyleSheet('background: #ffffff')
+        self.frame_layout = QVBoxLayout()
+        self.figure = plt.figure()
+        self.figure.subplots_adjust(**self.plot_params)
+        self.canvas = FigureCanvas(self.figure)
+        self.ax = self.figure.add_subplot(111)
+        self.ax.grid(axis='both', linewidth='0.4')
+        self.ax.set_xlabel("σ, МПа")
+        self.ax.set_ylabel("τ, МПа")
+        self.canvas.draw()
+        self.frame_layout.setSpacing(0)
+        self.frame_layout.addWidget(self.canvas)
+        self.toolbar = NavigationToolbar(self.canvas, self)
+        self.frame_layout.addWidget(self.toolbar)
+        self.frame.setLayout(self.frame_layout)
+
+        self.graph_layout.addWidget(self.frame)
+
+        self.layout.addWidget(self.graph)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+        self.setLayout(self.layout)
+
+    def plot(self, sigma_3, sigma_1, u, c, fi):
+        """Построение графиков опыта"""
+        self.ax.clear()
+        self.ax.set_xlabel("σ, МПа")
+        self.ax.set_ylabel("τ, МПа")
+
+        critical_line_x = np.linspace(0, sigma_1, 100)
+        critical_line_y = line(np.tan(np.deg2rad(fi)), c, critical_line_x)
+
+        mohr_x, mohr_y = SeismicStrangthUI.mohr_circle(sigma_3, sigma_1)
+
+        self.ax.fill(mohr_x, mohr_y, alpha=0.6, label='Природное состояние')
+        self.ax.fill(mohr_x - u, mohr_y, alpha=0.6, color="tomato", label='С учетом нагрузки')
+        self.ax.plot(critical_line_x, critical_line_y, color="firebrick")
+        self.ax.set_xlim(0, sigma_1 * 1.1)
+        self.ax.set_ylim(0, sigma_1 * 1.1 * 0.5)
+
+        trel_x, trel_y = define_t_rel_point(c, fi, sigma_3, sigma_1)
+        self.ax.plot([(sigma_3 + sigma_1) / 2, trel_x], [0, trel_y], color='black', linewidth=0.5, linestyle="--")
+
+        trel_x_ref, trel_y_ref = define_t_rel_point(c, fi, sigma_3 - u, sigma_1 - u)
+        self.ax.plot([(sigma_3 - u + sigma_1 - u) / 2, trel_x_ref], [0, trel_y_ref], color='black', linewidth=0.5, linestyle="--")
+
+        self.ax.legend(loc='upper left')
+        self.canvas.draw()
+
+    @staticmethod
+    def mohr_circle(sigma_3, sigma_1):
+        def Round(x, a, b):
+            val = np.full(len(x), 0.)
+            for i in range(len(x)):
+                val[i] = ((((b - a) ** 2) / 4) - ((((2 * x[i]) - b - a) ** 2) / 4))
+                if val[i] < 0.:
+                    val[i] = 0.
+            return val ** 0.5
+
+        X = np.linspace(sigma_3, sigma_1, 1000)
+        Y = Round(X, sigma_3, sigma_1)
+
+        return X, Y
 
     def save_canvas(self, format_="svg"):
         """Сохранение графиков для передачи в отчет"""
