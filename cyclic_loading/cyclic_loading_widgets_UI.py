@@ -415,46 +415,16 @@ class SeismicStrangthUI(QWidget):
 
         return X, Y
 
-    def save_canvas(self, format_="svg"):
+    def save_canvas(self):
         """Сохранение графиков для передачи в отчет"""
-
-        def save(figure, canvas, size_figure, ax, file_type):
-            try:
-                ax.get_legend().remove()
-                canvas.draw()
-
-                path = BytesIO()
-                size = figure.get_size_inches()
-                figure.set_size_inches(size_figure)
-                if file_type == "svg":
-                    figure.savefig(path, format='svg', transparent=True)
-                elif file_type == "jpg":
-                    figure.savefig(path, format='jpg', dpi=500, bbox_inches='tight')
-                path.seek(0)
-                figure.set_size_inches(size)
-                ax.legend(loc='upper left')
-                canvas.draw()
-            except AttributeError:
-                path = BytesIO()
-                size = figure.get_size_inches()
-                figure.set_size_inches(size_figure)
-                if file_type == "svg":
-                    figure.savefig(path, format='svg', transparent=True)
-                elif file_type == "jpg":
-                    figure.savefig(path, format='jpg', dpi=500, bbox_inches='tight')
-                path.seek(0)
-                figure.set_size_inches(size)
-                canvas.draw()
-            return path
-
-        if format_ == "jpg":
-            import matplotlib as mpl
-            mpl.rcParams['agg.path.chunksize'] = len(self.model._test_data.cycles)
-            format = 'jpg'
-        else:
-            format = 'svg'
-
-        return save(self.deviator_figure, self.deviator_canvas, [4.75, 4.75], self.deviator_ax, "jpg")
+        path = BytesIO()
+        size = self.figure.get_size_inches()
+        self.figure.set_size_inches([7.5, 3.75])
+        self.figure.savefig(path, format='svg', transparent=True)
+        path.seek(0)
+        self.figure.set_size_inches(size)
+        self.canvas.draw()
+        return path
 
 class CyclicLoadingOpenTestUI(QWidget):
     """Виджет для открытия файла прибора и определения параметров опыта"""

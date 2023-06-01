@@ -2678,6 +2678,59 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False, moov
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (60 - moove - s) * mm)
 
+def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
+    try:
+        a = svg2rlg(pick)
+        a.scale(scale, scale)
+        renderPDF.draw(a, canvas, 10 * mm, (68-moove) * mm)
+    except AttributeError:
+        a = ImageReader(pick)
+        if long:
+            canvas.drawImage(a, 48 * mm, 67.5 * mm,
+                             width=125 * mm, height=100 * mm)
+        else:
+            canvas.drawImage(a, 55 * mm, 67.5 * mm,
+                             width=105 * mm, height=100 * mm)
+
+
+    #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
+
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    r = 25
+    for i in range(r):
+        tableData.append([""])
+
+
+    tableData.append([Paragraph('''<p>τ<sub rise="0.5" size="6">max static</sub>, МПа:</p>''', LeftStyle), "", "",
+                          zap(Res["t_max_static"], 3), "", ""])
+    tableData.append([Paragraph('''<p>τ<sub rise="0.5" size="6">max dynamic</sub>, МПа:</p>''', LeftStyle), "", "",
+                          zap(Res["t_max_dynamic"], 3), "", ""])
+
+    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+
+    t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                    ('SPAN', (0, 1), (-1, r)),
+                    ('SPAN', (0, -2), (2, -2)),
+                    ('SPAN', (3, -2), (5, -2)),
+                    ('SPAN', (0, -1), (2, -1)),
+                    ('SPAN', (3, -1), (5, -1)),
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    # ("BACKGROUND", (2, -2), (2, -2), HexColor(0xebebeb)),
+                    # ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -1), (2, -1), HexColor(0xebebeb)),
+                    # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                    ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, (62 - moove) * mm)
+
 
 
 def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='standart', description="-", parameter= "Виброползучесть"):
@@ -4040,12 +4093,21 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
+    if len(picks) > 3:
+        main_frame(canvas, path,  Data_customer, code, "1/3", qr_code=qr_code)
+    else:
+        main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
 
-    main_frame(canvas, path,  Data_customer, code, "1/2", qr_code=qr_code)
     if test_parameter["type"] == "Сейсморазжижение":
-        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
-                                "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/С")
+        if len(picks) > 3:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                            ["ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                             "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                            "/СП")
+        else:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                    ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
+                                    "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/С")
     elif test_parameter["type"] == "По заданным параметрам":
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
@@ -4061,11 +4123,23 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     canvas.showPage()
 
-    main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
+    if len(picks) > 3:
+        main_frame(canvas, path, Data_customer, code, "2/3", qr_code=qr_code)
+    else:
+        main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
+
     if test_parameter["type"] == "Сейсморазжижение":
-        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
-                                 "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/С")
+        if len(picks) > 3:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                            [
+                                                "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                                "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                            "/СП")
+        else:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                            ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
+                                             "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                            "/С")
     elif test_parameter["type"] == "По заданным параметрам":
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
@@ -4081,6 +4155,17 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
     result_table__triaxial_cyclic(canvas, res, [picks[2]], moove=moove)
 
     canvas.showPage()
+
+    if len(picks) > 3:
+        main_frame(canvas, path, Data_customer, code, "3/3", qr_code=qr_code)
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                        [
+                                            "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                            "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                        "/СП")
+        parameter_table(canvas, Data_phiz, Lab, moove=moove)
+        test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
+        result_table_trel(canvas, res, picks[3], moove=moove)
 
     canvas.save()
 

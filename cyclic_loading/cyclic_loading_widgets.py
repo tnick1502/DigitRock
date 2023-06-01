@@ -610,10 +610,16 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         self.tab_2.popIn.connect(self.addTab)
         self.tab_2.popOut.connect(self.removeTab)
 
-        self.tab_3 = Save_Dir(result_table_params={
+        self.tab_3 = Save_Dir(
+            {"standart": "Стандартный отчет",
+             "t_rel": "Отчет о снижении прочности при сейсмическом воздействии"
+             },
+            result_table_params={
             "Макс. PPR": lambda lab: Cyclic_models[lab].get_test_results()['max_PPR'],
             "Макс. деформ.": lambda lab: Cyclic_models[lab].get_test_results()['max_strain'],
             "Цикл разрушения": lambda lab: Cyclic_models[lab].get_test_results()['fail_cycle'],
+            "t_max_dynamic/t_max_static": lambda lab: np.round(Cyclic_models[lab].get_test_results()['t_rel_dynamic'] / Cyclic_models[lab].get_test_results()['t_rel_static'], 2),
+            "Коэффициент демпфирования": lambda lab: Cyclic_models[lab].get_test_results()['damping_ratio'],
             "Заключение": lambda lab: Cyclic_models[lab].get_test_results()['conclusion'],
         },  qr={"state": True})
 
@@ -736,10 +742,11 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             elif statment.general_parameters.test_mode == "Динамическая прочность на сдвиг":
                 file_name = save + "/" + "Отчет " + file_path_name + "-С" + ".pdf"
 
+            from_model = Cyclic_models[statment.current_test].get_test_parameters()
 
-            test_parameter = {'sigma3': statment[statment.current_test].mechanical_properties.sigma_3,
-                              'sigma1': statment[statment.current_test].mechanical_properties.sigma_1,
-                              'tau': int(statment[statment.current_test].mechanical_properties.t*2),
+            test_parameter = {'sigma3': from_model['sigma_3'],
+                              'sigma1': from_model['sigma_1'],
+                              'tau': int(from_model['t'] * 2),
                               'K0': statment[statment.current_test].mechanical_properties.K0,
                               'frequency': statment[statment.current_test].mechanical_properties.frequency,
                               "Hw": statment[statment.current_test].mechanical_properties.Hw,
@@ -759,7 +766,9 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                        'EPSmax': test_result['max_strain'],
                        'res': test_result['conclusion'],
                        'nc': check_none(test_result['fail_cycle']),
-                       "damping_ratio": test_result["damping_ratio"]}
+                       "damping_ratio": test_result["damping_ratio"],
+                       "t_max_static": test_result["t_rel_static"],
+                       "t_max_dynamic": test_result["t_rel_dynamic"]}
 
             data_customer = statment.general_data
             date = statment[statment.current_test].physical_properties.date
@@ -801,11 +810,16 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                 else:
                     qr = None
 
+                if self.tab_3.report_type == 'standart':
+                    canvas = self.tab_2.test_widget.save_canvas()
+                elif self.tab_3.report_type == 't_rel':
+                    canvas =[*self.tab_2.test_widget.save_canvas(), self.tab_2.seismic_strangth.save_canvas()]
+
                 report_triaxial_cyclic(file_name, data_customer,
                                        statment[statment.current_test].physical_properties,
                                        statment.getLaboratoryNumber(),
                                        os.getcwd() + "/project_data/", test_parameter, results,
-                                       self.tab_2.test_widget.save_canvas(), "{:.2f}".format(__version__), qr_code=qr)
+                                       canvas, "{:.2f}".format(__version__), qr_code=qr)
             elif statment.general_parameters.test_mode == "Демпфирование":
                 data = {
                     "laboratory": "mdgt",
@@ -834,7 +848,6 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                                        statment.getLaboratoryNumber(),
                                        os.getcwd() + "/project_data/", test_parameter, results,
                                        [self.tab_2.damping.save_canvas()], "{:.2f}".format(__version__), qr_code=qr)
-
             elif statment.general_parameters.test_mode == "Динамическая прочность на сдвиг":
                 results["gamma_critical"] = test_result['gamma_critical']
                 data = {
@@ -874,14 +887,14 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             shutil.copy(file_name, statment.save_dir.report_directory + "/" + file_name[len(file_name) -
                                                                                  file_name[::-1].index("/"):])
 
-
-
             set_cell_data(self.tab_1.path, ("HY5", (5, 232)), "Сигма1, кПа", sheet="Лист1")
             set_cell_data(self.tab_1.path, ("HZ5", (5, 233)), "Сигма3, кПа", sheet="Лист1")
             set_cell_data(self.tab_1.path, ("IA5", (5, 234)), "Тау, кПа", sheet="Лист1")
             set_cell_data(self.tab_1.path, ("IB5", (5, 235)), "K0", sheet="Лист1")
             set_cell_data(self.tab_1.path, ("IC5", (5, 236)), "Частота, Гц", sheet="Лист1")
             set_cell_data(self.tab_1.path, ("ID5", (5, 237)), "Цикл разрушения", sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("IE5", (5, 238)), "t_max_static", sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("IF5", (5, 239)), "t_max_dynamic", sheet="Лист1")
 
 
             number = statment[statment.current_test].physical_properties.sample_number + 7
@@ -890,7 +903,6 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                           sheet="Лист1")
             set_cell_data(self.tab_1.path, ("HX" + str(number), (number, 231)), round(test_result['max_PPR'], 3),
                           sheet="Лист1")
-
             set_cell_data(self.tab_1.path, ("HY" + str(number), (number, 232)),
                           round(statment[statment.current_test].mechanical_properties.sigma_1, 3), sheet="Лист1")
             set_cell_data(self.tab_1.path, ("HZ" + str(number), (number, 233)),
@@ -902,6 +914,11 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             set_cell_data(self.tab_1.path, ("IC" + str(number), (number, 236)),
                           statment[statment.current_test].mechanical_properties.frequency, sheet="Лист1")
             set_cell_data(self.tab_1.path, ("ID" + str(number), (number, 237)), test_result["fail_cycle"],
+                          sheet="Лист1")
+
+            set_cell_data(self.tab_1.path, ("IE" + str(number), (number, 238)), results["t_max_static"],
+                          sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("IF" + str(number), (number, 239)), results["t_max_dynamic"],
                           sheet="Лист1")
 
             if statment.general_parameters.test_mode == "Демпфирование":

@@ -800,6 +800,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         return {
             'sigma_3': self._test_params.sigma_3,
             'sigma_1': self._test_params.sigma_1,
+            't': self._test_params.t,
         }
 
     def set_test_params(self, cosine=False):
