@@ -2682,7 +2682,7 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
     try:
         a = svg2rlg(pick)
         a.scale(scale, scale)
-        renderPDF.draw(a, canvas, 10 * mm, (68-moove) * mm)
+        renderPDF.draw(a, canvas, 10 * mm, (62-moove) * mm)
     except AttributeError:
         a = ImageReader(pick)
         if long:
