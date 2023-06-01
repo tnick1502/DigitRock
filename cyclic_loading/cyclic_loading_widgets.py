@@ -236,12 +236,13 @@ class CyclicSoilTestWidget(TabMixin, QWidget):
         self.test_widget.plot(plots, res)
         self.damping.plot(plots, res)
 
-        u = np.round((Cyclic_models[statment.current_test].get_test_results()['max_PPR'] * statment[statment.current_test].mechanical_properties.sigma_1) / 1000, 2)
+        parameters = Cyclic_models[statment.current_test].get_test_parameters()
+        u = np.round((Cyclic_models[statment.current_test].get_test_results()['max_PPR'] * parameters['sigma_3']) / 1000, 2)
         self.seismic_strangth.plot(
-            statment[statment.current_test].mechanical_properties.sigma_3/1000,
-            statment[statment.current_test].mechanical_properties.sigma_1/1000,
+            parameters['sigma_3']/1000,
+            parameters['sigma_1']/1000,
             u,
-            statment[statment.current_test].mechanical_properties.c/1000,
+            statment[statment.current_test].mechanical_properties.c,
             statment[statment.current_test].mechanical_properties.fi
         )
 

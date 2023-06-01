@@ -386,14 +386,16 @@ class SeismicStrangthUI(QWidget):
         self.ax.fill(mohr_x, mohr_y, alpha=0.6, label='Природное состояние')
         self.ax.fill(mohr_x - u, mohr_y, alpha=0.6, color="tomato", label='С учетом нагрузки')
         self.ax.plot(critical_line_x, critical_line_y, color="firebrick")
-        self.ax.set_xlim(0, sigma_1 * 1.1)
-        self.ax.set_ylim(0, sigma_1 * 1.1 * 0.5)
 
         trel_x, trel_y = define_t_rel_point(c, fi, sigma_3, sigma_1)
         self.ax.plot([(sigma_3 + sigma_1) / 2, trel_x], [0, trel_y], color='black', linewidth=0.5, linestyle="--")
 
         trel_x_ref, trel_y_ref = define_t_rel_point(c, fi, sigma_3 - u, sigma_1 - u)
         self.ax.plot([(sigma_3 - u + sigma_1 - u) / 2, trel_x_ref], [0, trel_y_ref], color='black', linewidth=0.5, linestyle="--")
+
+        lim = 2 * critical_line_y[-1]
+        self.ax.set_xlim(0, lim * 1.1)
+        self.ax.set_ylim(0, lim * 1.1 * 0.5)
 
         self.ax.legend(loc='upper left')
         self.canvas.draw()

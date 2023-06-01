@@ -38,6 +38,7 @@ import scipy.ndimage as ndimage
 
 from general.general_functions import define_qf, create_deviation_curve, current_exponent, step_sin, logarithm, sigmoida,\
     create_acute_sine_array, AttrDict, mirrow_element, create_json_file, read_json_file
+from cyclic_loading.strangth_functions import define_t_rel
 from configs.plot_params import plotter_params
 from datetime import timedelta
 from typing import Optional, Tuple
@@ -84,7 +85,10 @@ class ModelTriaxialCyclicLoading:
                                       "fail_cycle_criterion_stress": None,  # номер цикла или False
                                       "fail_cycle_criterion_PPR": None,  # номер цикла или False
                                       "conclusion": None, # заключение о разжижаемости
-                                      "damping_ratio": None})  # коэффициент демпфирования
+                                      "damping_ratio": None, # коэффициент демпфирования
+                                      't_max_static': None,
+                                      't_max_dynamic': None,
+                                      })
 
     def set_test_data(self, test_data):
         """Получение и обработка массивов данных, считанных с файла прибора"""
@@ -262,6 +266,26 @@ class ModelTriaxialCyclicLoading:
             self._test_result.fail_cycle = None
         else:
             self._test_result.conclusion = "Грунт не склонен к разжижению"
+
+
+
+        u = np.round((self._test_result.max_PPR * statment[statment.current_test].mechanical_properties.sigma_1) / 1000, 2)
+
+        parameters = self.get_test_parameters()
+
+        self._test_result.t_rel_static = np.round(define_t_rel(
+            c=statment[statment.current_test].mechanical_properties.c,
+            fi=statment[statment.current_test].mechanical_properties.fi,
+            sigma_3=parameters['sigma_3'] / 1000,
+            sigma_1=parameters['sigma_1'] / 1000
+        ), 3)
+
+        self._test_result.t_rel_dynamic = np.round(define_t_rel(
+            c=statment[statment.current_test].mechanical_properties.c,
+            fi=statment[statment.current_test].mechanical_properties.fi,
+            sigma_3=parameters['sigma_3'] / 1000 - u,
+            sigma_1=parameters['sigma_1'] / 1000 - u
+        ), 3)
 
     @staticmethod
     def define_fail_cycle(cycles, condisions):
@@ -771,6 +795,12 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
                                       "reverse": None})
 
         self._noise_data = {}
+
+    def get_test_parameters(self):
+        return {
+            'sigma_3': self._test_params.sigma_3,
+            'sigma_1': self._test_params.sigma_1,
+        }
 
     def set_test_params(self, cosine=False):
         """Функция принимает параметры опыта для дальнейших построений.
