@@ -893,8 +893,8 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             set_cell_data(self.tab_1.path, ("IB5", (5, 235)), "K0", sheet="Лист1")
             set_cell_data(self.tab_1.path, ("IC5", (5, 236)), "Частота, Гц", sheet="Лист1")
             set_cell_data(self.tab_1.path, ("ID5", (5, 237)), "Цикл разрушения", sheet="Лист1")
-            set_cell_data(self.tab_1.path, ("IE5", (5, 238)), "t_max_static", sheet="Лист1")
-            set_cell_data(self.tab_1.path, ("IF5", (5, 239)), "t_max_dynamic", sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("IU5", (5, 254)), "t_max_static", sheet="Лист1")
+            set_cell_data(self.tab_1.path, ("IV5", (5, 255)), "t_max_dynamic", sheet="Лист1")
 
 
             number = statment[statment.current_test].physical_properties.sample_number + 7
@@ -916,9 +916,9 @@ class CyclicSoilTestApp(AppMixin, QWidget):
             set_cell_data(self.tab_1.path, ("ID" + str(number), (number, 237)), test_result["fail_cycle"],
                           sheet="Лист1")
 
-            set_cell_data(self.tab_1.path, ("IE" + str(number), (number, 238)), results["t_max_static"],
+            set_cell_data(self.tab_1.path, ("IE" + str(number), (number, 254)), results["t_max_static"],
                           sheet="Лист1")
-            set_cell_data(self.tab_1.path, ("IF" + str(number), (number, 239)), results["t_max_dynamic"],
+            set_cell_data(self.tab_1.path, ("IF" + str(number), (number, 255)), results["t_max_dynamic"],
                           sheet="Лист1")
 
             if statment.general_parameters.test_mode == "Демпфирование":
