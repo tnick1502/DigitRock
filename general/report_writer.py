@@ -64,6 +64,7 @@ class ReportXlsxSaver:
         self.page_slant: int = 0
         '''текущий сдвиг по листам, увеличивается на `page_size_rows` для каждого листа'''
 
+        self.__template_filename = None
         if template_filename:
             self.__template_filename = template_filename
             '''имя файла шаблона'''
@@ -371,10 +372,6 @@ class ReportXlsxSaver:
         Строки корректируются на сдвиг текущего листа `self.page_slant`
         """
 
-        template_filename = self.__template_filename
-        if self._less_participants:
-            template_filename = self.__template_filename.replace('_less_participants', '')
-
         if not self.__template_mode:
             __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
                            'accreditation': f'C{7}', 'test_title': f'B{11 + self.page_slant}',
@@ -384,6 +381,10 @@ class ReportXlsxSaver:
                            'first_row': 13 + self.page_slant, 'last_title_col': 12,
                            'page_of_pages': f'Q{54 + self.page_slant}'}
             return __positions[key]
+
+        template_filename = self.__template_filename
+        if self._less_participants:
+            template_filename = self.__template_filename.replace('_less_participants', '')
 
         if template_filename == 'xls_statment_VIBRO_template.xlsx':
             __positions = {'customer': f'L{2 + self.page_slant}', 'obj_name': f'L{4 + self.page_slant}',
