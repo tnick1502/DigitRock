@@ -3684,8 +3684,8 @@ def result_table_liquid_potential(canvas, EGE, data, y_cordinate=50):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''Уравнение линии разжижения''', LeftStyle),
-         "", "", "", Paragraph('''<p>β - α*log<sub rise="0.5" size="6">e</sub>(N)</p>''', LeftStyle), ""])
+        [Paragraph('''Зависимость CSR от числа циклов нагружения N, CSR = f(N)''', LeftStyle),
+         "", "", "", Paragraph('''<p>CSR(N) = β - α*log<sub rise="0.5" size="6">e</sub>(N)</p>''', LeftStyle), ""])
     tableData.append(
         [Paragraph('''<p>Коэффициент α</p>''', LeftStyle),
          "", "", "", str(data["alpha"]).replace('.', ','), ""])
