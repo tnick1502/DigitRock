@@ -378,7 +378,9 @@ class SeismicStrangthUI(QWidget):
         self.ax.set_xlabel("σ, МПа")
         self.ax.set_ylabel("τ, МПа")
 
-        critical_line_x = np.linspace(0, sigma_1, 100)
+        x_start = -c / np.tan(np.deg2rad(fi))
+
+        critical_line_x = np.linspace(x_start, sigma_1, 100)
         critical_line_y = line(np.tan(np.deg2rad(fi)), c, critical_line_x)
 
         mohr_x, mohr_y = SeismicStrangthUI.mohr_circle(sigma_3, sigma_1)
@@ -393,9 +395,16 @@ class SeismicStrangthUI(QWidget):
         trel_x_ref, trel_y_ref = define_t_rel_point(c, fi, sigma_3 - u, sigma_1 - u)
         self.ax.plot([(sigma_3 - u + sigma_1 - u) / 2, trel_x_ref], [0, trel_y_ref], color='black', linewidth=0.5, linestyle="--")
 
-        lim = 2 * critical_line_y[-1]
-        self.ax.set_xlim(0, lim * 1.1)
-        self.ax.set_ylim(0, lim * 1.1 * 0.5)
+
+        lim_x = abs(x_start) + sigma_1
+        lim_y = critical_line_y[-1] * 1.1
+
+        if lim_x > lim_y:
+            self.ax.set_xlim(x_start, sigma_1 * 1.2)
+            self.ax.set_ylim(0, (sigma_1 * 1.2 - x_start) * 0.5)
+        else:
+            self.ax.set_ylim(0, critical_line_y[-1] * 1.2)
+            self.ax.set_xlim(x_start, (critical_line_y[-1] * 1.2 - abs(x_start)) * 2)
 
         self.ax.legend(loc='upper left')
         self.canvas.draw()
