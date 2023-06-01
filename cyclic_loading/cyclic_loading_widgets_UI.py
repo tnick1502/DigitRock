@@ -13,6 +13,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.patches import Rectangle
 import os
 import numpy as np
 import sys
@@ -400,11 +401,35 @@ class SeismicStrangthUI(QWidget):
         lim_y = critical_line_y[-1] * 1.1
 
         if lim_x > lim_y:
+            a = lim_x
             self.ax.set_xlim(x_start, sigma_1 * 1.2)
             self.ax.set_ylim(0, (sigma_1 * 1.2 - x_start) * 0.5)
         else:
+            a = lim_y
             self.ax.set_ylim(0, critical_line_y[-1] * 1.2)
             self.ax.set_xlim(x_start, (critical_line_y[-1] * 1.2 - abs(x_start)) * 2)
+
+        self.ax.add_patch(
+            Rectangle(
+                (trel_x, trel_y),
+                a / 25,
+                a / 25,
+                angle=fi + 180,
+                edgecolor='black',
+                facecolor='none',
+                lw=0.2)
+        )
+
+        self.ax.add_patch(
+            Rectangle(
+                (trel_x_ref, trel_y_ref),
+                a / 25,
+                a / 25,
+                angle=fi + 180,
+                edgecolor='black',
+                facecolor='none',
+                lw=0.2)
+        )
 
         self.ax.legend(loc='upper left')
         self.canvas.draw()
