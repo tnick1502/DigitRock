@@ -466,13 +466,9 @@ class StatementGenerator(QDialog):
                 #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
                 titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
 
-                data = expand_data(data)
 
                 try:
-                    if statment.general_parameters.test_mode == "Виброползучесть":
-                       data = convert_data(data)
-                    elif statment.general_parameters.test_mode == "Демпфирование по Релею":
-                        data = convert_data2(data)
+                    data = expand_data(data)
                 except:
                     pass
 
@@ -618,14 +614,7 @@ class StatementGenerator(QDialog):
                     titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
 
                     try:
-                        if statment.general_parameters.test_mode == "Виброползучесть":
-                           data = convert_data(data)
-                        elif statment.general_parameters.test_mode in [
-                            "Трёхосное сжатие (F, C, E)",
-                            "Трёхосное сжатие (F, C)",
-                            "Демпфирование по Релею"
-                        ]:
-                            data = expand_data(data)
+                        data = expand_data(data)
 
                     except Exception as err:
                         print(err)
