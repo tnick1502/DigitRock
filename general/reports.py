@@ -645,6 +645,55 @@ def ege_identifier_table(canvas, data_customer, EGE, name, p_ref, K0, lname = "-
 
     return (moove-3)*4
 
+def ege_identifier_simple_table(canvas, data_customer, EGE, name, lname = "-ПР"):  # Верхняя таблица данных
+
+    moove = int(len(data_customer.object_name)/115) + 1
+    if moove <= 3:
+        moove = 3
+
+    objectStyle = LeftStyle
+    if moove >= 6:
+        moove = moove -1
+        objectStyle = LeftStyle_min
+
+    t = Table([[name[0], "", "", "", "", "", "", "", "", ""],
+               [name[1]],
+               ["Протокол №", "", str_for_excel(EGE + "/" + data_customer.object_number + lname), "", "", "", "", "", "", ""],
+               ['Заказчик:', Paragraph(data_customer.customer, LeftStyle)],
+               ['Объект:', Paragraph(data_customer.object_name, objectStyle)], *[[""] for _ in range(moove)],
+               ["ИГЭ/РГЭ/ЛАБ.НОМЕР:", "", "", Paragraph(strNone(EGE), LeftStyle)],
+               ], colWidths=17.5 * mm, rowHeights=4 * mm)
+
+    t.setStyle([("FONTNAME", (0, 0), (-1, 1), 'TimesDj'),
+                 ("FONTNAME", (0, 2), (-1, -1), 'Times'),
+                 ("FONTSIZE", (0, 0), (-1, -1), 8),
+                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                 ("ALIGN", (0, 0), (-1, 1), "CENTER"),
+                 ("ALIGN", (0, 2), (-1, -1), "LEFT"),
+                 #("LEFTPADDING", (0, 0), (0, 0), 62 * mm),
+                 #("LEFTPADDING", (1, 0), (1, 0), 3 * mm),
+                 ('SPAN', (0, 0), (-1, 0)),
+                 ('SPAN', (0, 1), (-1, 1)),
+
+                 ('SPAN', (0, 2), (1, 2)), ('SPAN', (2, 2), (-1, 2)),
+                 ('SPAN', (1, 3), (-1, 3)),
+                 ('SPAN', (0, 4), (0, 4+moove)), ('SPAN', (1, 4), (-1, 4+moove)),
+                 ('SPAN', (0, 5+moove), (2, 5+moove)), ('SPAN', (3, 5+moove), (-1, 5+moove)),
+                 ("BACKGROUND", (0, 2), (1, 2), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 3), (0, 3), HexColor(0xebebeb)),
+                 ("BACKGROUND", (0, 4), (0, 4), HexColor(0xebebeb)),
+
+                 ("BACKGROUND", (0, 5+moove), (2, 5+moove), HexColor(0xebebeb)),
+                 #("BACKGROUND", (0, 2), (1, 2), HexColor(0xd9d9d9)),
+                 #('SPAN', (0, 2), (1, 2)),
+                 ('BOX', (0, 2), (-1, -1), 0.3 * mm, "black"),
+                 ('INNERGRID', (0, 2), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, (8 + 221 - (moove - 3)*4) * mm)
+
+    return (moove-3)*4
+
 
 
 
@@ -2629,9 +2678,62 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False, moov
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (60 - moove - s) * mm)
 
+def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
+    try:
+        a = svg2rlg(pick)
+        a.scale(scale, scale)
+        renderPDF.draw(a, canvas, 10 * mm, (62-moove) * mm)
+    except AttributeError:
+        a = ImageReader(pick)
+        if long:
+            canvas.drawImage(a, 48 * mm, 67.5 * mm,
+                             width=125 * mm, height=100 * mm)
+        else:
+            canvas.drawImage(a, 55 * mm, 67.5 * mm,
+                             width=105 * mm, height=100 * mm)
 
 
-def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='standart', description="-"):
+    #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
+
+    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    r = 25
+    for i in range(r):
+        tableData.append([""])
+
+
+    tableData.append([Paragraph('''<p>τ<sub rise="0.5" size="6">max static</sub>, МПа:</p>''', LeftStyle), "", "",
+                          zap(Res["t_max_static"], 3), "", ""])
+    tableData.append([Paragraph('''<p>τ<sub rise="0.5" size="6">max dynamic</sub>, МПа:</p>''', LeftStyle), "", "",
+                          zap(Res["t_max_dynamic"], 3), "", ""])
+
+    t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
+
+    t.setStyle([('SPAN', (0, 0), (-1, 0)),
+                    ('SPAN', (0, 1), (-1, r)),
+                    ('SPAN', (0, -2), (2, -2)),
+                    ('SPAN', (3, -2), (5, -2)),
+                    ('SPAN', (0, -1), (2, -1)),
+                    ('SPAN', (3, -1), (5, -1)),
+                    ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+                    ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    # ("BACKGROUND", (2, -2), (2, -2), HexColor(0xebebeb)),
+                    # ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -1), (2, -1), HexColor(0xebebeb)),
+                    # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (0, 0), (-1, r), "CENTER"),
+                    ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+                    ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+                    ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, (62 - moove) * mm)
+
+
+
+def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='standart', description="-", parameter= "Виброползучесть"):
 
     try:
         a = ImageReader(pick[1])
@@ -2695,14 +2797,22 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
             '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''',
             LeftStyle),
          "", "", E50, "", ""])
-
     tableData.append(
-        [Paragraph('''<p>Модуль деформации после динамического нагружения E<sub rise="0.5" size="6">50d</sub>, МПа:</p>''', LeftStyle), "",
+        [Paragraph(
+            '''<p>Модуль деформации после динамического нагружения E<sub rise="0.5" size="6">50d</sub>, МПа:</p>''',
+            LeftStyle), "",
          "", Ed, "", ""])
 
-    tableData.append(
-        [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub>, д.е.:</p>''', LeftStyle), "",
-         "", Kd, "", ""])
+
+    if parameter == "Виброползучесть":
+        tableData.append(
+            [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub>, д.е.:</p>''', LeftStyle), "",
+             "", Kd, "", ""])
+    else:
+        tableData.append(
+            [Paragraph('''<p>Коэффициент снижения модуля деформации K<sub rise="0.5" size="6">ds</sub>, д.е.:</p>''', LeftStyle),
+             "",
+             "", Kd, "", ""])
 
     if test_type == 'predict50':
         tableData.append(
@@ -3559,6 +3669,59 @@ def result_table_averaged(canvas, EGE, data, y_cordinate=50):
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, y_cordinate * mm)
 
+def result_table_liquid_potential(canvas, EGE, data, y_cordinate=50):
+    a = svg2rlg(data['lineral'])
+    a.scale(0.8, 0.8)
+    renderPDF.draw(a, canvas, 25 * mm, (y_cordinate + 87) * mm)
+
+    a = svg2rlg(data['log'])
+    a.scale(0.8, 0.8)
+    renderPDF.draw(a, canvas, 25 * mm, (y_cordinate + 9) * mm)
+
+    tableData = [[f"РЕЗУЛЬТАТЫ ОПРЕДЕЛЕНИЯ ПОТЕНЦИАЛА РАЗЖИЖЕНИЯ ПО ИГЭ {EGE}", "", "", "", "", ""]]
+    r = 40
+    for i in range(r):
+        tableData.append([""])
+
+    tableData.append(
+        [Paragraph('''Зависимость CSR от числа циклов нагружения N, CSR = f(N)''', LeftStyle),
+         "", "", "", Paragraph('''<p>CSR(N) = β - α*log<sub rise="0.5" size="6">e</sub>(N)</p>''', LeftStyle), ""])
+    tableData.append(
+        [Paragraph('''<p>Коэффициент α</p>''', LeftStyle),
+         "", "", "", str(data["alpha"]).replace('.', ','), ""])
+    tableData.append(
+        [Paragraph('''<p>Коэффициент β</p>''', LeftStyle),
+         "", "", "", str(data["betta"]).replace('.', ','), ""])
+
+    style = [('SPAN', (0, 0), (-1, 0)),
+             ('SPAN', (0, 1), (-1, r)),
+
+             ('SPAN', (0, -1), (3, -1)),
+             ('SPAN', (-2, -1), (-1, -1)),
+             ('SPAN', (0, -2), (3, -2)),
+             ('SPAN', (-2, -2), (-1, -2)),
+             ('SPAN', (0, -3), (3, -3)),
+             ('SPAN', (-2, -3), (-1, -3)),
+
+             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+
+             ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
+             ("FONTNAME", (0, 1), (-1, -1), 'Times'),
+             ("FONTSIZE", (0, 0), (-1, -1), 8),
+             # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
+             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+             ("ALIGN", (0, 0), (-1, r), "CENTER"),
+             ("ALIGN", (0, r + 1), (0, -1), "LEFT"),
+             ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
+             ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")]
+
+    t = Table(tableData, colWidths=175 / 6 * mm, rowHeights=4 * mm)
+    t.setStyle(style)
+
+    t.wrapOn(canvas, 0, 0)
+    t.drawOn(canvas, 25 * mm, y_cordinate * mm)
 
 
 def result_table_statment_cyclic(canvas, Data):
@@ -3888,6 +4051,39 @@ def report_averaged(file_name, data_customer, path, data, version = 1.1, qr_code
 
     canvas.save()
 
+def report_liquid_potential(file_name, data_customer, path, data, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+    # Подгружаем шрифты
+    pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
+    pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
+
+    canvas = Canvas(file_name, pagesize=A4)
+    code = SaveCode(version)
+
+
+    name = [
+        "ОПРЕДЕЛЕНИЕ ПОТЕНЦИАЛА РАЗЖИЖЕНИЯ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ",
+        "С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"
+    ]
+
+    page_number = 0
+    pages_count = len(data)
+
+    for EGE, report_data in data.items():
+        if page_number != 0:
+            canvas.showPage()
+        main_frame(canvas, path, data_customer, code, f"{page_number + 1}/{pages_count}", qr_code=qr_code)
+
+        moove = ege_identifier_simple_table(
+            canvas, data_customer, EGE, name,
+        )
+        result_table_liquid_potential(canvas, EGE, report_data, y_cordinate=48-moove)
+        page_number += 1
+
+    canvas.showPage()
+
+    canvas.save()
+
 def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res, picks, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
@@ -3897,12 +4093,21 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
     canvas = Canvas(Name, pagesize=A4)
 
     code = SaveCode(version)
+    if len(picks) > 3:
+        main_frame(canvas, path,  Data_customer, code, "1/3", qr_code=qr_code)
+    else:
+        main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
 
-    main_frame(canvas, path,  Data_customer, code, "1/2", qr_code=qr_code)
     if test_parameter["type"] == "Сейсморазжижение":
-        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
-                                "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/С")
+        if len(picks) > 3:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                            ["ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                             "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                            "/СП")
+        else:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                    ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
+                                    "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/С")
     elif test_parameter["type"] == "По заданным параметрам":
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
@@ -3918,11 +4123,23 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     canvas.showPage()
 
-    main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
+    if len(picks) > 3:
+        main_frame(canvas, path, Data_customer, code, "2/3", qr_code=qr_code)
+    else:
+        main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
+
     if test_parameter["type"] == "Сейсморазжижение":
-        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
-                                 "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/С")
+        if len(picks) > 3:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                            [
+                                                "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                                "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                            "/СП")
+        else:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                            ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
+                                             "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                            "/С")
     elif test_parameter["type"] == "По заданным параметрам":
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
@@ -3938,6 +4155,17 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
     result_table__triaxial_cyclic(canvas, res, [picks[2]], moove=moove)
 
     canvas.showPage()
+
+    if len(picks) > 3:
+        main_frame(canvas, path, Data_customer, code, "3/3", qr_code=qr_code)
+        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                        [
+                                            "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                            "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                        "/СП")
+        parameter_table(canvas, Data_phiz, Lab, moove=moove)
+        test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
+        result_table_trel(canvas, res, picks[3], moove=moove)
 
     canvas.save()
 
@@ -4334,20 +4562,26 @@ def report_FC_KN(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res,
 
     canvas.save()
 
-def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, report_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
+def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parameter, res_static, res_dynamic,  picks, report_type, test_type, version = 1.1, qr_code=None):  # p1 - папка сохранения отчета, p2-путь к файлу XL, Nop - номер опыта
     # Подгружаем шрифты
     pdfmetrics.registerFont(TTFont('Times', path + 'Report Data/Times.ttf'))
     pdfmetrics.registerFont(TTFont('TimesK', path + 'Report Data/TimesK.ttf'))
     pdfmetrics.registerFont(TTFont('TimesDj', path + 'Report Data/TimesDj.ttf'))
-    if report_type == "standart" or report_type == 'E50_E':
-        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
-        sig = "/ВП"
-    elif report_type == 'cryo':
-        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КРИОВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
-        sig = "/ВПК"
-    elif report_type == 'predict50' or report_type == 'predict100':
-        name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
-        sig = "/ВП"
+    if test_type == "Виброползучесть":
+        if report_type == "standart" or report_type == 'E50_E':
+            name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+            sig = "/ВП"
+        elif report_type == 'cryo':
+            name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ КРИОВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+            sig = "/ВПК"
+        elif report_type == 'predict50' or report_type == 'predict100':
+            name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
+            sig = "/ВП"
+        name2 = "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"
+    elif test_type == "Снижение модуля деформации сейсмо":
+        name = "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ МОДУЛЯ ДЕФОРМАЦИИ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ"
+        name2 = "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"
+        sig = "/СП"
 
 
     res_static["description"] = Data_phiz.description
@@ -4358,8 +4592,7 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     main_frame(canvas, path, Data_customer, code, "1/2", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            [name,
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], sig)
+                            [name,name2], sig)
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_parameter['Oborudovanie'] = "ЛИГА КЛ-1С, АСИС ГТ 2.0.5, GIESA UP-25a"
@@ -4376,13 +4609,12 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
 
     main_frame(canvas, path, Data_customer, code, "2/2", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                            ["ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], sig)
+                            [name, name2], sig)
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_vibration_creep(canvas, test_parameter, moove=moove)
 
-    result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]], moove=moove, test_type=report_type, description=Data_phiz.description)
+    result_vibration_creep(canvas, res_dynamic, [picks[0], picks[1]], moove=moove, test_type=report_type, description=Data_phiz.description, parameter=test_type)
 
     canvas.save()
 

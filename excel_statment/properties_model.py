@@ -1524,10 +1524,45 @@ class CyclicProperties(MechanicalProperties):
 
                 self.t = np.round(self.t, 1)
 
+            elif test_mode == "Потенциал разжижения":
+                if physical_properties.depth <= physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth)
+                elif physical_properties.depth > physical_properties.ground_water_depth:
+                    self.sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                            9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
 
-            self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
-                                                       physical_properties.Ip,
-                                                       physical_properties.Il, physical_properties.e)
+                self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
+                if self.sigma_3 < 10:
+                    self.sigma_3 = 10
+                    self.sigma_1 = np.round(self.sigma_3 / self.K0)
+
+                self.acceleration = float_df(data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]]) # В долях g
+                if self.acceleration:
+                    self.acceleration = np.round(self.acceleration, 3)
+                    self.intensity = CyclicProperties.define_intensity(self.acceleration)
+                else:
+                    self.intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
+                    self.acceleration = CyclicProperties.define_acceleration(self.intensity)
+
+                self.magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
+
+                self.t = np.round(0.65 * self.acceleration * self.sigma_1 * float(self.rd))
+                if self.t < 1.0:
+                    self.t = 1.0
+                self.t = np.round(self.t)
+
+                self.cycles_count = 15
+
+                self.frequency = 0.5
+
+            if test_mode == "Потенциал разжижения":
+                self.n_fail = 10
+            else:
+                self.n_fail, self.Mcsr = define_fail_cycle(self.cycles_count, self.sigma_1, self.t,
+                                                           physical_properties.Ip,
+                                                           physical_properties.Il, physical_properties.e)
+
             if self.n_fail:
                 if (self.sigma_1 - self.sigma_3) <= 1.5 * self.t:
                     self.Ms = np.round(np.random.uniform(60, 200), 2)
@@ -1539,9 +1574,8 @@ class CyclicProperties(MechanicalProperties):
                     physical_properties.e, physical_properties.Il)
 
             self.CSR = np.round(self.t / self.sigma_1, 2)
-
             self.damping_ratio = CyclicProperties.define_damping_ratio(physical_properties.type_ground, self.frequency)
-            #np.round(CyclicProperties.define_damping_ratio(), 2)
+            # np.round(CyclicProperties.define_damping_ratio(), 2)
 
     @staticmethod
     def define_Ms(c, fi, Mcsr, sigma_3, sigma_1, t, cycles_count, e, Il) -> float:
@@ -1710,8 +1744,9 @@ class VibrationCreepProperties(MechanicalProperties):
             super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode)
 
         if self.c and self.fi and self.E50:
+
             frequency = data_frame.iat[string, DynamicsPropertyPosition["frequency_vibration_creep"][1]]
-            #Kd = data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]]
+            self.frequency = VibrationCreepProperties.val_to_list(frequency)
 
             t = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])
             if not t:
@@ -1725,11 +1760,9 @@ class VibrationCreepProperties(MechanicalProperties):
             else:
                 self.t = np.round(t/2, 1)
 
-            self.frequency = VibrationCreepProperties.val_to_list(frequency)
             Kd = data_frame.iat[string, DynamicsPropertyPosition["Kd_vibration_creep"][1]]
 
             if type(Kd) != str and Kd is not None and math.isnan(Kd):
-                Kd = 0
                 Kd = None
             if Kd is not None:
                 self.Kd = VibrationCreepProperties.val_to_list(Kd)
@@ -1742,20 +1775,53 @@ class VibrationCreepProperties(MechanicalProperties):
                     self.Kd = [VibrationCreepProperties.define_Kd(self.qf, self.t,
                                                                   physical_properties.e, physical_properties.Il, frequency) for frequency in self.frequency]
 
-            """self.frequency = [float(frequency)] if str(frequency).isdigit() else list(map(
-                lambda frequency: float(frequency.replace(",", ".").strip(" ")), frequency.split(";")))
-            self.Kd = [float(Kd)] if str(Kd).isdigit() else list(map(lambda Kd: float(Kd.replace(",", ".").strip(" ")),
-                                                                     Kd.split(";")))"""
 
             def fr(x, x1, x2):
                 min_y = 0.98
                 return (((x - x1) * (min_y - 1)) / (x2 - x1)) + 1
 
-            if len(self.frequency)>=2:
-                for i in range(len(self.Kd)):
-                    self.Kd[i] *= fr(self.frequency[i], min(self.frequency), max(self.frequency))
+            if test_mode == "Виброползучесть":
+                if len(self.frequency) >= 2:
+                    for i in range(len(self.Kd)):
+                        self.Kd[i] *= fr(self.frequency[i], min(self.frequency), max(self.frequency))
 
-            self.cycles_count = int(np.random.uniform(2000, 5000))
+            if test_mode == "Снижение модуля деформации сейсмо":
+                self.frequency = [0.5]
+                t_vibration = self.t
+
+                rd = CyclicProperties.define_rd(physical_properties.depth)
+                intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
+                magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
+                acceleration = CyclicProperties.define_acceleration(intensity)
+
+                if physical_properties.depth <= physical_properties.ground_water_depth:
+                    sigma_1 = round(2 * 9.81 * physical_properties.depth)
+                elif physical_properties.depth > physical_properties.ground_water_depth:
+                    sigma_1 = round(2 * 9.81 * physical_properties.depth - (
+                            9.81 * (physical_properties.depth - physical_properties.ground_water_depth)))
+
+                self.t = np.round(0.65 * acceleration * sigma_1 * float(rd))
+                if self.t < 1.0:
+                    self.t = 1.0
+                self.t = np.round(self.t)
+
+                val_Kd = (1 - self.Kd[0]) * 0.5
+
+                if self.t <= t_vibration:
+                    Kd_t_addition = 0.25 * sigmoida(self.t / t_vibration, 0.5, 0.5, 0.55, 1.55)
+                else:
+                    Kd_t_addition = - 0.25 * sigmoida(mirrow_element(t_vibration / self.t, 0.5), 0.5, 0.5, 0.55, 1.55)
+
+                Kd = self.Kd[0] + val_Kd + Kd_t_addition
+
+                if Kd >= 1:
+                    Kd = np.random.uniform(0.95, 0.98)
+
+                self.Kd = [Kd]
+
+                self.cycles_count = CyclicProperties.define_cycles_count(magnitude)
+            else:
+                self.cycles_count = int(np.random.uniform(2000, 5000))
 
             if self.Kd[-1] >= 0.9:
                 self.damping_ratio = np.random.uniform(1, 2)

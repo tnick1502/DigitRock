@@ -30,6 +30,7 @@ from shear_test.shear_dilatancy_test_model import ModelShearDilatancySoilTest
 from k0_test.triaxial_k0_model import ModelK0SoilTest
 
 from excel_statment.params import accreditation
+from cyclic_loading.cyclic_stress_ratio_function import define_cycles_array_from_count_linery, define_t_from_csr, define_t_from_csr, define_csr_from_cycles_array, cyclic_stress_ratio_curve_params
 from excel_statment.position_configs import c_fi_E_PropertyPosition, GeneralDataColumns, MechanicalPropertyPosition
 from excel_statment.functions import set_cell_data
 from metrics.session_writer import SessionWriter
@@ -551,7 +552,8 @@ class CyclicStatment(InitialStatment):
                     "Штормовое разжижение",
                     "Демпфирование",
                     "По заданным параметрам",
-                    "Динамическая прочность на сдвиг"
+                    "Динамическая прочность на сдвиг",
+                    "Потенциал разжижения"
                     ]
             },
 
@@ -615,11 +617,10 @@ class CyclicStatment(InitialStatment):
                     assert column_fullness_test(self.path, columns=[("AN", 39)],
                                                 initial_columns=columns_marker), \
                         "Заполните частоту ('AN')"
-
                 if combo_params["test_mode"] == "Штормовое разжижение":
                     assert column_fullness_test(self.path, columns=[('HR', 225), ('HS', 226), ('HT', 227), ('HU', 228)],
                                                 initial_columns=columns_marker), "Заполните данные по шторму в ведомости"
-                if combo_params["test_mode"] == "Сейсморазжижение":
+                if combo_params["test_mode"] == "Сейсморазжижение" or combo_params["test_mode"] == "Потенциал разжижения":
                     assert column_fullness_test(self.path, columns=[("AQ", 42)], initial_columns=columns_marker) and \
                            (column_fullness_test(self.path, columns=[("AM", 42)], initial_columns=columns_marker) or
                             column_fullness_test(self.path, columns=[("AP", 42)], initial_columns=columns_marker)), \
@@ -629,7 +630,6 @@ class CyclicStatment(InitialStatment):
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
             else:
-
                 self.load_statment(
                     statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
                     properties_type=CyclicProperties,
@@ -647,16 +647,60 @@ class CyclicStatment(InitialStatment):
                     QMessageBox.warning(self, "Предупреждение", "Нет образцов с заданными параметрами опыта "
                                         + str(columns_marker), QMessageBox.Ok)
                 else:
+                    if combo_params["test_mode"] == "Потенциал разжижения":
+                        if statment.general_data.shipment_number:
+                            shipment_number = f" - {statment.general_data.shipment_number}"
+                        else:
+                            shipment_number = ""
+
+                        model_file = os.path.join(statment.save_dir.save_directory, "cyclic_models.pickle".split(".")[0] + shipment_number + ".pickle")
+
+                        if not os.path.exists(model_file):
+                            test_dict = {}
+
+                            for test in statment:
+                                EGE = statment[test].physical_properties.ige
+                                if test_dict.get(EGE, None):
+                                    test_dict[EGE].append(test)
+                                else:
+                                    test_dict[EGE] = [test]
+
+                            for EGE in test_dict:
+                                count_in_EGE = len(test_dict[EGE])
+                                alpha, betta = cyclic_stress_ratio_curve_params(
+                                    statment[test_dict[EGE][0]].physical_properties.Ip)
+                                cycles = define_cycles_array_from_count_linery(count_in_EGE)
+                                csr = define_csr_from_cycles_array(cycles, alpha, betta)
+
+                                for i in range(count_in_EGE):
+                                    statment[test_dict[EGE][i]].mechanical_properties.n_fail = cycles[i]
+                                    statment[test_dict[EGE][i]].mechanical_properties.t = round(define_t_from_csr(
+                                        csr[i],
+                                        statment[test_dict[EGE][i]].mechanical_properties.sigma_1
+                                    ))
+                                    statment[test_dict[EGE][i]].mechanical_properties.cycles_count = int(cycles[i] * 1.1)
+
                     self.table_physical_properties.set_data()
-                    self.load_models(models_name="cyclic_models.pickle",
-                                     models=Cyclic_models, models_type=ModelTriaxialCyclicLoadingSoilTest)
-                    self.statment_directory.emit(self.path)
-                    self.open_line.text_file_path.setText(self.path)
+                    try:
+                        self.load_models(models_name="cyclic_models.pickle",
+                                         models=Cyclic_models, models_type=ModelTriaxialCyclicLoadingSoilTest)
+                        self.statment_directory.emit(self.path)
+                        self.open_line.text_file_path.setText(self.path)
+                    except Exception as err:
+                        print(err)
 
 class VibrationCreepStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
     def __init__(self):
         data_test_parameters = {
+            "test_mode": {
+                "label": "Тип испытания",
+                "vars": [
+                    "Виброползучесть",
+                    "Снижение модуля деформации сейсмо"
+                ]
+            },
+
             "K0_mode": {
                 "label": "Тип определения K0",
                 "vars": [
@@ -719,10 +763,8 @@ class VibrationCreepStatment(InitialStatment):
 
             else:
 
-                combo_params["test_mode"] = "Виброползучесть"
-
                 self.load_statment(
-                    statment_name="Виброползучесть.pickle",
+                    statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
                     properties_type=VibrationCreepProperties,
                     general_params=combo_params)
 

@@ -196,7 +196,9 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         if statment.general_parameters.test_mode in ["Трёхосное сжатие с разгрузкой",
                                                      "Трёхосное сжатие (F, C, Eur)",
                                                      "Трёхосное сжатие с разгрузкой (plaxis)",
-                                                     "Виброползучесть"]:
+                                                     "Виброползучесть",
+                                                     "Снижение модуля деформации сейсмо"
+                                                     ]:
 
             if mode:
                 self.combo_box.setCurrentText(mode)
@@ -207,7 +209,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                     self.combo_box.addItems(["Eur"])
                     if statment.general_parameters.test_mode == "Трёхосное сжатие с разгрузкой (plaxis)":
                         self.combo_box.setCurrentText("Eur")
-                    elif statment.general_parameters.test_mode == "Виброползучесть":
+                    elif statment.general_parameters.test_mode in ["Виброползучесть", "Снижение модуля деформации сейсмо"]:
                         self.combo_box.setCurrentText("E50")
                     else:
                         self.combo_box.setCurrentText("Eur_E")

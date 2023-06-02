@@ -1,4 +1,3 @@
-
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMessageBox, QHBoxLayout, QTabWidget, \
     QDialog, QTableWidget, QGroupBox, QPushButton, QComboBox, QDialogButtonBox, QTableWidgetItem, QHeaderView, \
     QTextEdit, QProgressDialog
@@ -424,7 +423,6 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                 pick_vc_array.append(pick_vc)
                 pick_c_array.append(pick_c)
 
-
                 report_VibrationCreep3(save + "/" + file_name, data_customer,
                                       statment[statment.current_test].physical_properties,
                                       statment.getLaboratoryNumber(),
@@ -461,7 +459,8 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                                       os.getcwd() + "/project_data/",
                                       test_parameter, E_models[statment.current_test].get_test_results(),
                                       VC_models[statment.current_test].get_test_results(),
-                                      [pick_vc, pick_c, *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])], self.tab_4.report_type, "{:.2f}".format(__version__), qr_code=qr)
+                                      [pick_vc, pick_c, *self.tab_2.deviator_loading.save_canvas(format=["jpg", "jpg"])],
+                                      self.tab_4.report_type, statment.general_parameters.test_mode, "{:.2f}".format(__version__), qr_code=qr)
                 res = res[0]
 
                 number = statment[statment.current_test].physical_properties.sample_number + 7
@@ -578,8 +577,12 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
         test_mode_file_name = None
         if statment.general_parameters.test_mode == "Виброползучесть":
             test_mode_file_name = 'вибро'
+            statement_structure_key = "vibration_creep"
+        else:
+            test_mode_file_name = 'сейсмо'
+            statement_structure_key = "seismic_creep"
 
-        _statment = StatementGenerator(self, path=s, statement_structure_key="triaxial_cyclic",
+        _statment = StatementGenerator(self, path=s, statement_structure_key=statement_structure_key,
                                        test_mode_and_shipment=(test_mode_file_name,
                                                                statment.general_data.get_shipment_number()))
         _statment.show()
