@@ -1328,10 +1328,10 @@ def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8, moove=0, tttyy
         try:
             a = svg2rlg(pick[0])
             a.scale(scale, scale)
-            renderPDF.draw(a, canvas, 36 * mm, (81-moove) * mm)
+            renderPDF.draw(a, canvas, 20 * mm, (115-moove) * mm)
             b = svg2rlg(pick[1])
             b.scale(scale, scale)
-            renderPDF.draw(b, canvas, 120 * mm, (81-moove) * mm)
+            renderPDF.draw(b, canvas, 20 * mm, (60-moove) * mm)
         except AttributeError:
             a = ImageReader(pick[0])
             canvas.drawImage(a, 31 * mm, 81 * mm,
@@ -1344,7 +1344,7 @@ def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8, moove=0, tttyy
         try:
             a = svg2rlg(pick[0])
             a.scale(scale, scale)
-            renderPDF.draw(a, canvas, 36 * mm, (81-moove) * mm)
+            renderPDF.draw(a, canvas, 20 * mm, (60-moove) * mm)
         except AttributeError:
             a = ImageReader(pick[0])
             canvas.drawImage(a, 36 * mm, 81 * mm,
@@ -1354,7 +1354,7 @@ def result_table__triaxial_cyclic(canvas, Res, pick, scale = 0.8, moove=0, tttyy
     #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
-    r = 25
+    r = 29
     trt = 0
     for i in range(r):
         tableData.append([""])
@@ -2691,20 +2691,21 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
         else:
             canvas.drawImage(a, 55 * mm, 67.5 * mm,
                              width=105 * mm, height=100 * mm)
-
-
     #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
 
-    tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
+    tableData = [["ДИАГРАММА МОБИЛИЗОВАННОЙ ПРОЧНОСТИ", "", "", "", "", ""]]
     r = 25
     for i in range(r):
         tableData.append([""])
 
-
-    tableData.append([Paragraph('''<p>τ<sub rise="0.5" size="6">max static</sub>, МПа:</p>''', LeftStyle), "", "",
+    tableData.append([Paragraph('''<p>Статическое опротивление сдвигу τ<sub rise="0.5" size="6">static</sub>, МПа:</p>''', LeftStyle), "", "",
                           zap(Res["t_max_static"], 3), "", ""])
-    tableData.append([Paragraph('''<p>τ<sub rise="0.5" size="6">max dynamic</sub>, МПа:</p>''', LeftStyle), "", "",
+    tableData.append([Paragraph('''<p>Динамическое сопротивление сдвигу τ<sub rise="0.5" size="6">dynamic</sub>, МПа:</p>''', LeftStyle), "", "",
                           zap(Res["t_max_dynamic"], 3), "", ""])
+    tableData.append([Paragraph(
+        '''<p>Коэффициент снижения прочности K<sub rise="0.5" size="6">ds</sub>, МПа:</p>''', LeftStyle), "",
+                      "",
+                      zap(round(Res["t_max_dynamic"] / Res["t_max_static"], 2), 2), "", ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
 
@@ -2714,6 +2715,8 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
                     ('SPAN', (3, -2), (5, -2)),
                     ('SPAN', (0, -1), (2, -1)),
                     ('SPAN', (3, -1), (5, -1)),
+                    ('SPAN', (0, -3), (2, -3)),
+                    ('SPAN', (3, -3), (5, -3)),
                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
                     ("FONTSIZE", (0, 0), (-1, -1), 8),
@@ -2721,6 +2724,7 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
                     # ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
                     ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
                     ("BACKGROUND", (0, -1), (2, -1), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -3), (2, -3), HexColor(0xebebeb)),
                     # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                     ("ALIGN", (0, 0), (-1, r), "CENTER"),
@@ -2729,7 +2733,7 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (62 - moove) * mm)
+    t.drawOn(canvas, 25 * mm, (58 - moove) * mm)
 
 
 

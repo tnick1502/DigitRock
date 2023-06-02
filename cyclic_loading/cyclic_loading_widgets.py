@@ -813,7 +813,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                 if self.tab_3.report_type == 'standart':
                     canvas = self.tab_2.test_widget.save_canvas()
                 elif self.tab_3.report_type == 't_rel':
-                    canvas =[*self.tab_2.test_widget.save_canvas(), self.tab_2.seismic_strangth.save_canvas()]
+                    canvas = [*self.tab_2.test_widget.save_canvas(), self.tab_2.seismic_strangth.save_canvas()]
 
                 report_triaxial_cyclic(file_name, data_customer,
                                        statment[statment.current_test].physical_properties,

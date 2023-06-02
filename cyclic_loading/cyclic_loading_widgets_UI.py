@@ -226,7 +226,7 @@ class CyclicLoadingUI(QWidget):
         return [save(fig, can, size, format) for fig, can, size in zip([self.strain_figure,
                                                                             self.PPR_figure, self.stress_figure],
                                                    [self.strain_canvas, self.PPR_canvas, self.stress_canvas],
-                                                                          [[3, 3], [3, 3], [6, 3]])]
+                                                                          [[7, 2], [7, 2], [7, 4]])]
 
 class CyclicDampingUI(QWidget):
     """Интерфейс обработчика циклического трехосного нагружения.
@@ -386,8 +386,13 @@ class SeismicStrangthUI(QWidget):
 
         mohr_x, mohr_y = SeismicStrangthUI.mohr_circle(sigma_3, sigma_1)
 
-        self.ax.fill(mohr_x, mohr_y, alpha=0.6, label='Природное состояние')
-        self.ax.fill(mohr_x - u, mohr_y, alpha=0.6, color="tomato", label='С учетом нагрузки')
+        if sigma_1 == sigma_3:
+            self.ax.scatter((sigma_1 + sigma_3) / 2, 0, alpha=0.6, label='Природное состояние')
+            self.ax.scatter((sigma_1 + sigma_3 - 2 * u) / 2, 0, alpha=0.6, color="tomato", label='С учетом динамической нагрузки')
+        else:
+            self.ax.fill(mohr_x, mohr_y, alpha=0.6, label='Природное состояние')
+            self.ax.fill(mohr_x - u, mohr_y, alpha=0.6, color="tomato", label='С учетом динамической нагрузки')
+
         self.ax.plot(critical_line_x, critical_line_y, color="firebrick")
 
         trel_x, trel_y = define_t_rel_point(c, fi, sigma_3, sigma_1)
