@@ -297,6 +297,7 @@ class StatementGenerator(QDialog):
         super().__init__(parent)
 
         self.sort = False
+        self.split_freq = True
 
         self.setGeometry(100, 50, 1000, 950)
 
@@ -354,6 +355,8 @@ class StatementGenerator(QDialog):
 
         self.StatementStructure.sort_btn.clicked.connect(self._on_sort)
 
+        self.StatementStructure.devide_freq_btn.clicked.connect(self._on_devide_freq)
+
         self.setLayout(self.layout)
 
     def open_excel(self, path=None):
@@ -396,6 +399,9 @@ class StatementGenerator(QDialog):
                     for j in range(len(data[i])):
                         if data[i][j] == 'None':
                             data[i][j] = ' '
+
+                if self.split_freq:
+                    data = expand_data(data)
 
                 if self.sort:
                     data = self.sort_data_by_skv_depth(data)
@@ -447,7 +453,9 @@ class StatementGenerator(QDialog):
                 save_file_pass = QFileDialog.getExistingDirectory(self, "Select Directory")
 
                 if self.statment_test_mode and self.shipment:
-                    save_file_name = f'Ведомость {self.statment_test_mode} {self.shipment}.pdf'
+                    customer_name = ''.join(
+                        list(filter(lambda c: c not in '''«»\/:*?"'<>|''', self.customer['customer'])))
+                    save_file_name = f"{customer_name} - {self.customer['object_number']} - {self.customer['object_short']} - Сводная ведомость {self.statment_test_mode}{self.shipment}.pdf"
                 else:
                     save_file_name = 'Общая ведомость.pdf'
                 # считывание параметра "Заголовок"
@@ -458,11 +466,9 @@ class StatementGenerator(QDialog):
                 #    StatementStructure.read_ad_params(self.StatementStructure.additional_parameters.text())
                 titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
 
+
                 try:
-                    if statment.general_parameters.test_mode == "Виброползучесть":
-                       data = convert_data(data)
-                    elif statment.general_parameters.test_mode == "Демпфирование по Релею":
-                        data = convert_data2(data)
+                    data = expand_data(data)
                 except:
                     pass
 
@@ -527,6 +533,11 @@ class StatementGenerator(QDialog):
                             num_page_rows = 53
                             is_template = True
 
+                        elif self.StatementStructure.combo_box.currentText() == 'FCE':
+                            template_filename = 'xls_statment_FCE_template.xlsx'
+                            num_page_rows = 71
+                            is_template = True
+
                         else:
                             is_template = False
 
@@ -540,7 +551,8 @@ class StatementGenerator(QDialog):
 
 
                             writer = ReportXlsxSaver(template_filename=template_filename,
-                                                     num_page_rows=num_page_rows)
+                                                     num_page_rows=num_page_rows,
+                                                     less_participants=self.StatementStructure.less_participants_btn.isChecked())
 
                             formatted_tests_data, additional = writer.form_tests_data_list_mode(titles, data)
 
@@ -602,14 +614,7 @@ class StatementGenerator(QDialog):
                     titles, data, scales = self.table_data(self.statment_data, self.StatementStructure.get_structure())
 
                     try:
-                        if statment.general_parameters.test_mode == "Виброползучесть":
-                           data = convert_data(data)
-                        elif statment.general_parameters.test_mode in [
-                            "Трёхосное сжатие (F, C, E)",
-                            "Трёхосное сжатие (F, C)",
-                            "Демпфирование по Релею"
-                        ]:
-                            data = expand_data(data)
+                        data = expand_data(data)
 
                     except Exception as err:
                         print(err)
@@ -947,6 +952,13 @@ class StatementGenerator(QDialog):
 
         self._plot()
 
+    def _on_devide_freq(self, checked: bool):
+        if checked:
+            self.split_freq = True
+        else:
+            self.split_freq = False
+        self._plot()
+
     def sort_data_by_skv_depth(self, data):
         result = copy.deepcopy(data[:-1])
 
@@ -1108,6 +1120,12 @@ class StatementStructure(QWidget):
         self.less_participants_btn.setFixedHeight(30)
         self.less_participants_btn.setFixedWidth(150)
         self.end_line.addWidget(self.less_participants_btn)
+
+        self.devide_freq_btn = QCheckBox("Разбить по частоте")
+        self.devide_freq_btn.setChecked(True)
+        self.devide_freq_btn.setFixedHeight(30)
+        self.devide_freq_btn.setFixedWidth(150)
+        self.end_line.addWidget(self.devide_freq_btn)
 
         self.end_line.addStretch(-1)
         self.parameter_box_layout.addLayout(self.end_line)
