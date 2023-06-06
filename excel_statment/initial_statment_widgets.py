@@ -578,10 +578,14 @@ class TriaxialStaticStatment(InitialStatment):
 
         if self.deviationsBox.radiobutton_custom.isChecked():
             try:
-                amplitude_1, amplitude_2, amplitude_3 = self.deviationsBox.line_custom.displayText().split(';')
+                amplitude_1 = float(self.deviationsBox.line_amp1.displayText())
+                amplitude_2 = float(self.deviationsBox.line_amp2.displayText())
+                amplitude_3 = float(self.deviationsBox.line_amp3.displayText())
+
                 self.deviations_amplitude = [float(amplitude_1), float(amplitude_2), float(amplitude_3)]
+
             except ValueError:
-                QMessageBox.critical(self, "Не верный формат данных", "Укажите в формате 0.04; 0.02; 0.01",
+                QMessageBox.critical(self, "Не верный формат данных", "Укажите в формате x.x",
                                      QMessageBox.Ok)
                 return
             except Exception as err:
@@ -1457,7 +1461,7 @@ class DeviationsCustomBox(QGroupBox):
         self.setTitle('Выбор девиаций')
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
-        self.setFixedWidth(450)
+        self.setFixedWidth(750)
 
         self.radiobutton_state_standard = QRadioButton("По умолчанию")
         self.radiobutton_state_standard.setChecked(True)
@@ -1465,10 +1469,19 @@ class DeviationsCustomBox(QGroupBox):
         self.radiobutton_state_standard.toggled.connect(self._onClicked)
         self.layout.addWidget(self.radiobutton_state_standard)
 
-        self.radiobutton_custom = QRadioButton("Ручное")
-        self.line_custom = QLineEdit()
-        self.line_custom.setDisabled(True)
-        self.line_custom.setPlaceholderText('0.04; 0.02; 0.01')
+        self.radiobutton_custom = QRadioButton("Ручное:")
+
+        self.line_amp1 = QLineEdit("0.04")
+        self.line_amp1.setDisabled(True)
+        self.lable_1 = QLabel("Амп. дев. (низк. час.)")
+        self.line_amp2 = QLineEdit("0.02")
+        self.line_amp2.setDisabled(True)
+        self.lable_2 = QLabel("Амп. дев. (сред. час.)")
+        self.line_amp3 = QLineEdit("0.01")
+        self.line_amp3.setDisabled(True)
+        self.lable_3 = QLabel("Амп. дев. (выс. час.)")
+
+
         self.radiobutton_custom.value = "custom"
         self.radiobutton_custom.toggled.connect(self._onClicked)
 
@@ -1476,7 +1489,13 @@ class DeviationsCustomBox(QGroupBox):
 
         self.layout.addWidget(self.radiobutton_state_standard)
         self.layout.addWidget(self.radiobutton_custom)
-        self.layout.addWidget(self.line_custom)
+        self.layout.addWidget(self.lable_1)
+        self.layout.addWidget(self.line_amp1)
+        self.layout.addWidget(self.lable_2)
+        self.layout.addWidget(self.line_amp2)
+        self.layout.addWidget(self.lable_3)
+        self.layout.addWidget(self.line_amp3)
+
         self.layout.addWidget(self.acceptBtn)
 
     def _onClicked(self):
@@ -1485,9 +1504,14 @@ class DeviationsCustomBox(QGroupBox):
             self._checked = radioButton.value
 
             if radioButton.value == "custom":
-                self.line_custom.setDisabled(False)
+                self.line_amp1.setDisabled(False)
+                self.line_amp2.setDisabled(False)
+                self.line_amp3.setDisabled(False)
+
             else:
-                self.line_custom.setDisabled(True)
+                self.line_amp1.setDisabled(True)
+                self.line_amp2.setDisabled(True)
+                self.line_amp3.setDisabled(True)
 
     # def set_data(self):
     #     data = statment[statment.current_test].mechanical_properties.pressure_array
