@@ -2,7 +2,7 @@ from typing import List
 
 from PyQt5.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QGroupBox, QTableWidget, QDialog, \
     QComboBox, QWidget, QHeaderView, QTableWidgetItem, QFileSystemModel, QTreeView, QLineEdit, QSplitter, QPushButton, \
-    QVBoxLayout, QLabel, QMessageBox, QProgressBar, QSlider, QStyle, QStyleOptionSlider, QRadioButton
+    QVBoxLayout, QLabel, QMessageBox, QProgressBar, QSlider, QStyle, QStyleOptionSlider, QRadioButton, QGridLayout
 from PyQt5.QtGui import QPainter, QPalette, QBrush, QPen
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5 import QtGui, QtCore
@@ -132,6 +132,8 @@ class InitialStatment(QWidget):
 
         self.path = ""
 
+        self.force_recreate = False
+
         self.generate = generate
 
         self.create_IU(fill_keys)
@@ -205,7 +207,7 @@ class InitialStatment(QWidget):
 
         statment_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/" + statment_name + waterfill
 
-        if os.path.exists(statment_file):
+        if os.path.exists(statment_file) and not self.force_recreate:
             statment.load(statment_file)
             app_logger.info(f"Загружен сохраненный файл ведомости {statment_name}")
         else:
@@ -235,7 +237,7 @@ class InitialStatment(QWidget):
 
         model_file = os.path.join(statment.save_dir.save_directory, models_name.split(".")[0] + shipment_number + ".pickle")
         models.setModelType(models_type)
-        if os.path.exists(model_file):
+        if os.path.exists(model_file) and not self.force_recreate:
             try:
                 models.load(model_file)
                 app_logger.info(f"Загружен файл модели {models_name.split('.')[0] + shipment_number + '.pickle'}")
@@ -429,9 +431,19 @@ class TriaxialStaticStatment(InitialStatment):
             "u": "Поровое давление"
         }
 
+        self.deviations_amplitude = None
+
         super().__init__(data_test_parameters, fill_keys)
 
         self.open_line.combo_waterfill.setCurrentText("Не указывать")
+
+        self.deviationsBox = DeviationsCustomBox()
+
+        self.deviationsBox.acceptBtn.clicked.connect(self._onAcceptBtn)
+
+        self.layout.setSpacing(10)
+
+        self.layout.insertWidget(self.layout.count() - 2, self.deviationsBox)
 
     @log_this(app_logger, "debug")
     def file_open(self):
@@ -444,6 +456,9 @@ class TriaxialStaticStatment(InitialStatment):
 
             if combo_params["test_mode"] == "Трёхосное сжатие (F, C) res":
                 columns_marker.extend([MechanicalPropertyPosition["c_res"], MechanicalPropertyPosition["fi_res"]])
+
+            if self.deviations_amplitude:
+                combo_params["deviations_amplitude"] = self.deviations_amplitude
 
             try:
                 assert column_fullness_test(
@@ -538,6 +553,45 @@ class TriaxialStaticStatment(InitialStatment):
                                          models=E_models, models_type=ModelTriaxialStaticLoadSoilTest)
                         self.load_models(models_name="FC_models.pickle",
                                          models=FC_models, models_type=ModelMohrCirclesSoilTest)
+
+        self.force_recreate = False
+
+    def _onAcceptBtn(self):
+
+        if E_models or FC_models:
+            ret = QMessageBox.question(self, 'Предупреждение',
+                                       f"Применение параметров вызовет Полное пересоздание модели и всех опытов. Вы уверены?",
+                                       QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+            if ret == QMessageBox.Yes:
+                pass
+            else:
+                return
+
+
+        if self.deviationsBox.radiobutton_state_standard.isChecked():
+            self.deviations_amplitude = None
+
+            if E_models or FC_models:
+                self.force_recreate = True
+                self.file_open()
+            return
+
+        if self.deviationsBox.radiobutton_custom.isChecked():
+            try:
+                amplitude_1, amplitude_2, amplitude_3 = self.deviationsBox.line_custom.displayText().split(';')
+                self.deviations_amplitude = [float(amplitude_1), float(amplitude_2), float(amplitude_3)]
+            except ValueError:
+                QMessageBox.critical(self, "Не верный формат данных", "Укажите в формате 0.04; 0.02; 0.01",
+                                     QMessageBox.Ok)
+                return
+            except Exception as err:
+                QMessageBox.critical(self, "Ошибка", str(err), QMessageBox.Ok)
+                return
+
+            if E_models or FC_models:
+                self.force_recreate = True
+                self.file_open()
+
 
 class CyclicStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
@@ -1390,6 +1444,75 @@ class K0Statment(InitialStatment):
         if _mode == 'Hardening Soil':
             return True
         return False
+
+
+class DeviationsCustomBox(QGroupBox):
+    def __init__(self):
+        super().__init__()
+        self.add_UI()
+        self._checked = None
+
+    def add_UI(self):
+        """Дополнительный интерфейс"""
+        self.setTitle('Выбор девиаций')
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+        self.setFixedWidth(450)
+
+        self.radiobutton_state_standard = QRadioButton("По умолчанию")
+        self.radiobutton_state_standard.setChecked(True)
+        self.radiobutton_state_standard.value = "state_standard"
+        self.radiobutton_state_standard.toggled.connect(self._onClicked)
+        self.layout.addWidget(self.radiobutton_state_standard)
+
+        self.radiobutton_custom = QRadioButton("Ручное")
+        self.line_custom = QLineEdit()
+        self.line_custom.setDisabled(True)
+        self.line_custom.setPlaceholderText('0.04; 0.02; 0.01')
+        self.radiobutton_custom.value = "custom"
+        self.radiobutton_custom.toggled.connect(self._onClicked)
+
+        self.acceptBtn = QPushButton("Применить")
+
+        self.layout.addWidget(self.radiobutton_state_standard)
+        self.layout.addWidget(self.radiobutton_custom)
+        self.layout.addWidget(self.line_custom)
+        self.layout.addWidget(self.acceptBtn)
+
+    def _onClicked(self):
+        radioButton = self.sender()
+        if radioButton.isChecked():
+            self._checked = radioButton.value
+
+            if radioButton.value == "custom":
+                self.line_custom.setDisabled(False)
+            else:
+                self.line_custom.setDisabled(True)
+
+    # def set_data(self):
+    #     data = statment[statment.current_test].mechanical_properties.pressure_array
+    #     def str_array(array):
+    #         if array is None:
+    #             return "-"
+    #         else:
+    #             s = ""
+    #             for i in array:
+    #                 s += f"{str(i)}; "
+    #             return s
+    #     for key in data:
+    #         if key != "current":
+    #             line = getattr(self, f"line_{key}")
+    #             radiobutton = getattr(self, f"radiobutton_{key}")
+    #             line.setText(str_array(data[key]))
+    #             if data[key] is None:
+    #                 radiobutton.setDisabled(True)
+    #             else:
+    #                 radiobutton.setDisabled(False)
+    #             if data[key] == data["current"]:
+    #                 radiobutton.setChecked(True)
+
+    def get_checked(self):
+        return self._checked
 
 
 if __name__ == "__main__":

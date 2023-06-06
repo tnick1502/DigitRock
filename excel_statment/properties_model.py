@@ -258,6 +258,7 @@ class MechanicalProperties:
     }
     c_res = DataTypeValidation(float, int)
     fi_res = DataTypeValidation(float, int)
+    deviations_amplitude = DataTypeValidation(list)
 
     def __init__(self):
 
@@ -288,7 +289,7 @@ class MechanicalProperties:
 
     @log_this(app_logger, "debug")
     def defineProperties(self, physical_properties, data_frame: pd.DataFrame, string: int,
-                         test_mode=None, K0_mode=None, sigma3_lim=None, phi_mode=None) -> None:
+                         test_mode=None, K0_mode=None, sigma3_lim=None, phi_mode=None, deviations_amplitude=None) -> None:
         """Считывание строки свойств"""
         custom_check = True
         if test_mode == "Трёхосное сжатие КН" or test_mode == "Вибропрочность":
@@ -510,6 +511,11 @@ class MechanicalProperties:
 
             if test_mode == "Трёхосное сжатие (F, C) res":
                 self.q_res = np.round(float(MechanicalProperties.define_qf(self.sigma_3, self.c_res, self.fi_res)), 1)
+
+            if deviations_amplitude:
+                self.deviations_amplitude = deviations_amplitude
+            else:
+                self.deviations_amplitude = [0.04, 0.02, 0.01]
 
     @staticmethod
     def round_sigma_3(sigma_3, param=5):
