@@ -2095,8 +2095,8 @@ def curve(qf, e50, **kwargs):
     y2 = y2[:index_x2[0]]
     if not Eur:
         try:
-            y1 += deviation_volume_strain(x, x_given, x[np.argmax(y)], 0.008, 0.001)
-            y2 += deviation_volume_strain(x, x_given, 0.15, 0.005, 0.002)
+            y1 += deviation_volume_strain(x, x_given, x[np.argmax(y)], 0.008, 0.001/2)
+            y2 += deviation_volume_strain(x, x_given, 0.15, 0.005, 0.002/2)
         except:
             pass
 

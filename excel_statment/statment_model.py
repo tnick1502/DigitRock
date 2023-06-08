@@ -214,7 +214,7 @@ class Test:
 
     def __init__(self, test_class=None, data_frame=None, i=None, test_mode=None, K0_mode=None, sigma3_lim=None,
                  identification_column=None, physical_properties_dict=None, mechanical_properties_dict=None,
-                 equipment=None, phi_mode=None):
+                 equipment=None, phi_mode=None, deviations_amplitude=None):
         if physical_properties_dict and mechanical_properties_dict:
             self.physical_properties = PhysicalProperties()
             for attr in physical_properties_dict:
@@ -250,20 +250,23 @@ class Test:
                                                                 string=i,
                                                                 test_mode=test_mode, K0_mode=K0_mode,
                                                                 sigma3_lim=sigma3_lim,
-                                                                phi_mode=phi_mode)
+                                                                phi_mode=phi_mode,
+                                                                deviations_amplitude=deviations_amplitude)
                 else:
                     self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
                                                                 string=i,
                                                                 test_mode=test_mode, K0_mode=K0_mode,
-                                                                sigma3_lim=sigma3_lim)
+                                                                sigma3_lim=sigma3_lim,
+                                                                deviations_amplitude=deviations_amplitude)
             else:
                 if phi_mode:
                     self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
                                                                 string=i,
-                                                                test_mode=test_mode, K0_mode=K0_mode, phi_mode=phi_mode)
+                                                                test_mode=test_mode, K0_mode=K0_mode, phi_mode=phi_mode,
+                                                                deviations_amplitude=deviations_amplitude)
                 else:
                     self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame, string=i,
-                                                            test_mode=test_mode, K0_mode=K0_mode)
+                                                            test_mode=test_mode, K0_mode=K0_mode, deviations_amplitude=deviations_amplitude)
 
     def get_json(self):
         return {
@@ -332,12 +335,16 @@ class Statment:
         if not hasattr(self.general_parameters, "phi_mode"):
             self.general_parameters.phi_mode = None
 
+        if not hasattr(self.general_parameters, "deviations_amplitude"):
+            self.general_parameters.deviations_amplitude = None
+
         if data_frame is not None:
             for i in range(len(data_frame["Лаб. № пробы"])):
                 self.tests[str_df(data_frame.iat[i, PhysicalPropertyPosition["laboratory_number"][1]])] = \
                     Test(self.test_class, data_frame, i, self.general_parameters.test_mode,
                          self.general_parameters.K0_mode, self.general_parameters.sigma3_lim, identification_column,
-                         equipment=self.general_parameters.equipment, phi_mode=self.general_parameters.phi_mode)
+                         equipment=self.general_parameters.equipment, phi_mode=self.general_parameters.phi_mode,
+                         deviations_amplitude=self.general_parameters.deviations_amplitude)
         self.original_keys = list(self.tests.keys())
 
     def setGeneralParameters(self, data):
