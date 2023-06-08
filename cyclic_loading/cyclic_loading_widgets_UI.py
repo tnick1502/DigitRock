@@ -708,7 +708,7 @@ class ModelTriaxialCyclicLoading_Sliders(QWidget):
 
     def _check_fail(self):
         """Отключает слайдеры в случае разрушения"""
-        if self.PPR_n_fail_slider.current_value() >= self._max_cycles:
+        if round(self.PPR_n_fail_slider.current_value()) >= round(self._max_cycles):
             self.strain_rise_after_fail_slider.setDisabled(True)
             self.PPR_rise_after_fail_slider.setDisabled(True)
             self.PPR_max_slider.setDisabled(False)
