@@ -269,7 +269,7 @@ class ModelTriaxialCyclicLoading:
 
 
 
-        u = np.round((self._test_result.max_PPR * statment[statment.current_test].mechanical_properties.sigma_1) / 1000, 2)
+        u = np.round((self._test_result.max_PPR * statment[statment.current_test].mechanical_properties.sigma_3) / 1000, 2)
 
         parameters = self.get_test_parameters()
 
@@ -280,11 +280,19 @@ class ModelTriaxialCyclicLoading:
             sigma_1=parameters['sigma_1'] / 1000
         ), 3)
 
+
+        if parameters['sigma_3'] / 1000 - u < 0:
+            sigma_3_dyn = 0
+            sigma_1_dyn = parameters['sigma_1'] / 1000 - parameters['sigma_3'] / 1000
+        else:
+            sigma_3_dyn = parameters['sigma_3'] / 1000 - u
+            sigma_1_dyn = parameters['sigma_1'] / 1000 - u
+
         self._test_result.t_rel_dynamic = np.round(define_t_rel(
             c=statment[statment.current_test].mechanical_properties.c,
             fi=statment[statment.current_test].mechanical_properties.fi,
-            sigma_3=parameters['sigma_3'] / 1000 - u,
-            sigma_1=parameters['sigma_1'] / 1000 - u
+            sigma_3=sigma_3_dyn,
+            sigma_1=sigma_1_dyn
         ), 3)
 
     @staticmethod
@@ -946,7 +954,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
     def set_PPR_params(self, PPR_params):
         """Установка пользовательских параметров отрисовки PPR"""
-        self._test_params.n_fail = int(PPR_params["PPR_n_fail"])
+        self._test_params.n_fail = round(PPR_params["PPR_n_fail"])
         if self._test_params.n_fail == self._test_params.cycles_count:
             self._test_params.n_fail = None
         self._draw_params.PPR_max = PPR_params["PPR_max"]
@@ -1262,7 +1270,15 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         if self._test_params.Kd:
             strain_cyclic = self._test_data.strain[len(self._load_stage.strain):]
             strain_cyclic -= strain_cyclic[0]
-            strain_cyclic *= (((self._load_stage.strain[-1] / self._test_params.Kd) - self._load_stage.strain[-1])/np.max(strain_cyclic))
+
+            self._load_stage.strain[-1] / self._test_params.Kd
+
+            #strain_cyclic *= (
+                       # ((self._load_stage.strain[-1] / self._test_params.Kd) - self._load_stage.strain[-1]) / np.max(
+                    #strain_cyclic))
+            strain_cyclic *= (
+                        ((self._load_stage.strain[-1] / self._test_params.Kd) - self._load_stage.strain[-1]) /(
+                    strain_cyclic[-1]))
             self._test_data.strain = np.hstack((self._load_stage.strain, strain_cyclic + self._load_stage.strain[-1]))
 
         self.form_noise_data()

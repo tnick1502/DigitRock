@@ -240,9 +240,18 @@ class ModelVibrationCreep:
                     if dyn_test.strain_dynamic is not None:
                         #qf = self._static_test_data.get_test_results()["qf"]
 
-                        test_result.E50, test_result.E50d = \
+                        # test_result.E50, test_result.E50d
+                        test_result.E50, _ = \
                             ModelVibrationCreep.find_E50d(dyn_test.strain_dynamic, dyn_test.deviator_dynamic,
                                                           start_dynamic=dyn_test.start_dynamic)
+
+                        mean = np.max(dyn_test.deviator_dynamic) - statment[statment.current_test].mechanical_properties.t * 2
+                        for i in range(len(dyn_test.deviator_dynamic) - 1, -1, -1):
+                            if abs(dyn_test.deviator_dynamic[i] - mean) < 1:
+                                break
+
+                        test_result.E50d = (dyn_test.deviator_dynamic[i] / dyn_test.strain_dynamic[i]) / 1000
+
                         test_result.Kd = np.round((test_result.E50d / test_result.E50), 2)
                         #print("data from test processing", len(dyn_test.time), len(dyn_test.deviator_dynamic))
                         dyn_test.time, dyn_test.creep_curve = \
