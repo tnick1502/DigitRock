@@ -1262,7 +1262,15 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         if self._test_params.Kd:
             strain_cyclic = self._test_data.strain[len(self._load_stage.strain):]
             strain_cyclic -= strain_cyclic[0]
-            strain_cyclic *= (((self._load_stage.strain[-1] / self._test_params.Kd) - self._load_stage.strain[-1])/np.max(strain_cyclic))
+
+            self._load_stage.strain[-1] / self._test_params.Kd
+
+            #strain_cyclic *= (
+                       # ((self._load_stage.strain[-1] / self._test_params.Kd) - self._load_stage.strain[-1]) / np.max(
+                    #strain_cyclic))
+            strain_cyclic *= (
+                        ((self._load_stage.strain[-1] / self._test_params.Kd) - self._load_stage.strain[-1]) /(
+                    strain_cyclic[-1]))
             self._test_data.strain = np.hstack((self._load_stage.strain, strain_cyclic + self._load_stage.strain[-1]))
 
         self.form_noise_data()
