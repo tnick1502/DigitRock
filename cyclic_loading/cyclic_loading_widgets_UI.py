@@ -7,7 +7,7 @@ __version__ = 1
 from PyQt5.QtWidgets import QApplication, QGridLayout, QFrame, QLabel, QHBoxLayout,\
     QVBoxLayout, QGroupBox, QWidget, QLineEdit, QPushButton, QTableWidget, QDialog, QHeaderView,  QTableWidgetItem, \
     QHeaderView, QDialogButtonBox, QFileDialog, QMessageBox, QItemDelegate, QComboBox, QScrollArea
-from cyclic_loading.strangth_functions import define_t_rel_point, perpendicular_passing_through_the_point
+from cyclic_loading.strangth_functions import define_t_rel_point, perpendicular_passing_through_the_point, define_t_rel
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
@@ -383,23 +383,41 @@ class SeismicStrangthUI(QWidget):
 
         critical_line_x = np.linspace(x_start, sigma_1 * 1.1, 100)
         critical_line_y = line(np.tan(np.deg2rad(fi)), c, critical_line_x)
-
         mohr_x, mohr_y = SeismicStrangthUI.mohr_circle(sigma_3, sigma_1)
-
-        if sigma_1 == sigma_3:
-            self.ax.scatter((sigma_1 + sigma_3) / 2, 0, alpha=0.6, label='Природное состояние')
-            self.ax.scatter((sigma_1 + sigma_3 - 2 * u) / 2, 0, alpha=0.6, color="tomato", label='С учетом динамической нагрузки')
-        else:
-            self.ax.fill(mohr_x, mohr_y, alpha=0.6, label='Природное состояние')
-            self.ax.fill(mohr_x - u, mohr_y, alpha=0.6, color="tomato", label='С учетом динамической нагрузки')
+        trel_x, trel_y = define_t_rel_point(c, fi, sigma_3, sigma_1)
 
         self.ax.plot(critical_line_x, critical_line_y, color="firebrick")
-
-        trel_x, trel_y = define_t_rel_point(c, fi, sigma_3, sigma_1)
         self.ax.plot([(sigma_3 + sigma_1) / 2, trel_x], [0, trel_y], color='black', linewidth=0.5, linestyle="--")
+        if sigma_1 == sigma_3:
+            self.ax.scatter((sigma_1 + sigma_3) / 2, 0, alpha=0.6, label='Природное состояние')
+        else:
+            self.ax.fill(mohr_x, mohr_y, alpha=0.6, label='Природное состояние')
 
-        trel_x_ref, trel_y_ref = define_t_rel_point(c, fi, sigma_3 - u, sigma_1 - u)
-        self.ax.plot([(sigma_3 - u + sigma_1 - u) / 2, trel_x_ref], [0, trel_y_ref], color='black', linewidth=0.5, linestyle="--")
+
+        if u > sigma_3:
+            sigma_3_ref = 0
+            sigma_1_ref = sigma_1 - sigma_3
+        else:
+            sigma_3_ref = sigma_3 - u
+            sigma_1_ref = sigma_1 - u
+
+        t_max = define_t_rel(c, fi, sigma_3_ref, sigma_1_ref)
+
+        plot = 1
+        if (sigma_1_ref - sigma_3_ref) / 2 > t_max:
+            plot = 0
+
+        trel_x_ref, trel_y_ref = define_t_rel_point(c, fi, sigma_3_ref, sigma_1_ref)
+        self.ax.plot([(sigma_1_ref + sigma_3_ref) / 2, trel_x_ref], [0, trel_y_ref], color='black', linewidth=0.5, linestyle="--")
+
+        mohr_x_rel, mohr_y_rel = SeismicStrangthUI.mohr_circle(sigma_3_ref, sigma_1_ref)
+
+        if sigma_1 == sigma_3:
+            self.ax.scatter((sigma_1_ref + sigma_3_ref) / 2, 0, alpha=0.6, color="tomato",
+                                label='С учетом динамической нагрузки')
+        else:
+            if plot:
+                self.ax.fill(mohr_x_rel, mohr_y_rel, alpha=0.6, color="tomato", label='С учетом динамической нагрузки')
 
         lim = abs(x_start) + sigma_1 * 1.2
         self.ax.set_xlim(x_start, sigma_1 * 1.2)

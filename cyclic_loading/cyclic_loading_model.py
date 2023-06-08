@@ -269,7 +269,7 @@ class ModelTriaxialCyclicLoading:
 
 
 
-        u = np.round((self._test_result.max_PPR * statment[statment.current_test].mechanical_properties.sigma_1) / 1000, 2)
+        u = np.round((self._test_result.max_PPR * statment[statment.current_test].mechanical_properties.sigma_3) / 1000, 2)
 
         parameters = self.get_test_parameters()
 
@@ -280,11 +280,19 @@ class ModelTriaxialCyclicLoading:
             sigma_1=parameters['sigma_1'] / 1000
         ), 3)
 
+
+        if parameters['sigma_3'] / 1000 - u < 0:
+            sigma_3_dyn = 0
+            sigma_1_dyn = parameters['sigma_1'] / 1000 - parameters['sigma_3'] / 1000
+        else:
+            sigma_3_dyn = parameters['sigma_3'] / 1000 - u
+            sigma_1_dyn = parameters['sigma_1'] / 1000 - u
+
         self._test_result.t_rel_dynamic = np.round(define_t_rel(
             c=statment[statment.current_test].mechanical_properties.c,
             fi=statment[statment.current_test].mechanical_properties.fi,
-            sigma_3=parameters['sigma_3'] / 1000 - u,
-            sigma_1=parameters['sigma_1'] / 1000 - u
+            sigma_3=sigma_3_dyn,
+            sigma_1=sigma_1_dyn
         ), 3)
 
     @staticmethod
