@@ -1010,15 +1010,17 @@ def test_mode_consolidation(canvas, Data, moove=0, report_type="standart", dyn=N
     if (report_type == "plaxis_m" or report_type == "plaxis") and p_or_sigma:
         sigma_str = '''<p>Референтное давление p<sub rise="2.5" size="6">ref</sub>, МПа:</p>'''
     else:
-        sigma_str = '''<p>Боковое давление σ'<sub rise="2.5" size="6">3</sub>, МПа:</p>'''
+        sigma_str = '''<p>Боковое давление σ'<sub rise="2.5" size="6">3</sub> (σ'<sub rise="2.5" size="6">xg</sub>), МПа:</p>'''
 
     if "/" in str(Data["sigma_3"]):
+        sigma_str = '''<p>Боковое давление σ'<sub rise="2.5" size="6">3</sub>, МПа:</p>'''
         sigma_3 = str(Data["sigma_3"])
     else:
         try:
             sigma_3 = zap(Data["sigma_3"] / 1000, 3)
         except:
             sigma_3 = "-"
+            sigma_str = '''<p>Боковое давление σ'<sub rise="2.5" size="6">3</sub>, МПа:</p>'''
 
     if isinstance(sigma_3, list):
         sigma_3 = zap(Data["sigma_3"][0], 3)
