@@ -954,7 +954,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
 
     def set_PPR_params(self, PPR_params):
         """Установка пользовательских параметров отрисовки PPR"""
-        self._test_params.n_fail = int(PPR_params["PPR_n_fail"])
+        self._test_params.n_fail = round(PPR_params["PPR_n_fail"])
         if self._test_params.n_fail == self._test_params.cycles_count:
             self._test_params.n_fail = None
         self._draw_params.PPR_max = PPR_params["PPR_max"]
