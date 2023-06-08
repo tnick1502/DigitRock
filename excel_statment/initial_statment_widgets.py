@@ -207,7 +207,7 @@ class InitialStatment(QWidget):
 
         statment_file = "".join([i for i in os.path.split(self.path)[:-1]]) + "/" + statment_name + waterfill
 
-        if os.path.exists(statment_file):
+        if os.path.exists(statment_file) and not self.force_recreate:
             statment.load(statment_file)
             app_logger.info(f"Загружен сохраненный файл ведомости {statment_name}")
         else:
