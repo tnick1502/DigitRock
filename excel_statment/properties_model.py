@@ -1581,6 +1581,7 @@ class CyclicProperties(MechanicalProperties):
 
             self.CSR = np.round(self.t / self.sigma_1, 2)
             self.damping_ratio = CyclicProperties.define_damping_ratio(physical_properties.type_ground, self.frequency)
+            self.damping_ratio = np.round(self.damping_ratio, 2)
             # np.round(CyclicProperties.define_damping_ratio(), 2)
 
     @staticmethod
@@ -1780,7 +1781,7 @@ class VibrationCreepProperties(MechanicalProperties):
                 else:
                     self.Kd = [VibrationCreepProperties.define_Kd(self.qf, self.t,
                                                                   physical_properties.e, physical_properties.Il, frequency) for frequency in self.frequency]
-
+            self.Kd = [round(i, 2) for i in self.Kd]
 
             def fr(x, x1, x2):
                 min_y = 0.98
@@ -1835,6 +1836,8 @@ class VibrationCreepProperties(MechanicalProperties):
                 self.damping_ratio = np.random.uniform(3, 5)
             else:
                 self.damping_ratio = np.random.uniform(5, 10)
+
+            self.damping_ratio = np.round(self.damping_ratio, 2)
 
     @staticmethod
     def val_to_list(val) -> list:
