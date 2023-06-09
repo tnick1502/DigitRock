@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget, QFileDialog, QMessageBox, QHBoxLayout, QTabWidget, \
     QDialog, QTableWidget, QGroupBox, QPushButton, QComboBox, QDialogButtonBox, QTableWidgetItem, QHeaderView, \
-    QTextEdit, QProgressDialog
+    QTextEdit, QProgressDialog, QLabel
 from PyQt5.QtCore import Qt, pyqtSignal
 import numpy as np
 import sys
@@ -12,6 +12,8 @@ from excel_statment.initial_tables import LinePhysicalProperties
 from excel_statment.initial_statment_widgets import VibrationCreepStatment
 from general.reports import report_VibrationCreep, report_VibrationCreep3, zap
 from general.save_widget import Save_Dir
+from general.general_widgets import Float_Slider
+from configs.styles import style
 from vibration_creep.vibration_creep_widgets_UI import VibrationCreepUI
 from excel_statment.initial_tables import TableVertical
 from static_loading.triaxial_static_test_widgets import StaticSoilTestWidget
@@ -66,10 +68,13 @@ class VibrationCreepSoilTestWidget(TabMixin, QWidget):
         }
         self.identification = TableVertical(fill_keys, size={"size": 100, "size_fixed_index": [1]})
         self.identification.setFixedWidth(350)
-        self.identification.setFixedHeight(700)
+        self.identification.setFixedHeight(350)
         self.layout.addWidget(self.dynamic_widget)
+        self.sliders = KdSliders()
+        self.sliders.setFixedWidth(350)
 
         self.layout_2.addWidget(self.identification)
+        self.layout_2.addWidget(self.sliders)
         self.layout.addLayout(self.layout_2)
         self.layout_2.addStretch(-1)
         self.main_layout.setContentsMargins(5, 5, 5, 5)
@@ -104,6 +109,110 @@ class VibrationCreepSoilTestWidget(TabMixin, QWidget):
         #plots = self._model._static_test_data.get_plot_data()
         #res = self._model._static_test_data.get_test_results()
         #self.static_widget.plot(plots, res)
+
+class KdSliders(QWidget):
+    signal = pyqtSignal(object)
+
+    def __init__(self):
+        """Определяем основную структуру данных"""
+        super().__init__()
+        self._activate = False
+        self._createUI()
+
+    def _createUI(self):
+        self.layout = QVBoxLayout(self)
+        self.box = QGroupBox("Параметры Kd")
+        self.box_layout = QVBoxLayout()
+        self.box.setLayout(self.box_layout)
+
+        for i in range(1, 6):
+            # Имя параметра
+            setattr(self, f'param_name_{i}', QLabel(f'i'))
+            param_name = getattr(self, f'param_name_{i}')
+
+            # Cлайдер
+            setattr(self, f'slider_{i}', Float_Slider(Qt.Horizontal))
+            slider = getattr(self, f'slider_{i}')
+
+            # Строка со значнием слайдера
+            setattr(self, f'label_{i}', QLabel())
+            slider_label = getattr(self, f'label_{i}')
+            slider_label.setFixedWidth(40)
+
+            # Строка для размещения
+            setattr(self, f'line_{i}', QHBoxLayout())
+            line = getattr(self, f'line_{i}')
+            setattr(self, f'widget_line_{i}', QWidget())
+            widget_line = getattr(self, f'widget_line_{i}')
+            widget_line.setLayout(line)
+
+            # Разместим слайдер и подпись на строке
+            line.addWidget(param_name)
+            line.addWidget(slider)
+            line.addWidget(slider_label)
+            self.box_layout.addWidget(widget_line)
+            func = getattr(self, '_sliders_moove')
+            slider.sliderMoved.connect(func)
+            release = getattr(self, '_sliders_released')
+            slider.sliderReleased.connect(release)
+            slider.setStyleSheet(style)
+            widget_line.setVisible(False)
+
+        self.layout.addWidget(self.box)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+
+    def _get_slider_params(self):
+        """Получение по ключам значения со всех слайдеров"""
+        return_params = []
+        for i in range(1, 6):
+            slider = getattr(self, f'slider_{i}')
+            return_params.append(slider.current_value())
+        return return_params
+
+    def _set_slider_labels_params(self, params):
+        """Установка по ключам текстовых полей значений слайдеров"""
+        for i, val in enumerate(params):
+            slider_label = getattr(self, f'label_{i + 1}')
+            slider_label.setText(str(val))
+
+    def _sliders_moove(self):
+        """Обработка перемещения слайдеров деформации"""
+        if self._activate:
+            params = self._get_slider_params()
+            self._set_slider_labels_params(params)
+
+    def _sliders_released(self):
+        """Обработка окончания перемещения слайдеров деформации"""
+        if self._activate:
+            params = list(filter(lambda x: x != 0, self._get_slider_params()))
+            self._set_slider_labels_params(params)
+            statment[statment.current_test].mechanical_properties.Kd = params
+            self.signal.emit(True)
+
+    def set_sliders_params(self):
+        try:
+
+            for i in range(1, 6):
+                widget_line = getattr(self, f'widget_line_{i}')
+                widget_line.setVisible(False)
+
+            frequency = statment[statment.current_test].mechanical_properties.frequency
+            Kd = [res['Kd'] for res in VC_models[statment.current_test].get_test_results()]
+
+            for Kd, frequency, i in zip(Kd, frequency, range(1, 6)):
+                current_slider = getattr(self, f'slider_{i}')
+                current_slider.set_borders(0.3, 1)
+                current_slider.set_value(Kd)
+                param_name = getattr(self, f'param_name_{i}')
+                param_name.setText(str(frequency))
+                widget_line = getattr(self, f'widget_line_{i}')
+                widget_line.setVisible(True)
+
+            self._activate = True
+
+            self._sliders_moove()
+        except Exception as err:
+            print(err)
 
 class PredictVCTestResults(QDialog):
     """Класс отрисовывает таблицу физических свойств"""
@@ -333,6 +442,8 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
         self.tab_2.signal[bool].connect(self.tab_3.set_test_params)
         self.tab_3.signal.connect(self.tab_4.result_table.update)
 
+        self.tab_3.sliders.signal[object].connect(lambda signal: self.tab_3._refresh())
+
         self.button_predict = QPushButton("Прогнозирование")
         self.button_predict.setFixedHeight(50)
         self.button_predict.clicked.connect(self._predict)
@@ -362,6 +473,7 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
         self.tab_2.item_identification.set_data()
         self.physical_line_1.set_data()
         self.physical_line_2.set_data()
+        self.tab_3.sliders.set_sliders_params()
 
     def save_report(self):
         try:
@@ -586,7 +698,6 @@ class VibrationCreepSoilTestApp(AppMixin, QWidget):
                                        test_mode_and_shipment=(test_mode_file_name,
                                                                statment.general_data.get_shipment_number()))
         _statment.show()
-
 
     def save_report_and_continue(self):
         try:
