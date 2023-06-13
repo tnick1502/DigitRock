@@ -181,6 +181,9 @@ def main_frame(canvas, path, Data_customer, code, list, qr_code=None):
     b.scale(0.053, 0.053)
     renderPDF.draw(b, canvas, 180 * mm, 269 * mm)
 
+    #a = ImageReader(path + "mdgt_qr_1.png")
+    #canvas.drawImage(a, 182 * mm, 270 * mm, width=20 * mm, height=20 * mm)
+
     canvas.setFont('TimesDj', 20)
     canvas.drawString((47) * mm, (282) * mm, "МОСТДОРГЕОТРЕСТ")
     canvas.setFont('TimesDj', 12)
@@ -2700,33 +2703,33 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
     for i in range(r):
         tableData.append([""])
 
-    tableData.append([Paragraph('''<p>Статическое опротивление сдвигу τ<sub rise="0.5" size="6">static</sub>, МПа:</p>''', LeftStyle), "", "",
-                          zap(Res["t_max_static"], 3), "", ""])
-    tableData.append([Paragraph('''<p>Динамическое сопротивление сдвигу τ<sub rise="0.5" size="6">dynamic</sub>, МПа:</p>''', LeftStyle), "", "",
-                          zap(Res["t_max_dynamic"], 3), "", ""])
+    tableData.append([Paragraph('''<p>Статическое сопротивление сдвигу τ<sub rise="0.5" size="6">static</sub>, МПа:</p>''', LeftStyle), "", "",
+                          "", zap(Res["t_max_static"], 3), ""])
+    tableData.append([Paragraph('''<p>Статическое сопротивление сдвигу при динамеческом воздействии τ<sub rise="0.5" size="6">dynamic</sub>, МПа:</p>''', LeftStyle), "", "",
+                          "", zap(Res["t_max_dynamic"], 3), ""])
     tableData.append([Paragraph(
         '''<p>Коэффициент снижения прочности K<sub rise="0.5" size="6">ds</sub>, МПа:</p>''', LeftStyle), "",
                       "",
-                      zap(round(Res["t_max_dynamic"] / Res["t_max_static"], 2), 2), "", ""])
+                      "", zap(round(Res["t_max_dynamic"] / Res["t_max_static"], 2), 2), ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
 
     t.setStyle([('SPAN', (0, 0), (-1, 0)),
                     ('SPAN', (0, 1), (-1, r)),
-                    ('SPAN', (0, -2), (2, -2)),
-                    ('SPAN', (3, -2), (5, -2)),
-                    ('SPAN', (0, -1), (2, -1)),
-                    ('SPAN', (3, -1), (5, -1)),
-                    ('SPAN', (0, -3), (2, -3)),
-                    ('SPAN', (3, -3), (5, -3)),
+                    ('SPAN', (0, -2), (3, -2)),
+                    ('SPAN', (4, -2), (5, -2)),
+                    ('SPAN', (0, -1), (3, -1)),
+                    ('SPAN', (4, -1), (5, -1)),
+                    ('SPAN', (0, -3), (3, -3)),
+                    ('SPAN', (4, -3), (5, -3)),
                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
                     ("FONTSIZE", (0, 0), (-1, -1), 8),
                     # ("BACKGROUND", (2, -2), (2, -2), HexColor(0xebebeb)),
                     # ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
-                    ("BACKGROUND", (0, -2), (2, -2), HexColor(0xebebeb)),
-                    ("BACKGROUND", (0, -1), (2, -1), HexColor(0xebebeb)),
-                    ("BACKGROUND", (0, -3), (2, -3), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
                     # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                     ("ALIGN", (0, 0), (-1, r), "CENTER"),
@@ -2800,60 +2803,60 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
 
     tableData.append(
         [Paragraph(
-            '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''',
+            '''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub> (ГОСТ 12248.3—2020), МПа:</p>''',
             LeftStyle),
-         "", "", E50, "", ""])
+         "", "", "", E50, ""])
     tableData.append(
         [Paragraph(
-            '''<p>Модуль деформации после динамического нагружения E<sub rise="0.5" size="6">50d</sub>, МПа:</p>''',
+            '''<p>Модуль деформации после динамического воздействия E<sub rise="0.5" size="6">50d</sub> (ГОСТ 12248.3—2020), МПа:</p>''',
             LeftStyle), "",
-         "", Ed, "", ""])
+         "", "", Ed, ""])
 
 
     if parameter == "Виброползучесть":
         tableData.append(
             [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub>, д.е.:</p>''', LeftStyle), "",
-             "", Kd, "", ""])
+             "", "", Kd, ""])
     else:
         tableData.append(
             [Paragraph('''<p>Коэффициент снижения модуля деформации K<sub rise="0.5" size="6">ds</sub>, д.е.:</p>''', LeftStyle),
              "",
-             "", Kd, "", ""])
+             "", "", Kd, ""])
 
     if test_type == 'predict50':
         tableData.append(
             [Paragraph('''<p>Количество циклов нагружения, ед.</p>''', LeftStyle), "",
-             "", cycles_count, "", ""])
+             "", "", cycles_count, ""])
         tableData.append(
             [Paragraph('''<p>Уравнение дополнительной деформации</p>''', LeftStyle), "",
-             "", formula, "", ""])
+             "", "", formula, ""])
         tableData.append(
             [Paragraph('''<p>Дополнительная деформация виброползучести на период 50 лет, %</p>''', LeftStyle), "",
-             "", prediction, "", ""])
+             "", "", prediction, ""])
         tableData.append(
             [Paragraph(
                 '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub>, МПа:</p> (50 лет)''',
                 LeftStyle),
-                "", "", Ered, "", ""])
+                "", "", "", Ered, ""])
     elif test_type == 'predict100':
         tableData.append(
             [Paragraph('''<p>Количество циклов нагружения, ед.</p>''', LeftStyle), "",
-             "", cycles_count, "", ""])
+             "", "", cycles_count, ""])
         tableData.append(
             [Paragraph('''<p>Уравнение дополнительной деформации</p>''', LeftStyle), "",
-             "", formula, "", ""])
+             "", "", formula, ""])
         tableData.append(
             [Paragraph('''<p>Дополнительная деформация виброползучести на период 100 лет, %</p>''', LeftStyle), "",
-             "", prediction, "", ""])
+             "", "", prediction, ""])
         tableData.append(
             [Paragraph(
                 '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub>, МПа:</p> (100 лет)''',
                 LeftStyle),
-                "", "", Ered, "", ""])
+                "", "", "", Ered, ""])
     else:
         tableData.append(
-            [Paragraph('''<p>Динамический модуль деформации E<sub rise="0.5" size="6">d</sub>, МПа:</p>''', LeftStyle), "",
-             "", Ed_elastic, "", ""])
+            [Paragraph('''<p>Динамический модуль деформации E<sub rise="0.5" size="6">d</sub> (ГОСТ 56353-2022), МПа:</p>''', LeftStyle), "",
+             "", "", Ed_elastic, ""])
         #tableData.append(["Примечание:", "", "", Paragraph(description, LeftStyle), "", ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights=4 * mm)
@@ -2861,29 +2864,29 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
         t.setStyle([('SPAN', (0, 0), (-1, 0)),
                     ('SPAN', (0, 1), (-1, r)),
 
-                    ('SPAN', (0, -1), (2, -1)),
-                    ('SPAN', (-3, -1), (-1, -1)),
+                    ('SPAN', (0, -1), (3, -1)),
+                    ('SPAN', (-2, -1), (-1, -1)),
 
-                    ('SPAN', (0, -2), (2, -2)),
-                    ('SPAN', (-3, -2), (-1, -2)),
+                    ('SPAN', (0, -2), (3, -2)),
+                    ('SPAN', (-2, -2), (-1, -2)),
 
-                    ('SPAN', (0, -3), (2, -3)),
-                    ('SPAN', (-3, -3), (-1, -3)),
+                    ('SPAN', (0, -3), (3, -3)),
+                    ('SPAN', (-2, -3), (-1, -3)),
 
-                    ('SPAN', (0, -4), (2, -4)),
-                    ('SPAN', (-3, -4), (-1, -4)),
+                    ('SPAN', (0, -4), (3, -4)),
+                    ('SPAN', (-2, -4), (-1, -4)),
 
-                    ('SPAN', (0, -5), (2, -5)),
-                    ('SPAN', (-3, -5), (-1, -5)),
+                    ('SPAN', (0, -5), (3, -5)),
+                    ('SPAN', (-2, -5), (-1, -5)),
 
-                    ('SPAN', (0, -6), (2, -6)),
-                    ('SPAN', (-3, -6), (-1, -6)),
+                    ('SPAN', (0, -6), (3, -6)),
+                    ('SPAN', (-2, -6), (-1, -6)),
 
-                    ('SPAN', (0, -7), (2, -7)),
-                    ('SPAN', (-3, -7), (-1, -7)),
+                    ('SPAN', (0, -7), (3, -7)),
+                    ('SPAN', (-2, -7), (-1, -7)),
 
                     ('SPAN', (-2, -4), (-1, -4)),
-                    ('SPAN', (0, -6), (2, -6)),
+                    ('SPAN', (0, -6), (3, -6)),
 
                     # ('SPAN', (2, -1), (3, -1)),
                     # ('SPAN', (4, -1), (5, -1)),
@@ -2892,7 +2895,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
                     # ('SPAN', (2, -3), (3, -3)),
                     #  ('SPAN', (4, -3), (5, -3)),
 
-                    ("BACKGROUND", (0, -7), (2, -1), HexColor(0xebebeb)),
+                    ("BACKGROUND", (0, -7), (3, -1), HexColor(0xebebeb)),
 
                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -2911,23 +2914,17 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
         t.setStyle([('SPAN', (0, 0), (-1, 0)),
                 ('SPAN', (0, 1), (-1, r)),
 
-                ('SPAN', (0, -1), (2, -1)),
-                ('SPAN', (-3, -1), (-1, -1)),
+                ('SPAN', (0, -1), (3, -1)),
+                ('SPAN', (-2, -1), (-1, -1)),
 
-                ('SPAN', (0, -2), (2, -2)),
-                ('SPAN', (-3, -2), (-1, -2)),
+                ('SPAN', (0, -2), (3, -2)),
+                ('SPAN', (-2, -2), (-1, -2)),
 
-                ('SPAN', (0, -3), (2, -3)),
-                ('SPAN', (-3, -3), (-1, -3)),
+                ('SPAN', (0, -3), (3, -3)),
+                ('SPAN', (-2, -3), (-1, -3)),
 
-                ('SPAN', (0, -4), (2, -4)),
-                ('SPAN', (-3, -4), (-1, -4)),
-
-                ('SPAN', (0, -5), (2, -5)),
-                ('SPAN', (-3, -5), (-1, -5)),
-
+                ('SPAN', (0, -4), (3, -4)),
                 ('SPAN', (-2, -4), (-1, -4)),
-                ('SPAN', (0, -6), (2, -6)),
 
                 #('SPAN', (2, -1), (3, -1)),
                 #('SPAN', (4, -1), (5, -1)),
@@ -2936,7 +2933,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
                 #('SPAN', (2, -3), (3, -3)),
               #  ('SPAN', (4, -3), (5, -3)),
 
-                ("BACKGROUND", (0, -4), (2, -1), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -4), (3, -1), HexColor(0xebebeb)),
 
                 ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                 ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -4069,7 +4066,7 @@ def report_liquid_potential(file_name, data_customer, path, data, version = 1.1,
 
     name = [
         "ОПРЕДЕЛЕНИЕ ПОТЕНЦИАЛА РАЗЖИЖЕНИЯ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ",
-        "С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"
+        "С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"
     ]
 
     page_number = 0
@@ -4108,20 +4105,20 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
         if len(picks) > 3:
             moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                             ["ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
-                                             "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                             "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
                                             "/СП")
         else:
             moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                     ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
-                                    "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/С")
+                                    "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"], "/С")
     elif test_parameter["type"] == "По заданным параметрам":
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
-                                "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/С")
+                                "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"], "/С")
     elif test_parameter["type"] == "Штормовое разжижение":
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
-                                 "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/ШТ")
+                                 "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2022, ASTM D5311)"], "/ШТ")
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
     result_table__triaxial_cyclic(canvas, res, [picks[0], picks[1]], moove=moove)
@@ -4139,21 +4136,21 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
             moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                             [
                                                 "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
-                                                "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                                "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
                                             "/СП")
         else:
             moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                             ["ОПРЕДЕЛЕНИЕ СЕЙСМИЧЕСКОЙ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
-                                             "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                             "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
                                             "/С")
     elif test_parameter["type"] == "По заданным параметрам":
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
-                                "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/С")
+                                "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"], "/С")
     elif test_parameter["type"] == "Штормовое разжижение":
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
-                                 "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                 "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2022, ASTM D5311)"],
                                 "/ШТ")
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
@@ -4167,7 +4164,7 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                         [
                                             "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
-                                            "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                            "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
                                         "/СП")
         parameter_table(canvas, Data_phiz, Lab, moove=moove)
         test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
@@ -4583,10 +4580,10 @@ def report_VibrationCreep(Name, Data_customer, Data_phiz, Lab, path, test_parame
         elif report_type == 'predict50' or report_type == 'predict100':
             name = "ОПРЕДЕЛЕНИЕ ПАРАМЕТРОВ ВИБРОПОЛЗУЧЕСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ"
             sig = "/ВП"
-        name2 = "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"
+        name2 = "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"
     elif test_type == "Снижение модуля деформации сейсмо":
         name = "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ МОДУЛЯ ДЕФОРМАЦИИ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ"
-        name2 = "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"
+        name2 = "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"
         sig = "/СП"
 
 
@@ -4648,7 +4645,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
     main_frame(canvas, path, Data_customer, code, f"1/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             [name,
-                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/ВП")
+                             "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"], "/ВП")
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_vibration_creep(canvas, test_parameter, moove=moove)
@@ -4663,7 +4660,7 @@ def report_VibrationCreep3(Name, Data_customer, Data_phiz, Lab, path, test_param
         main_frame(canvas, path, Data_customer, code, f"{i+2}/{1+len(test_parameter['frequency'])}", qr_code=qr_code)
         moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 [name,
-                                 "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"], "/ВП")
+                                 "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"], "/ВП")
 
         parameter_table(canvas, Data_phiz, Lab, moove=moove)
         t = dict(test_parameter)
@@ -4705,7 +4702,7 @@ def report_RayleighDamping(Name, Data_customer, Data_phiz, Lab, path, test_param
         main_frame(canvas, path, Data_customer, code, f"{i+1}/6", qr_code=qr_code)
         sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                                 ["ОПРЕДЕЛЕНИЕ ДЕМПФИРУЮЩИХ СВОЙСТ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
-                                 "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                                 "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
                                 "/Д")
         parameter_table(canvas, Data_phiz, Lab)
         test_parameter["frequency"] = frequency[i]
@@ -4718,7 +4715,7 @@ def report_RayleighDamping(Name, Data_customer, Data_phiz, Lab, path, test_param
     main_frame(canvas, path, Data_customer, code, f"6/6", qr_code=qr_code)
     sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ДЕМПФИРУЮЩИХ СВОЙСТ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
-                             "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                             "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
                             "/Д")
     parameter_table(canvas, Data_phiz, Lab)
     test_parameter["frequency"] = "-"#"; ".join([zap(f, 1) for f in frequency])
@@ -4745,7 +4742,7 @@ def report_cyclic_damping(Name, Data_customer, Data_phiz, Lab, path, test_parame
     main_frame(canvas, path,  Data_customer, code, "1/1", qr_code=qr_code)
     moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
                             ["ОПРЕДЕЛЕНИЕ ДЕМПФИРУЮЩИХ СВОЙСТ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ",
-                             "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311/ASTM D5311M-13)"],
+                             "ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
                             "/Д")
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)

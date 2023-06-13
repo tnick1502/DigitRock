@@ -1474,7 +1474,25 @@ class CyclicProperties(MechanicalProperties):
                     if self.sigma_1 < 10:
                         self.sigma_1 = 10
 
-                self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2)
+                t = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])
+                if t:
+                    self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2)
+                else:
+                    self.acceleration = float_df(
+                        data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]])  # В долях g
+                    if self.acceleration:
+                        self.acceleration = np.round(self.acceleration, 3)
+                        self.intensity = CyclicProperties.define_intensity(self.acceleration)
+                    else:
+                        self.intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
+                        self.acceleration = CyclicProperties.define_acceleration(self.intensity)
+
+                    self.magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
+
+                    self.t = np.round(0.65 * self.acceleration * self.sigma_1 * float(self.rd))
+                    if self.t < 1.0:
+                        self.t = 1.0
+                    self.t = np.round(self.t)
 
                 cycles_count = float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]])
                 if cycles_count:

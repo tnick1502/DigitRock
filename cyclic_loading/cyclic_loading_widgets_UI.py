@@ -391,7 +391,7 @@ class SeismicStrangthUI(QWidget):
         if sigma_1 == sigma_3:
             self.ax.scatter((sigma_1 + sigma_3) / 2, 0, alpha=0.6, label='Природное состояние')
         else:
-            self.ax.fill(mohr_x, mohr_y, alpha=0.6, label='Природное состояние')
+            self.ax.plot(mohr_x, mohr_y, alpha=0.6, label='Природное состояние')
 
 
         if u > sigma_3:
@@ -417,7 +417,7 @@ class SeismicStrangthUI(QWidget):
                                 label='С учетом динамической нагрузки')
         else:
             if plot:
-                self.ax.fill(mohr_x_rel, mohr_y_rel, alpha=0.6, color="tomato", label='С учетом динамической нагрузки')
+                self.ax.plot(mohr_x_rel, mohr_y_rel, alpha=0.6, color="tomato", label='С учетом динамической нагрузки')
 
         lim = abs(x_start) + sigma_1 * 1.2
         self.ax.set_xlim(x_start, sigma_1 * 1.2)

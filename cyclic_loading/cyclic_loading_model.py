@@ -260,12 +260,12 @@ class ModelTriaxialCyclicLoading:
             self._test_result.gamma_critical = self._test_params.t / G
 
         if self._test_result.fail_cycle_criterion_stress or self._test_result.fail_cycle_criterion_PPR:
-            self._test_result.conclusion = "Грунт склонен к разжижению"
+            self._test_result.conclusion = "Грунт разжижается"
         elif self._test_result.fail_cycle_criterion_strain:
             self._test_result.conclusion = "Грунт динамически неустойчив"
             self._test_result.fail_cycle = None
         else:
-            self._test_result.conclusion = "Грунт не склонен к разжижению"
+            self._test_result.conclusion = "Грунт не разжижается"
 
 
 
