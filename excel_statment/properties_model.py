@@ -1644,6 +1644,9 @@ class CyclicProperties(MechanicalProperties):
 
     @staticmethod
     def define_rd(z):
+        return np.round(
+            (1 - 0.4113 * (z ** 0.5) + 0.04052 * z + 0.001753 * (z ** 1.5)) / (1 - 0.4117 * (z ** 0.5) + 0.05729 * z - 0.006205 * (z ** 1.5) + 0.00121 * (z ** 2)), 3)
+        '''
         if z <= 9.15:
             return np.round((1 - (0.00765 * z)), 3)
         elif (z > 9.15) and (z < 23):
@@ -1662,6 +1665,7 @@ class CyclicProperties(MechanicalProperties):
                 (1 - a_11 * (z ** 0.5) + a_12 * z + a_13 * (z ** 1.5)) /
                 (1 - a_21 * (z ** 0.5) + a_22 * z - a_23 * (z ** 1.5) + a_24 * (z ** 2))
                 , 3)
+        '''
 
     @staticmethod
     def define_acceleration(intensity: float) -> float:
