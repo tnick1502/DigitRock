@@ -178,8 +178,24 @@ class CyclicLoadingUI(QWidget):
             self.strain_ax.set_ylim(plot_data["strain_lim"])
             self.PPR_ax.set_ylim(plot_data["PPR_lim"])
 
-
             self.strain_ax.plot(plot_data["cycles"], plot_data["strain"])
+
+            #self.strain_ax.plot(
+            #    plot_data["strain_processing"]['min_x'],
+            #    plot_data["strain_processing"]['min_y'],
+             #   linewidth=0.5
+            #)
+            #self.strain_ax.plot(
+            #    plot_data["strain_processing"]['max_x'],
+            #    plot_data["strain_processing"]['max_y'],
+             #   linewidth=0.5
+            #)
+            #self.strain_ax.plot(
+            #    plot_data["strain_processing"]['averaged_cycle'],
+            #    plot_data["strain_processing"]['averaged_strain'],
+            #    linewidth=0.5
+            #)
+
             self.PPR_ax.plot(plot_data["cycles"], plot_data["PPR"])
             self.stress_ax.plot(plot_data["mean_effective_stress"], plot_data["deviator"] / 2)
 

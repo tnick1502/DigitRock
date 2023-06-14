@@ -141,10 +141,29 @@ class ModelTriaxialCyclicLoading:
             else:
                 PPR_lim.append(1)
 
+            """
+            strain_processing = ModelTriaxialCyclicLoading.define_max_and_min_line(self._test_data.cycles, self._test_data.strain)
+
+            x_av, y_av = ModelTriaxialCyclicLoading.define_averange_line(
+                strain_processing['min_x'],
+                strain_processing['min_y'],
+                strain_processing['max_x'],
+                strain_processing['max_y'],
+            )
+
+            strain_processing.update(
+                {
+                    'averaged_cycle': x_av,
+                    'averaged_strain': y_av
+                }
+            )
+            """
+
             return {"cycles": self._test_data.cycles,
                     "deviator": self._test_data.deviator,
                     "strain": self._test_data.strain,
                     "PPR": self._test_data.PPR,
+                    #'strain_processing': strain_processing,
                     "mean_effective_stress": self._test_data.mean_effective_stress,
                     "strain_lim": strain_lim,
                     "PPR_lim": PPR_lim,
@@ -294,6 +313,79 @@ class ModelTriaxialCyclicLoading:
             sigma_3=sigma_3_dyn,
             sigma_1=sigma_1_dyn
         ), 3)
+
+    @staticmethod
+    def define_max_and_min_line(x: list, y: list):
+        """Функция поиска максимума и минимума"""
+        point_count = 4
+
+        local_min_x = [x[0]]
+        local_min_y = [y[0]]
+
+        local_max_x = [x[0]]
+        local_max_y = [y[0]]
+
+        if sum(y[:point_count]) > y[0]:
+            increase = True
+        else:
+            increase = False
+
+        i = 0
+
+        while i <= len(x) - point_count:
+            if y[i] < sum(y[i: i + point_count]) / point_count:
+                if increase == False:
+                    local_min_x.append(x[i])
+                    local_min_y.append(y[i])
+                    increase = True
+                    i += 1
+
+            elif y[i] > sum(y[i: i + point_count]) / point_count:
+                if increase == True:
+                    local_max_x.append(x[i])
+                    local_max_y.append(y[i])
+                    increase = False
+                    i += 1
+            i += 1
+
+        local_min_x.append(x[-1])
+        local_min_y.append(y[-1])
+
+        local_max_x.append(x[-1])
+        local_max_y.append(y[-1])
+
+        return {
+            'min_x': local_min_x,
+            'min_y': local_min_y,
+            'max_x': local_max_x,
+            'max_y': local_max_y,
+        }
+
+    @staticmethod
+    def define_averange_line(x_min: list, y_min: list, x_max: list, y_max: list):
+        """Функция поиска средней линии"""
+        x_approximate_min, y_approximate_min = ModelTriaxialCyclicLoading.approximate(x_min, y_min)
+        x_approximate_max, y_approximate_max = ModelTriaxialCyclicLoading.approximate(x_max, y_max)
+
+        x_averaged = x_approximate_min
+        y_averaged = (y_approximate_min + y_approximate_max) / 2
+
+        return x_averaged, y_averaged
+
+    @staticmethod
+    def approximate(x, y):
+        x_approximate = np.linspace(0, max(x), 50)
+
+        while True:
+            try:
+                y_approximate = np.polyval(
+                    np.polyfit(x, y, 10),
+                    x_approximate)
+                break
+            except:
+                continue
+        return x_approximate, y_approximate
+
 
     @staticmethod
     def define_fail_cycle(cycles, condisions):
@@ -894,7 +986,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             "strain_E0": {"value": self._draw_params.strain_E0,
                            "borders": [self._draw_params.strain_E0/5, self._draw_params.strain_E0*5]},
             "strain_rise_after_fail": {"value": self._draw_params.strain_rise_after_fail,
-                           "borders": [self._draw_params.strain_rise_after_fail/3,
+                           "borders": [self._draw_params.strain_rise_after_fail/8,
                                        self._draw_params.strain_rise_after_fail*3]},
             "strain_stabilization": {"value": self._draw_params.strain_stabilization,
                            "borders": [0, 0.5]},
@@ -1033,7 +1125,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             self._draw_params.strain_E0*=np.random.uniform(4, 6)
 
         # Параметр, отвечающий за рост деформации после цикла разрушения
-        self._draw_params.strain_rise_after_fail = np.random.uniform(2, 3)
+        self._draw_params.strain_rise_after_fail = np.random.uniform(1, 2)
 
         # Стабилизация деформации к ассимптоте
         self._draw_params.strain_stabilization = np.random.uniform(0.01, 0.03)
