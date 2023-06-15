@@ -1133,7 +1133,10 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._draw_params.strain_phase_offset = self._test_params.damping_ratio/40
 
         # Погрешность и коэффициент сглаживания
-        self._draw_params.strain_deviation = 0.0001
+        if self._test_params.Kd:
+            self._draw_params.strain_deviation = 0.00003
+        else:
+            self._draw_params.strain_deviation = 0.0001
         self._draw_params.strain_filter = 0.5
 
         # Ассимптота графика PPR. Если есть разрушение - не учитывается
@@ -1222,7 +1225,7 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
             self._test_data.strain = ModelTriaxialCyclicLoadingSoilTest.create_strain_array(
                 self._test_data.cycles[len(self._load_stage.strain):] - self._test_data.cycles[len(self._load_stage.strain)],
                 2 * self._test_params.t, E_module, self._draw_params.strain_max, self._draw_params.strain_slant,
-                phase_shift=self._draw_params.strain_phase_offset -0.5*np.pi, stabilization=self._draw_params.strain_stabilization)
+                phase_shift=self._draw_params.strain_phase_offset, stabilization=self._draw_params.strain_stabilization)
             self._test_data.strain -= self._test_data.strain[0]
             self._test_data.strain = np.hstack((self._load_stage.strain,
                                                 self._test_data.strain + np.max(self._load_stage.strain)))

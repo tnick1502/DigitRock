@@ -1814,6 +1814,15 @@ class VibrationCreepProperties(MechanicalProperties):
                     for i in range(len(self.Kd)):
                         self.Kd[i] *= fr(self.frequency[i], min(self.frequency), max(self.frequency))
 
+                    if self.Kd[-1] >= 0.9:
+                        self.damping_ratio = np.random.uniform(1, 2)
+                    elif self.Kd[-1] >= 0.8:
+                        self.damping_ratio = np.random.uniform(3, 5)
+                    else:
+                        self.damping_ratio = np.random.uniform(5, 10)
+
+                    self.damping_ratio = np.round(self.damping_ratio, 2)
+
             if test_mode == "Снижение модуля деформации сейсмо":
                 self.frequency = [0.5]
                 t_vibration = self.t
@@ -1849,17 +1858,15 @@ class VibrationCreepProperties(MechanicalProperties):
                 self.Kd = [Kd]
 
                 self.cycles_count = CyclicProperties.define_cycles_count(magnitude)
+
+                self.damping_ratio = np.round(CyclicProperties.define_damping_ratio(physical_properties.type_ground,
+                                                                                    sum(self.frequency) / len(
+                                                                                        self.frequency)), 2)
             else:
                 self.cycles_count = int(np.random.uniform(2000, 5000))
-
-            if self.Kd[-1] >= 0.9:
-                self.damping_ratio = np.random.uniform(1, 2)
-            elif self.Kd[-1] >= 0.8:
-                self.damping_ratio = np.random.uniform(3, 5)
-            else:
-                self.damping_ratio = np.random.uniform(5, 10)
-
-            self.damping_ratio = np.round(self.damping_ratio, 2)
+                self.damping_ratio = np.round(CyclicProperties.define_damping_ratio(physical_properties.type_ground,
+                                                                                    sum(self.frequency) / len(
+                                                                                        self.frequency)), 2)
 
     @staticmethod
     def val_to_list(val) -> list:
