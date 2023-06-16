@@ -264,7 +264,7 @@ class ModelTriaxialDeviatorLoading:
 
             line_ = line(self._test_result.Eur*1000, b, self._test_data.strain_cut)
             _begin, = np.where(line_ >= self._test_data.deviator_cut[self._test_data.reload_points_cut[1]])
-            _end, = np.where(line_ >= self._test_data.deviator_cut[self._test_data.reload_points_cut[2]])
+            _end, = np.where(line_ >= self._test_data.deviator_cut[self._test_data.reload_points_cut[0]] + 5)
 
             Eur = point_to_xy(Point(x=self._test_data.strain_cut[_begin[0]],
                                     y=line_[_begin[0]] / 1000),
@@ -273,11 +273,11 @@ class ModelTriaxialDeviatorLoading:
 
             _begin, = np.where(self._test_data.deviator_cut >=
                                self._test_data.deviator_cut[self._test_data.reload_points_cut[1] - 5])
-            _end, = np.where(self._test_data.deviator_cut >=
-                               self._test_data.deviator_cut[self._test_data.reload_points_cut[2] + 5])
+            _end, = np.where(self._test_data.deviator_cut[self._test_data.reload_points_cut[1]:] >=
+                               self._test_data.deviator_cut[self._test_data.reload_points_cut[0]] + 5)
 
-            strain_Eur = self._test_data.strain_cut[:_end[0]]
-            deviator_Eur = self._test_data.deviator_cut[:_end[0]]/1000
+            strain_Eur = self._test_data.strain_cut[_begin[0]:_end[0] + self._test_data.reload_points_cut[1]]
+            deviator_Eur = self._test_data.deviator_cut[_begin[0]:_end[0] + self._test_data.reload_points_cut[1]]/1000
 
         else:
             Eur = None
@@ -423,6 +423,7 @@ class ModelTriaxialDeviatorLoading:
         self._test_result.Eur = \
             ModelTriaxialDeviatorLoading.define_Eur(self._test_data.strain_cut,
                                   self._test_data.deviator_cut, self._test_data.reload_points_cut)
+
         if self._test_data.volume_strain_approximate is not None:
             self._test_result.poissons_ratio = ModelTriaxialDeviatorLoading.define_poissons(self._test_data.strain_cut,
                                       self._test_data.deviator_cut,
@@ -445,8 +446,6 @@ class ModelTriaxialDeviatorLoading:
 
         if statment.general_parameters.test_mode != 'Трёхосное сжатие КН':
             self._test_result.max_pore_pressure = 0
-
-
 
         self._test_result.Eps50 = (self._test_result.qf*0.5) / self._test_result.E50
         self._test_result.qf50 = self._test_result.qf*0.5 / 1000
@@ -549,12 +548,17 @@ class ModelTriaxialDeviatorLoading:
     def define_E50_qf(strain, deviator):
         """Определение параметров qf и E50"""
         qf = np.max(deviator)
-        # Найдем область E50
-        i_07qf, = np.where(deviator > qf * 0.7)
-        imax, = np.where(deviator[:i_07qf[0]] > qf / 2)
-        imin, = np.where(deviator[:i_07qf[0]] < qf / 2)
-        imax = imax[0]
-        imin = imin[-1]
+
+        imax = 0
+        for i in range(len(deviator)):
+            if deviator[i] > qf / 2:
+                imax = i
+                break
+
+        if imax == 0:
+            imax = len(deviator)
+
+        imin = imax - 1
 
         E50 = (qf / 2) / (
             np.interp(qf / 2, np.array([deviator[imin], deviator[imax]]), np.array([strain[imin], strain[imax]])))
