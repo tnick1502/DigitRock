@@ -1,4 +1,6 @@
-x = [1, 1, 1, 3, 4, 5]
-s = 3
-i = 0
-print(sum(x[i: i + s])/s)
+import numpy as np
+
+x = np.hstack((np.linspace(0, 100, 100), np.linspace(0, 100, 100)))
+
+i, = np.where(x > 50)
+print(i)
