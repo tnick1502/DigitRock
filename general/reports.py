@@ -3619,7 +3619,7 @@ def result_table_averaged(canvas, EGE, data, y_cordinate=50):
 
     a = svg2rlg(data["pick"])
     a.scale(0.8, 0.8)
-    renderPDF.draw(a, canvas, 25 * mm, (y_cordinate + 17) * mm)
+    renderPDF.draw(a, canvas, 25 * mm, (y_cordinate + 21) * mm)
 
     tableData = [[f"РЕЗУЛЬТАТЫ УСРЕДНЕНИЯ КРИВЫХ ПО ИГЭ {EGE}", "", "", "", "", ""]]
     r = 28
@@ -3627,34 +3627,58 @@ def result_table_averaged(canvas, EGE, data, y_cordinate=50):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Средний модуль деформации E<sub rise="0.5" size="6">50</sub>, МПа:</p>''', LeftStyle),
-            "", "", "", zap(data["averaged_E50"], 2), ""])
+        [Paragraph('''<p>Усредненный модуль деформации E<sub rise="0.5" size="6">50</sub>, кПа:</p>''', LeftStyle),
+            "", "", "", zap(data["averaged_E50"], 1), ""])
     tableData.append(
-        [Paragraph('''<p>Средний девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle),
-            "", "", "", zap(data["averaged_qf"], 2), ""])
+        [Paragraph('''<p>Усредненный девиатор разрушения q<sub rise="0.5" size="6">f</sub>, кПа:</p>''', LeftStyle),
+            "", "", "", zap(data["averaged_qf"], 1), ""])
+
     tableData.append(
-        [Paragraph('''<p>Среднее эффективное сцепление с', МПа:</p>''', LeftStyle),
-            "", "", "", zap(data["averaged_c"], 3), ""])
+        [Paragraph('''<p>Усредненный Eoed, кПа:</p>''', LeftStyle),
+         "", "", "",
+         zap(data['averaged_statment_data']['Eoed_ref'], 1) if data['averaged_statment_data']['Eoed_ref'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Средний эффективный угол внутреннего трения φ', град:</p>''', LeftStyle),
-            "", "", "", zap(data["averaged_fi"], 1), ""])
+        [Paragraph('''<p>Усредненный Eur, кПа:</p>''', LeftStyle),
+         "", "", "",
+         zap(data['averaged_statment_data']['Eur_ref'], 1) if data['averaged_statment_data']['Eur_ref'] else '-', ""])
+    tableData.append(
+        [Paragraph('''<p>Усредненное эффективное сцепление с', кПа:</p>''', LeftStyle),
+            "", "", "", zap(data['averaged_statment_data']['c'], 1) if data['averaged_statment_data']['c'] else '-', ""])
+    tableData.append(
+        [Paragraph('''<p>Усредненный эффективный угол внутреннего трения φ', град:</p>''', LeftStyle),
+            "", "", "", zap(data['averaged_statment_data']['fi'], 1) if data['averaged_statment_data']['fi'] else '-', ""])
+    tableData.append(
+        [Paragraph('''<p>m:</p>''', LeftStyle),
+         "", "", "", zap(data['averaged_statment_data']['m'], 3) if data['averaged_statment_data']['m'] else '-', ""])
+    tableData.append(
+        [Paragraph('''<p>Усредненный угол дилатансии:</p>''', LeftStyle),
+         "", "", "", zap(data['averaged_statment_data']['dilatancy_angle'], 2) if data['averaged_statment_data']['dilatancy_angle'] else '-', ""])
+    tableData.append(
+        [Paragraph('''<p>Усредненный коэффициент v_ur, д.е.:</p>''', LeftStyle),
+         "", "", "", zap(data['averaged_statment_data']['v_ur'], 2) if data['averaged_statment_data']['v_ur'] else '-', ""])
+    tableData.append(
+        [Paragraph('''<p>Усредненный Rf:</p>''', LeftStyle),
+         "", "", "", zap(data['averaged_statment_data']['Rf'], 3) if data['averaged_statment_data']['Rf'] else '-', ""])
+    tableData.append(
+        [Paragraph('''<p>Усредненный OCR. д.е.:</p>''', LeftStyle),
+         "", "", "", zap(data['averaged_statment_data']['OCR'], 2) if data['averaged_statment_data'][
+            'OCR'] else '-', ""])
+    tableData.append(
+        [Paragraph('''<p>Усредненный POP, кПа:</p>''', LeftStyle),
+         "", "", "", zap(data['averaged_statment_data']['POP'], 1) if data['averaged_statment_data'][
+            'POP'] else '-', ""])
+
+
+    {'E50_ref': 14200.0, 'Eoed_ref': 24833.333, 'Eur_ref': 64866.667, 'm': 0.572, 'c': 1.0, 'fi': 35.5,
+     'dilatancy_angle': 3.517, 'v_ur': 0.203, 'p_ref': 100.0, 'К0nc': 0.473, 'Rf': None, 'OCR': None, 'POP': None}
 
     style = [('SPAN', (0, 0), (-1, 0)),
              ('SPAN', (0, 1), (-1, r)),
 
-             ('SPAN', (0, -1), (3, -1)),
-             ('SPAN', (-2, -1), (-1, -1)),
-             ('SPAN', (0, -2), (3, -2)),
-             ('SPAN', (-2, -2), (-1, -2)),
-             ('SPAN', (0, -3), (3, -3)),
-             ('SPAN', (-2, -3), (-1, -3)),
-             ('SPAN', (0, -4), (3, -4)),
-             ('SPAN', (-2, -4), (-1, -4)),
+             *[('SPAN', (0, -i), (3, -i)) for i in range(1, 13)],
+             *[('SPAN', (-2, -i), (-1, -i)) for i in range(1, 13)],
 
-             ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
-             ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
-             ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
-             ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
+             *[("BACKGROUND", (0, -i), (3, -i), HexColor(0xebebeb)) for i in range(1, 13)],
 
              ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
              ("FONTNAME", (0, 1), (-1, -1), 'Times'),
@@ -3670,7 +3694,7 @@ def result_table_averaged(canvas, EGE, data, y_cordinate=50):
     t.setStyle(style)
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, y_cordinate * mm)
+    t.drawOn(canvas, 25 * mm, (y_cordinate - 26) * mm)
 
 def result_table_liquid_potential(canvas, EGE, data, y_cordinate=50):
     a = svg2rlg(data['lineral'])
@@ -4045,7 +4069,7 @@ def report_averaged(file_name, data_customer, path, data, version = 1.1, qr_code
             canvas.showPage()
         main_frame(canvas, path, data_customer, code, f"{page_number + 1}/{pages_count}", qr_code=qr_code)
         moove = ege_identifier_table(
-            canvas, data_customer, EGE, name, p_ref=data[EGE]["averaged_p_ref"] / 1000, K0=data[EGE]["averaged_K0"]
+            canvas, data_customer, EGE, name, p_ref=data[EGE]['averaged_statment_data']["p_ref"] / 1000, K0=data[EGE]['averaged_statment_data']['К0nc']
         )
         result_table_averaged(canvas, EGE, report_data, y_cordinate=80-moove)
         page_number += 1
