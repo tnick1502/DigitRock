@@ -860,12 +860,6 @@ class VibrationCreepStatment(InitialStatment):
                     self.open_line.text_file_path.setText(self.path)
 
     def _onAcceptBtn(self):
-
-        if self.open_line.get_data()["test_mode"] != "Виброползучесть":
-            QMessageBox.critical(self, "Не верный тип опыта", "Выбор доступен только для типа испытания Виброползучесть",
-                                 QMessageBox.Ok)
-            return
-
         if E_models:
             ret = QMessageBox.question(self, 'Предупреждение',
                                        f"Применение параметров вызовет Полное пересоздание модели и всех опытов. Вы уверены?",
