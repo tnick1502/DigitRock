@@ -512,10 +512,13 @@ class MechanicalProperties:
             if test_mode == "Трёхосное сжатие (F, C) res":
                 self.q_res = np.round(float(MechanicalProperties.define_qf(self.sigma_3, self.c_res, self.fi_res)), 1)
 
-            if deviations_amplitude:
-                self.deviations_amplitude = deviations_amplitude
-            else:
-                self.deviations_amplitude = [0.04, 0.02, 0.01]
+            self.set_deviations_amplitude(deviations_amplitude)
+
+    def set_deviations_amplitude(self, deviations_amplitude=None):
+        if deviations_amplitude is None:
+            self.deviations_amplitude = [0.04, 0.02, 0.01]
+        else:
+            self.deviations_amplitude = deviations_amplitude
 
     @staticmethod
     def round_sigma_3(sigma_3, param=5):
@@ -1765,7 +1768,8 @@ class VibrationCreepProperties(MechanicalProperties):
             if isinstance(getattr(VibrationCreepProperties, key), DataTypeValidation):
                 object.__setattr__(self, key, None)
 
-    def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode, sigma3_lim=None) -> None:
+    def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode, sigma3_lim=None,
+                         deviations_amplitude=None) -> None:
         if sigma3_lim:
             super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode,
                                      sigma3_lim=sigma3_lim)
@@ -1860,6 +1864,11 @@ class VibrationCreepProperties(MechanicalProperties):
                 self.damping_ratio = np.random.uniform(5, 10)
 
             self.damping_ratio = np.round(self.damping_ratio, 2)
+
+            if deviations_amplitude:
+                self.deviations_amplitude = deviations_amplitude
+            else:
+                self.deviations_amplitude = [0.04, 0.02, 0.01]
 
     @staticmethod
     def val_to_list(val) -> list:
