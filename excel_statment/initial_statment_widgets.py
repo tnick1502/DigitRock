@@ -798,7 +798,17 @@ class VibrationCreepStatment(InitialStatment):
             "m": "Показатель степени жесткости"
         }
 
+        self.deviations_amplitude = None
+
         super().__init__(data_test_parameters, fill_keys)
+
+        self.deviationsBox = DeviationsCustomBox()
+
+        self.deviationsBox.acceptBtn.clicked.connect(self._onAcceptBtn)
+
+        self.layout.setSpacing(10)
+
+        self.layout.insertWidget(self.layout.count() - 2, self.deviationsBox)
 
     @log_this(app_logger, "debug")
     def file_open(self):
@@ -810,6 +820,9 @@ class VibrationCreepStatment(InitialStatment):
             columns_marker = list(zip(*c_fi_E_PropertyPosition["Виброползучесть"]))
             marker, customer = read_general_prameters(self.path)
 
+            if self.deviations_amplitude:
+                combo_params["deviations_amplitude"] = self.deviations_amplitude
+
             try:
                 assert column_fullness_test(
                     self.path, columns=k0_test_type_column(combo_params["K0_mode"]),
@@ -820,7 +833,6 @@ class VibrationCreepStatment(InitialStatment):
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
             else:
-
                 self.load_statment(
                     statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
                     properties_type=VibrationCreepProperties,
@@ -846,6 +858,61 @@ class VibrationCreepStatment(InitialStatment):
 
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
+
+    def _onAcceptBtn(self):
+
+        if self.open_line.get_data()["test_mode"] != "Виброползучесть":
+            QMessageBox.critical(self, "Не верный тип опыта", "Выбор доступен только для типа испытания Виброползучесть",
+                                 QMessageBox.Ok)
+            return
+
+        if E_models:
+            ret = QMessageBox.question(self, 'Предупреждение',
+                                       f"Применение параметров вызовет Полное пересоздание модели и всех опытов. Вы уверены?",
+                                       QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+            if ret == QMessageBox.Yes:
+                pass
+            else:
+                return
+
+        if self.deviationsBox.radiobutton_state_standard.isChecked():
+            self.deviations_amplitude = None
+
+            if E_models:
+                for modelKey in E_models.tests:
+                    statment.setCurrentTest(modelKey)
+                    statment.tests[modelKey].mechanical_properties.set_deviations_amplitude(self.deviations_amplitude)
+                    E_models.tests[modelKey].set_test_params()
+
+                QMessageBox.warning(self, "Обновление завешено", "Все модели обновлены",
+                                     QMessageBox.Ok)
+            return
+
+        if self.deviationsBox.radiobutton_custom.isChecked():
+            try:
+                amplitude_1 = float(self.deviationsBox.line_amp1.displayText())
+                amplitude_2 = float(self.deviationsBox.line_amp2.displayText())
+                amplitude_3 = float(self.deviationsBox.line_amp3.displayText())
+
+                self.deviations_amplitude = [float(amplitude_1), float(amplitude_2), float(amplitude_3)]
+
+            except ValueError:
+                QMessageBox.critical(self, "Не верный формат данных", "Укажите в формате x.x",
+                                     QMessageBox.Ok)
+                return
+            except Exception as err:
+                QMessageBox.critical(self, "Ошибка", str(err), QMessageBox.Ok)
+                return
+
+            if E_models:
+                if E_models:
+                    for modelKey in E_models.tests:
+                        statment.setCurrentTest(modelKey)
+                        statment.tests[modelKey].mechanical_properties.deviations_amplitude = self.deviations_amplitude
+                        E_models.tests[modelKey].set_test_params()
+
+                    QMessageBox.warning(self, "Обновление завешено", "Все модели обновлены",
+                                        QMessageBox.Ok)
 
 class ConsolidationStatment(InitialStatment):
     """Класс обработки файла задания для трехосника"""
