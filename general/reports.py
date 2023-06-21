@@ -3627,44 +3627,44 @@ def result_table_averaged(canvas, EGE, data, y_cordinate=50):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Усредненный модуль деформации E<sub rise="0.5" size="6">50</sub>, кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, кПа:</p>''', LeftStyle),
             "", "", "", zap(data["averaged_E50"], 1), ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный девиатор разрушения q<sub rise="0.5" size="6">f</sub>, кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, кПа:</p>''', LeftStyle),
             "", "", "", zap(data["averaged_qf"], 1), ""])
 
     tableData.append(
-        [Paragraph('''<p>Усредненный Eoed, кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Касательный модуль жесткости E<sub rise="0.5" size="6">oed</sub><sup rise="0.5" size="6">ref</sup>, кПа:</p>''', LeftStyle),
          "", "", "",
          zap(data['averaged_statment_data']['Eoed_ref'], 1) if data['averaged_statment_data']['Eoed_ref'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный Eur, кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Модуль деформации (жесткости) при разгрузке E<sub rise="0.5" size="6">ur</sub>, кПа:</p>''', LeftStyle),
          "", "", "",
          zap(data['averaged_statment_data']['Eur_ref'], 1) if data['averaged_statment_data']['Eur_ref'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненное эффективное сцепление с', кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Эффективное сцепление с', кПа:</p>''', LeftStyle),
             "", "", "", zap(data['averaged_statment_data']['c'], 1) if data['averaged_statment_data']['c'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный эффективный угол внутреннего трения φ', град:</p>''', LeftStyle),
+        [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle),
             "", "", "", zap(data['averaged_statment_data']['fi'], 1) if data['averaged_statment_data']['fi'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>m:</p>''', LeftStyle),
+        [Paragraph('''<p>Показатель степени для зависимости жесткости от уровня напряжений m, ед.:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['m'], 3) if data['averaged_statment_data']['m'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный угол дилатансии:</p>''', LeftStyle),
+        [Paragraph('''<p>Угол дилатансии ψ, град.:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['dilatancy_angle'], 2) if data['averaged_statment_data']['dilatancy_angle'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный коэффициент v_ur, д.е.:</p>''', LeftStyle),
+        [Paragraph('''<p>Коэффициент Пуассона при разгрузке u<sub rise="0.5" size="6">ur</sub>, д.е.:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['v_ur'], 2) if data['averaged_statment_data']['v_ur'] else '-', ""])
     tableData.append(
         [Paragraph('''<p>Усредненный Rf:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['Rf'], 3) if data['averaged_statment_data']['Rf'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный OCR. д.е.:</p>''', LeftStyle),
+        [Paragraph('''<p>Коэффициент переуплотнения OCR, д.е.:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['OCR'], 2) if data['averaged_statment_data'][
             'OCR'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный POP, кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Напряжение переуплотнения POP, кПа:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['POP'], 1) if data['averaged_statment_data'][
             'POP'] else '-', ""])
 
