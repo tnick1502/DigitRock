@@ -40,7 +40,8 @@ def test_version(version: float) -> bool:
     return True if float(version) == float(get_actual_version()) else False
 
 if __name__ == "__main__":
-    add_data("3.75", """
+    add_data("3.76", """
     1. Добавлены слайдеры задания Kd 
     2. Изменения в отчетах динамики
+    3. Добавлены предустановки по ползункам амплитуды девиаций в вибро
     """)
