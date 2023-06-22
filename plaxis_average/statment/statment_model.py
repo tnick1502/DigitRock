@@ -55,7 +55,6 @@ class AveragedStatment:
                 self.EGES[EGE].append(test)
             else:
                 self.EGES[EGE] = [test]
-        print(self.EGES)
 
     def getAvarange(self):
         result_EGES = {}
@@ -89,7 +88,6 @@ class AveragedStatment:
     def save_excel(self):
         data = self.getAvarange()
         keys = list(data.keys())
-        print(data)
 
         matrix = [data[key].values() for key in keys]
         df1 = pd.DataFrame(matrix,
