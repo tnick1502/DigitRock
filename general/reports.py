@@ -2683,7 +2683,7 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False, moov
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (60 - moove - s) * mm)
 
-def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
+def result_table_trel(canvas, Res, pick, test_parameter, scale = 0.8, long=False, moove=0):
     try:
         a = svg2rlg(pick)
         a.scale(scale, scale)
@@ -2711,6 +2711,10 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
         '''<p>Коэффициент снижения прочности K<sub rise="0.5" size="6">ds</sub>, МПа:</p>''', LeftStyle), "",
                       "",
                       "", zap(round(Res["t_max_dynamic"] / Res["t_max_static"], 2), 2), ""])
+    tableData.append([Paragraph(
+        '''<p>Избыточное поровое давление u<sub rise="0.5" size="6">excess</sub>, МПа:</p>''', LeftStyle), "",
+        "",
+        "", zap(round(Res["PPRmax"] * test_parameter["sigma3"] / 1000, 3), 3), ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
 
@@ -2722,6 +2726,8 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
                     ('SPAN', (4, -1), (5, -1)),
                     ('SPAN', (0, -3), (3, -3)),
                     ('SPAN', (4, -3), (5, -3)),
+                    ('SPAN', (0, -4), (3, -4)),
+                    ('SPAN', (4, -4), (5, -4)),
                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
                     ("FONTSIZE", (0, 0), (-1, -1), 8),
@@ -2730,6 +2736,7 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
                     ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
                     ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
                     ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
                     # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                     ("ALIGN", (0, 0), (-1, r), "CENTER"),
@@ -2738,7 +2745,7 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (58 - moove) * mm)
+    t.drawOn(canvas, 25 * mm, (54 - moove) * mm)
 
 
 
@@ -4192,7 +4199,7 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
                                         "/СП")
         parameter_table(canvas, Data_phiz, Lab, moove=moove)
         test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
-        result_table_trel(canvas, res, picks[3], moove=moove)
+        result_table_trel(canvas, res, picks[3], test_parameter, moove=moove)
 
     canvas.save()
 
