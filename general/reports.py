@@ -2703,9 +2703,9 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
     for i in range(r):
         tableData.append([""])
 
-    tableData.append([Paragraph('''<p>Статическое сопротивление сдвигу τ<sub rise="0.5" size="6">static</sub>, МПа:</p>''', LeftStyle), "", "",
+    tableData.append([Paragraph('''<p>Статическое сопротивление сдвигу τ<sub rise="0.5" size="6">f</sub><sup rise="1.5" size="6"> st</sup>, МПа:</p>''', LeftStyle), "", "",
                           "", zap(Res["t_max_static"], 3), ""])
-    tableData.append([Paragraph('''<p>Статическое сопротивление сдвигу при динамеческом воздействии τ<sub rise="0.5" size="6">dynamic</sub>, МПа:</p>''', LeftStyle), "", "",
+    tableData.append([Paragraph('''<p>Статическое сопротивление сдвигу при динамеческом воздействии τ<sub rise="0.5" size="6">f</sub><sup rise="1.5" size="6"> d</sup>, МПа:</p>''', LeftStyle), "", "",
                           "", zap(Res["t_max_dynamic"], 3), ""])
     tableData.append([Paragraph(
         '''<p>Коэффициент снижения прочности K<sub rise="0.5" size="6">ds</sub>, МПа:</p>''', LeftStyle), "",
