@@ -178,7 +178,7 @@ class VibrationCreepUI(QWidget):
                     self.vibration_creep_ax.plot(*plot_data["E50"][i], **plotter_params["static_loading_black_dotted_line"])
 
             self.vibration_creep_ax2.plot(plot_data["dyn_strain"][i], plot_data["dyn_curve"][i], alpha=0.5,
-                                          linewidth=0.1, color=color)
+                                          linewidth=0.3, color=color)
 
             self.vibration_creep_ax2.plot([np.min(plot_data["dyn_strain"][i]), np.max(plot_data["dyn_strain"][i])],
                                           [np.min(plot_data["dyn_curve"][i]), np.max(plot_data["dyn_curve"][i])],

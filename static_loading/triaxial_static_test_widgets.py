@@ -10,7 +10,7 @@ import numpy as np
 
 from general.general_functions import create_path
 from general.tab_view import TabMixin
-from static_loading.plaxis_avereged_widget import AverageWidget
+from plaxis_average.plaxis_avereged_widget import AverageWidget
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from excel_statment.initial_statment_widgets import TriaxialStaticStatment
 from excel_statment.initial_tables import LinePhysicalProperties

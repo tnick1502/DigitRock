@@ -250,7 +250,7 @@ class ModelVibrationCreep:
                             if abs(dyn_test.deviator_dynamic[i] - mean) < 1:
                                 break
 
-                        test_result.E50d = (dyn_test.deviator_dynamic[i] / dyn_test.strain_dynamic[i]) / 1000
+                        test_result.E50d = np.round((dyn_test.deviator_dynamic[i] / dyn_test.strain_dynamic[i]) / 1000, 2)
 
                         test_result.Kd = np.round((test_result.E50d / test_result.E50), 2)
                         #print("data from test processing", len(dyn_test.time), len(dyn_test.deviator_dynamic))

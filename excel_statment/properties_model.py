@@ -512,10 +512,13 @@ class MechanicalProperties:
             if test_mode == "Трёхосное сжатие (F, C) res":
                 self.q_res = np.round(float(MechanicalProperties.define_qf(self.sigma_3, self.c_res, self.fi_res)), 1)
 
-            if deviations_amplitude:
-                self.deviations_amplitude = deviations_amplitude
-            else:
-                self.deviations_amplitude = [0.04, 0.02, 0.01]
+            self.set_deviations_amplitude(deviations_amplitude)
+
+    def set_deviations_amplitude(self, deviations_amplitude=None):
+        if deviations_amplitude is None:
+            self.deviations_amplitude = [0.04, 0.02, 0.01]
+        else:
+            self.deviations_amplitude = deviations_amplitude
 
     @staticmethod
     def round_sigma_3(sigma_3, param=5):
@@ -1474,7 +1477,25 @@ class CyclicProperties(MechanicalProperties):
                     if self.sigma_1 < 10:
                         self.sigma_1 = 10
 
-                self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2)
+                t = float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])
+                if t:
+                    self.t = np.round(float_df(data_frame.iat[string, DynamicsPropertyPosition["sigma_d_vibration_creep"][1]])/2)
+                else:
+                    self.acceleration = float_df(
+                        data_frame.iat[string, DynamicsPropertyPosition["acceleration"][1]])  # В долях g
+                    if self.acceleration:
+                        self.acceleration = np.round(self.acceleration, 3)
+                        self.intensity = CyclicProperties.define_intensity(self.acceleration)
+                    else:
+                        self.intensity = float_df(data_frame.iat[string, DynamicsPropertyPosition["intensity"][1]])
+                        self.acceleration = CyclicProperties.define_acceleration(self.intensity)
+
+                    self.magnitude = float_df(data_frame.iat[string, DynamicsPropertyPosition["magnitude"][1]])
+
+                    self.t = np.round(0.65 * self.acceleration * self.sigma_1 * float(self.rd))
+                    if self.t < 1.0:
+                        self.t = 1.0
+                    self.t = np.round(self.t)
 
                 cycles_count = float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]])
                 if cycles_count:
@@ -1581,6 +1602,7 @@ class CyclicProperties(MechanicalProperties):
 
             self.CSR = np.round(self.t / self.sigma_1, 2)
             self.damping_ratio = CyclicProperties.define_damping_ratio(physical_properties.type_ground, self.frequency)
+            self.damping_ratio = np.round(self.damping_ratio, 2)
             # np.round(CyclicProperties.define_damping_ratio(), 2)
 
     @staticmethod
@@ -1625,6 +1647,9 @@ class CyclicProperties(MechanicalProperties):
 
     @staticmethod
     def define_rd(z):
+        return np.round(
+            (1 - 0.4113 * (z ** 0.5) + 0.04052 * z + 0.001753 * (z ** 1.5)) / (1 - 0.4117 * (z ** 0.5) + 0.05729 * z - 0.006205 * (z ** 1.5) + 0.00121 * (z ** 2)), 3)
+        '''
         if z <= 9.15:
             return np.round((1 - (0.00765 * z)), 3)
         elif (z > 9.15) and (z < 23):
@@ -1643,6 +1668,7 @@ class CyclicProperties(MechanicalProperties):
                 (1 - a_11 * (z ** 0.5) + a_12 * z + a_13 * (z ** 1.5)) /
                 (1 - a_21 * (z ** 0.5) + a_22 * z - a_23 * (z ** 1.5) + a_24 * (z ** 2))
                 , 3)
+        '''
 
     @staticmethod
     def define_acceleration(intensity: float) -> float:
@@ -1742,7 +1768,8 @@ class VibrationCreepProperties(MechanicalProperties):
             if isinstance(getattr(VibrationCreepProperties, key), DataTypeValidation):
                 object.__setattr__(self, key, None)
 
-    def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode, sigma3_lim=None) -> None:
+    def defineProperties(self, physical_properties, data_frame, string, test_mode, K0_mode, sigma3_lim=None,
+                         deviations_amplitude=None) -> None:
         if sigma3_lim:
             super().defineProperties(physical_properties, data_frame, string, test_mode=test_mode, K0_mode=K0_mode,
                                      sigma3_lim=sigma3_lim)
@@ -1780,7 +1807,7 @@ class VibrationCreepProperties(MechanicalProperties):
                 else:
                     self.Kd = [VibrationCreepProperties.define_Kd(self.qf, self.t,
                                                                   physical_properties.e, physical_properties.Il, frequency) for frequency in self.frequency]
-
+            self.Kd = [round(i, 2) for i in self.Kd]
 
             def fr(x, x1, x2):
                 min_y = 0.98
@@ -1835,6 +1862,13 @@ class VibrationCreepProperties(MechanicalProperties):
                 self.damping_ratio = np.random.uniform(3, 5)
             else:
                 self.damping_ratio = np.random.uniform(5, 10)
+
+            self.damping_ratio = np.round(self.damping_ratio, 2)
+
+            if deviations_amplitude:
+                self.deviations_amplitude = deviations_amplitude
+            else:
+                self.deviations_amplitude = [0.04, 0.02, 0.01]
 
     @staticmethod
     def val_to_list(val) -> list:

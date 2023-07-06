@@ -1,0 +1,35 @@
+params = {
+    'borehole': ['B', 1],
+    'depth': ['C', 2],
+    'ground_name': ['D', 3],
+    'EGE': ['AH', 33],
+    'E50_ref': ['AI', 34],
+    'Eoed_ref': ['AJ', 35],
+    'Eur_ref': ['AK', 36],
+    'm': ['AL', 37],
+    'c': ['AM', 38],
+    'fi': ['AN', 39],
+    'dilatancy_angle': ['AO', 40],
+    'v_ur': ['AP', 41],
+    'p_ref': ['AQ', 42],
+    'К0nc': ['AR', 43],
+    'Rf': ['AS', 44],
+    'OCR': ['AT', 45],
+    'POP': ['AU', 46],
+}
+
+averaged_params = [
+    'E50_ref',
+    'Eoed_ref',
+    'Eur_ref',
+    'm',
+    'c',
+    'fi',
+    'dilatancy_angle',
+    'v_ur',
+    'p_ref',
+    'К0nc',
+    'Rf',
+    'OCR',
+    'POP'
+    ]

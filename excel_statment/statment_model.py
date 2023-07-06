@@ -249,27 +249,49 @@ class Test:
 
             if sigma3_lim:
                 if phi_mode:
-                    self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
-                                                                string=i,
-                                                                test_mode=test_mode, K0_mode=K0_mode,
-                                                                sigma3_lim=sigma3_lim,
-                                                                phi_mode=phi_mode,
-                                                                deviations_amplitude=deviations_amplitude)
+                    if deviations_amplitude:
+                        self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
+                                                                    string=i,
+                                                                    test_mode=test_mode, K0_mode=K0_mode,
+                                                                    sigma3_lim=sigma3_lim,
+                                                                    phi_mode=phi_mode,
+                                                                    deviations_amplitude=deviations_amplitude)
+                    else:
+                        self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
+                                                                    string=i,
+                                                                    test_mode=test_mode, K0_mode=K0_mode,
+                                                                    sigma3_lim=sigma3_lim,
+                                                                    phi_mode=phi_mode)
                 else:
-                    self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
-                                                                string=i,
-                                                                test_mode=test_mode, K0_mode=K0_mode,
-                                                                sigma3_lim=sigma3_lim,
-                                                                deviations_amplitude=deviations_amplitude)
+                    if deviations_amplitude:
+                        self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
+                                                                    string=i,
+                                                                    test_mode=test_mode, K0_mode=K0_mode,
+                                                                    sigma3_lim=sigma3_lim,
+                                                                    deviations_amplitude=deviations_amplitude)
+                    else:
+                        self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
+                                                                    string=i,
+                                                                    test_mode=test_mode, K0_mode=K0_mode,
+                                                                    sigma3_lim=sigma3_lim)
             else:
                 if phi_mode:
-                    self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
-                                                                string=i,
-                                                                test_mode=test_mode, K0_mode=K0_mode, phi_mode=phi_mode,
-                                                                deviations_amplitude=deviations_amplitude)
+                    if deviations_amplitude:
+                        self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
+                                                                    string=i,
+                                                                    test_mode=test_mode, K0_mode=K0_mode, phi_mode=phi_mode,
+                                                                    deviations_amplitude=deviations_amplitude)
+                    else:
+                        self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame,
+                                                                    string=i,
+                                                                    test_mode=test_mode, K0_mode=K0_mode, phi_mode=phi_mode)
                 else:
-                    self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame, string=i,
-                                                            test_mode=test_mode, K0_mode=K0_mode, deviations_amplitude=deviations_amplitude)
+                    if deviations_amplitude:
+                        self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame, string=i,
+                                                                test_mode=test_mode, K0_mode=K0_mode, deviations_amplitude=deviations_amplitude)
+                    else:
+                        self.mechanical_properties.defineProperties(self.physical_properties, data_frame=data_frame, string=i,
+                                                                test_mode=test_mode, K0_mode=K0_mode)
 
     def get_json(self):
         return {
