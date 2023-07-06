@@ -4147,9 +4147,15 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                                 "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"], "/С")
     elif test_parameter["type"] == "Штормовое разжижение":
-        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
-                                 "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2022, ASTM D5311)"], "/ШТ")
+        if len(picks) > 3:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                            ["ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ ШТОРМОВОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                            "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
+                                            "/СП")
+        else:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                    ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
+                                     "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2022, ASTM D5311)"], "/ШТ")
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
     result_table__triaxial_cyclic(canvas, res, [picks[0], picks[1]], moove=moove)
