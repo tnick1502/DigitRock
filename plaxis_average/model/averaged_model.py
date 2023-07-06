@@ -28,6 +28,8 @@ class AveragedItemModel:
         self.approximate_type = "poly"
         self.approximate_param_poly = 6
         self.approximate_param_sectors = 500
+
+        # TODO: Аппроксимация и уменьшение точек
         for key in keys:
             self.tests[key] = E_models[key].deviator_loading.get_for_average()
         self.processing()

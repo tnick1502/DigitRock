@@ -1399,10 +1399,12 @@ class CyclicProperties(MechanicalProperties):
                     self.sigma_1 = np.round(sigma_1 * 1000)
                 else:
                     self.sigma_1 = np.round((2 - (self.rw / 10)) * 9.81 * physical_properties.depth)
-                if self.sigma_1 < 10:
-                    self.sigma_1 = 10
 
                 self.sigma_3 = np.round(self.sigma_1 * self.K0)
+
+                if self.sigma_3 < 10:
+                    self.sigma_3 = 10
+                    self.sigma_1 = np.round(self.sigma_3 / self.K0)
 
                 self.cycles_count = int(float_df(data_frame.iat[string, DynamicsPropertyPosition["cycles_count_storm"][1]]))
 
