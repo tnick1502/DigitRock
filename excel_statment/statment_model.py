@@ -68,7 +68,10 @@ class StatmentData:
         if shipment_number is None:
             shipment_number = ""
         else:
-            shipment_number = str(shipment_number)
+            if type(shipment_number) != str:
+                shipment_number = str(shipment_number).split('.')[0]
+            else:
+                shipment_number = str(shipment_number)
 
         if accreditation in ["AO", "АО"]:
             self.accreditation_key = "новая"
