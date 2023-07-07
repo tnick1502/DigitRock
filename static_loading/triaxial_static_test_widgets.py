@@ -1548,17 +1548,16 @@ class StatickSoilTestApp(AppMixin, QWidget):
         }
 
         general_for_write_params = {
-            "test_type": ("CW" + str(number), (number, 100)),
-            "sigma_3": ("CX" + str(number), (number, 101)),
-            "sigma_1": ("CY" + str(number), (number, 102)),
-            "fi": ("CZ" + str(number), (number, 103)),
-            "c": ("DA" + str(number), (number, 104)),
-            "E": ("DB" + str(number), (number, 105)),
-            "E50": ("DC" + str(number), (number, 106)),
-            "Eur": ("DD" + str(number), (number, 107)),
-            "poissons_ratio": ("DE" + str(number), (number, 108)),
+            "test_type": ("CY" + str(number), (number, 102)),
+            "sigma_3": ("CZ" + str(number), (number, 103)),
+            "sigma_1": ("DA" + str(number), (number, 104)),
+            "fi": ("DB" + str(number), (number, 105)),
+            "c": ("DC" + str(number), (number, 106)),
+            "E": ("DD" + str(number), (number, 107)),
+            "E50": ("DE" + str(number), (number, 108)),
+            "Eur": ("DF" + str(number), (number, 109)),
+            "poissons_ratio": ("DG" + str(number), (number, 110)),
         }
-
         if statment.general_parameters.test_mode in [
             "Трёхосное сжатие (F, C, E)",
             "Трёхосное сжатие (F, C, Eur)",
