@@ -4160,7 +4160,6 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
     test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
     result_table__triaxial_cyclic(canvas, res, [picks[0], picks[1]], moove=moove)
 
-
     canvas.showPage()
 
     if len(picks) > 3:
@@ -4205,11 +4204,18 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     if len(picks) > 3:
         main_frame(canvas, path, Data_customer, code, "3/3", qr_code=qr_code)
-        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                        [
-                                            "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
-                                            "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
-                                        "/СП")
+        if test_parameter["type"] == "Сейсморазжижение":
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                                [
+                                                    "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                                    "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
+                                                "/СП")
+        elif test_parameter["type"] == "Штормовое разжижение":
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                                [
+                                                    "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ ШТОРМОВОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                                    "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
+                                                "/СП")
         parameter_table(canvas, Data_phiz, Lab, moove=moove)
         test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
         result_table_trel(canvas, res, picks[3], test_parameter, moove=moove)
