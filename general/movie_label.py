@@ -120,8 +120,9 @@ class Loader(QDialog):
     BUFFER_SIZE = 4096
 
     def __init__(self, start_message: 'str' = '',
-                 gif: 'str' = "./singletons/loading.gif",
-                 message_port: 'int' = 5432,
+                 window_title: 'str' = 'Загрузка...',
+                 gif: 'str' = "./general/loading.gif",
+                 message_port: 'int' = 7777,
                  modal: 'bool' = False,
                  size: Tuple['int', 'int'] = (300, 80),
                  parent: 'QWidget' = None):
@@ -152,6 +153,8 @@ class Loader(QDialog):
         self.setGeometry(left, top, self.width, self.height)
         # Запрещаем изменение размера пользователем
         self.setFixedSize(self.width, self.height)
+
+        self.setWindowTitle(str(window_title))
 
         # Флаг сосотояния работы лоадера, блокирует нежелательное повeдение при True
         self.__is_running = False
@@ -218,7 +221,7 @@ class Loader(QDialog):
 
     def __set_message(self, message):
         """Устанавливает сообщение на элементы виджета"""
-        self.setWindowTitle(str(message))
+        #self.setWindowTitle(str(message))
         self.message_label.setText(str(message))
         QApplication.processEvents()
 
@@ -287,7 +290,7 @@ class App(QMainWindow):
         # Основная часть
 
         # Инициализация лоадера
-        loader = Loader("Моделирование", message_port=5432, gif=gifFile)
+        loader = Loader("Моделирование", gif=gifFile)
         # ОБъявление фукнции для вызова
         def function_to_call(a1, a2, a3, a4):
             value = 1
