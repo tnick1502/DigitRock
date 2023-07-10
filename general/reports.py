@@ -2683,7 +2683,7 @@ def result_table_cyclic_damping(canvas, Res, pick, scale = 0.8, long=False, moov
     t.wrapOn(canvas, 0, 0)
     t.drawOn(canvas, 25 * mm, (60 - moove - s) * mm)
 
-def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
+def result_table_trel(canvas, Res, pick, test_parameter, scale = 0.8, long=False, moove=0):
     try:
         a = svg2rlg(pick)
         a.scale(scale, scale)
@@ -2703,14 +2703,18 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
     for i in range(r):
         tableData.append([""])
 
-    tableData.append([Paragraph('''<p>Статическое сопротивление сдвигу τ<sub rise="0.5" size="6">static</sub>, МПа:</p>''', LeftStyle), "", "",
+    tableData.append([Paragraph('''<p>Статическое сопротивление сдвигу τ<sub rise="0.5" size="6">f</sub><sup rise="1.5" size="6"> st</sup>, МПа:</p>''', LeftStyle), "", "",
                           "", zap(Res["t_max_static"], 3), ""])
-    tableData.append([Paragraph('''<p>Статическое сопротивление сдвигу при динамеческом воздействии τ<sub rise="0.5" size="6">dynamic</sub>, МПа:</p>''', LeftStyle), "", "",
+    tableData.append([Paragraph('''<p>Статическое сопротивление сдвигу при динамеческом воздействии τ<sub rise="0.5" size="6">f</sub><sup rise="1.5" size="6"> d</sup>, МПа:</p>''', LeftStyle), "", "",
                           "", zap(Res["t_max_dynamic"], 3), ""])
     tableData.append([Paragraph(
         '''<p>Коэффициент снижения прочности K<sub rise="0.5" size="6">ds</sub>, МПа:</p>''', LeftStyle), "",
                       "",
                       "", zap(round(Res["t_max_dynamic"] / Res["t_max_static"], 2), 2), ""])
+    tableData.append([Paragraph(
+        '''<p>Избыточное поровое давление u<sub rise="0.5" size="6">excess</sub>, МПа:</p>''', LeftStyle), "",
+        "",
+        "", zap(round(Res["PPRmax"] * test_parameter["sigma3"] / 1000, 3), 3), ""])
 
     t = Table(tableData, colWidths=175/6 * mm, rowHeights = 4 * mm)
 
@@ -2722,6 +2726,8 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
                     ('SPAN', (4, -1), (5, -1)),
                     ('SPAN', (0, -3), (3, -3)),
                     ('SPAN', (4, -3), (5, -3)),
+                    ('SPAN', (0, -4), (3, -4)),
+                    ('SPAN', (4, -4), (5, -4)),
                     ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
                     ("FONTNAME", (0, 1), (-1, -1), 'Times'),
                     ("FONTSIZE", (0, 0), (-1, -1), 8),
@@ -2730,6 +2736,7 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
                     ("BACKGROUND", (0, -2), (3, -2), HexColor(0xebebeb)),
                     ("BACKGROUND", (0, -1), (3, -1), HexColor(0xebebeb)),
                     ("BACKGROUND", (0, -3), (3, -3), HexColor(0xebebeb)),
+                ("BACKGROUND", (0, -4), (3, -4), HexColor(0xebebeb)),
                     # ("LEFTPADDING", (0, 1), (1, 10), 50 * mm),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                     ("ALIGN", (0, 0), (-1, r), "CENTER"),
@@ -2738,7 +2745,7 @@ def result_table_trel(canvas, Res, pick, scale = 0.8, long=False, moove=0):
                     ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
 
     t.wrapOn(canvas, 0, 0)
-    t.drawOn(canvas, 25 * mm, (58 - moove) * mm)
+    t.drawOn(canvas, 25 * mm, (54 - moove) * mm)
 
 
 
@@ -3627,44 +3634,44 @@ def result_table_averaged(canvas, EGE, data, y_cordinate=50):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Усредненный модуль деформации E<sub rise="0.5" size="6">50</sub>, кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Модуль деформации E<sub rise="0.5" size="6">50</sub>, кПа:</p>''', LeftStyle),
             "", "", "", zap(data["averaged_E50"], 1), ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный девиатор разрушения q<sub rise="0.5" size="6">f</sub>, кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, кПа:</p>''', LeftStyle),
             "", "", "", zap(data["averaged_qf"], 1), ""])
 
     tableData.append(
-        [Paragraph('''<p>Усредненный Eoed, кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Касательный модуль жесткости E<sub rise="0.5" size="6">oed</sub><sup rise="0.5" size="6">ref</sup>, кПа:</p>''', LeftStyle),
          "", "", "",
          zap(data['averaged_statment_data']['Eoed_ref'], 1) if data['averaged_statment_data']['Eoed_ref'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный Eur, кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Модуль деформации (жесткости) при разгрузке E<sub rise="0.5" size="6">ur</sub>, кПа:</p>''', LeftStyle),
          "", "", "",
          zap(data['averaged_statment_data']['Eur_ref'], 1) if data['averaged_statment_data']['Eur_ref'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненное эффективное сцепление с', кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Эффективное сцепление с', кПа:</p>''', LeftStyle),
             "", "", "", zap(data['averaged_statment_data']['c'], 1) if data['averaged_statment_data']['c'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный эффективный угол внутреннего трения φ', град:</p>''', LeftStyle),
+        [Paragraph('''<p>Эффективный угол внутреннего трения φ', град:</p>''', LeftStyle),
             "", "", "", zap(data['averaged_statment_data']['fi'], 1) if data['averaged_statment_data']['fi'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>m:</p>''', LeftStyle),
+        [Paragraph('''<p>Показатель степени для зависимости жесткости от уровня напряжений m, ед.:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['m'], 3) if data['averaged_statment_data']['m'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный угол дилатансии:</p>''', LeftStyle),
+        [Paragraph('''<p>Угол дилатансии ψ, град.:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['dilatancy_angle'], 2) if data['averaged_statment_data']['dilatancy_angle'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный коэффициент v_ur, д.е.:</p>''', LeftStyle),
+        [Paragraph('''<p>Коэффициент Пуассона при разгрузке u<sub rise="0.5" size="6">ur</sub>, д.е.:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['v_ur'], 2) if data['averaged_statment_data']['v_ur'] else '-', ""])
     tableData.append(
         [Paragraph('''<p>Усредненный Rf:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['Rf'], 3) if data['averaged_statment_data']['Rf'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный OCR. д.е.:</p>''', LeftStyle),
+        [Paragraph('''<p>Коэффициент переуплотнения OCR, д.е.:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['OCR'], 2) if data['averaged_statment_data'][
             'OCR'] else '-', ""])
     tableData.append(
-        [Paragraph('''<p>Усредненный POP, кПа:</p>''', LeftStyle),
+        [Paragraph('''<p>Напряжение переуплотнения POP, кПа:</p>''', LeftStyle),
          "", "", "", zap(data['averaged_statment_data']['POP'], 1) if data['averaged_statment_data'][
             'POP'] else '-', ""])
 
@@ -4140,13 +4147,18 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                                 "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"], "/С")
     elif test_parameter["type"] == "Штормовое разжижение":
-        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
-                                 "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2022, ASTM D5311)"], "/ШТ")
+        if len(picks) > 3:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                            ["ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ ШТОРМОВОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                            "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
+                                            "/СП")
+        else:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                    ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
+                                     "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2022, ASTM D5311)"], "/ШТ")
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
     result_table__triaxial_cyclic(canvas, res, [picks[0], picks[1]], moove=moove)
-
 
     canvas.showPage()
 
@@ -4172,10 +4184,17 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
                                 ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ",
                                 "СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"], "/С")
     elif test_parameter["type"] == "Штормовое разжижение":
-        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
-                                 "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2022, ASTM D5311)"],
-                                "/ШТ")
+        if len(picks) > 3:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                            [
+                                                "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ ШТОРМОВОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                                "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
+                                            "/СП")
+        else:
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                    ["ОПРЕДЕЛЕНИЕ РАЗЖИЖАЕМОСТИ ГРУНТОВ МЕТОДОМ ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С",
+                                     "РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ШТОРМОВОЕ ВОЗДЕЙСТВИЕ) (ГОСТ 56353-2022, ASTM D5311)"],
+                                    "/ШТ")
 
     parameter_table(canvas, Data_phiz, Lab, moove=moove)
     test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
@@ -4185,14 +4204,21 @@ def report_triaxial_cyclic(Name, Data_customer, Data_phiz, Lab, path, test_param
 
     if len(picks) > 3:
         main_frame(canvas, path, Data_customer, code, "3/3", qr_code=qr_code)
-        moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
-                                        [
-                                            "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
-                                            "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
-                                        "/СП")
+        if test_parameter["type"] == "Сейсморазжижение":
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                                [
+                                                    "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ СЕЙСМИЧЕСКОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                                    "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
+                                                "/СП")
+        elif test_parameter["type"] == "Штормовое разжижение":
+            moove = sample_identifier_table(canvas, Data_customer, Data_phiz, Lab,
+                                                [
+                                                    "ОПРЕДЕЛЕНИЕ СНИЖЕНИЯ ПРОЧНОСТНЫХ СВОЙСТВ ГРУНТОВ ПРИ ШТОРМОВОМ ВОЗДЕЙСТВИИ МЕТОДОМ",
+                                                    "ЦИКЛИЧЕСКИХ ТРЁХОСНЫХ СЖАТИЙ С РЕГУЛИРУЕМОЙ НАГРУЗКОЙ (ГОСТ 56353-2022, ASTM D5311)"],
+                                                "/СП")
         parameter_table(canvas, Data_phiz, Lab, moove=moove)
         test_mode_triaxial_cyclic(canvas, Data_phiz.r, test_parameter, moove=moove)
-        result_table_trel(canvas, res, picks[3], moove=moove)
+        result_table_trel(canvas, res, picks[3], test_parameter, moove=moove)
 
     canvas.save()
 

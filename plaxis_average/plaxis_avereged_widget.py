@@ -321,6 +321,7 @@ class AverageWidget(QGroupBox):
         self.open_box = QGroupBox("Ведомость")
         self.open_box_layout = QHBoxLayout()
         self.open_box.setLayout(self.open_box_layout)
+        self.open_box.setFixedHeight(70)
 
         self.statment_button = QPushButton("Выбрать ведомость")
         self.statment_button.clicked.connect(self.statment_button_click)
@@ -382,8 +383,10 @@ class AverageWidget(QGroupBox):
                 self.load_model()
                 self._create_EGE_UI()
                 self.plot()
-            except Exception as err:
-                print(err)
+                self.statment_line.setText(path)
+            except Exception as error:
+                self.statment_line.setText("")
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
     def _model_file(self):
         if statment.general_data.shipment_number:
@@ -395,7 +398,9 @@ class AverageWidget(QGroupBox):
 
     def save_report(self):
         try:
-            file_name = statment.save_dir.directory + "/" + "Отчет по усреднению девиаторных нагружений.pdf"
+            dir = os.path.split(averaged_statment.excel_path)[0]
+
+            file_name = dir + "/" + "Отчет по усреднению девиаторных нагружений.pdf"
 
             data = {key: averaged_model[key].get_results() for key in averaged_model}
 
@@ -416,7 +421,10 @@ class AverageWidget(QGroupBox):
                 qr_code=None)
 
             self.save_model()
-            averaged_model.save_plaxis(os.path.join(statment.save_dir.directory, "plaxis_averaged_curves"))
+
+            averaged_model.save_plaxis(os.path.join(dir, "plaxis_averaged_curves"))
+
+            averaged_statment.save_excel()
 
             QMessageBox.about(self, "Сообщение", f"Отчет успешно сохранен: {file_name}")
         except Exception as error:

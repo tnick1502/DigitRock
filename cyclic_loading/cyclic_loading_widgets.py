@@ -612,7 +612,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
 
         self.tab_3 = Save_Dir(
             {"standart": "Стандартный отчет",
-             "t_rel": "Отчет о снижении прочности при сейсмическом воздействии"
+             "t_rel": "Отчет о снижении прочности при динамическом воздействии"
              },
             result_table_params={
             "Макс. PPR": lambda lab: Cyclic_models[lab].get_test_results()['max_PPR'],
@@ -1031,11 +1031,6 @@ class CyclicSoilTestApp(AppMixin, QWidget):
 
         Cyclic_models.dump(os.path.join(statment.save_dir.save_directory,
                                         f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
-
-        try:
-            statment.save([Cyclic_models], [f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"])
-        except Exception as err:
-            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
 
         try:
             self.save_report()

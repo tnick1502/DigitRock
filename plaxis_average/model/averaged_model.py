@@ -28,6 +28,8 @@ class AveragedItemModel:
         self.approximate_type = "poly"
         self.approximate_param_poly = 6
         self.approximate_param_sectors = 500
+
+        # TODO: Аппроксимация и уменьшение точек
         for key in keys:
             self.tests[key] = E_models[key].deviator_loading.get_for_average()
         self.processing()
@@ -42,6 +44,9 @@ class AveragedItemModel:
 
     def approximate_average(self, type="poly", param=8) -> (np.array, np.array):
         points = []
+
+        max_strain_array = filter(lambda x: True if x < 1.14 else False,
+                                  [max(self.tests[test]["strain"]) for test in self.tests])
 
         max_strain = max([max(self.tests[test]["strain"]) for test in self.tests])
 

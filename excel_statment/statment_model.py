@@ -6,6 +6,8 @@ import pyexcel as p
 import pickle
 import xlrd
 import shutil
+from psycopg2 import connect, errors
+import threading
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, PropertiesDict, ConsolidationProperties, CyclicProperties
 from descriptors import DataTypeValidation
@@ -15,6 +17,9 @@ from excel_statment.position_configs import PhysicalPropertyPosition, Mechanical
 from excel_statment.functions import str_df, float_df
 from general.general_functions import read_json_file, create_json_file
 import shelve
+from metrics.functions import user_ip
+from metrics.configs import configs
+from version_control.configs import actual_version
 from loggers.logger import app_logger
 
 
@@ -68,7 +73,10 @@ class StatmentData:
         if shipment_number is None:
             shipment_number = ""
         else:
-            shipment_number = str(shipment_number)
+            if type(shipment_number) != str:
+                shipment_number = str(shipment_number).split('.')[0]
+            else:
+                shipment_number = str(shipment_number)
 
         if accreditation in ["AO", "АО"]:
             self.accreditation_key = "новая"
@@ -426,6 +434,35 @@ class Statment:
             model_path = os.path.join(backup_date_path, self.general_parameters.test_mode)
             create_path(model_path)
             model.dump(os.path.join(model_path, model_name))
+
+        self.db_writer()
+
+    def db_writer(self):
+        try:
+            object_number = self.general_data.object_number
+            test_type = self.general_parameters.test_mode
+        except:
+            object_number = None
+            test_type = None
+
+        def db_write():
+            with connect(
+                    database=configs.DATABASE,
+                    user=configs.USER,
+                    password=configs.PASSWORD,
+                    host=configs.HOST,
+                    port=configs.PORT
+            ) as conn:
+                try:
+                    with conn.cursor() as cursor:
+                        cursor.execute(
+                            f"INSERT INTO use_count (user_ip, parameter_name, datetime, object_number, test_type, program_version) VALUES ('{user_ip()}', 'save_pickle', '{datetime.now()}','{object_number}', '{test_type}', '{actual_version}')"
+                        )
+                except (errors, Exception) as err:
+                    print(err)
+                    conn.rollback()
+
+        threading.Thread(target=db_write, args=()).start()
 
     @staticmethod
     def createDataFrame(excel_path) -> pd.DataFrame:
