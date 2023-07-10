@@ -1,6 +1,4 @@
-import numpy as np
 
-x = np.hstack((np.linspace(0, 100, 100), np.linspace(0, 100, 100)))
 
-i, = np.where(x > 50)
-print(i)
+
+y = filter(lambda x: True if x < 1.14 else False, [max(self.tests[test]["strain"]) for test in self.tests])

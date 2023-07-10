@@ -45,6 +45,9 @@ class AveragedItemModel:
     def approximate_average(self, type="poly", param=8) -> (np.array, np.array):
         points = []
 
+        max_strain_array = filter(lambda x: True if x < 1.14 else False,
+                                  [max(self.tests[test]["strain"]) for test in self.tests])
+
         max_strain = max([max(self.tests[test]["strain"]) for test in self.tests])
 
         for test in self.tests:
