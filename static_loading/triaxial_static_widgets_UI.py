@@ -190,7 +190,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         except:
             pass
 
-    def plot(self, plots, res, mode=None):
+    def plot(self, plots, res, mode=None, plot_dots=True):
         """Построение графиков опыта"""
 
         if statment.general_parameters.test_mode in ["Трёхосное сжатие с разгрузкой",
@@ -218,13 +218,13 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
             # Если необходимо безразрывное построение девиатора
             if not plots["is_split_deviator"] or plots["strain"][-1] < 0.13:
                 if self.combo_box.currentText() == "E":
-                    self._plot_E(plots, res)
+                    self._plot_E(plots, res, plot_dots)
                 elif self.combo_box.currentText() == "E50":
                     self._plot_E50(plots, res)
                 elif self.combo_box.currentText() == "E и E50":
-                    self._plot_E_E50(plots, res)
+                    self._plot_E_E50(plots, res, plot_dots)
                 elif self.combo_box.currentText() == "Eur_E":
-                    self._plot_Eur_E(plots, res)
+                    self._plot_Eur_E(plots, res, plot_dots)
                 elif self.combo_box.currentText() == "Eur_E50":
                     self._plot_Eur_E50(plots, res)
                 elif self.combo_box.currentText() == "Eur":
@@ -263,7 +263,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
         except:
             pass
 
-    def _plot_E(self, plots, res):
+    def _plot_E(self, plots, res, plot_dots=True):
         self.clear_split_axis()
         self.replot_deviator_axis()
 
@@ -288,9 +288,9 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                                   **plotter_params["static_loading_main_line"])
             self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"] + plots["sigma_3"],
                                   **plotter_params["static_loading_gray_line"])
-
-            self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
-            self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
+            if plot_dots:
+                self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
+                self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
 
             self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"], label=_label,
                                   **plotter_params["static_loading_black_dotted_line"])
@@ -371,10 +371,10 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
             self.deviator_ax_2.plot(plots["strain_cut"], plots["deviator_cut"] + plots["sigma_3"],
                                   **plotter_params["static_loading_gray_line"])
 
-            self.deviator_ax_1.scatter(*plots["E_point_1"], s=20, color="black")
-            self.deviator_ax_2.scatter(*plots["E_point_2"], s=20, color="black")
-            self.deviator_ax_1.scatter(*plots["E_point_1"], s=20, color="black")
-            self.deviator_ax_2.scatter(*plots["E_point_2"], s=20, color="black")
+            self.dots_1 = self.deviator_ax_1.scatter(*plots["E_point_1"], s=20, color="black")
+            self.dots_2 = self.deviator_ax_2.scatter(*plots["E_point_2"], s=20, color="black")
+            self.dots_3 = self.deviator_ax_1.scatter(*plots["E_point_1"], s=20, color="black")
+            self.dots_4 = self.deviator_ax_2.scatter(*plots["E_point_2"], s=20, color="black")
 
             self.deviator_ax_1.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"], label=_label,
                                     **plotter_params["static_loading_black_dotted_line"])
@@ -427,7 +427,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         self.deviator_canvas.draw()
 
-    def _plot_E_E50(self, plots, res):
+    def _plot_E_E50(self, plots, res, plot_dots=True):
         self.clear_split_axis()
         self.replot_deviator_axis()
 
@@ -452,9 +452,9 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                                   **plotter_params["static_loading_main_line"])
             self.deviator_ax.plot(plots["strain_cut"], plots["deviator_cut"] + plots["sigma_3"],
                                   **plotter_params["static_loading_gray_line"])
-
-            self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
-            self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
+            if plot_dots:
+                self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
+                self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
 
             self.deviator_ax2.scatter(res["Eps50"], res["qf50"], s=20, color="black")
 
@@ -773,7 +773,7 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         self.deviator_canvas.draw()
 
-    def _plot_Eur_E(self, plots, res):
+    def _plot_Eur_E(self, plots, res, plot_dots=True):
         self.clear_split_axis()
         self.replot_deviator_axis()
 
@@ -803,9 +803,9 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
                 self.deviator_ax.plot(plots["E"]["x"], plots["E"]["y"] + plots["sigma_3"], label=_label,
                                       **plotter_params["static_loading_black_dotted_line"])
 
-
-                self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
-                self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
+                if plot_dots:
+                    self.deviator_ax.scatter(*plots["E_point_1"], s=20, color="black")
+                    self.deviator_ax.scatter(*plots["E_point_2"], s=20, color="black")
 
                 self.deviator_ax2.plot(plots["strain_Eur"], plots["deviator_Eur"],
                                        **plotter_params["static_loading_main_line"])
@@ -1266,6 +1266,14 @@ class ModelTriaxialDeviatorLoadingUI(QWidget):
 
         self.volume_strain_ax_2.legend()
         self.volume_strain_canvas.draw()
+
+    def remove_dots(self):
+        for i in range(1, 5):
+            try:
+                dot = getattr(self, f'dots_{i}')
+                dot.remove()
+            except Exception as err:
+                print(err)
 
     @staticmethod
     def hide_stuff(axis):

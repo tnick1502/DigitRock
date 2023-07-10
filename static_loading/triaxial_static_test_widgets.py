@@ -183,11 +183,11 @@ class StaticProcessingWidget(QWidget):
         except KeyError:
             pass
 
-    def _plot_deviator_loading(self):
+    def _plot_deviator_loading(self, plot_dots):
         try:
             plot_data = E_models[statment.current_test].deviator_loading.get_plot_data()
             res = E_models[statment.current_test].deviator_loading.get_test_results()
-            self.deviator_loading.plot(plot_data, res)
+            self.deviator_loading.plot(plot_data, res, plot_dots=plot_dots)
         except KeyError:
             pass
 
@@ -547,7 +547,7 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
             pass
 
     @log_this(app_logger, "debug")
-    def set_params(self, param=None):
+    def set_params(self, param=None, plot_dots=True):
         try:
             self.deviator_loading_sliders.set_sliders_params(
                 E_models[statment.current_test].get_deviator_loading_draw_params())
@@ -564,7 +564,7 @@ class StaticSoilTestWidget(TabMixin, StaticProcessingWidget):
             self._plot_reconsolidation()
             self._plot_consolidation_sqrt()
             self._plot_consolidation_log()
-            self._plot_deviator_loading()
+            self._plot_deviator_loading(plot_dots)
             self._connect_model_Ui()
         except KeyError:
             pass
@@ -1682,6 +1682,7 @@ class StatickSoilTestApp(AppMixin, QWidget):
                 self.save_massage = False
                 statment.setCurrentTest(test)
                 self.set_test_parameters(True)
+                self.tab_2.set_params(plot_dots=False)
                 self.save_report()
                 progress.setValue(i)
             progress.setValue(len(statment))
