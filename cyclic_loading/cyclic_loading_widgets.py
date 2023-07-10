@@ -1033,11 +1033,6 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                                         f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
 
         try:
-            statment.save([Cyclic_models], [f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"])
-        except Exception as err:
-            QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
-
-        try:
             self.save_report()
         except:
             pass
