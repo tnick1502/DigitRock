@@ -1,4 +1,3 @@
-import threading
 from typing import List
 
 from PyQt5.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QGroupBox, QTableWidget, QDialog, \
@@ -16,7 +15,6 @@ from excel_statment.initial_tables import TableCastomer, ComboBox_Initial_Parame
 
 from excel_statment.properties_model import PhysicalProperties, MechanicalProperties, CyclicProperties, \
     DataTypeValidation, RCProperties, VibrationCreepProperties, ConsolidationProperties, ShearProperties, RayleighDampingProperties, K0Properties
-from general.movie_label import Loader
 from loggers.logger import app_logger, log_this
 from singletons import statment, E_models, FC_models, VC_models, RC_models, Cyclic_models, Consolidation_models, Shear_models, Shear_Dilatancy_models, VibrationFC_models, RayleighDamping_models, K0_models
 
@@ -447,17 +445,9 @@ class TriaxialStaticStatment(InitialStatment):
 
         self.layout.insertWidget(self.layout.count() - 2, self.deviationsBox)
 
-        self.loader = Loader(window_title="Загрузка ведомости", parent=self, message_port=5001)
-
     @log_this(app_logger, "debug")
     def file_open(self):
         SessionWriter.set_sheet_load_datetime()
-        if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
-            self.loader.show()
-            th = threading.Thread(target=self.async_file_open, args=())
-            th.start()
-
-    def async_file_open(self):
         """Открытие и проверка заполненности всего файла веддомости"""
         if self.path and (self.path.endswith("xls") or self.path.endswith("xlsx")):
             combo_params = self.open_line.get_data()
@@ -476,10 +466,8 @@ class TriaxialStaticStatment(InitialStatment):
                     initial_columns=columns_marker), "Заполните K0 в ведомости"
                 assert not marker, "Проверьте " + error
             except AssertionError as error:
-                self.loader.close()
                 QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
             else:
-                Loader.send_message(self.loader.port, 'Загрузка ведомости')
                 self.load_statment(
                     statment_name=self.open_line.get_data()["test_mode"] + ".pickle",
                     properties_type=MechanicalProperties,
@@ -535,8 +523,6 @@ class TriaxialStaticStatment(InitialStatment):
                     self.statment_directory.emit(self.path)
                     self.open_line.text_file_path.setText(self.path)
 
-                    Loader.send_message(self.loader.port, "Моделирование опытов")
-
                     if statment.general_parameters.test_mode == "Трёхосное сжатие (F, C)" or \
                             statment.general_parameters.test_mode == "Трёхосное сжатие КН" or \
                             statment.general_parameters.test_mode == "Трёхосное сжатие НН" or \
@@ -568,9 +554,6 @@ class TriaxialStaticStatment(InitialStatment):
                         self.load_models(models_name="FC_models.pickle",
                                          models=FC_models, models_type=ModelMohrCirclesSoilTest)
 
-                    Loader.send_message(self.loader.port, "Моделирование завершено")
-
-        self.loader.close()
         self.force_recreate = False
 
     def _onAcceptBtn(self):
