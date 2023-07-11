@@ -269,7 +269,7 @@ class Loader(QDialog):
             sock = socket.socket()
             sock.settimeout(1)
             is_ok = sock.connect_ex(('localhost', port))
-            print(is_ok)
+            #print(is_ok)
             if is_ok == 0:
                 sock.sendall(pickle.dumps(message))
             sock.close()
