@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import shutil
 import threading
 
+from general.movie_label import Loader
 from general.tab_view import AppMixin
 from static_loading.mohr_circles_wiggets import MohrWidget, MohrWidgetSoilTest
 from static_loading.triaxial_static_test_widgets import TriaxialStaticLoading_Sliders
@@ -499,28 +500,37 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         except Exception as err:
             QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
 
+
+        loader = Loader(window_title="Схранение протоколов...", start_message="Схранение протоколов...", message_port=7777)
+
         statment.save_dir.clear_dirs()
-        progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
-        progress.setCancelButton(None)
-        progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setValue(0)
+        # progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
+        # progress.setCancelButton(None)
+        # progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
+        # progress.setWindowModality(Qt.WindowModal)
+        # progress.setValue(0)
 
         def save():
+            count = len(statment)
+            Loader.send_message(loader.port, f"Схранение протоколов 0 из {count}")
             for i, test in enumerate(statment):
                 self.save_massage = False
                 statment.setCurrentTest(test)
                 self.set_test_parameters(True)
-                self.save_report()
-                progress.setValue(i)
-            progress.setValue(len(statment))
-            progress.close()
+                try:
+                    self.save_report()
+                except Exception as err:
+                    loader.close()
+                    QMessageBox.critical(self, "Ошибка", "Ошибка сохранения")
+                    return
+                Loader.send_message(loader.port, f"Схранение протоколов {i+1} из {count}")
+            loader.close()
             QMessageBox.about(self, "Сообщение", "Объект выгнан")
             app_logger.info("Объект успешно выгнан")
             self.save_massage = True
 
         t = threading.Thread(target=save)
-        progress.show()
+        loader.show()
         t.start()
 
         SessionWriter.write_session(len(statment))

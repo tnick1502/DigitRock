@@ -199,7 +199,7 @@ class Loader(QDialog):
         while self.__is_running:
             conn, addr = self.sock.accept()
             all_data = bytearray()
-            while True:
+            while True and self.__is_running:
                 data = conn.recv(Loader.BUFFER_SIZE)
                 if not data:
                     break
@@ -236,9 +236,9 @@ class Loader(QDialog):
 
     def close(self) -> bool:
         """Закрывает лоадер и останавливает поток с сокетом"""
-        is_closed = super().close()
-        self.__is_running = not is_closed
-        return is_closed
+        super().close()
+        self.__is_running = False
+        return False
 
     @property
     def port(self):
