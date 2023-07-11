@@ -1268,18 +1268,22 @@ class ModelTriaxialCyclicLoadingSoilTest(ModelTriaxialCyclicLoading):
         self._modeling_strain()
 
         if self._test_params.Kd:
-            strain_cyclic = self._test_data.strain[len(self._load_stage.strain):]
-            strain_cyclic -= strain_cyclic[0]
+            try:
+                strain_cyclic = self._test_data.strain[len(self._load_stage.strain):]
+                deviator_cyclic = self._test_data.deviator[len(self._load_stage.strain):]
+                strain_cyclic -= strain_cyclic[0]
 
-            self._load_stage.strain[-1] / self._test_params.Kd
+                mean = np.max(deviator_cyclic) - self._test_params.t * 2
+                for i in range(len(deviator_cyclic) - 1, -1, -1):
+                    if abs(deviator_cyclic[i] - mean) < 1:
+                        break
 
-            #strain_cyclic *= (
-                       # ((self._load_stage.strain[-1] / self._test_params.Kd) - self._load_stage.strain[-1]) / np.max(
-                    #strain_cyclic))
-            strain_cyclic *= (
-                        ((self._load_stage.strain[-1] / self._test_params.Kd) - self._load_stage.strain[-1]) /(
-                    strain_cyclic[-1]))
-            self._test_data.strain = np.hstack((self._load_stage.strain, strain_cyclic + self._load_stage.strain[-1]))
+                strain_cyclic *= (
+                            ((self._load_stage.strain[-1] / self._test_params.Kd) - self._load_stage.strain[-1]) / (
+                        strain_cyclic[i]))
+                self._test_data.strain = np.hstack((self._load_stage.strain, strain_cyclic + self._load_stage.strain[-1]))
+            except Exception as err:
+                print(err)
 
         self.form_noise_data()
             #self._test_data.strain *= ((self._load_stage.strain[-1] * self._test_params.Kd)/np.max(self._test_data.strain - self._load_stage.strain[-1])) - self._load_stage.strain[-1]
