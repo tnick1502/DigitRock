@@ -512,7 +512,7 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
 
         def save():
             count = len(statment)
-            Loader.send_message(loader.port, f"Схранение протоколов 0 из {count}")
+            Loader.send_message(loader.port, f"Сохранение протоколов 0 из {count}")
             for i, test in enumerate(statment):
                 self.save_massage = False
                 statment.setCurrentTest(test)
@@ -523,7 +523,7 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
                     loader.close()
                     QMessageBox.critical(self, "Ошибка", "Ошибка сохранения")
                     return
-                Loader.send_message(loader.port, f"Схранение протоколов {i+1} из {count}")
+                Loader.send_message(loader.port, f"Сохранение протоколов {i+1} из {count}")
             loader.close()
             QMessageBox.about(self, "Сообщение", "Объект выгнан")
             app_logger.info("Объект успешно выгнан")
