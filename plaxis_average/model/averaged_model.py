@@ -45,20 +45,36 @@ class AveragedItemModel:
     def approximate_average(self, type="poly", param=8) -> (np.array, np.array):
         points = []
 
-        max_strain_array = filter(lambda x: True if x < 1.14 else False,
-                                  [max(self.tests[test]["strain"]) for test in self.tests])
+        max_strains_array = []
+        for test in self.tests:
+            i, = np.where(self.tests[test]["strain"] >= np.max(self.tests[test]["strain"]) - 0.015)
+            i = i[0]
+            if np.mean(self.tests[test]["deviator"][i:]) < 0.97 * np.max(self.tests[test]["deviator"]):
+                max_strains_array.append(np.max(self.tests[test]["strain"]))
 
-        max_strain = max([max(self.tests[test]["strain"]) for test in self.tests])
+        if len(max_strains_array):
+            max_strain = max(max_strains_array)
+        else:
+            max_strain = max([max(self.tests[test]["strain"]) for test in self.tests])
+
+        if max_strain <= 0.1:
+            max_strain = 0.1
 
         for test in self.tests:
-            #qf_index = (self.tests[test]["deviator"].argmax())
             if self.tests[test]["strain"][-1] <= max_strain:
-                points_count = int((max_strain - self.tests[test]["strain"][-1]) * (1000 / 0.15))
-                strain_for_sum = np.hstack((self.tests[test]["strain"],  np.linspace(self.tests[test]["strain"][-1], max_strain, points_count)))
-                deviator_for_sum = np.hstack((self.tests[test]["deviator"], np.full(points_count, np.max(self.tests[test]["deviator"][-1]))))
+                i_max = np.argmax(self.tests[test]["deviator"])
+                points_count = int((max_strain - self.tests[test]["strain"][i_max]) * (1000 / 0.15))
+                strain_for_sum = np.hstack((self.tests[test]["strain"][:i_max],
+                                            np.linspace(self.tests[test]["strain"][i_max], max_strain, points_count)))
+                deviator_for_sum = np.hstack(
+                    (self.tests[test]["deviator"][:i_max], np.full(points_count, self.tests[test]["deviator"][i_max])))
+
             else:
-                strain_for_sum = self.tests[test]["strain"]
-                deviator_for_sum = self.tests[test]["deviator"]
+                i, = np.where(self.tests[test]["strain"] >= max_strain)
+                i = i[0]
+
+                strain_for_sum = self.tests[test]["strain"][:i]
+                deviator_for_sum = self.tests[test]["deviator"][:i]
 
             for point in zip(strain_for_sum, deviator_for_sum):
                 points.append(point)

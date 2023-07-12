@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import QApplication, QFrame, QHBoxLayout, QVBoxLayout, QGroupBox, QWidget, QScrollArea, \
-    QTableWidgetItem, QRadioButton, QButtonGroup, QLabel, QPushButton, QMessageBox, QLineEdit, QFileDialog
+    QTableWidgetItem, QRadioButton, QButtonGroup, QLabel, QPushButton, QMessageBox, QLineEdit, QFileDialog, QDialog, QTextEdit
 from PyQt5.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import sys
@@ -153,6 +154,32 @@ class ResultTable(TableVertical):
             attr = replaceNone(data.get(key, None))
             self.setItem(i, 1, QTableWidgetItem(attr))
 
+class Info(QDialog):
+    def __init__(self, text='', *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._UI()
+        self.textbox.setText(text)
+        self.show()
+
+    def _UI(self):
+        self.setWindowTitle("Информация")
+        self.setFixedWidth(500)
+        self.setFixedHeight(600)
+        self.layout = QVBoxLayout()
+        self.layout_buttons = QHBoxLayout()
+        self.setLayout(self.layout)
+        self.textbox = QTextEdit()
+        self.textbox.setDisabled(True)
+
+        self.ok_button = QPushButton("Ok")
+        self.ok_button.clicked.connect(lambda: self.close())
+
+        self.layout_buttons.addStretch(-1)
+        self.layout_buttons.addWidget(self.ok_button)
+
+        self.layout.addWidget(self.textbox)
+        self.layout.addLayout(self.layout_buttons)
+
 class DeviatorItemUI(QGroupBox):
     """Интерфейс обработчика циклического трехосного нагружения.
     При создании требуется выбрать модель трехосного нагружения методом set_model(model).
@@ -254,6 +281,8 @@ class DeviatorItemUI(QGroupBox):
 
         plot_data = averaged_model[self.EGE].get_plot_data()
 
+        max_strain = max(plot_data["averaged"]["strain"])
+
         for key in plot_data:
             if key == "averaged":
                 if plot_data[key]["strain"] is not None:
@@ -261,9 +290,29 @@ class DeviatorItemUI(QGroupBox):
                         plot_data[key]["strain"], plot_data[key]["deviator"],
                         label=key, linewidth=3, linestyle="-")
             else:
-                self.plot_ax.plot(
-                    plot_data[key]["strain"], plot_data[key]["deviator"],
-                    label=key, linewidth=1, linestyle="-", alpha=0.6)
+                i, = np.where(plot_data[key]["strain"] >= max_strain)
+
+                if len(i):
+                    i = i[0]
+                else:
+                    i = len(plot_data[key]["strain"])
+
+                plot_data[key]["strain"] = plot_data[key]["strain"][:i]
+                plot_data[key]["deviator"] = plot_data[key]["deviator"][:i]
+
+                i_max = np.argmax(plot_data[key]["deviator"])
+
+                if (plot_data[key]["strain"][i_max] <= 0.98 * max(plot_data[key]["strain"])) and (0.97 * plot_data[key]["deviator"][i_max] >= plot_data[key]["deviator"][-1]):
+                    self.plot_ax.plot(
+                        plot_data[key]["strain"][:i_max], plot_data[key]["deviator"][:i_max],
+                        label=key, linewidth=1, linestyle="-", alpha=0.6)
+                    self.plot_ax.plot(
+                        plot_data[key]["strain"][i_max:], plot_data[key]["deviator"][i_max:],
+                        label=key, linewidth=0.5, linestyle="--", alpha=0.5, color='gray')
+                else:
+                    self.plot_ax.plot(
+                        plot_data[key]["strain"], plot_data[key]["deviator"],
+                        label=key, linewidth=1, linestyle="-", alpha=0.6)
 
         self.plot_ax.plot(
             [0, 0.9 * results["averaged_qf"] / results["averaged_E50"]],
@@ -332,6 +381,11 @@ class AverageWidget(QGroupBox):
         self.statment_line.setDisabled(True)
         self.open_box_layout.addWidget(self.statment_line)
 
+        self.info_button = QPushButton("Информация")
+        self.info_button.clicked.connect(self.info)
+        self.open_box_layout.addWidget(self.info_button)
+        self.info_button.setFixedWidth(120)
+
         self.layout_wiget.addWidget(self.open_box)
 
         self.save_button = QPushButton("Сохранить")
@@ -374,19 +428,29 @@ class AverageWidget(QGroupBox):
         model_file = self._model_file()
         averaged_model.dump(model_file)
 
+    def info(self):
+        text = '''
+МОДУЛЬ УСРЕДНЕНИЯ ДЕВИАТОРНЫХ КРИВЫХ
+        
+Алгоритм:
+Кривые берутся из модели. Максимальная деформация усредненной кривой берется функцией максимума от самой длинной кривой с пиком, либо 0.1. Для усреднения все кривые с пиком продляются до максимальной деформации из точки пика, а кривые без пика обрезаются до значения максимальной деформации.
+        '''
+        self.info = Info(text)
+
     def statment_button_click(self):
         path = QFileDialog.getOpenFileName(self, 'Open file')[0]
         if path != "":
             try:
                 averaged_statment.setExcelFile(path)
                 averaged_model.set_data()
+                self.statment_line.setText("")
                 self.load_model()
                 self._create_EGE_UI()
                 self.plot()
                 self.statment_line.setText(path)
             except Exception as error:
                 self.statment_line.setText("")
-                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+                QMessageBox.critical(self, "Ошибка !!!", str(error), QMessageBox.Ok)
 
     def _model_file(self):
         if statment.general_data.shipment_number:
