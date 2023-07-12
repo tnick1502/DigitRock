@@ -308,7 +308,7 @@ class DeviatorItemUI(QGroupBox):
                         label=key, linewidth=1, linestyle="-", alpha=0.6)
                     self.plot_ax.plot(
                         plot_data[key]["strain"][i_max:], plot_data[key]["deviator"][i_max:],
-                        label=key, linewidth=0.5, linestyle="--", alpha=0.5, color='gray')
+                        linewidth=0.5, linestyle="--", alpha=0.5, color='gray')
                 else:
                     self.plot_ax.plot(
                         plot_data[key]["strain"], plot_data[key]["deviator"],
