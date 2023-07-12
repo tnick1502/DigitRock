@@ -110,3 +110,21 @@ RETURNS TABLE (username varchar, report_count numeric) AS $$
 	WHERE username IN (SELECT username FROM users) AND EXTRACT (MONTH FROM session_start) = current_month AND EXTRACT (YEAR FROM session_start) = current_year
 	GROUP BY users.username
 $$ LANGUAGE SQL;
+
+
+
+
+SELECT username, object_number, test_type, to_char (datetime, 'DD.MM.YYYY HH24:MI:SS') as datetime
+FROM use_count
+LEFT JOIN users USING (user_ip)
+WHERE parameter_name = 'save_pickle'
+ORDER BY datetime DESC
+
+SELECT distinct object_number as object_no, to_char (max(datetime), 'DD.MM.YYYY HH24:MI:SS') as datetime
+FROM use_count
+LEFT JOIN users USING (user_ip)
+WHERE parameter_name = 'save_pickle'
+GROUP BY object_no
+ORDER BY datetime DESC
+
+SELECT * FROM get_pickles_savers('test')

@@ -32,6 +32,7 @@ __version__ = actual_version
 from authentication.request_qr import request_qr
 from authentication.control import control
 from metrics.session_writer import SessionWriter
+from general.movie_label import Loader
 
 
 class ConsilidationSoilTestWidget(TabMixin, QWidget):
@@ -504,11 +505,11 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
         loader = Loader(window_title="Схранение протоколов...", start_message="Схранение протоколов...", message_port=7777)
 
         statment.save_dir.clear_dirs()
-        # progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
-        # progress.setCancelButton(None)
-        # progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
-        # progress.setWindowModality(Qt.WindowModal)
-        # progress.setValue(0)
+
+        loader = Loader(window_title="Сохранение протоколов...", start_message="Сохранение протоколов...",
+                        message_port=7782)
+        count = len(statment)
+        Loader.send_message(loader.port, f"Сохранено 0 из {count}")
 
         def save():
             count = len(statment)
@@ -517,13 +518,9 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
                 self.save_massage = False
                 statment.setCurrentTest(test)
                 self.set_test_parameters(True)
-                try:
-                    self.save_report()
-                except Exception as err:
-                    loader.close()
-                    QMessageBox.critical(self, "Ошибка", "Ошибка сохранения")
-                    return
-                Loader.send_message(loader.port, f"Сохранение протоколов {i+1} из {count}")
+                self.save_report()
+                Loader.send_message(loader.port, f"Сохранено {i + 1} из {count}")
+            Loader.send_message(loader.port, f"Сохранено {count} из {count}")
             loader.close()
             QMessageBox.about(self, "Сообщение", "Объект выгнан")
             app_logger.info("Объект успешно выгнан")

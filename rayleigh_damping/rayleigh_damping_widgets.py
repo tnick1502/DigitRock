@@ -27,6 +27,7 @@ from general.tab_view import TabMixin, AppMixin
 __version__ = actual_version
 from general.general_statement import StatementGenerator
 from metrics.session_writer import SessionWriter
+from general.movie_label import Loader
 
 class RayleighDampingWidget(TabMixin, QWidget):
     """Виджет для открытия и обработки файла прибора. Связывает классы ModelTriaxialCyclicLoading_FileOpenData и
@@ -326,11 +327,11 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
             QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
 
         statment.save_dir.clear_dirs()
-        progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
-        progress.setCancelButton(None)
-        progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setValue(0)
+
+        loader = Loader(window_title="Сохранение протоколов...", start_message="Сохранение протоколов...",
+                        message_port=7780)
+        count = len(statment)
+        Loader.send_message(loader.port, f"Сохранено 0 из {count}")
 
         def save():
             for i, test in enumerate(statment):
@@ -338,15 +339,15 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
                 statment.setCurrentTest(test)
                 self._set_params(True)
                 self.save_report()
-                progress.setValue(i)
-            progress.setValue(len(statment))
-            progress.close()
+                Loader.send_message(loader.port, f"Сохранено {i + 1} из {count}")
+            Loader.send_message(loader.port, f"Сохранено {count} из {count}")
+            loader.close()
             QMessageBox.about(self, "Сообщение", "Объект выгнан")
             app_logger.info("Объект успешно выгнан")
             self.save_massage = True
 
         t = threading.Thread(target=save)
-        progress.show()
+        loader.show()
         t.start()
 
         SessionWriter.write_session(len(statment))

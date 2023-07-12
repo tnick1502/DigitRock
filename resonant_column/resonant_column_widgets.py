@@ -22,6 +22,7 @@ from loggers.logger import app_logger, log_this, handler
 from excel_statment.functions import set_cell_data
 from singletons import RC_models, statment
 from version_control.configs import actual_version
+from general.movie_label import Loader
 
 from general.tab_view import AppMixin, TabMixin
 __version__ = actual_version
@@ -711,6 +712,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
             QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
 
     def save_all_reports(self):
+
         try:
             statment.save([RC_models], [f"rc_models{statment.general_data.get_shipment_number()}.pickle"])
         except Exception as err:
@@ -720,11 +722,11 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
                                     f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
 
         statment.save_dir.clear_dirs()
-        progress = QProgressDialog("Сохранение протоколов...", "Процесс сохранения:", 0, len(statment), self)
-        progress.setCancelButton(None)
-        progress.setWindowFlags(progress.windowFlags() & ~Qt.WindowCloseButtonHint)
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setValue(0)
+
+        loader = Loader(window_title="Сохранение протоколов...", start_message="Сохранение протоколов...",
+                        message_port=7777)
+        count = len(statment)
+        Loader.send_message(loader.port, f"Сохранено 0 из {count}")
 
         def save():
             for i, test in enumerate(statment):
@@ -732,14 +734,14 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
                 statment.setCurrentTest(test)
                 self.tab_2.set_test_params(True)
                 self.save_report()
-                progress.setValue(i)
-            progress.setValue(len(statment))
-            progress.close()
+                Loader.send_message(loader.port, f"Сохранено {i + 1} из {count}")
+            Loader.send_message(loader.port, f"Сохранено {count} из {count}")
+            loader.close()
             QMessageBox.about(self, "Сообщение", "Объект выгнан")
             self.save_massage = True
 
         t = threading.Thread(target=save)
-        progress.show()
+        loader.show()
         t.start()
 
         SessionWriter.write_session(len(statment))
