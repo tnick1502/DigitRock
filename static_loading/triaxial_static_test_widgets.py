@@ -1679,18 +1679,30 @@ class StatickSoilTestApp(AppMixin, QWidget):
         Loader.send_message(loader.port, f"Сохранено 0 из {count}")
 
         def save():
+            is_ok = True
             for i, test in enumerate(statment):
                 self.save_massage = False
                 statment.setCurrentTest(test)
                 self.set_test_parameters(True)
                 self.tab_2.set_params(plot_dots=False)
-                self.save_report()
-                Loader.send_message(loader.port, f"Сохранено {i + 1} из {count}")
-            Loader.send_message(loader.port, f"Сохранено {count} из {count}")
-            loader.close()
-            app_logger.info("Объект успешно выгнан")
-            self.save_massage = True
-            QMessageBox.about(self, "Сообщение", "Объект выгнан")
+                try:
+                    self.save_report()
+                except Exception as err:
+                    is_ok = False
+                    loader.close()
+                    app_logger.info(f"Ошибка сохранения пробы {err}")
+                    QMessageBox.critical(self, "Ошибка",
+                                         f"Ошибка сохранения пробы {statment.current_test}. Операция прервана.")
+                    break
+                else:
+                    Loader.send_message(loader.port, f"Сохранено {i + 1} из {count}")
+
+            if is_ok:
+                Loader.send_message(loader.port, f"Сохранено {count} из {count}")
+                loader.close()
+                app_logger.info("Объект успешно выгнан")
+                self.save_massage = True
+                QMessageBox.about(self, "Сообщение", "Объект выгнан")
 
         t = threading.Thread(target=save)
         loader.show()

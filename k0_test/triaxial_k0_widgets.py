@@ -1,3 +1,5 @@
+import time
+
 from excel_statment.initial_tables import LinePhysicalProperties
 from excel_statment.position_configs import MechanicalPropertyPosition
 from version_control.configs import actual_version
@@ -261,6 +263,9 @@ class K0SoilTestApp(QWidget):
 
         self.tab_2.save_widget.roundFI_btn.hide()
 
+        self.loader = Loader(window_title="Сохранение протоколов...", start_message="Сохранение протоколов...",
+                        message_port=7783, parent=self)
+
     def save_report(self):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
@@ -350,29 +355,41 @@ class K0SoilTestApp(QWidget):
                 K0_models.dump(os.path.join(statment.save_dir.save_directory,
                                             f"k0ur_models{statment.general_data.get_shipment_number()}.pickle"))
             control()
+            return True, 'Успешно'
 
         except AssertionError as error:
-            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+            self.loader.critical("Ошибка", str(error))
+            return False, f'Ошибка: {str(error)}'
 
         except PermissionError:
-            QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
+            self.loader.critical("Ошибка", "Закройте файл отчета")
+            return False, 'Ошибка: Не закрыт файл отчета'
 
     def save_all_reports(self):
-        loader = Loader(window_title="Сохранение протоколов...", start_message="Сохранение протоколов...",
-                        message_port=7783)
         count = len(statment)
-        Loader.send_message(loader.port, f"Сохранено 0 из {count}")
+        Loader.send_message(self.loader.port, f"Сохранено 0 из {count}")
 
         def save():
+            errors = []
             for i, test in enumerate(statment):
                 self.save_massage = False
                 statment.setCurrentTest(test)
                 self.tab_2.set_test_params(True)
-                self.save_report()
-                Loader.send_message(loader.port, f"Сохранено {i + 1} из {count}")
-            Loader.send_message(loader.port, f"Сохранено {count} из {count}")
-            loader.close()
-            QMessageBox.about(self, "Сообщение", "Объект выгнан")
+                try:
+                    is_ok, message = self.save_report()
+                    if not is_ok:
+                        errors.append(f'{test}: {message}')
+                except Exception as err:
+                    self.loader.close_OK(f"Ошибка сохранения пробы {statment.current_test}. Операция прервана.")
+                    app_logger.info(f"Ошибка сохранения пробы {err}")
+                    return
+                Loader.send_message(self.loader.port, f"Сохранено {i + 1} из {count}")
+            Loader.send_message(self.loader.port, f"Сохранено {count} из {count}")
+
+            if len(errors) == 0:
+                self.loader.close_OK(f"Объект выгнан")
+            else:
+                self.loader.close_OK("Ошибки в пробах:\n"+"\n".join(errors))
             self.save_massage = True
 
             read_parameters = self.tab_1.open_line.get_data()
@@ -392,7 +409,7 @@ class K0SoilTestApp(QWidget):
                 QMessageBox.critical(self, "Ошибка", f"Ошибка бекапа модели {str(err)}", QMessageBox.Ok)
 
         t = threading.Thread(target=save)
-        loader.show()
+        self.loader.start()
         t.start()
 
         SessionWriter.write_session(len(statment))

@@ -518,7 +518,15 @@ class ConsolidationSoilTestApp(AppMixin,QWidget):
                 self.save_massage = False
                 statment.setCurrentTest(test)
                 self.set_test_parameters(True)
-                self.save_report()
+
+                try:
+                    self.save_report()
+                except Exception as err:
+                    loader.close()
+                    QMessageBox.critical(self, "Ошибка", f"Ошибка сохранения пробы {statment.current_test}. Операция прервана.")
+                    app_logger.info(f"Ошибка сохранения пробы {err}")
+                    return
+
                 Loader.send_message(loader.port, f"Сохранено {i + 1} из {count}")
             Loader.send_message(loader.port, f"Сохранено {count} из {count}")
             loader.close()
