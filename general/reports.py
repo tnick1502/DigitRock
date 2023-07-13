@@ -2259,7 +2259,7 @@ def result_table_deviator_standart_vc(canvas, Res, pick, scale = 0.8, moove=0):
 
 
     tableData.append(
-        [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "",
+        [Paragraph('''<p>Максимальный девиатор напряжений q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "",
             zap(Res["qf"], 3), "", ""])
 
     tableData.append(
@@ -2496,11 +2496,11 @@ def result_table_deviator_vc(canvas, Res, pick, scale = 0.8, moove=0):
         tableData.append([""])
 
     tableData.append(
-        [Paragraph('''<p>Девиатор разрушения q<sub rise="0.5" size="6">f</sub>, МПа:</p>''', LeftStyle), "", "",
-         Res["qf"], "", ""])
+        [Paragraph('''<p>Максимальный девиатор напряжений q<sub rise="0.5" size="6">f</sub> (ГОСТ 12248.3 - 2020), МПа:</p>''', LeftStyle), "", "", "",
+         Res["qf"], ""])
 
     tableData.append(
-        ["Примечание:", "", "", Paragraph(Res["description"], LeftStyle), "", ""])
+        ["Примечание:", "", "", "", Paragraph(Res["description"], LeftStyle), ""])
     tableData.append(
         ["", "", "", "", "", ""])
 
@@ -2515,13 +2515,13 @@ def result_table_deviator_vc(canvas, Res, pick, scale = 0.8, moove=0):
     style = [('SPAN', (0, 0), (-1, 0)),
              ('SPAN', (0, 1), (-1, r)),
 
-             ('SPAN', (0, -2), (2, -1)),
-             ('SPAN', (-3, -2), (-1, -1)),
+             ('SPAN', (0, -2), (3, -1)),
+             ('SPAN', (-2, -2), (-1, -1)),
 
-             ('SPAN', (0, -3), (2, -3)),
-             ('SPAN', (-3, -3), (-1, -3)),
+             ('SPAN', (0, -3), (3, -3)),
+             ('SPAN', (-2, -3), (-1, -3)),
 
-             ("BACKGROUND", (0, -3), (2, -1), HexColor(0xebebeb)),
+             ("BACKGROUND", (0, -3), (3, -1), HexColor(0xebebeb)),
              ("FONTNAME", (0, 0), (-1, 0), 'TimesDj'),
              ("FONTNAME", (0, 1), (-1, -1), 'Times'),
              ("FONTSIZE", (0, 0), (-1, -1), 8),
@@ -2753,11 +2753,11 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
 
     try:
         a = ImageReader(pick[1])
-        canvas.drawImage(a, 32 * mm, (66-moove) * mm,
-                         width=160 * mm, height=54 * mm)
+        canvas.drawImage(a, 32 * mm, (72-moove) * mm,
+                         width=160 * mm, height=50 * mm)
         b = ImageReader(pick[0])
-        canvas.drawImage(b, 32 * mm, (120-moove) * mm,
-                         width=160 * mm, height=54 * mm)
+        canvas.drawImage(b, 32 * mm, (125-moove) * mm,
+                         width=160 * mm, height=50 * mm)
 
     except AttributeError:
         print("lksdfksdfkmsdf")
@@ -2765,7 +2765,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
     #renderPDF.draw(a, canvas, 112.5 * mm, 110 * mm)
 
     tableData = [["РЕЗУЛЬТАТЫ ИСПЫТАНИЯ", "", "", "", "", ""]]
-    r = 29
+    r = 27
     for i in range(r):
         tableData.append([""])
 
@@ -2822,7 +2822,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
 
     if parameter == "Виброползучесть":
         tableData.append(
-            [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub>, д.е.:</p>''', LeftStyle), "",
+            [Paragraph('''<p>Коэффициент снижения жесткости K<sub rise="0.5" size="6">d</sub> (СП 22.13330.2016 п 6.14), д.е.:</p>''', LeftStyle), "",
              "", "", Kd, ""])
     else:
         tableData.append(
@@ -2832,32 +2832,32 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
 
     if test_type == 'predict50':
         tableData.append(
-            [Paragraph('''<p>Количество циклов нагружения, ед.</p>''', LeftStyle), "",
+            [Paragraph('''<p>Количество циклов нагружения, ед.:</p>''', LeftStyle), "",
              "", "", cycles_count, ""])
         tableData.append(
-            [Paragraph('''<p>Уравнение дополнительной деформации</p>''', LeftStyle), "",
+            [Paragraph('''<p>Зависимость осевых деформаций от времени нагружения ε = f(ln t):</p>''', LeftStyle), "",
              "", "", formula, ""])
         tableData.append(
-            [Paragraph('''<p>Дополнительная деформация виброползучести на период 50 лет, %</p>''', LeftStyle), "",
+            [Paragraph('''<p>Деформация виброползучести ε<sub rise="0.5" size="6">d</sub> (50 лет), %:</p>''', LeftStyle), "",
              "", "", prediction, ""])
         tableData.append(
             [Paragraph(
-                '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub>, МПа:</p> (50 лет)''',
+                '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub> (50 лет), МПа:</p>''',
                 LeftStyle),
                 "", "", "", Ered, ""])
     elif test_type == 'predict100':
         tableData.append(
-            [Paragraph('''<p>Количество циклов нагружения, ед.</p>''', LeftStyle), "",
+            [Paragraph('''<p>Количество циклов нагружения, ед.:</p>''', LeftStyle), "",
              "", "", cycles_count, ""])
         tableData.append(
-            [Paragraph('''<p>Уравнение дополнительной деформации</p>''', LeftStyle), "",
+            [Paragraph('''<p>Зависимость осевых деформаций от времени нагружения ε = f(ln t):</p>''', LeftStyle), "",
              "", "", formula, ""])
         tableData.append(
-            [Paragraph('''<p>Дополнительная деформация виброползучести на период 100 лет, %</p>''', LeftStyle), "",
+            [Paragraph('''<p>Деформация виброползучести ε<sub rise="0.5" size="6">d</sub> (100 лет), %:</p>''', LeftStyle), "",
              "", "", prediction, ""])
         tableData.append(
             [Paragraph(
-                '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub>, МПа:</p> (100 лет)''',
+                '''<p>Уменьшенное значение модуля деформации E<sub rise="0.5" size="6">red</sub> (100 лет), МПа:</p>''',
                 LeftStyle),
                 "", "", "", Ered, ""])
     else:
@@ -2951,6 +2951,7 @@ def result_vibration_creep(canvas, Res, pick, scale = 0.8, moove=0, test_type='s
                 ("ALIGN", (0, r+1), (0, -1), "LEFT"),
                 ('BOX', (0, 1), (-1, -1), 0.3 * mm, "black"),
                 ('INNERGRID', (0, 1), (-1, -1), 0.3 * mm, "black")])
+
 
         t.wrapOn(canvas, 0, 0)
         t.drawOn(canvas, 25 * mm, (42-moove-((r-30)*4)) * mm)

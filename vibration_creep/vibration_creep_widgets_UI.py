@@ -217,7 +217,7 @@ class VibrationCreepUI(QWidget):
                                                                                self.creep_figure],
                                                                               [self.vibration_creep_canvas,
                                                                                self.creep_canvas],
-                                                                              [[8, 2], [6, 2]],
+                                                                              [[8, 2.5], [8, 2.5]],
                                                                               [self.vibration_creep_ax,
                                                                                self.creep_ax],
                                                                                       ["jpg", "jpg"])]
