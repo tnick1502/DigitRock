@@ -99,7 +99,10 @@ class Sliders(QWidget):
         return_params = {}
         for key in params:
             slider = getattr(self, "{}_slider".format(key))
-            return_params[key] = int(round(slider.current_value()))
+            if key == 'max_deformation_param':
+                return_params[key] = float(slider.current_value())
+            else:
+                return_params[key] = int(round(slider.current_value()))
         return return_params
 
     def _set_slider_labels_params(self, params):
@@ -215,8 +218,10 @@ class DeviatorItemUI(QGroupBox):
         self.param_button_group.buttonClicked.connect(self.radio_button_clicked)
         self.radio_button_layout.addWidget(self.param_radio_button_1, 1)
         self.radio_button_layout.addWidget(self.param_radio_button_2, 2)
-        self.param_box_layout.addLayout(self.radio_button_layout)
 
+        self.param_radio_button_2.setChecked(True)
+        #self.param_box_layout.addLayout(self.radio_button_layout)
+        '''
         if averaged_model[self.EGE].approximate_type == 'sectors':
             self.param_radio_button_1.setChecked(True)
         elif averaged_model[self.EGE].approximate_type == 'poly':
@@ -224,7 +229,7 @@ class DeviatorItemUI(QGroupBox):
 
         if averaged_model[self.EGE].approximate_type == 'sectors':
             self.param_radio_button_1.setChecked(True)
-            self.param_slider = Sliders({"param": "Параметр аппроксимации"})
+            self.param_slider = Sliders({"param": "Степень полинома", 'filter_param': 'Степень сглаживания'})
             self.param_slider.set_params(
                 {"param": {"value": averaged_model[self.EGE].approximate_param_sectors, "borders": [50, 1000]}})
         elif averaged_model[self.EGE].approximate_type == 'poly':
@@ -232,6 +237,14 @@ class DeviatorItemUI(QGroupBox):
             self.param_slider = Sliders({"param": "Параметр аппроксимации"})
             self.param_slider.set_params(
                 {"param": {"value": averaged_model[self.EGE].approximate_param_poly, "borders": [3, 15]}})
+        '''
+
+        self.param_slider = Sliders({"param": "Степень полинома", 'max_deformation_param': 'Максимальная деформация'})
+        self.param_slider.set_params(
+            {
+                "param": {"value": averaged_model[self.EGE].approximate_param_poly, "borders": [2, 15]},
+                "max_deformation_param": {"value": averaged_model[self.EGE].approximate_param_max_deformation, "borders": [0.02, 0.15]},
+            })
 
         self.param_slider.signal[object].connect(self.slider_moove)
         self.param_box_layout.addWidget(self.param_slider)
@@ -337,11 +350,16 @@ class DeviatorItemUI(QGroupBox):
         self.plot()
 
     def slider_moove(self, param):
-        if averaged_model[self.EGE].approximate_type == "poly":
-            averaged_model[self.EGE].set_approximate_type("poly", param["param"])
-        elif averaged_model[self.EGE].approximate_type == "sectors":
-            averaged_model[self.EGE].set_approximate_type("sectors", param["param"])
-        self.plot()
+        try:
+            if averaged_model[self.EGE].approximate_type == "poly":
+                averaged_model[self.EGE].set_approximate_type(
+                    approximate_type="poly", approximate_param=param["param"], approximate_max_deformation=param["max_deformation_param"]
+                )
+            elif averaged_model[self.EGE].approximate_type == "sectors":
+                averaged_model[self.EGE].set_approximate_type("sectors", param["param"])
+            self.plot()
+        except Exception as err:
+            print(err)
 
     def save_canvas(self):
         """Сохранение графиков для передачи в отчет"""
@@ -450,7 +468,7 @@ class AverageWidget(QGroupBox):
                 self.statment_line.setText(path)
             except Exception as error:
                 self.statment_line.setText("")
-                QMessageBox.critical(self, "Ошибка !!!", str(error), QMessageBox.Ok)
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
     def _model_file(self):
         if statment.general_data.shipment_number:

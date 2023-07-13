@@ -17,6 +17,7 @@ class AveragedItemModel:
     approximate_type: str
     approximate_param_poly: int
     approximate_param_sectors: int
+    approximate_param_max_deformation: int
 
     def __init__(self, keys=None):
         self.tests = {}
@@ -28,6 +29,7 @@ class AveragedItemModel:
         self.approximate_type = "poly"
         self.approximate_param_poly = 6
         self.approximate_param_sectors = 500
+        self.approximate_param_max_deformation = 0.1
 
         # TODO: Аппроксимация и уменьшение точек
         for key in keys:
@@ -35,14 +37,12 @@ class AveragedItemModel:
         self.processing()
 
     def processing(self):
-        self.averaged_strain, self.averaged_deviator = self.approximate_average(
-            type=self.approximate_type,
-            param=self.approximate_param_poly if self.approximate_type == "poly" else self.approximate_param_sectors
-        )
-
+        self.averaged_strain, self.averaged_deviator = self.approximate_average()
         self.averaged_E50, self.averaged_qf = AveragedItemModel.define_E50_qf(self.averaged_strain, self.averaged_deviator)
 
-    def approximate_average(self, type="poly", param=8) -> (np.array, np.array):
+    def approximate_average(self) -> (np.array, np.array):
+        param = self.approximate_param_poly if self.approximate_type == "poly" else self.approximate_param_sectors
+
         points = []
 
         max_strains_array = []
@@ -57,8 +57,8 @@ class AveragedItemModel:
         else:
             max_strain = max([max(self.tests[test]["strain"]) for test in self.tests])
 
-        if max_strain <= 0.1:
-            max_strain = 0.1
+        if max_strain <= self.approximate_param_max_deformation:
+            max_strain = self.approximate_param_max_deformation
 
         for test in self.tests:
             if self.tests[test]["strain"][-1] <= max_strain:
@@ -84,7 +84,7 @@ class AveragedItemModel:
         strain = [point[0] for point in points]
         deviator = [point[1] for point in points]
 
-        if type == "sectors":
+        if self.approximate_type == "sectors":
             step = max(strain) / param
             step_points = {}
             for i in range(len(strain)):
@@ -105,17 +105,22 @@ class AveragedItemModel:
             averange_deviator = ndimage.gaussian_filter(np.array(averange_deviator), 3, order=0)
             averange_deviator[0] = 0
 
-            return np.array(averange_strain), np.array(averange_deviator)
+            averange_strain, averange_deviator = np.array(averange_strain), np.array(averange_deviator)
 
-        elif type == "poly":
+        elif self.approximate_type == "poly":
             averange_strain = np.linspace(0, max(strain), 50)
             averange_deviator = np.polyval(np.polyfit(strain, ndimage.gaussian_filter(deviator, 3, order=0), param), averange_strain)
             averange_deviator[0] = 0
 
-            return np.array(averange_strain), np.array(averange_deviator)
+            averange_strain, averange_deviator = np.array(averange_strain), np.array(averange_deviator)
 
-    def set_approximate_type(self, approximate_type, approximate_param) -> None:
+        averange_deviator = ndimage.gaussian_filter(averange_deviator, 1, order=0)
+        averange_deviator[0] = 0
+        return averange_strain, averange_deviator
+
+    def set_approximate_type(self, approximate_type, approximate_param, approximate_max_deformation) -> None:
         self.approximate_type = approximate_type
+        self.approximate_param_max_deformation = approximate_max_deformation
         if approximate_type == "poly":
             self.approximate_param_poly = approximate_param
         elif approximate_type == "sectors":
