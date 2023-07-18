@@ -21,6 +21,7 @@ class AveragedItemModel:
 
     def __init__(self, keys=None):
         self.tests = {}
+        self.first_time = True
         if keys:
             self.set_tests(keys)
 
@@ -29,12 +30,14 @@ class AveragedItemModel:
         self.approximate_type = "poly"
         self.approximate_param_poly = 6
         self.approximate_param_sectors = 500
-        self.approximate_param_max_deformation = 0.1
+        self.approximate_param_max_deformation = 0.15
 
         # TODO: Аппроксимация и уменьшение точек
         for key in keys:
             self.tests[key] = E_models[key].deviator_loading.get_for_average()
+        self.first_time = True
         self.processing()
+        self.first_time = False
 
     def processing(self):
         self.averaged_strain, self.averaged_deviator = self.approximate_average()
@@ -45,7 +48,7 @@ class AveragedItemModel:
 
         points = []
 
-        max_strains_array = []
+        '''max_strains_array = []
         for test in self.tests:
             i, = np.where(self.tests[test]["strain"] >= np.max(self.tests[test]["strain"]) - 0.015)
             i = i[0]
@@ -58,6 +61,13 @@ class AveragedItemModel:
             max_strain = max([max(self.tests[test]["strain"]) for test in self.tests])
 
         if max_strain <= self.approximate_param_max_deformation:
+            max_strain = self.approximate_param_max_deformation
+        '''
+        if self.first_time:
+            max_strain = max([max(self.tests[test]["strain"]) for test in self.tests])
+            max_strain = 0.1 if max_strain < 0.1 else max_strain
+            self.approximate_param_max_deformation = max_strain
+        else:
             max_strain = self.approximate_param_max_deformation
 
         for test in self.tests:
