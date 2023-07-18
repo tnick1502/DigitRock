@@ -266,7 +266,7 @@ class K0SoilTestApp(QWidget):
         self.loader = Loader(window_title="Сохранение протоколов...", start_message="Сохранение протоколов...",
                         message_port=7783, parent=self)
 
-    def save_report(self):
+    def save_report(self, save_all_mode=False):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
             file_path_name = statment.current_test.replace("/", "-").replace("*", "")
@@ -358,38 +358,43 @@ class K0SoilTestApp(QWidget):
             return True, 'Успешно'
 
         except AssertionError as error:
-            self.loader.critical("Ошибка", str(error))
-            return False, f'Ошибка: {str(error)}'
+            # self.loader.critical("Ошибка", str(error))
+            if not save_all_mode:
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+            return False, f'{str(error)}'
 
         except PermissionError:
-            self.loader.critical("Ошибка", "Закройте файл отчета")
-            return False, 'Ошибка: Не закрыт файл отчета'
+            # self.loader.critical("Ошибка", "Закройте файл отчета")
+            if not save_all_mode:
+                QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
+            return False, 'Не закрыт файл отчета'
 
     def save_all_reports(self):
+        if self.loader.is_running:
+            QMessageBox.critical(self, "Ошибка", "Закройте окно сохранения")
+            return
         count = len(statment)
         Loader.send_message(self.loader.port, f"Сохранено 0 из {count}")
 
         def save():
-            errors = []
             for i, test in enumerate(statment):
                 self.save_massage = False
                 statment.setCurrentTest(test)
                 self.tab_2.set_test_params(True)
                 try:
-                    is_ok, message = self.save_report()
+                    is_ok, message = self.save_report(save_all_mode=True)
                     if not is_ok:
-                        errors.append(f'{test}: {message}')
+                        self.loader.close_OK(f"Ошибка сохранения пробы {statment.current_test}\n{message}.\nОперация прервана.")
+                        app_logger.info(f"Ошибка сохранения пробы {message}")
+                        return
                 except Exception as err:
-                    self.loader.close_OK(f"Ошибка сохранения пробы {statment.current_test}. Операция прервана.")
+                    self.loader.close_OK(f"Ошибка сохранения пробы {statment.current_test}\n{err}.\nОперация прервана.")
                     app_logger.info(f"Ошибка сохранения пробы {err}")
                     return
                 Loader.send_message(self.loader.port, f"Сохранено {i + 1} из {count}")
             Loader.send_message(self.loader.port, f"Сохранено {count} из {count}")
 
-            if len(errors) == 0:
-                self.loader.close_OK(f"Объект выгнан")
-            else:
-                self.loader.close_OK("Ошибки в пробах:\n"+"\n".join(errors))
+            self.loader.close_OK(f"Объект выгнан")
             self.save_massage = True
 
             read_parameters = self.tab_1.open_line.get_data()

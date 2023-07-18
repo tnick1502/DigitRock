@@ -279,13 +279,22 @@ class Loader(QDialog):
         return False
 
     def close_OK(self, message):
-        self.__is_running = False
         self.__set_message(message)
         self.gif_label.object.setVisible(False)
         self.ok_btn.setVisible(True)
 
     def critical(self, title, message):
-        QMessageBox.critical(self.parentWidget(), title, message, QMessageBox.Ok)
+        try:
+            # ИНОГДА ПРИВОДИТ К КРАШУ ПРИОЛОЖЕНИЯ.
+            # В PyCharm этого не видно. Ошибка при запуске через консоль CMD (возникает реже?)
+            # QBackingStore::endPaint() called with active painter
+            # https://github.com/FreeCAD/FreeCAD/issues/8808
+            # QMessageBox.critical(self, title, message, QMessageBox.Ok)
+            message = QMessageBox(3, title, message, QMessageBox.Ok)
+            message.exec_()
+            QApplication.processEvents()
+        except:
+            pass
 
     @property
     def port(self):
@@ -294,6 +303,14 @@ class Loader(QDialog):
     @port.setter
     def port(self, value):
         self.__port = value
+
+    @property
+    def is_running(self):
+        return self.__is_running
+
+    @is_running.setter
+    def is_running(self, value):
+        self.__is_running = value
 
     def set_message(self, message):
         """
