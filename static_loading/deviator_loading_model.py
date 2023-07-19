@@ -513,8 +513,8 @@ class ModelTriaxialDeviatorLoading:
 
     def get_for_average(self):
         return {
-            "strain": self._test_data.strain_cut,
-            "deviator": self._test_data.deviator_cut
+            "strain": np.array(self._test_data.strain_cut),
+            "deviator": np.array(self._test_data.deviator_cut)
         }
 
     @staticmethod
