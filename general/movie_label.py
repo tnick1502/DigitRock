@@ -2,10 +2,11 @@ import pickle
 import socket
 import sys
 import threading
+import time
 
 from PyQt5.QtCore import Qt, QByteArray, QObject, QSize
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QHBoxLayout, QPushButton, QVBoxLayout, QDialog,\
-    QDesktopWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QHBoxLayout, QPushButton, QVBoxLayout, QDialog, \
+    QDesktopWidget, QMessageBox, QSizePolicy
 from PyQt5.QtGui import QMovie
 
 from typing import Tuple
@@ -152,8 +153,10 @@ class Loader(QDialog):
         top = int(abs((QDesktopWidget().screenGeometry().height() - self.height) / 2.0))
         self.setGeometry(left, top, self.width, self.height)
         # Запрещаем изменение размера пользователем
-        self.setFixedSize(self.width, self.height)
-
+        #self.setFixedSize(self.width, self.height)
+        self.setMinimumWidth(self.width)
+        self.setMinimumHeight(self.height)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setWindowTitle(str(window_title))
 
         # Флаг сосотояния работы лоадера, блокирует нежелательное повeдение при True
@@ -182,24 +185,36 @@ class Loader(QDialog):
 
         # Текстовое сообщение
         self.message_label = QLabel()
+        self.message_label.setMinimumWidth(self.width)
         self.message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.message_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         self.layout.addWidget(self.message_label)
-        self.__set_message(start_message)
+        self.start_message = start_message
+        self.__set_message(self.start_message)
+
+        # OK btn
+        self.ok_btn = QPushButton(parent=self, text='OK')
+        self.ok_btn.setVisible(False)
+        self.layout.addWidget(self.ok_btn)
+        self.ok_btn.clicked.connect(self.close)
 
         # Задание порта и сокета для получения сообщений
         self.__port = message_port
-        self.sock = socket.socket()
-        self.sock.bind(('', self.port))
-        self.sock.listen(10)
+        self.sock = None
 
     def __run(self):
         """
         Запускает работу сокета по прослушиванию сообщений. Вызывается только через `show`
         """
         while self.__is_running:
-            conn, addr = self.sock.accept()
+            try:
+                conn, addr = self.sock.accept()
+            except Exception as err:
+                break
+
             all_data = bytearray()
-            while True:
+            while True and self.__is_running:
                 data = conn.recv(Loader.BUFFER_SIZE)
                 if not data:
                     break
@@ -210,9 +225,8 @@ class Loader(QDialog):
             else:
                 message = ''
 
-            if not message:
+            if not message or not self.__is_running:
                 conn.close()
-                self.close()
                 break
 
             self.__set_message(str(message))
@@ -223,22 +237,64 @@ class Loader(QDialog):
         """Устанавливает сообщение на элементы виджета"""
         #self.setWindowTitle(str(message))
         self.message_label.setText(str(message))
+        self.message_label.adjustSize()
+        self.adjustSize()
         QApplication.processEvents()
 
-    def show(self):
+    def start(self):
         """Отображает лоадер пользователю и запускает поток с сокетом"""
         if self.__is_running:
             return
         self.__is_running = True
+        self.gif_label.label.setVisible(True)
+        self.ok_btn.setVisible(False)
+
+        # Подключение сокета делаем при каждом отображении
+        self.sock = socket.socket()
+        self.sock.bind(('', self.port))
+        self.sock.listen(10)
+
         self.__thread = threading.Thread(target=self.__run, args=())
         self.__thread.start()
         super().show()
 
     def close(self) -> bool:
         """Закрывает лоадер и останавливает поток с сокетом"""
-        is_closed = super().close()
-        self.__is_running = not is_closed
-        return is_closed
+        self.__is_running = False
+        self.send_message(self.port, None)
+
+        # При закрытии виджета открепляем сокет, чтобы освободить порт
+        try:
+            self.sock.close()
+        except:
+            pass
+
+        super().close()
+        self.__set_message(self.start_message)
+
+        QApplication.processEvents()
+        # QT Закрывает виджет не сразу и приложение может зависнуть, если открыть другое окно сразу после Лоадера.
+        # Перебором подобрано время ожидания
+        time.sleep(0.3)
+        return False
+
+    def close_OK(self, message):
+        self.__set_message(message)
+        self.gif_label.object.setVisible(False)
+        self.ok_btn.setVisible(True)
+
+    def critical(self, title, message):
+        try:
+            # ИНОГДА ПРИВОДИТ К КРАШУ ПРИОЛОЖЕНИЯ.
+            # В PyCharm этого не видно. Ошибка при запуске через консоль CMD (возникает реже?)
+            # QBackingStore::endPaint() called with active painter
+            # https://github.com/FreeCAD/FreeCAD/issues/8808
+            # QMessageBox.critical(self, title, message, QMessageBox.Ok)
+            message = QMessageBox(3, title, message, QMessageBox.Ok)
+            message.exec_()
+            QApplication.processEvents()
+        except:
+            pass
 
     @property
     def port(self):
@@ -247,6 +303,14 @@ class Loader(QDialog):
     @port.setter
     def port(self, value):
         self.__port = value
+
+    @property
+    def is_running(self):
+        return self.__is_running
+
+    @is_running.setter
+    def is_running(self, value):
+        self.__is_running = value
 
     def set_message(self, message):
         """
@@ -294,20 +358,23 @@ class App(QMainWindow):
         # ОБъявление фукнции для вызова
         def function_to_call(a1, a2, a3, a4):
             value = 1
-            while value <= 10:
+            while value <= 5:
                 numpy.sort(numpy.random.uniform(0.0, 1.0, 10000000))
                 # Отправка сообщений из другого потока должна осуществляться через Loader.send_message
                 Loader.send_message(loader.port, f'Моделирование : {value}/10')
+                if value == 2:
+                    loader.critical('Ошибка', 'Ошибка моделирования')
                 #
                 value += 1
 
             # Лоадер необходимо закрывать вручную
-            loader.close()
+            # loader.close()
+            loader.close_OK("Моделирование завершено")
 
         # Кнопка запуска фукнции
         def on_btn():
             # Использование класса
-            loader.show()
+            loader.start()
             # Реальные действия должны быть выделены в отдельный поток
             threading.Thread(target=function_to_call, args=(1, 2, 3, 4)).start()
 
