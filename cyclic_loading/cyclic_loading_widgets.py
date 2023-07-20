@@ -671,6 +671,9 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         self.physical_line.save_button.clicked.connect(self.save_report_and_continue)
         self.tab_3.roundFI_btn.hide()
 
+        self.loader = Loader(window_title="Сохранение протоколов...", start_message="Сохранение протоколов...",
+                             message_port=7787, parent=self)
+
     def keyPressEvent(self, event):
         if statment.current_test:
             list = [x for x in statment]
@@ -712,7 +715,7 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                                                 f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
                 app_logger.info("Новые параметры ведомости и модели сохранены")
 
-    def save_report(self):
+    def save_report(self, save_all_mode = False):
 
         def check_none(s):
             if s:
@@ -939,23 +942,38 @@ class CyclicSoilTestApp(AppMixin, QWidget):
                           #ame=statment.general_parameters.test_mode + ".pickle")
 
             control()
+            return True, "Успешно"
 
 
         except AssertionError as error:
-            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
-            app_logger.exception(f"Не выгнан {statment.current_test}")
+            if not save_all_mode:
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+                app_logger.exception(f"Не выгнан {statment.current_test}")
+            return False, f'{str(error)}'
 
         #except TypeError as error:
             #QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
 
         except PermissionError:
-            QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
-            app_logger.exception(f"Не выгнан {statment.current_test}")
+            if not save_all_mode:
+                QMessageBox.critical(self, "Ошибка", f"Закройте файл отчета {statment.current_test}", QMessageBox.Ok)
+                app_logger.exception(f"Не выгнан {statment.current_test}")
+            return False, 'Не закрыт файл отчета'
 
-        except:
-            app_logger.exception(f"Не выгнан {statment.current_test}")
+
+        except Exception as error:
+
+            if not save_all_mode:
+                app_logger.exception(f"Не выгнан {statment.current_test}")
+
+            return False, f'{str(error)}'
 
     def save_all_reports(self):
+
+        if self.loader.is_running:
+            QMessageBox.critical(self, "Ошибка", "Закройте окно сохранения")
+            return
+
         try:
             statment.save([Cyclic_models], [f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"])
         except Exception as err:
@@ -964,28 +982,41 @@ class CyclicSoilTestApp(AppMixin, QWidget):
         Cyclic_models.dump(os.path.join(statment.save_dir.save_directory,
                                         f"cyclic_models{statment.general_data.get_shipment_number()}.pickle"))
 
-        statment.save_dir.clear_dirs()
-
-        loader = Loader(window_title="Сохранение протоколов...", start_message="Сохранение протоколов...",
-                        message_port=7778)
-        count = len(statment)
-        Loader.send_message(loader.port, f"Сохранено 0 из {count}")
+        try:
+            statment.save_dir.clear_dirs()
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", "Ошибка очистки папки с отчетами. Не закрыт файл отчета.")
+            return
 
         def save():
+
+            count = len(statment)
+            Loader.send_message(self.loader.port, f"Сохранено 0 из {count}")
+
             for i, test in enumerate(statment):
                 self.save_massage = False
                 statment.setCurrentTest(test)
                 self.tab_2.set_params(True)
-                self.save_report()
-                Loader.send_message(loader.port, f"Сохранено {i+1} из {count}")
-            Loader.send_message(loader.port, f"Сохранено {count} из {count}")
-            loader.close()
-            QMessageBox.about(self, "Сообщение", "Объект выгнан")
-            app_logger.info("Объект успешно выгнан")
+                try:
+                    is_ok, message = self.save_report(save_all_mode=True)
+                    if not is_ok:
+                        self.loader.close_OK(
+                            f"Ошибка сохранения пробы {statment.current_test}\n{message}.\nОперация прервана.")
+                        app_logger.info(f"Ошибка сохранения пробы {message}")
+                        return
+                except Exception as err:
+                    self.loader.close_OK(f"Ошибка сохранения пробы {statment.current_test}\n{err}.\nОперация прервана.")
+                    app_logger.info(f"Ошибка сохранения пробы {err}")
+                    return
+
+                Loader.send_message(self.loader.port, f"Сохранено {i + 1} из {count}")
+                Loader.send_message(self.loader.port, f"Сохранено {count} из {count}")
+
+                self.loader.close_OK(f"Объект выгнан")
             self.save_massage = True
 
         t = threading.Thread(target=save)
-        loader.show()
+        self.loader.start()
         t.start()
 
         SessionWriter.write_session(len(statment))

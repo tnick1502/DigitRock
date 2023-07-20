@@ -564,6 +564,9 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         self.tab_2.popIn.connect(self.addTab)
         self.tab_2.popOut.connect(self.removeTab)
 
+        self.loader = Loader(window_title="Сохранение протоколов...", start_message="Сохранение протоколов...",
+                             message_port=7786, parent=self)
+
         def G0_repeat(lab):
             G0 = int(RC_models[lab].get_test_results()["G0"])
             G0_list = [int(RC_models[i].get_test_results()["G0"]) for i in statment]
@@ -637,7 +640,7 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
                 app_logger.info("Новые параметры ведомости и модели сохранены")
 
     #@log_this(app_logger, "debug")
-    def save_report(self):
+    def save_report(self, save_all_mode = False):
         try:
             assert statment.current_test, "Не выбран образец в ведомости"
             file_path_name = statment.getLaboratoryNumber().replace("/", "-").replace("*", "")
@@ -695,12 +698,19 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
                 self.tab_1.table_physical_properties.get_row_by_lab_naumber(statment.current_test))
 
             control()
+            return True, "Успешно"
 
         except AssertionError as error:
-            QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+            if not save_all_mode:
+                QMessageBox.critical(self, "Ошибка", str(error), QMessageBox.Ok)
+                app_logger.exception(f"Не выгнан {statment.current_test}")
+            return False, f'{str(error)}'
 
         except PermissionError:
-            QMessageBox.critical(self, "Ошибка", "Закройте файл отчета", QMessageBox.Ok)
+            if not save_all_mode:
+                QMessageBox.critical(self, "Ошибка", f"Закройте файл отчета {statment.current_test}", QMessageBox.Ok)
+                app_logger.exception(f"Не выгнан {statment.current_test}")
+            return False, 'Не закрыт файл отчета'
 
     def save_pickle(self):
         try:
@@ -713,6 +723,10 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
 
     def save_all_reports(self):
 
+        if self.loader.is_running:
+            QMessageBox.critical(self, "Ошибка", "Закройте окно сохранения")
+            return
+
         try:
             statment.save([RC_models], [f"rc_models{statment.general_data.get_shipment_number()}.pickle"])
         except Exception as err:
@@ -721,27 +735,41 @@ class RezonantColumnSoilTestApp(AppMixin, QWidget):
         RC_models.dump(os.path.join(statment.save_dir.save_directory,
                                     f"rc_models{statment.general_data.get_shipment_number()}.pickle"))
 
-        statment.save_dir.clear_dirs()
-
-        loader = Loader(window_title="Сохранение протоколов...", start_message="Сохранение протоколов...",
-                        message_port=7777)
-        count = len(statment)
-        Loader.send_message(loader.port, f"Сохранено 0 из {count}")
+        try:
+            statment.save_dir.clear_dirs()
+        except Exception as err:
+            QMessageBox.critical(self, "Ошибка", "Ошибка очистки папки с отчетами. Не закрыт файл отчета.")
+            return
 
         def save():
+
+            count = len(statment)
+            Loader.send_message(self.loader.port, f"Сохранено 0 из {count}")
+
             for i, test in enumerate(statment):
                 self.save_massage = False
                 statment.setCurrentTest(test)
                 self.tab_2.set_test_params(True)
-                self.save_report()
-                Loader.send_message(loader.port, f"Сохранено {i + 1} из {count}")
-            Loader.send_message(loader.port, f"Сохранено {count} из {count}")
-            loader.close()
-            QMessageBox.about(self, "Сообщение", "Объект выгнан")
+                try:
+                    is_ok, message = self.save_report(save_all_mode=True)
+                    if not is_ok:
+                        self.loader.close_OK(
+                            f"Ошибка сохранения пробы {statment.current_test}\n{message}.\nОперация прервана.")
+                        app_logger.info(f"Ошибка сохранения пробы {message}")
+                        return
+                except Exception as err:
+                    self.loader.close_OK(f"Ошибка сохранения пробы {statment.current_test}\n{err}.\nОперация прервана.")
+                    app_logger.info(f"Ошибка сохранения пробы {err}")
+                    return
+
+                Loader.send_message(self.loader.port, f"Сохранено {i + 1} из {count}")
+                Loader.send_message(self.loader.port, f"Сохранено {count} из {count}")
+
+                self.loader.close_OK(f"Объект выгнан")
             self.save_massage = True
 
         t = threading.Thread(target=save)
-        loader.show()
+        self.loader.start()
         t.start()
 
         SessionWriter.write_session(len(statment))
