@@ -375,9 +375,9 @@ class RayleighDampingSoilTestApp(AppMixin, QWidget):
                     return
 
                 Loader.send_message(self.loader.port, f"Сохранено {i + 1} из {count}")
-                Loader.send_message(self.loader.port, f"Сохранено {count} из {count}")
-
-                self.loader.close_OK(f"Объект выгнан")
+            # Конец цикла
+            Loader.send_message(self.loader.port, f"Сохранено {count} из {count}")
+            self.loader.close_OK(f"Объект выгнан")
             self.save_massage = True
 
         t = threading.Thread(target=save)
