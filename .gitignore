@@ -1,5 +1,5 @@
 venv
-qr.png
+**/qr.png
 .idea
 __pycache__
 log.log
